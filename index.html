@@ -7,7 +7,7 @@
 <style>
   :root{
     --peach-1:#ff8fb1;
-    --peach-2:#ff5f9e;
+    --peach-2:#EF0870;
     --peach-dark:#3d1f2a;
     --bg:#1a1020;
     --card-bg:#2a1830;
@@ -35,26 +35,28 @@
   /* ===== HEADER ===== */
   header{
     position:sticky;top:0;z-index:50;
-    display:flex;align-items:center;justify-content:space-between;
-    padding:14px 18px;
     background:rgba(26,16,32,0.92);
     backdrop-filter:blur(8px);
-    border-bottom:1px solid rgba(255,143,177,0.25);
+    border-bottom:1px solid rgba(239,8,112,0.25);
+  }
+  .header-inner{
+    max-width:640px;margin:0 auto;padding:14px 18px;
+    display:flex;align-items:center;justify-content:space-between;
   }
   .header-left{display:flex;align-items:center;gap:12px;}
   #hamburgerBtn{
     background:none;font-size:26px;color:var(--peach-1);padding:4px 8px;border-radius:8px;
   }
-  #hamburgerBtn:hover{background:rgba(255,143,177,0.15);}
+  #hamburgerBtn:hover{background:rgba(239,8,112,0.15);}
   .logo{font-weight:800;font-size:19px;letter-spacing:0.5px;
-    background:linear-gradient(90deg,var(--peach-1),var(--gold));
+    background:linear-gradient(90deg,var(--peach-2),var(--gold));
     -webkit-background-clip:text;background-clip:text;color:transparent;
   }
   .tabs{display:flex;gap:6px;background:var(--card-bg);padding:4px;border-radius:999px;}
   .tab-btn{
     padding:8px 16px;border-radius:999px;background:none;color:var(--text-dim);font-weight:600;font-size:14px;
   }
-  .tab-btn.active{background:linear-gradient(90deg,var(--peach-2),var(--peach-1));color:#2a0f1c;}
+  .tab-btn.active{background:linear-gradient(90deg,var(--peach-2),var(--peach-1));color:#fff;}
 
   /* ===== DRAWER ===== */
   #drawerOverlay{
@@ -69,14 +71,14 @@
     box-shadow:4px 0 20px rgba(0,0,0,0.4);
   }
   #drawer.open{transform:translateX(0);}
-  .drawer-title{font-weight:800;font-size:18px;color:var(--peach-1);margin-bottom:4px;}
+  .drawer-title{font-weight:800;font-size:18px;color:var(--peach-2);margin-bottom:4px;}
   .social-row{display:flex;flex-direction:column;gap:10px;}
   .social-link{
     display:flex;align-items:center;gap:12px;padding:10px 12px;border-radius:12px;
     background:var(--card-bg-2);transition:background .15s;
   }
-  .social-link:hover{background:rgba(255,143,177,0.18);}
-  .social-link img{width:28px;height:28px;object-fit:contain;border-radius:6px;}
+  .social-link:hover{background:rgba(239,8,112,0.18);}
+  .social-link img{width:28px;height:28px;object-fit:contain;border-radius:6px;background:#fff;padding:2px;}
   .social-link span{font-weight:600;font-size:14px;}
   .drawer-divider{height:1px;background:rgba(255,255,255,0.08);}
   .drawer-nav-btn{
@@ -84,7 +86,7 @@
     background:var(--card-bg-2);font-weight:700;font-size:15px;color:var(--text);
     justify-content:flex-start;
   }
-  .drawer-nav-btn:hover{background:rgba(255,143,177,0.18);}
+  .drawer-nav-btn:hover{background:rgba(239,8,112,0.18);}
   #staffDrawerBtn{margin-top:auto;background:linear-gradient(90deg,#6a3d8f,#a45fc7);color:#fff;}
 
   /* ===== MAIN ===== */
@@ -93,7 +95,7 @@
 
   #addActBtn{
     display:block;width:100%;margin-bottom:16px;padding:12px;border-radius:14px;
-    background:linear-gradient(90deg,var(--peach-2),var(--gold));color:#2a0f1c;font-weight:800;font-size:15px;
+    background:linear-gradient(90deg,var(--peach-2),var(--gold));color:#fff;font-weight:800;font-size:15px;
   }
 
   /* ===== ACTIVITY CARD ===== */
@@ -105,11 +107,11 @@
   .card-top{display:flex;gap:0;padding:14px;}
   @media (max-width:480px){.card-top{flex-direction:column;}}
   .card-img-wrap{
-    position:relative;flex:0 0 120px;width:120px;height:120px;border-radius:12px;overflow:hidden;
+    position:relative;flex:0 0 120px;width:120px;aspect-ratio:1/1;border-radius:12px;overflow:hidden;
     background:var(--card-bg-2);
   }
-  @media (max-width:480px){.card-img-wrap{width:100%;height:180px;}}
-  .card-img-wrap img{width:100%;height:100%;object-fit:cover;}
+  @media (max-width:480px){.card-img-wrap{width:100%;flex-basis:auto;}}
+  .card-img-wrap img{width:100%;height:100%;object-fit:contain;}
   .crown-badge{
     position:absolute;top:-6px;left:-6px;font-size:26px;filter:drop-shadow(0 2px 3px rgba(0,0,0,0.6));
   }
@@ -127,24 +129,25 @@
   .btn-small{
     padding:7px 12px;border-radius:10px;font-size:12.5px;font-weight:700;
   }
-  .btn-primary{background:linear-gradient(90deg,var(--peach-2),var(--peach-1));color:#2a0f1c;}
+  .btn-primary{background:linear-gradient(90deg,var(--peach-2),var(--peach-1));color:#fff;}
   .btn-ghost{background:var(--card-bg-2);color:var(--text);}
   .btn-admin{background:rgba(164,95,199,0.25);color:#d9b6f5;}
+  .btn-danger{background:rgba(231,76,60,0.22);color:var(--red);}
 
   .accordion{border-top:1px solid rgba(255,255,255,0.07);}
   .accordion-toggle{
-    width:100%;text-align:left;padding:12px 16px;background:none;color:var(--peach-1);
+    width:100%;text-align:left;padding:12px 16px;background:none;color:var(--peach-2);
     font-weight:700;font-size:13.5px;display:flex;justify-content:space-between;align-items:center;
   }
   .accordion-body{padding:0 16px 16px;font-size:13.5px;color:var(--text-dim);line-height:1.5;display:none;white-space:pre-wrap;}
   .accordion-body.open{display:block;}
   .wishlist-block{margin-top:10px;padding:10px;background:var(--card-bg-2);border-radius:10px;white-space:pre-wrap;}
-  .hashtags{margin-top:8px;color:var(--peach-1);font-size:12.5px;}
 
   table.entregas-table{width:100%;border-collapse:collapse;font-size:13px;}
-  table.entregas-table th{text-align:left;color:var(--peach-1);padding:6px 4px;border-bottom:1px solid rgba(255,255,255,0.1);}
-  table.entregas-table td{padding:6px 4px;border-bottom:1px solid rgba(255,255,255,0.05);}
+  table.entregas-table th{text-align:left;color:var(--peach-2);padding:6px 4px;border-bottom:1px solid rgba(255,255,255,0.1);}
+  table.entregas-table td{padding:6px 4px;border-bottom:1px solid rgba(255,255,255,0.05);vertical-align:middle;}
   table.entregas-table a{color:var(--peach-1);text-decoration:underline;}
+  .anuario-mini-btn{background:rgba(255,215,0,0.18);color:var(--gold);padding:5px 8px;border-radius:8px;font-size:11px;font-weight:700;white-space:nowrap;}
 
   /* ===== ANUARIO GRID ===== */
   #anuarioGrid{display:grid;grid-template-columns:1fr 1fr;gap:12px;}
@@ -153,7 +156,7 @@
     position:relative;border-radius:14px;overflow:hidden;background:var(--card-bg);
     border:1px solid var(--gold);box-shadow:0 0 14px rgba(255,215,0,0.12);cursor:pointer;
   }
-  .anuario-tile img{width:100%;height:120px;object-fit:cover;}
+  .anuario-tile img{width:100%;aspect-ratio:1/1;object-fit:contain;background:var(--card-bg-2);}
   .anuario-tile .crown-badge{top:6px;left:6px;}
   .anuario-tile .tile-title{padding:10px;font-weight:800;font-size:13.5px;}
 
@@ -161,11 +164,12 @@
   #searchMiembros{
     width:100%;padding:12px 14px;border-radius:12px;border:1px solid rgba(255,255,255,0.1);
     background:var(--card-bg-2);color:var(--text);font-size:14px;margin-bottom:14px;
+    display:block;
   }
-  .section-label{font-weight:800;color:var(--peach-1);margin:16px 0 10px;font-size:14px;}
+  .section-label{font-weight:800;color:var(--peach-2);margin:16px 0 10px;font-size:14px;text-align:left;}
   #staffCarousel{display:flex;gap:12px;overflow-x:auto;padding-bottom:8px;}
   .member-avatar-item{flex:0 0 auto;width:78px;text-align:center;cursor:pointer;}
-  .member-avatar-item img{width:64px;height:64px;border-radius:50%;object-fit:cover;border:2px solid var(--peach-1);margin:0 auto;}
+  .member-avatar-item img{width:64px;height:64px;border-radius:50%;object-fit:cover;border:2px solid var(--peach-2);margin:0 auto;}
   .member-avatar-item .m-name{font-size:11px;margin-top:6px;color:var(--text-dim);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
 
   #miembrosList{display:flex;flex-direction:column;gap:10px;}
@@ -191,7 +195,7 @@
   #staffStatusBadge{
     display:none;position:fixed;bottom:14px;right:14px;background:linear-gradient(90deg,#6a3d8f,#a45fc7);
     color:#fff;padding:8px 14px;border-radius:999px;font-size:12.5px;font-weight:700;z-index:60;
-    box-shadow:0 4px 14px rgba(0,0,0,0.4);
+    box-shadow:0 4px 14px rgba(0,0,0,0.4);cursor:pointer;
   }
 
   /* ===== MODALS ===== */
@@ -204,7 +208,7 @@
     background:var(--card-bg);border-radius:18px;padding:20px;width:100%;max-width:440px;
     max-height:85vh;overflow-y:auto;-webkit-overflow-scrolling:touch;
   }
-  .modal-box h3{margin-top:0;color:var(--peach-1);}
+  .modal-box h3{margin-top:0;color:var(--peach-2);}
   .modal-close{float:right;background:none;color:var(--text-dim);font-size:20px;}
   .form-group{margin-bottom:12px;}
   .form-group label{display:block;font-size:12.5px;color:var(--text-dim);margin-bottom:5px;font-weight:600;}
@@ -217,43 +221,48 @@
   .modal-actions button{flex:1;padding:12px;border-radius:12px;font-weight:800;}
 
   .member-modal-header{text-align:center;}
-  .member-modal-header img{width:90px;height:90px;border-radius:50%;object-fit:cover;margin:0 auto 10px;border:3px solid var(--peach-1);}
+  .member-modal-header img{width:90px;height:90px;border-radius:50%;object-fit:cover;margin:0 auto 10px;border:3px solid var(--peach-2);}
   .expelled-banner{background:var(--red);color:#fff;padding:8px;border-radius:10px;font-weight:800;text-align:center;margin-bottom:12px;font-size:13px;}
   .info-table{width:100%;margin-top:14px;font-size:13.5px;}
   .info-table td{padding:6px 0;border-bottom:1px solid rgba(255,255,255,0.06);}
   .info-table td:first-child{color:var(--text-dim);width:50%;}
   .platform-row{display:flex;gap:10px;margin-top:14px;}
   .platform-btn{flex:1;display:flex;flex-direction:column;align-items:center;gap:6px;padding:10px;background:var(--card-bg-2);border-radius:12px;}
-  .platform-btn img{width:28px;height:28px;object-fit:contain;}
+  .platform-btn img{width:28px;height:28px;object-fit:contain;background:#fff;border-radius:5px;padding:2px;}
   .platform-btn span{font-size:11px;color:var(--text-dim);}
   .castigos-box{margin-top:16px;background:var(--card-bg-2);border-radius:12px;padding:12px;}
-  .castigos-box .ct-title{font-weight:800;color:var(--peach-1);margin-bottom:8px;font-size:13px;}
+  .castigos-box .ct-title{font-weight:800;color:var(--peach-2);margin-bottom:8px;font-size:13px;}
   .castigos-box .ct-row{display:flex;justify-content:space-between;font-size:13.5px;padding:3px 0;}
   .admin-strike-btns{display:flex;gap:8px;margin-top:12px;}
   .admin-strike-btns button{flex:1;padding:10px;border-radius:10px;font-weight:700;font-size:12.5px;}
   .btn-falta{background:rgba(241,196,15,0.2);color:var(--yellow);}
   .btn-strike{background:rgba(231,76,60,0.2);color:var(--red);}
+  .btn-reset-castigos{width:100%;margin-top:8px;padding:9px;border-radius:10px;font-weight:700;font-size:12.5px;background:rgba(255,255,255,0.08);color:var(--text-dim);}
 
   .winners-block{background:var(--card-bg-2);border-radius:12px;padding:14px;margin-top:10px;}
   .winners-block div{margin:6px 0;font-size:14px;}
   .toast{
     position:fixed;bottom:70px;left:50%;transform:translateX(-50%);background:#222;color:#fff;
     padding:10px 18px;border-radius:999px;font-size:13px;z-index:300;opacity:0;transition:opacity .25s;
+    text-align:center;max-width:85vw;
   }
   .toast.show{opacity:1;}
   .empty-state{text-align:center;color:var(--text-dim);padding:40px 10px;font-size:14px;}
+  .upload-status{font-size:12px;color:var(--text-dim);margin-top:4px;}
 </style>
 </head>
 <body>
 
 <header>
-  <div class="header-left">
-    <button id="hamburgerBtn">☰</button>
-    <div class="logo">🍑 Peaches Hub</div>
-  </div>
-  <div class="tabs">
-    <button class="tab-btn active" data-tab="actividades">Actividades</button>
-    <button class="tab-btn" data-tab="anuario">Anuario</button>
+  <div class="header-inner">
+    <div class="header-left">
+      <button id="hamburgerBtn">☰</button>
+      <div class="logo">🍑 Peaches Hub</div>
+    </div>
+    <div class="tabs">
+      <button class="tab-btn active" data-tab="actividades">Actividades</button>
+      <button class="tab-btn" data-tab="anuario">Anuario</button>
+    </div>
   </div>
 </header>
 
@@ -269,6 +278,9 @@
     </a>
     <a class="social-link" target="_blank" href="https://www.tiktok.com/@team_peaches_off">
       <img src="https://static.vecteezy.com/system/resources/previews/016/716/450/original/tiktok-icon-free-png.png" alt="TikTok"><span>TikTok</span>
+    </a>
+    <a class="social-link" target="_blank" href="https://www.smule.com/groups/1934104?utm_source=web&utm_campaign=share&utm_medium=copylink">
+      <img src="https://blog.smule.com/wp-content/uploads/smule-icon.png" alt="Smule"><span>Únete en Smule</span>
     </a>
   </div>
   <div class="drawer-divider"></div>
@@ -314,7 +326,7 @@
 <div id="staffStatusBadge">🛠️ Modo Staff activo</div>
 <div class="toast" id="toast"></div>
 
-<!-- MODAL: Detalle de miembro -->
+<!-- MODAL: Detalle de miembro / anuario -->
 <div class="modal-overlay" id="memberModal">
   <div class="modal-box">
     <button class="modal-close" data-close="memberModal">✕</button>
@@ -330,7 +342,15 @@
     <form id="activityForm">
       <input type="hidden" id="af_id">
       <div class="form-group"><label>Título</label><input type="text" id="af_titulo" required></div>
-      <div class="form-group"><label>Imagen (URL)</label><input type="text" id="af_imagenUrl"></div>
+      <div class="form-group">
+        <label>Imagen (URL)</label>
+        <input type="text" id="af_imagenUrl">
+      </div>
+      <div class="form-group">
+        <label>O sube una imagen desde tu galería/archivos</label>
+        <input type="file" id="af_imagenFile" accept="image/*">
+        <div class="upload-status" id="af_uploadStatus"></div>
+      </div>
       <div class="form-group"><label>Descripción</label><textarea id="af_descripcion"></textarea></div>
       <div class="form-group"><label>Wishlist (ideas, una por línea)</label><textarea id="af_wishlist"></textarea></div>
       <div class="form-group"><label>Fecha inicio</label><input type="date" id="af_fechaInicio"></div>
@@ -368,15 +388,16 @@
 
 <script>
 /* ============================================================
-   CONFIGURACIÓN — cambia esto por tu propia URL de Apps Script
+   CONFIGURACIÓN
    ============================================================ */
 const APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwcnPM10DeRLE6ReNX_AqeViRfKkHjpflT-QCw05oW_L8n5ohrDhfR_iPuzTqYNrG8H4A/exec";
+const LOGO_DEFAULT = "https://raw.githubusercontent.com/WaxyFlounder971/TeamPeachesHub/main/imagenes/PeachesLogo.jpg";
 
 /* ============================================================
    ESTADO GLOBAL
    ============================================================ */
 let DB = { actividades: [], entregas: [], miembros: [] };
-let staffPin = localStorage.getItem("tph_pin") || null; // null = no es staff
+let staffPin = localStorage.getItem("tph_pin") || null;
 let currentTab = "actividades";
 
 /* ============================================================
@@ -419,10 +440,45 @@ async function apiPost(payload){
   payload.pin = staffPin || "";
   const res = await fetch(APPS_SCRIPT_URL, {
     method: "POST",
-    headers: {"Content-Type":"text/plain;charset=utf-8"}, // evita preflight CORS
+    headers: {"Content-Type":"text/plain;charset=utf-8"},
     body: JSON.stringify(payload)
   });
   return res.json();
+}
+
+/* ---- Descargar imagen al mantener presionada / click derecho ---- */
+async function downloadImage(url, filename){
+  try{
+    const res = await fetch(url, {mode:"cors"});
+    const blob = await res.blob();
+    const blobUrl = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = blobUrl;
+    a.download = filename || "imagen-peaches.jpg";
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    URL.revokeObjectURL(blobUrl);
+    toast("Imagen descargada en el dispositivo ✅");
+  }catch(err){
+    toast("No se pudo descargar la imagen ❌");
+    console.error(err);
+  }
+}
+
+function enableLongPress(img, filename){
+  if(!img || img.dataset.longPressBound) return;
+  img.dataset.longPressBound = "1";
+  let timer = null;
+  const start = () => { timer = setTimeout(()=>downloadImage(img.src, filename), 550); };
+  const cancel = () => { if(timer){ clearTimeout(timer); timer = null; } };
+  img.addEventListener("touchstart", start, {passive:true});
+  img.addEventListener("touchend", cancel);
+  img.addEventListener("touchmove", cancel);
+  img.addEventListener("mousedown", start);
+  img.addEventListener("mouseup", cancel);
+  img.addEventListener("mouseleave", cancel);
+  img.addEventListener("contextmenu", (e)=>{ e.preventDefault(); downloadImage(img.src, filename); });
 }
 
 /* ============================================================
@@ -446,7 +502,7 @@ async function cargarDatos(){
    ============================================================ */
 function renderActividades(){
   const feed = document.getElementById("actividadesFeed");
-  const activas = DB.actividades.filter(a => !esTrue(a.esAnuario)).slice().reverse(); // LIFO
+  const activas = DB.actividades.filter(a => !esTrue(a.esAnuario)).slice().reverse();
   if(activas.length === 0){
     feed.innerHTML = `<div class="empty-state">Todavía no hay actividades. ${staffPin ? '¡Agrega la primera!' : ''}</div>`;
     return;
@@ -463,7 +519,7 @@ function cardHTML(a){
   <div class="card" data-id="${a.id}">
     <div class="card-top">
       <div class="card-img-wrap">
-        ${a.imagenUrl ? `<img src="${escAttr(a.imagenUrl)}" alt="">` : ""}
+        ${a.imagenUrl ? `<img class="js-longpress" data-filename="${escAttr((a.titulo||'actividad')+'.jpg')}" src="${escAttr(a.imagenUrl)}" alt="">` : ""}
       </div>
       <div class="card-info">
         <div class="card-title">${escHtml(a.titulo || "")}</div>
@@ -472,6 +528,7 @@ function cardHTML(a){
         <div class="card-actions">
           ${a.linkForms ? `<a class="btn-small btn-primary" target="_blank" href="${escAttr(a.linkForms)}">🎙️ Ir a Forms</a>` : ""}
           ${staffPin ? `<button class="btn-small btn-admin" data-edit="${a.id}">✏️ Editar</button>` : ""}
+          ${staffPin ? `<button class="btn-small btn-danger" data-delete="${a.id}">🗑️ Borrar</button>` : ""}
         </div>
       </div>
     </div>
@@ -487,11 +544,12 @@ function cardHTML(a){
       <div class="accordion-body" id="entregas-${a.id}">
         ${entregasDeEsta.length ? `
         <table class="entregas-table">
-          <tr><th>Persona</th><th>Canción/Escena</th><th>Enlace</th></tr>
+          <tr><th>Persona</th><th>Canción/Escena</th><th>Enlace</th>${staffPin ? "<th></th>" : ""}</tr>
           ${entregasDeEsta.map(e => `<tr>
             <td>${escHtml(e.nombreUsuario||"")}</td>
             <td>${escHtml(e.detalleEntrega||"")}</td>
             <td>${e.linkGrabacion ? `<a href="${escAttr(e.linkGrabacion)}" target="_blank">🔗 Escuchar</a>`:""}</td>
+            ${staffPin ? `<td><button class="anuario-mini-btn" data-anuario-entrega="${a.id}" data-nombre="${escAttr(e.nombreUsuario||"")}" data-detalle="${escAttr(e.detalleEntrega||"")}">👑 Anuario</button></td>` : ""}
           </tr>`).join("")}
         </table>` : `<div style="color:var(--text-dim);">Todavía no hay entregas registradas.</div>`}
         ${staffPin ? `<button class="btn-small btn-admin" style="margin-top:10px;" data-add-entrega="${a.id}">(+) Registrar Entrega</button>` : ""}
@@ -511,9 +569,39 @@ function attachCardEvents(){
   document.querySelectorAll("[data-edit]").forEach(btn=>{
     btn.onclick = () => openActivityForm(btn.dataset.edit);
   });
+  document.querySelectorAll("[data-delete]").forEach(btn=>{
+    btn.onclick = () => borrarActividad(btn.dataset.delete);
+  });
   document.querySelectorAll("[data-add-entrega]").forEach(btn=>{
     btn.onclick = () => openEntregaForm(btn.dataset.addEntrega);
   });
+  document.querySelectorAll("[data-anuario-entrega]").forEach(btn=>{
+    btn.onclick = () => enviarAAnuario(btn.dataset.anuarioEntrega, btn.dataset.nombre, btn.dataset.detalle);
+  });
+  document.querySelectorAll(".card-img-wrap img.js-longpress").forEach(img=>{
+    enableLongPress(img, img.dataset.filename);
+  });
+}
+
+async function borrarActividad(id){
+  if(!confirm("¿Seguro que quieres borrar esta actividad? Esto también borra sus entregas.")) return;
+  const r = await apiPost({action:"deleteActividad", id});
+  if(r.ok){ toast("Actividad borrada 🗑️"); await cargarDatos(); }
+  else toast("Error: " + (r.error||""));
+}
+
+async function enviarAAnuario(idActividad, nombreUsuario, detalle){
+  if(!confirm("¿Deseas añadir esto al Anuario?")) return;
+  let tipo = prompt("¿Canto o Doblaje? (escribe: canto / doblaje)");
+  if(!tipo) return;
+  tipo = tipo.trim().toLowerCase();
+  if(tipo !== "canto" && tipo !== "doblaje"){
+    toast("Escribe exactamente 'canto' o 'doblaje' ❌");
+    return;
+  }
+  const r = await apiPost({action:"addToAnuario", idActividad, tipo, nombreUsuario, detalle});
+  if(r.ok){ toast("Agregado al Anuario 👑"); await cargarDatos(); }
+  else toast("Error: " + (r.error||""));
 }
 
 /* ============================================================
@@ -529,12 +617,15 @@ function renderAnuario(){
   grid.innerHTML = items.map(a => `
     <div class="anuario-tile" data-anuario="${a.id}">
       <span class="crown-badge">👑</span>
-      ${a.imagenUrl ? `<img src="${escAttr(a.imagenUrl)}" alt="">` : `<div style="height:120px;background:var(--card-bg-2);"></div>`}
+      ${a.imagenUrl ? `<img class="js-longpress" data-filename="${escAttr((a.titulo||'anuario')+'.jpg')}" src="${escAttr(a.imagenUrl)}" alt="">` : `<div style="aspect-ratio:1/1;background:var(--card-bg-2);"></div>`}
       <div class="tile-title">${escHtml(a.titulo||"")}</div>
     </div>
   `).join("");
   document.querySelectorAll("[data-anuario]").forEach(tile=>{
     tile.onclick = () => openAnuarioDetail(tile.dataset.anuario);
+  });
+  document.querySelectorAll("#anuarioGrid img.js-longpress").forEach(img=>{
+    enableLongPress(img, img.dataset.filename);
   });
 }
 
@@ -544,7 +635,7 @@ function openAnuarioDetail(id){
   const entregasDeEsta = DB.entregas.filter(e => String(e.idActividad) === String(a.id));
   document.getElementById("memberModalContent").innerHTML = `
     <h3>👑 ${escHtml(a.titulo||"")}</h3>
-    ${a.imagenUrl ? `<img src="${escAttr(a.imagenUrl)}" style="border-radius:12px;width:100%;margin-bottom:10px;">` : ""}
+    ${a.imagenUrl ? `<img id="anuarioDetailImg" data-filename="${escAttr((a.titulo||'anuario')+'.jpg')}" src="${escAttr(a.imagenUrl)}" style="border-radius:12px;width:100%;aspect-ratio:1/1;object-fit:contain;background:var(--card-bg-2);margin-bottom:10px;">` : ""}
     <div class="winners-block">
       ${a.ganadorCanto ? `<div>🥇 <strong>Mejor Canto:</strong> ${escHtml(a.ganadorCanto)}</div>` : ""}
       ${a.ganadorDoblaje ? `<div>🎙️ <strong>Mejor Doblaje:</strong> ${escHtml(a.ganadorDoblaje)}</div>` : ""}
@@ -554,11 +645,23 @@ function openAnuarioDetail(id){
       <div class="section-label">🎧 Audios</div>
       ${entregasDeEsta.map(e=>`<div style="margin:6px 0;"><a href="${escAttr(e.linkGrabacion)}" target="_blank">▶ ${escHtml(e.nombreUsuario)} - ${escHtml(e.detalleEntrega)}</a></div>`).join("")}
     ` : ""}
-    ${staffPin ? `<button class="btn-small btn-admin" style="margin-top:12px;width:100%;" data-edit-anuario="${a.id}">✏️ Editar</button>` : ""}
+    ${staffPin ? `<div style="display:flex;gap:8px;margin-top:12px;">
+      <button class="btn-small btn-admin" style="flex:1;" data-edit-anuario="${a.id}">✏️ Editar</button>
+      <button class="btn-small btn-danger" style="flex:1;" data-delete-anuario="${a.id}">🗑️ Borrar</button>
+    </div>` : ""}
   `;
   openModal("memberModal");
+  const img = document.getElementById("anuarioDetailImg");
+  if(img) enableLongPress(img, img.dataset.filename);
   const editBtn = document.querySelector("[data-edit-anuario]");
   if(editBtn) editBtn.onclick = () => { closeModal("memberModal"); openActivityForm(a.id); };
+  const delBtn = document.querySelector("[data-delete-anuario]");
+  if(delBtn) delBtn.onclick = async () => {
+    if(!confirm("¿Seguro que quieres borrar esta edición del Anuario?")) return;
+    const r = await apiPost({action:"deleteActividad", id:a.id});
+    if(r.ok){ toast("Borrado 🗑️"); closeModal("memberModal"); await cargarDatos(); }
+    else toast("Error: " + (r.error||""));
+  };
 }
 
 /* ============================================================
@@ -573,7 +676,7 @@ function renderMiembros(filtro=""){
   const carousel = document.getElementById("staffCarousel");
   carousel.innerHTML = staffList.length ? staffList.map(m => `
     <div class="member-avatar-item" data-member="${m.id}">
-      <img src="${escAttr(m.avatarUrl || placeholderAvatar())}" alt="">
+      <img src="${escAttr(m.avatarUrl || LOGO_DEFAULT)}" alt="">
       <div class="m-name">${escHtml(m.nombre||"")}</div>
     </div>`).join("") : `<div style="color:var(--text-dim);font-size:13px;">Sin resultados.</div>`;
 
@@ -581,7 +684,7 @@ function renderMiembros(filtro=""){
   const list = document.getElementById("miembrosList");
   list.innerHTML = todos.length ? todos.map(m => `
     <div class="member-row" data-member="${m.id}">
-      <img src="${escAttr(m.avatarUrl || placeholderAvatar())}" alt="">
+      <img src="${escAttr(m.avatarUrl || LOGO_DEFAULT)}" alt="">
       <div class="m-info">
         <div class="m-name">${escHtml(m.nombre||"")}</div>
         <div class="badges-row">
@@ -597,10 +700,6 @@ function renderMiembros(filtro=""){
   });
 }
 
-function placeholderAvatar(){
-  return "https://ui-avatars.com/api/?background=ff5f9e&color=fff&name=%3F";
-}
-
 function openMemberModal(id){
   const m = DB.miembros.find(x => String(x.id) === String(id));
   if(!m) return;
@@ -608,7 +707,7 @@ function openMemberModal(id){
   const faltas = Number(m.faltas)||0;
   document.getElementById("memberModalContent").innerHTML = `
     <div class="member-modal-header">
-      <img src="${escAttr(m.avatarUrl || placeholderAvatar())}">
+      <img id="memberDetailAvatar" data-filename="${escAttr((m.nombre||'miembro')+'.jpg')}" src="${escAttr(m.avatarUrl || LOGO_DEFAULT)}">
       <div style="font-weight:800;font-size:17px;">${escHtml(m.nombre||"")}</div>
       <div class="badges-row" style="justify-content:center;">
         ${esTrue(m.staff) ? `<span class="badge badge-staff">Staff</span>`:""}
@@ -624,11 +723,11 @@ function openMemberModal(id){
     </table>
     <div class="platform-row">
       ${m.usuarioSmule ? `<a class="platform-btn" target="_blank" href="${escAttr(m.usuarioSmule)}">
-        <img src="https://play-lh.googleusercontent.com/Wv-IXc8zXJRVqTAhr30il408Fh-FI8AhZZOyoPC440Mc7gYsxzoBMn777wal6MRLdCM"><span>Smule</span></a>`:""}
+        <img src="https://blog.smule.com/wp-content/uploads/smule-icon.png"><span>Smule</span></a>`:""}
       ${m.usuarioBandlab ? `<a class="platform-btn" target="_blank" href="${escAttr(m.usuarioBandlab)}">
-        <img src="https://tse3.mm.bing.net/th/id/OIP.p-wv60aUTPfSQ3BwhZyaCAHaHa?r=0&rs=1&pid=ImgDetMain&o=7&rm=3"><span>BandLab</span></a>`:""}
+        <img src="https://onbukei.com/wp-content/uploads/2021/10/bandlab-music-making-studio.png"><span>BandLab</span></a>`:""}
       ${m.usuarioDiscord ? `<button class="platform-btn" data-copy-discord="${escAttr(m.usuarioDiscord)}">
-        <span style="font-size:22px;">💬</span><span>Copiar Discord</span></button>`:""}
+        <img src="https://freelogopng.com/images/all_img/1691730767discord-logo-transparent.png"><span>Copiar Discord</span></button>`:""}
     </div>
     <div class="castigos-box">
       <div class="ct-title">Castigos</div>
@@ -638,10 +737,15 @@ function openMemberModal(id){
       <div class="admin-strike-btns">
         <button class="btn-falta" data-falta="${m.id}">+ Falta</button>
         <button class="btn-strike" data-strike="${m.id}">+ Strike</button>
-      </div>` : ""}
+      </div>
+      <button class="btn-reset-castigos" data-reset="${m.id}">🔄 Borrar Castigos</button>
+      ` : ""}
     </div>
   `;
   openModal("memberModal");
+
+  const avatarImg = document.getElementById("memberDetailAvatar");
+  if(avatarImg) enableLongPress(avatarImg, avatarImg.dataset.filename);
 
   const copyBtn = document.querySelector("[data-copy-discord]");
   if(copyBtn){
@@ -654,6 +758,8 @@ function openMemberModal(id){
   if(faltaBtn) faltaBtn.onclick = () => registrarFalta(m.id);
   const strikeBtn = document.querySelector("[data-strike]");
   if(strikeBtn) strikeBtn.onclick = () => registrarStrike(m.id);
+  const resetBtn = document.querySelector("[data-reset]");
+  if(resetBtn) resetBtn.onclick = () => borrarCastigos(m.id);
 }
 
 async function registrarFalta(idMiembro){
@@ -664,6 +770,12 @@ async function registrarFalta(idMiembro){
 async function registrarStrike(idMiembro){
   const r = await apiPost({action:"addStrike", idMiembro});
   if(r.ok){ toast("Strike registrado"); await cargarDatos(); openMemberModal(idMiembro); }
+  else toast("Error: " + (r.error||"revisa el PIN"));
+}
+async function borrarCastigos(idMiembro){
+  if(!confirm("¿Poner faltas y strikes de este miembro en 0?")) return;
+  const r = await apiPost({action:"resetCastigos", idMiembro});
+  if(r.ok){ toast("Castigos reiniciados ✅"); await cargarDatos(); openMemberModal(idMiembro); }
   else toast("Error: " + (r.error||"revisa el PIN"));
 }
 
@@ -690,6 +802,8 @@ function openActivityForm(id){
   document.getElementById("af_id").value = a ? a.id : "";
   document.getElementById("af_titulo").value = a ? a.titulo||"" : "";
   document.getElementById("af_imagenUrl").value = a ? a.imagenUrl||"" : "";
+  document.getElementById("af_imagenFile").value = "";
+  document.getElementById("af_uploadStatus").textContent = "";
   document.getElementById("af_descripcion").value = a ? a.descripcion||"" : "";
   document.getElementById("af_wishlist").value = a ? a.wishlist||"" : "";
   document.getElementById("af_fechaInicio").value = a ? toDateInput(a.fechaInicio) : "";
@@ -714,6 +828,35 @@ document.getElementById("af_esAnuario").addEventListener("change", toggleAnuario
 function toggleAnuarioFields(){
   document.getElementById("af_anuarioFields").classList.toggle("hidden", !document.getElementById("af_esAnuario").checked);
 }
+
+function fileToBase64(file){
+  return new Promise((resolve,reject)=>{
+    const reader = new FileReader();
+    reader.onload = () => resolve(reader.result.split(",")[1]);
+    reader.onerror = reject;
+    reader.readAsDataURL(file);
+  });
+}
+
+document.getElementById("af_imagenFile").addEventListener("change", async (e)=>{
+  const file = e.target.files[0];
+  if(!file) return;
+  const statusEl = document.getElementById("af_uploadStatus");
+  statusEl.textContent = "Subiendo imagen...";
+  try{
+    const base64Data = await fileToBase64(file);
+    const r = await apiPost({action:"uploadImage", filename:file.name, mimeType:file.type, base64Data});
+    if(r.ok){
+      document.getElementById("af_imagenUrl").value = r.url;
+      statusEl.textContent = "Imagen subida ✅";
+    } else {
+      statusEl.textContent = "Error: " + (r.error||"no se pudo subir");
+    }
+  }catch(err){
+    statusEl.textContent = "Error al leer la imagen";
+    console.error(err);
+  }
+});
 
 document.getElementById("activityForm").addEventListener("submit", async (e) => {
   e.preventDefault();
@@ -841,8 +984,19 @@ async function verificarPin(){
   }
 }
 
+document.getElementById("staffStatusBadge").onclick = () => {
+  if(confirm("¿Deseas salir del modo staff?")){
+    staffPin = null;
+    localStorage.removeItem("tph_pin");
+    document.getElementById("staffStatusBadge").style.display = "none";
+    document.getElementById("addActBtn").classList.add("hidden");
+    toast("Saliste del modo staff");
+    renderActividades(); renderAnuario(); renderMiembros();
+  }
+};
+
 /* ============================================================
-   ESCAPE HELPERS (seguridad básica al insertar texto en HTML)
+   ESCAPE HELPERS
    ============================================================ */
 function escHtml(str){
   return String(str).replace(/[&<>"']/g, s => ({
