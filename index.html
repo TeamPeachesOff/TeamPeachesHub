@@ -4,11 +4,11 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Team Peaches Hub 🍑</title>
+<link id="favicon" rel="icon" type="image/jpeg" href="https://raw.githubusercontent.com/TeamPeachesOff/TeamPeachesHub/main/Logos/PeachesLogo.jpeg">
 <style>
   :root{
     --peach-1:#ff8fb1;
     --peach-2:#EF0870;
-    --peach-dark:#3d1f2a;
     --bg:#1a1020;
     --card-bg:#2a1830;
     --card-bg-2:#33203a;
@@ -18,154 +18,109 @@
     --yellow:#f1c40f;
     --red:#e74c3c;
     --gold:#ffd700;
+    --purple:#a45fc7;
     --radius:16px;
   }
   *{box-sizing:border-box;}
-  body{
-    margin:0;
-    font-family:'Segoe UI',Arial,sans-serif;
-    background:linear-gradient(160deg,var(--bg),#241228 60%,#170b1c);
-    color:var(--text);
-    min-height:100vh;
-  }
+  body{margin:0;font-family:'Segoe UI',Arial,sans-serif;
+    background:linear-gradient(160deg,var(--bg),#241228 60%,#170b1c);color:var(--text);min-height:100vh;}
   a{color:inherit;text-decoration:none;}
   button{font-family:inherit;cursor:pointer;border:none;}
   img{max-width:100%;display:block;}
 
-  /* ===== HEADER ===== */
-  header{
-    position:sticky;top:0;z-index:50;
-    background:rgba(26,16,32,0.92);
-    backdrop-filter:blur(8px);
-    border-bottom:1px solid rgba(239,8,112,0.25);
-  }
-  .header-inner{
-    max-width:640px;margin:0 auto;padding:14px 18px;
-    display:flex;align-items:center;justify-content:space-between;
-  }
+  header{position:sticky;top:0;z-index:50;background:rgba(26,16,32,0.92);backdrop-filter:blur(8px);
+    border-bottom:1px solid rgba(239,8,112,0.25);}
+  .header-inner{max-width:640px;margin:0 auto;padding:14px 18px;display:flex;align-items:center;justify-content:space-between;}
   .header-left{display:flex;align-items:center;gap:12px;}
-  #hamburgerBtn{
-    background:none;font-size:26px;color:var(--peach-1);padding:4px 8px;border-radius:8px;
-  }
+  #hamburgerBtn{background:none;font-size:26px;color:var(--peach-1);padding:4px 8px;border-radius:8px;}
   #hamburgerBtn:hover{background:rgba(239,8,112,0.15);}
   .logo{font-weight:800;font-size:19px;letter-spacing:0.5px;
-    background:linear-gradient(90deg,var(--peach-2),#ffffff);
-    -webkit-background-clip:text;background-clip:text;color:transparent;
-  }
+    background:linear-gradient(90deg,var(--peach-2),#ffffff);-webkit-background-clip:text;background-clip:text;color:transparent;}
   .tabs{display:flex;gap:6px;background:var(--card-bg);padding:4px;border-radius:999px;}
-  .tab-btn{
-    padding:8px 16px;border-radius:999px;background:none;color:var(--text-dim);font-weight:600;font-size:14px;
-  }
+  .tab-btn{padding:8px 16px;border-radius:999px;background:none;color:var(--text-dim);font-weight:600;font-size:14px;}
   .tab-btn.active{background:linear-gradient(90deg,var(--peach-2),var(--peach-1));color:#fff;}
 
-  /* ===== DRAWER ===== */
-  #drawerOverlay{
-    position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:99;
-    display:none;
-  }
-  #drawer{
-    position:fixed;top:0;left:0;height:100%;width:280px;max-width:82vw;
-    background:var(--card-bg);z-index:100;
-    transform:translateX(-100%);transition:transform .25s ease;
-    display:flex;flex-direction:column;padding:20px 16px;gap:18px;
-    box-shadow:4px 0 20px rgba(0,0,0,0.4);
-  }
+  #drawerOverlay{position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:99;display:none;}
+  #drawer{position:fixed;top:0;left:0;height:100%;width:280px;max-width:82vw;background:var(--card-bg);z-index:100;
+    transform:translateX(-100%);transition:transform .25s ease;display:flex;flex-direction:column;padding:20px 16px;gap:18px;
+    box-shadow:4px 0 20px rgba(0,0,0,0.4);}
   #drawer.open{transform:translateX(0);}
   .drawer-title{font-weight:800;font-size:18px;color:var(--peach-2);margin-bottom:4px;}
   .social-row{display:flex;flex-direction:column;gap:10px;}
-  .social-link{
-    display:flex;align-items:center;gap:12px;padding:10px 12px;border-radius:12px;
-    background:var(--card-bg-2);transition:background .15s;
-  }
+  .social-link{display:flex;align-items:center;gap:12px;padding:10px 12px;border-radius:12px;background:var(--card-bg-2);transition:background .15s;}
   .social-link:hover{background:rgba(239,8,112,0.18);}
   .social-link img{width:28px;height:28px;object-fit:contain;border-radius:6px;}
   .social-link span{font-weight:600;font-size:14px;}
   .drawer-divider{height:1px;background:rgba(255,255,255,0.08);}
-  .drawer-nav-btn{
-    display:flex;align-items:center;gap:10px;padding:12px;border-radius:12px;
-    background:var(--card-bg-2);font-weight:700;font-size:15px;color:var(--text);
-    justify-content:flex-start;
-  }
+  .drawer-nav-btn{display:flex;align-items:center;gap:10px;padding:12px;border-radius:12px;background:var(--card-bg-2);
+    font-weight:700;font-size:15px;color:var(--text);justify-content:flex-start;}
   .drawer-nav-btn:hover{background:rgba(239,8,112,0.18);}
   #staffDrawerBtn{margin-top:auto;background:linear-gradient(90deg,#6a3d8f,#a45fc7);color:#fff;}
 
-  /* ===== MAIN ===== */
   main{max-width:640px;margin:0 auto;padding:16px 12px 60px;}
   .hidden{display:none !important;}
 
-  #addActBtn{
-    display:block;width:100%;margin-bottom:16px;padding:12px;border-radius:14px;
-    background:linear-gradient(90deg,var(--peach-2),var(--gold));color:#fff;font-weight:800;font-size:15px;
-  }
+  #addActBtn{display:block;width:100%;margin-bottom:14px;padding:12px;border-radius:14px;
+    background:linear-gradient(90deg,var(--peach-2),var(--gold));color:#fff;font-weight:800;font-size:15px;}
 
-  /* ===== ACTIVITY CARD ===== */
-  .card{
-    background:var(--card-bg);border-radius:var(--radius);margin-bottom:18px;overflow:hidden;
-    border:1px solid rgba(255,255,255,0.06);
-  }
-  .card.anuario-card{border:1px solid var(--gold);box-shadow:0 0 18px rgba(255,215,0,0.15);}
+  /* filtro pill canto/doblaje */
+  .filter-pills{display:flex;gap:8px;margin-bottom:16px;}
+  .pill-toggle{flex:1;padding:9px;border-radius:999px;background:var(--card-bg-2);color:var(--text-dim);
+    font-weight:700;font-size:13px;text-align:center;transition:all .15s;border:1px solid transparent;}
+  .pill-toggle.on{background:linear-gradient(90deg,var(--peach-2),var(--peach-1));color:#fff;}
+
+  .card{background:var(--card-bg);border-radius:var(--radius);margin-bottom:18px;overflow:hidden;border:1px solid rgba(255,255,255,0.06);}
   .card-top{display:flex;gap:0;padding:14px;}
   @media (max-width:480px){.card-top{flex-direction:column;}}
-  .card-img-wrap{
-    position:relative;flex:0 0 120px;width:120px;aspect-ratio:1/1;border-radius:12px;overflow:hidden;
-    background:var(--card-bg-2);
-  }
+  .card-img-wrap{position:relative;flex:0 0 120px;width:120px;aspect-ratio:1/1;border-radius:12px;overflow:hidden;background:var(--card-bg-2);}
   @media (max-width:480px){.card-img-wrap{width:100%;flex-basis:auto;}}
   .card-img-wrap img{width:100%;height:100%;object-fit:contain;}
-  .crown-badge{
-    position:absolute;top:-6px;left:-6px;font-size:26px;filter:drop-shadow(0 2px 3px rgba(0,0,0,0.6));
-  }
+  .crown-badge{position:absolute;top:-6px;left:-6px;font-size:26px;filter:drop-shadow(0 2px 3px rgba(0,0,0,0.6));}
   .card-info{flex:1;padding-left:14px;display:flex;flex-direction:column;gap:6px;min-width:0;}
   @media (max-width:480px){.card-info{padding-left:0;padding-top:10px;}}
   .card-title{font-weight:800;font-size:16px;line-height:1.25;}
   .card-dates{font-size:12.5px;color:var(--text-dim);}
-  .status-tag{
-    display:inline-block;padding:3px 10px;border-radius:999px;font-size:12px;font-weight:700;width:fit-content;
-  }
+  .badge-row{display:flex;gap:6px;flex-wrap:wrap;}
+  .status-tag{display:inline-block;padding:3px 10px;border-radius:999px;font-size:12px;font-weight:700;width:fit-content;}
   .status-green{background:rgba(46,204,113,0.18);color:var(--green);}
   .status-yellow{background:rgba(241,196,15,0.18);color:var(--yellow);}
   .status-red{background:rgba(231,76,60,0.18);color:var(--red);}
+  .part-tag{display:inline-block;padding:3px 10px;border-radius:999px;font-size:12px;font-weight:700;width:fit-content;}
+  .part-opcional{background:rgba(93,173,226,0.18);color:#5dade2;}
+  .part-obligatoria{background:rgba(241,196,15,0.18);color:var(--yellow);}
+  .part-purga{background:rgba(231,76,60,0.22);color:var(--red);}
+  .cat-tag{display:inline-block;padding:3px 10px;border-radius:999px;font-size:12px;font-weight:700;width:fit-content;background:rgba(164,95,199,0.2);color:#d9b6f5;}
   .card-actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:4px;}
-  .btn-small{
-    padding:7px 12px;border-radius:10px;font-size:12.5px;font-weight:700;
-  }
+  .btn-small{padding:7px 12px;border-radius:10px;font-size:12.5px;font-weight:700;}
   .btn-primary{background:linear-gradient(90deg,var(--peach-2),var(--peach-1));color:#fff;}
-  .btn-ghost{background:var(--card-bg-2);color:var(--text);}
+  .btn-secondary{background:rgba(93,173,226,0.2);color:#5dade2;}
   .btn-admin{background:rgba(164,95,199,0.25);color:#d9b6f5;}
   .btn-danger{background:rgba(231,76,60,0.22);color:var(--red);}
 
   .accordion{border-top:1px solid rgba(255,255,255,0.07);}
-  .accordion-toggle{
-    width:100%;text-align:left;padding:12px 16px;background:none;color:var(--peach-2);
-    font-weight:700;font-size:13.5px;display:flex;justify-content:space-between;align-items:center;
-  }
-  .accordion-body{padding:0 16px 16px;font-size:13.5px;color:var(--text-dim);line-height:1.5;display:none;white-space:pre-wrap;}
+  .accordion-toggle{width:100%;text-align:left;padding:12px 14px;background:none;color:var(--peach-2);
+    font-weight:700;font-size:13.5px;display:flex;justify-content:space-between;align-items:center;}
+  .accordion-body{padding:0 14px 14px;font-size:13.5px;color:var(--text-dim);line-height:1.5;display:none;white-space:pre-wrap;}
   .accordion-body.open{display:block;}
-  .wishlist-block{margin-top:10px;padding:10px;background:var(--card-bg-2);border-radius:10px;white-space:pre-wrap;}
+  .wishlist-block{margin-top:8px;padding:8px 10px;background:var(--card-bg-2);border-radius:10px;white-space:pre-wrap;}
 
   table.entregas-table{width:100%;border-collapse:collapse;font-size:13px;}
   table.entregas-table th{text-align:left;color:var(--peach-2);padding:6px 4px;border-bottom:1px solid rgba(255,255,255,0.1);}
   table.entregas-table td{padding:6px 4px;border-bottom:1px solid rgba(255,255,255,0.05);vertical-align:middle;}
   table.entregas-table a{color:var(--peach-1);text-decoration:underline;}
   .anuario-mini-btn{background:rgba(255,215,0,0.18);color:var(--gold);padding:5px 8px;border-radius:8px;font-size:11px;font-weight:700;white-space:nowrap;}
+  .entregas-toolbar{display:flex;gap:8px;margin-top:10px;flex-wrap:wrap;}
 
-  /* ===== ANUARIO GRID ===== */
   #anuarioGrid{display:grid;grid-template-columns:1fr 1fr;gap:12px;}
   @media (max-width:420px){#anuarioGrid{grid-template-columns:1fr;}}
-  .anuario-tile{
-    position:relative;border-radius:14px;overflow:hidden;background:var(--card-bg);
-    border:1px solid var(--gold);box-shadow:0 0 14px rgba(255,215,0,0.12);cursor:pointer;
-  }
+  .anuario-tile{position:relative;border-radius:14px;overflow:hidden;background:var(--card-bg);
+    border:1px solid var(--gold);box-shadow:0 0 14px rgba(255,215,0,0.12);cursor:pointer;}
   .anuario-tile img{width:100%;aspect-ratio:1/1;object-fit:contain;background:var(--card-bg-2);}
   .anuario-tile .crown-badge{top:6px;left:6px;}
   .anuario-tile .tile-title{padding:10px;font-weight:800;font-size:13.5px;}
 
-  /* ===== MIEMBROS ===== */
-  #searchMiembros{
-    width:100%;padding:12px 14px;border-radius:12px;border:1px solid rgba(255,255,255,0.1);
-    background:var(--card-bg-2);color:var(--text);font-size:14px;margin-bottom:14px;
-    display:block;
-  }
+  #searchMiembros{width:100%;padding:12px 14px;border-radius:12px;border:1px solid rgba(255,255,255,0.1);
+    background:var(--card-bg-2);color:var(--text);font-size:14px;margin-bottom:14px;display:block;}
   .section-label{font-weight:800;color:var(--peach-2);margin:16px 0 10px;font-size:14px;text-align:left;}
   #staffCarousel{display:flex;gap:12px;overflow-x:auto;padding-bottom:8px;}
   .member-avatar-item{flex:0 0 auto;width:78px;text-align:center;cursor:pointer;}
@@ -173,9 +128,7 @@
   .member-avatar-item .m-name{font-size:11px;margin-top:6px;color:var(--text-dim);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
 
   #miembrosList{display:flex;flex-direction:column;gap:10px;}
-  .member-row{
-    display:flex;align-items:center;gap:12px;background:var(--card-bg);padding:10px 12px;border-radius:14px;cursor:pointer;
-  }
+  .member-row{display:flex;align-items:center;gap:12px;background:var(--card-bg);padding:10px 12px;border-radius:14px;cursor:pointer;}
   .member-row img{width:46px;height:46px;border-radius:50%;object-fit:cover;}
   .member-row .m-info{flex:1;min-width:0;}
   .member-row .m-name{font-weight:700;font-size:14px;}
@@ -185,43 +138,34 @@
   .badge-canto{background:rgba(46,204,113,0.2);color:var(--green);}
   .badge-doblaje{background:rgba(52,152,219,0.2);color:#5dade2;}
 
-  /* ===== PIN / STAFF SCREEN ===== */
   .center-screen{max-width:340px;margin:60px auto;text-align:center;padding:0 16px;}
-  #pinInput{
-    width:100%;text-align:center;font-size:24px;letter-spacing:8px;padding:14px;border-radius:12px;
-    border:1px solid rgba(255,255,255,0.15);background:var(--card-bg-2);color:var(--text);margin:16px 0;
-  }
+  #pinInput{width:100%;text-align:center;font-size:24px;letter-spacing:8px;padding:14px;border-radius:12px;
+    border:1px solid rgba(255,255,255,0.15);background:var(--card-bg-2);color:var(--text);margin:16px 0;}
   #pinMsg{font-size:13px;color:var(--red);min-height:18px;}
-  #staffStatusBadge{
-    display:none;position:fixed;bottom:14px;right:14px;background:linear-gradient(90deg,#6a3d8f,#a45fc7);
+  #staffStatusBadge{display:none;position:fixed;bottom:14px;right:14px;background:linear-gradient(90deg,#6a3d8f,#a45fc7);
     color:#fff;padding:8px 14px;border-radius:999px;font-size:12.5px;font-weight:700;z-index:60;
-    box-shadow:0 4px 14px rgba(0,0,0,0.4);cursor:pointer;
-  }
+    box-shadow:0 4px 14px rgba(0,0,0,0.4);cursor:pointer;}
 
-  /* ===== MODALS ===== */
-  .modal-overlay{
-    position:fixed;inset:0;background:rgba(0,0,0,0.6);z-index:200;
-    display:none;align-items:flex-start;justify-content:center;padding:30px 12px;overflow-y:auto;
-  }
+  .modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,0.6);z-index:200;display:none;
+    align-items:flex-start;justify-content:center;padding:30px 12px;overflow-y:auto;}
   .modal-overlay.open{display:flex;}
-  .modal-box{
-    background:var(--card-bg);border-radius:18px;padding:20px;width:100%;max-width:440px;
-    max-height:85vh;overflow-y:auto;-webkit-overflow-scrolling:touch;
-  }
+  .modal-box{background:var(--card-bg);border-radius:18px;padding:20px;width:100%;max-width:440px;
+    max-height:85vh;overflow-y:auto;-webkit-overflow-scrolling:touch;}
   .modal-box h3{margin-top:0;color:var(--peach-2);}
   .modal-close{float:right;background:none;color:var(--text-dim);font-size:20px;}
   .form-group{margin-bottom:12px;}
   .form-group label{display:block;font-size:12.5px;color:var(--text-dim);margin-bottom:5px;font-weight:600;}
-  .form-group input, .form-group textarea, .form-group select{
-    width:100%;padding:10px;border-radius:10px;border:1px solid rgba(255,255,255,0.12);
-    background:var(--card-bg-2);color:var(--text);font-family:inherit;font-size:13.5px;
-  }
+  .form-group input, .form-group textarea, .form-group select{width:100%;padding:10px;border-radius:10px;
+    border:1px solid rgba(255,255,255,0.12);background:var(--card-bg-2);color:var(--text);font-family:inherit;font-size:13.5px;}
   .form-group textarea{min-height:70px;resize:vertical;}
+  .radio-row{display:flex;gap:14px;flex-wrap:wrap;}
+  .radio-row label{display:flex;align-items:center;gap:6px;font-weight:400;font-size:13.5px;}
   .modal-actions{display:flex;gap:10px;margin-top:16px;}
   .modal-actions button{flex:1;padding:12px;border-radius:12px;font-weight:800;}
+  .upload-status{font-size:12px;color:var(--text-dim);margin-top:4px;}
 
-  .member-modal-header{text-align:center;}
-  .member-modal-header img{width:90px;height:90px;border-radius:50%;object-fit:cover;margin:0 auto 10px;border:3px solid var(--peach-2);}
+  .member-modal-header{display:flex;flex-direction:column;align-items:center;text-align:center;}
+  .member-modal-header img{width:90px;height:90px;border-radius:50%;object-fit:cover;margin-bottom:10px;border:3px solid var(--peach-2);}
   .expelled-banner{background:var(--red);color:#fff;padding:8px;border-radius:10px;font-weight:800;text-align:center;margin-bottom:12px;font-size:13px;}
   .info-table{width:100%;margin-top:14px;font-size:13.5px;}
   .info-table td{padding:6px 0;border-bottom:1px solid rgba(255,255,255,0.06);}
@@ -238,17 +182,23 @@
   .btn-falta{background:rgba(241,196,15,0.2);color:var(--yellow);}
   .btn-strike{background:rgba(231,76,60,0.2);color:var(--red);}
   .btn-reset-castigos{width:100%;margin-top:8px;padding:9px;border-radius:10px;font-weight:700;font-size:12.5px;background:rgba(255,255,255,0.08);color:var(--text-dim);}
+  .edit-pencil{position:absolute;top:0;right:0;background:rgba(164,95,199,0.25);color:#d9b6f5;padding:6px 10px;border-radius:10px;font-size:12px;font-weight:700;}
+  .modal-relative{position:relative;}
 
   .winners-block{background:var(--card-bg-2);border-radius:12px;padding:14px;margin-top:10px;}
   .winners-block div{margin:6px 0;font-size:14px;}
-  .toast{
-    position:fixed;bottom:70px;left:50%;transform:translateX(-50%);background:#222;color:#fff;
-    padding:10px 18px;border-radius:999px;font-size:13px;z-index:300;opacity:0;transition:opacity .25s;
-    text-align:center;max-width:85vw;
-  }
+
+  .anuario-pill-group{display:flex;gap:8px;margin:10px 0;}
+  .anuario-pill{flex:1;padding:10px;border-radius:999px;background:var(--card-bg-2);color:var(--text-dim);font-weight:700;font-size:13px;text-align:center;}
+  .anuario-pill.selected{background:linear-gradient(90deg,var(--peach-2),var(--peach-1));color:#fff;}
+  .anuario-dest-btns{display:flex;flex-direction:column;gap:8px;margin-top:12px;}
+  .anuario-dest-btns button{padding:12px;border-radius:12px;font-weight:800;background:var(--card-bg-2);color:var(--text);}
+  .anuario-dest-btns button:hover{background:rgba(255,215,0,0.15);color:var(--gold);}
+
+  .toast{position:fixed;bottom:70px;left:50%;transform:translateX(-50%);background:#222;color:#fff;
+    padding:10px 18px;border-radius:999px;font-size:13px;z-index:300;opacity:0;transition:opacity .25s;text-align:center;max-width:85vw;}
   .toast.show{opacity:1;}
   .empty-state{text-align:center;color:var(--text-dim);padding:40px 10px;font-size:14px;}
-  .upload-status{font-size:12px;color:var(--text-dim);margin-top:4px;}
 </style>
 </head>
 <body>
@@ -271,16 +221,24 @@
   <div class="drawer-title">Team Peaches</div>
   <div class="social-row">
     <a class="social-link" target="_blank" href="https://youtube.com/@teampeachesoff">
-      <img src="https://pngimg.com/uploads/youtube/youtube_PNG102352.png" alt="YouTube"><span>YouTube</span>
+      <img src="https://raw.githubusercontent.com/TeamPeachesOff/TeamPeachesHub/main/Logos/YoutubeLogo.png"
+           onerror="this.onerror=null;this.src='https://pngimg.com/uploads/youtube/youtube_PNG102352.png';" alt="YouTube">
+      <span>YouTube</span>
     </a>
     <a class="social-link" target="_blank" href="https://www.instagram.com/team_peaches_off/">
-      <img src="https://pngimg.com/uploads/instagram/instagram_PNG10.png" alt="Instagram"><span>Instagram</span>
+      <img src="https://raw.githubusercontent.com/TeamPeachesOff/TeamPeachesHub/main/Logos/InstagramLogo.png"
+           onerror="this.onerror=null;this.src='https://pngimg.com/uploads/instagram/instagram_PNG10.png';" alt="Instagram">
+      <span>Instagram</span>
     </a>
     <a class="social-link" target="_blank" href="https://www.tiktok.com/@team_peaches_off">
-      <img src="https://static.vecteezy.com/system/resources/previews/016/716/450/original/tiktok-icon-free-png.png" alt="TikTok"><span>TikTok</span>
+      <img src="https://raw.githubusercontent.com/TeamPeachesOff/TeamPeachesHub/main/Logos/TikTokLogo.png"
+           onerror="this.onerror=null;this.src='https://static.vecteezy.com/system/resources/previews/016/716/450/original/tiktok-icon-free-png.png';" alt="TikTok">
+      <span>TikTok</span>
     </a>
     <a class="social-link" target="_blank" href="https://www.smule.com/groups/1934104?utm_source=web&utm_campaign=share&utm_medium=copylink">
-      <img src="https://blog.smule.com/wp-content/uploads/smule-icon.png" alt="Smule"><span>Smule</span>
+      <img src="https://raw.githubusercontent.com/TeamPeachesOff/TeamPeachesHub/main/Logos/SmuleLogo.png"
+           onerror="this.onerror=null;this.src='https://blog.smule.com/wp-content/uploads/smule-icon.png';" alt="Smule">
+      <span>Smule</span>
     </a>
   </div>
   <div class="drawer-divider"></div>
@@ -289,19 +247,19 @@
 </div>
 
 <main>
-
-  <!-- ACTIVIDADES -->
   <section id="viewActividades">
     <button id="addActBtn" class="hidden">(+) Añadir Actividad</button>
+    <div class="filter-pills">
+      <button class="pill-toggle on" id="filterCanto">🎤 Canto</button>
+      <button class="pill-toggle on" id="filterDoblaje">🎙️ Doblaje</button>
+    </div>
     <div id="actividadesFeed"></div>
   </section>
 
-  <!-- ANUARIO -->
   <section id="viewAnuario" class="hidden">
     <div id="anuarioGrid"></div>
   </section>
 
-  <!-- MIEMBROS -->
   <section id="viewMiembros" class="hidden">
     <input type="text" id="searchMiembros" placeholder="🔍 Buscar por nombre, rol o rango vocal...">
     <div class="section-label">👑 Staff & Coordinación</div>
@@ -310,7 +268,6 @@
     <div id="miembrosList"></div>
   </section>
 
-  <!-- STAFF PIN -->
   <section id="viewStaffPin" class="hidden">
     <div class="center-screen">
       <div style="font-size:40px;">🍑🔒</div>
@@ -320,7 +277,6 @@
       <button class="btn-primary" style="width:100%;padding:12px;border-radius:12px;font-weight:800;" id="pinSubmitBtn">Desbloquear</button>
     </div>
   </section>
-
 </main>
 
 <div id="staffStatusBadge">🛠️ Modo Staff activo</div>
@@ -328,26 +284,56 @@
 
 <!-- MODAL: Detalle de miembro / anuario -->
 <div class="modal-overlay" id="memberModal">
-  <div class="modal-box">
-    <button class="modal-close" data-close="memberModal">✕</button>
+  <div class="modal-box"><button class="modal-close" data-close="memberModal">✕</button>
     <div id="memberModalContent"></div>
+  </div>
+</div>
+
+<!-- MODAL: Editar miembro -->
+<div class="modal-overlay" id="memberEditModal">
+  <div class="modal-box"><button class="modal-close" data-close="memberEditModal">✕</button>
+    <h3>Editar miembro</h3>
+    <form id="memberEditForm">
+      <input type="hidden" id="me_id">
+      <div class="form-group"><label>Nombre</label><input type="text" id="me_nombre" required></div>
+      <div class="form-group"><label>Avatar (URL)</label><input type="text" id="me_avatarUrl"></div>
+      <div class="form-group">
+        <label>O sube una foto</label>
+        <input type="file" id="me_avatarFile" accept="image/*">
+        <div class="upload-status" id="me_uploadStatus"></div>
+      </div>
+      <div class="form-group"><label>Usuario Smule (URL)</label><input type="text" id="me_smule"></div>
+      <div class="form-group"><label>Usuario Discord</label><input type="text" id="me_discord"></div>
+      <div class="form-group"><label>Usuario BandLab (URL)</label><input type="text" id="me_bandlab"></div>
+      <div class="form-group"><label>Teléfono (WhatsApp, ej: 50688888888)</label><input type="text" id="me_telefono"></div>
+      <div class="form-group"><label>Rango vocal</label><input type="text" id="me_rango"></div>
+      <div class="form-group"><label>Cumpleaños (DD/MM)</label><input type="text" id="me_cumple"></div>
+      <div class="form-group"><label>Miembro desde</label><input type="date" id="me_ingreso"></div>
+      <div class="form-group">
+        <div class="radio-row">
+          <label><input type="checkbox" id="me_staff" style="width:auto;"> Staff</label>
+          <label><input type="checkbox" id="me_canto" style="width:auto;"> Canto</label>
+          <label><input type="checkbox" id="me_doblaje" style="width:auto;"> Doblaje</label>
+        </div>
+      </div>
+      <div class="modal-actions">
+        <button type="submit" class="btn-primary">Guardar</button>
+      </div>
+      <button type="button" class="btn-small btn-danger" style="width:100%;margin-top:10px;" id="me_deleteBtn">🗑️ Borrar miembro</button>
+    </form>
   </div>
 </div>
 
 <!-- MODAL: Detalle / edición de actividad -->
 <div class="modal-overlay" id="activityFormModal">
-  <div class="modal-box">
-    <button class="modal-close" data-close="activityFormModal">✕</button>
+  <div class="modal-box"><button class="modal-close" data-close="activityFormModal">✕</button>
     <h3 id="activityFormTitle">Nueva actividad</h3>
     <form id="activityForm">
       <input type="hidden" id="af_id">
       <div class="form-group"><label>Título</label><input type="text" id="af_titulo" required></div>
+      <div class="form-group"><label>Imagen (URL)</label><input type="text" id="af_imagenUrl"></div>
       <div class="form-group">
-        <label>Imagen (URL)</label>
-        <input type="text" id="af_imagenUrl">
-      </div>
-      <div class="form-group">
-        <label>O sube una imagen desde tu galería/archivos</label>
+        <label>O sube una imagen desde galería/archivos</label>
         <input type="file" id="af_imagenFile" accept="image/*">
         <div class="upload-status" id="af_uploadStatus"></div>
       </div>
@@ -356,33 +342,42 @@
       <div class="form-group"><label>Fecha inicio</label><input type="date" id="af_fechaInicio"></div>
       <div class="form-group"><label>Fecha fin</label><input type="date" id="af_fechaFin"></div>
       <div class="form-group"><label>Link de entrega (Forms)</label><input type="text" id="af_linkForms"></div>
+      <div class="form-group"><label>Link para unirse (Smule, si es grupal)</label><input type="text" id="af_linkUnirse"></div>
       <div class="form-group">
-        <label>Categoría (elige solo una)</label>
-        <div style="display:flex;gap:16px;">
-          <label style="display:flex;align-items:center;gap:6px;font-weight:400;"><input type="radio" name="af_categoria" value="canto" style="width:auto;"> 🎤 Canto</label>
-          <label style="display:flex;align-items:center;gap:6px;font-weight:400;"><input type="radio" name="af_categoria" value="doblaje" style="width:auto;"> 🎙️ Doblaje</label>
-          <label style="display:flex;align-items:center;gap:6px;font-weight:400;"><input type="radio" name="af_categoria" value="" style="width:auto;" checked> Ninguna</label>
+        <label>Script/Letra (PDF, si es grupal)</label>
+        <input type="text" id="af_linkScript" placeholder="Link al PDF (o subilo abajo)">
+        <input type="file" id="af_scriptFile" accept="application/pdf" style="margin-top:6px;">
+        <div class="upload-status" id="af_scriptStatus"></div>
+      </div>
+      <div class="form-group">
+        <label>Categoría (obligatorio elegir una)</label>
+        <div class="radio-row">
+          <label><input type="radio" name="af_categoria" value="canto" style="width:auto;" required> 🎤 Canto</label>
+          <label><input type="radio" name="af_categoria" value="doblaje" style="width:auto;"> 🎙️ Doblaje</label>
         </div>
       </div>
       <div class="form-group">
-        <label><input type="checkbox" id="af_esAnuario" style="width:auto;"> Mover al Anuario</label>
+        <label>Tipo de participación</label>
+        <select id="af_participacion">
+          <option value="opcional">✅ Opcional (semanal)</option>
+          <option value="obligatoria">⚠️ Obligatoria (mensual)</option>
+          <option value="purga">☠️ Purga (evento especial)</option>
+        </select>
       </div>
+      <div class="form-group"><label><input type="checkbox" id="af_esAnuario" style="width:auto;"> Mover al Anuario</label></div>
       <div id="af_anuarioFields" class="hidden">
         <div class="form-group"><label>🥇 Mejor Canto</label><input type="text" id="af_ganadorCanto"></div>
         <div class="form-group"><label>🎙️ Mejor Doblaje</label><input type="text" id="af_ganadorDoblaje"></div>
         <div class="form-group"><label>✨ Menciones Honoríficas</label><textarea id="af_menciones"></textarea></div>
       </div>
-      <div class="modal-actions">
-        <button type="submit" class="btn-primary">Guardar</button>
-      </div>
+      <div class="modal-actions"><button type="submit" class="btn-primary">Guardar</button></div>
     </form>
   </div>
 </div>
 
 <!-- MODAL: Registrar entrega -->
 <div class="modal-overlay" id="entregaFormModal">
-  <div class="modal-box">
-    <button class="modal-close" data-close="entregaFormModal">✕</button>
+  <div class="modal-box"><button class="modal-close" data-close="entregaFormModal">✕</button>
     <h3>Registrar entrega</h3>
     <form id="entregaForm">
       <input type="hidden" id="en_idActividad">
@@ -394,30 +389,49 @@
   </div>
 </div>
 
+<!-- MODAL: Añadir al Anuario -->
+<div class="modal-overlay" id="anuarioModal">
+  <div class="modal-box"><button class="modal-close" data-close="anuarioModal">✕</button>
+    <h3>👑 Añadir al Anuario</h3>
+    <div id="anuarioModalInfo" style="font-size:13.5px;color:var(--text-dim);margin-bottom:6px;"></div>
+    <div style="font-size:12.5px;color:var(--text-dim);margin-top:10px;">Categoría (corrige si hace falta):</div>
+    <div class="anuario-pill-group">
+      <button type="button" class="anuario-pill" data-cat="canto">🎤 Canto</button>
+      <button type="button" class="anuario-pill" data-cat="doblaje">🎙️ Doblaje</button>
+    </div>
+    <div class="anuario-dest-btns">
+      <button type="button" data-dest="cancion">🥇 Mejor Canción</button>
+      <button type="button" data-dest="doblaje">🎙️ Mejor Doblaje</button>
+      <button type="button" data-dest="mencion">✨ Mención Honorífica</button>
+    </div>
+  </div>
+</div>
+
 <script>
 /* ============================================================
    CONFIGURACIÓN
    ============================================================ */
 const APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwcnPM10DeRLE6ReNX_AqeViRfKkHjpflT-QCw05oW_L8n5ohrDhfR_iPuzTqYNrG8H4A/exec";
-const LOGO_DEFAULT = "https://raw.githubusercontent.com/WaxyFlounder971/TeamPeachesHub/main/imagenes/PeachesLogo.jpg";
+const LOGO_DEFAULT = "https://raw.githubusercontent.com/TeamPeachesOff/TeamPeachesHub/main/Logos/PeachesLogo.jpeg";
+const LOGO_FALLBACK = "https://i.imgur.com/wusLyff.jpeg";
 
 /* ============================================================
    ESTADO GLOBAL
    ============================================================ */
 let DB = { actividades: [], entregas: [], miembros: [] };
 let staffPin = localStorage.getItem("tph_pin") || null;
-let currentTab = "actividades";
+let filtroCanto = true, filtroDoblaje = true;
+let modoEliminarEntregas = {}; // { idActividad: Set(ids seleccionados) }
+let anuarioCtx = null; // { idActividad, nombreUsuario, detalle, categoria }
 
 /* ============================================================
    UTILIDADES
    ============================================================ */
 function toast(msg){
   const t = document.getElementById("toast");
-  t.textContent = msg;
-  t.classList.add("show");
+  t.textContent = msg; t.classList.add("show");
   setTimeout(()=>t.classList.remove("show"), 2200);
 }
-
 function estadoActividad(fechaFinStr){
   if(!fechaFinStr) return {clase:"status-green", texto:"🟢 Actividad Activa"};
   const hoy = new Date(); hoy.setHours(0,0,0,0);
@@ -427,53 +441,45 @@ function estadoActividad(fechaFinStr){
   if(diffDias <= 2) return {clase:"status-yellow", texto:"🟡 Últimos Días"};
   return {clase:"status-green", texto:"🟢 Actividad Activa"};
 }
-
+function participacionTag(p){
+  if(p === "obligatoria") return `<span class="part-tag part-obligatoria">⚠️ Obligatoria</span>`;
+  if(p === "purga") return `<span class="part-tag part-purga">☠️ Purga</span>`;
+  return `<span class="part-tag part-opcional">✅ Opcional</span>`;
+}
+function categoriaTag(c){
+  if(c === "canto") return `<span class="cat-tag">🎤 Canto</span>`;
+  if(c === "doblaje") return `<span class="cat-tag">🎙️ Doblaje</span>`;
+  return "";
+}
 function fmtFecha(f){
   if(!f) return "";
   const d = new Date(f);
   if(isNaN(d)) return f;
   return d.toLocaleDateString("es-CR",{day:"2-digit",month:"short",year:"numeric"});
 }
+function esTrue(v){ return v === true || v === "TRUE" || v === "true" || v === 1; }
 
-function esTrue(v){
-  return v === true || v === "TRUE" || v === "true" || v === 1;
-}
-
-async function apiGet(){
-  const res = await fetch(APPS_SCRIPT_URL);
-  return res.json();
-}
-
+async function apiGet(){ const res = await fetch(APPS_SCRIPT_URL); return res.json(); }
 async function apiPost(payload){
   payload.pin = staffPin || "";
   const res = await fetch(APPS_SCRIPT_URL, {
-    method: "POST",
-    headers: {"Content-Type":"text/plain;charset=utf-8"},
-    body: JSON.stringify(payload)
+    method: "POST", headers: {"Content-Type":"text/plain;charset=utf-8"}, body: JSON.stringify(payload)
   });
   return res.json();
 }
 
-/* ---- Descargar imagen al mantener presionada / click derecho ---- */
 async function downloadImage(url, filename){
   try{
     const res = await fetch(url, {mode:"cors"});
     const blob = await res.blob();
     const blobUrl = URL.createObjectURL(blob);
     const a = document.createElement("a");
-    a.href = blobUrl;
-    a.download = filename || "imagen-peaches.jpg";
-    document.body.appendChild(a);
-    a.click();
-    a.remove();
+    a.href = blobUrl; a.download = filename || "imagen-peaches.jpg";
+    document.body.appendChild(a); a.click(); a.remove();
     URL.revokeObjectURL(blobUrl);
     toast("Imagen descargada en el dispositivo ✅");
-  }catch(err){
-    toast("No se pudo descargar la imagen ❌");
-    console.error(err);
-  }
+  }catch(err){ toast("No se pudo descargar la imagen ❌"); console.error(err); }
 }
-
 function enableLongPress(img, filename){
   if(!img || img.dataset.longPressBound) return;
   img.dataset.longPressBound = "1";
@@ -488,6 +494,20 @@ function enableLongPress(img, filename){
   img.addEventListener("mouseleave", cancel);
   img.addEventListener("contextmenu", (e)=>{ e.preventDefault(); downloadImage(img.src, filename); });
 }
+function avatarImgTag(m, extraClass){
+  const url = escAttr(m.avatarUrl || LOGO_DEFAULT);
+  return `<img class="js-avatar ${extraClass||''}" src="${url}" alt="">`;
+}
+function bindAvatarFallbacks(){
+  document.querySelectorAll("img.js-avatar").forEach(img=>{
+    if(img.dataset.fbBound) return;
+    img.dataset.fbBound = "1";
+    img.addEventListener("error", function(){
+      if(!img.dataset.fbStage){ img.dataset.fbStage="1"; img.src = LOGO_DEFAULT; }
+      else if(img.dataset.fbStage === "1"){ img.dataset.fbStage="2"; img.src = LOGO_FALLBACK; }
+    });
+  });
+}
 
 /* ============================================================
    CARGA DE DATOS
@@ -495,9 +515,7 @@ function enableLongPress(img, filename){
 async function cargarDatos(){
   try{
     DB = await apiGet();
-    renderActividades();
-    renderAnuario();
-    renderMiembros();
+    renderActividades(); renderAnuario(); renderMiembros();
   }catch(err){
     document.getElementById("actividadesFeed").innerHTML =
       `<div class="empty-state">No se pudo conectar con la base de datos.<br>Revisa la URL del Apps Script.</div>`;
@@ -508,15 +526,28 @@ async function cargarDatos(){
 /* ============================================================
    RENDER: ACTIVIDADES
    ============================================================ */
+document.getElementById("filterCanto").onclick = () => { filtroCanto = !filtroCanto; syncFilterPills(); renderActividades(); };
+document.getElementById("filterDoblaje").onclick = () => { filtroDoblaje = !filtroDoblaje; syncFilterPills(); renderActividades(); };
+function syncFilterPills(){
+  document.getElementById("filterCanto").classList.toggle("on", filtroCanto);
+  document.getElementById("filterDoblaje").classList.toggle("on", filtroDoblaje);
+}
+
 function renderActividades(){
   const feed = document.getElementById("actividadesFeed");
-  const activas = DB.actividades.filter(a => !esTrue(a.esAnuario)).slice().reverse();
+  let activas = DB.actividades.filter(a => !esTrue(a.esAnuario)).slice().reverse();
+  activas = activas.filter(a => {
+    if(a.categoria === "canto") return filtroCanto;
+    if(a.categoria === "doblaje") return filtroDoblaje;
+    return true; // sin categoría: siempre visible
+  });
   if(activas.length === 0){
-    feed.innerHTML = `<div class="empty-state">Todavía no hay actividades. ${staffPin ? '¡Agrega la primera!' : ''}</div>`;
+    feed.innerHTML = `<div class="empty-state">No hay actividades con este filtro. ${staffPin ? '¡Agrega una!' : ''}</div>`;
     return;
   }
   feed.innerHTML = activas.map(a => cardHTML(a)).join("");
   attachCardEvents();
+  bindAvatarFallbacks();
 }
 
 function cardHTML(a){
@@ -532,9 +563,15 @@ function cardHTML(a){
       <div class="card-info">
         <div class="card-title">${escHtml(a.titulo || "")}</div>
         <div class="card-dates">${fechasTxt}</div>
-        <span class="status-tag ${estado.clase}">${estado.texto}</span>
+        <div class="badge-row">
+          <span class="status-tag ${estado.clase}">${estado.texto}</span>
+          ${categoriaTag(a.categoria)}
+          ${participacionTag(a.participacion)}
+        </div>
         <div class="card-actions">
           ${a.linkForms ? `<a class="btn-small btn-primary" target="_blank" href="${escAttr(a.linkForms)}">🎙️ Ir a Forms</a>` : ""}
+          ${a.linkUnirse ? `<a class="btn-small btn-secondary" target="_blank" href="${escAttr(a.linkUnirse)}">🤝 Unirse</a>` : ""}
+          ${a.linkScript ? `<a class="btn-small btn-secondary" target="_blank" href="${escAttr(a.linkScript)}">📄 Script</a>` : ""}
           ${staffPin ? `<button class="btn-small btn-admin" data-edit="${a.id}">✏️ Editar</button>` : ""}
           ${staffPin ? `<button class="btn-small btn-danger" data-delete="${a.id}">🗑️ Borrar</button>` : ""}
         </div>
@@ -548,19 +585,28 @@ function cardHTML(a){
       </div>
     </div>
     <div class="accordion">
-      <button class="accordion-toggle" data-toggle="entregas-${a.id}">▶ Ver Actividades Entregadas (${entregasDeEsta.length})</button>
+      <button class="accordion-toggle" data-toggle="entregas-${a.id}">▼ Ver Actividades Entregadas (${entregasDeEsta.length})</button>
       <div class="accordion-body" id="entregas-${a.id}">
         ${entregasDeEsta.length ? `
-        <table class="entregas-table">
-          <tr><th>Persona</th><th>Canción/Escena</th><th>Enlace</th>${staffPin ? "<th></th>" : ""}</tr>
-          ${entregasDeEsta.map(e => `<tr>
+        <table class="entregas-table" id="tabla-${a.id}">
+          <tr><th></th><th>Persona</th><th>Canción/Escena</th><th>Enlace</th>${staffPin ? "<th></th>" : ""}</tr>
+          ${entregasDeEsta.map(e => `<tr data-entrega-row="${e.id}">
+            <td><input type="checkbox" class="js-check-entrega hidden" data-id="${e.id}" data-act="${a.id}"></td>
             <td>${escHtml(e.nombreUsuario||"")}</td>
             <td>${escHtml(e.detalleEntrega||"")}</td>
             <td>${e.linkGrabacion ? `<a href="${escAttr(e.linkGrabacion)}" target="_blank">🔗 Escuchar</a>`:""}</td>
-            ${staffPin ? `<td><button class="anuario-mini-btn" data-anuario-entrega="${a.id}" data-nombre="${escAttr(e.nombreUsuario||"")}" data-detalle="${escAttr(e.detalleEntrega||"")}">👑 Anuario</button></td>` : ""}
+            ${staffPin ? `<td><button class="anuario-mini-btn" data-anuario-entrega="${a.id}" data-nombre="${escAttr(e.nombreUsuario||"")}" data-detalle="${escAttr(e.detalleEntrega||"")}" data-cat="${escAttr(a.categoria||"")}">👑</button></td>` : ""}
           </tr>`).join("")}
         </table>` : `<div style="color:var(--text-dim);">Todavía no hay entregas registradas.</div>`}
-        ${staffPin ? `<button class="btn-small btn-admin" style="margin-top:10px;" data-add-entrega="${a.id}">(+) Registrar Entrega</button>` : ""}
+        ${staffPin ? `
+        <div class="entregas-toolbar">
+          <button class="btn-small btn-admin" data-add-entrega="${a.id}">(+) Registrar Entrega</button>
+          ${entregasDeEsta.length ? `<button class="btn-small btn-danger" data-toggle-borrar="${a.id}">🗑️ Eliminar</button>` : ""}
+        </div>
+        <div class="entregas-toolbar hidden" id="borrar-toolbar-${a.id}">
+          <button class="btn-small btn-danger" data-confirm-borrar="${a.id}">Borrar seleccionadas (0)</button>
+          <button class="btn-small btn-ghost" data-cancel-borrar="${a.id}" style="background:var(--card-bg-2);color:var(--text);">Cancelar</button>
+        </div>` : ""}
       </div>
     </div>
   </div>`;
@@ -574,21 +620,48 @@ function attachCardEvents(){
       btn.textContent = btn.textContent.replace(/^./, body.classList.contains("open") ? "▲" : "▼");
     };
   });
-  document.querySelectorAll("[data-edit]").forEach(btn=>{
-    btn.onclick = () => openActivityForm(btn.dataset.edit);
-  });
-  document.querySelectorAll("[data-delete]").forEach(btn=>{
-    btn.onclick = () => borrarActividad(btn.dataset.delete);
-  });
-  document.querySelectorAll("[data-add-entrega]").forEach(btn=>{
-    btn.onclick = () => openEntregaForm(btn.dataset.addEntrega);
-  });
+  document.querySelectorAll("[data-edit]").forEach(btn=>btn.onclick = () => openActivityForm(btn.dataset.edit));
+  document.querySelectorAll("[data-delete]").forEach(btn=>btn.onclick = () => borrarActividad(btn.dataset.delete));
+  document.querySelectorAll("[data-add-entrega]").forEach(btn=>btn.onclick = () => openEntregaForm(btn.dataset.addEntrega));
   document.querySelectorAll("[data-anuario-entrega]").forEach(btn=>{
-    btn.onclick = () => enviarAAnuario(btn.dataset.anuarioEntrega, btn.dataset.nombre, btn.dataset.detalle);
+    btn.onclick = () => abrirModalAnuario(btn.dataset.anuarioEntrega, btn.dataset.nombre, btn.dataset.detalle, btn.dataset.cat);
   });
-  document.querySelectorAll(".card-img-wrap img.js-longpress").forEach(img=>{
-    enableLongPress(img, img.dataset.filename);
+  document.querySelectorAll("[data-toggle-borrar]").forEach(btn=>{
+    btn.onclick = () => toggleModoBorrarEntregas(btn.dataset.toggleBorrar, true);
   });
+  document.querySelectorAll("[data-cancel-borrar]").forEach(btn=>{
+    btn.onclick = () => toggleModoBorrarEntregas(btn.dataset.cancelBorrar, false);
+  });
+  document.querySelectorAll("[data-confirm-borrar]").forEach(btn=>{
+    btn.onclick = () => confirmarBorrarEntregas(btn.dataset.confirmBorrar);
+  });
+  document.querySelectorAll(".js-check-entrega").forEach(chk=>{
+    chk.onchange = () => {
+      const actId = chk.dataset.act;
+      if(!modoEliminarEntregas[actId]) modoEliminarEntregas[actId] = new Set();
+      if(chk.checked) modoEliminarEntregas[actId].add(chk.dataset.id);
+      else modoEliminarEntregas[actId].delete(chk.dataset.id);
+      const btn = document.querySelector(`[data-confirm-borrar="${actId}"]`);
+      if(btn) btn.textContent = `Borrar seleccionadas (${modoEliminarEntregas[actId].size})`;
+    };
+  });
+  document.querySelectorAll(".card-img-wrap img.js-longpress").forEach(img=>enableLongPress(img, img.dataset.filename));
+}
+
+function toggleModoBorrarEntregas(actId, on){
+  const tabla = document.getElementById("tabla-"+actId);
+  const toolbar = document.getElementById("borrar-toolbar-"+actId);
+  if(tabla) tabla.querySelectorAll(".js-check-entrega").forEach(c=>{ c.classList.toggle("hidden", !on); if(!on) c.checked=false; });
+  if(toolbar) toolbar.classList.toggle("hidden", !on);
+  if(!on) modoEliminarEntregas[actId] = new Set();
+}
+async function confirmarBorrarEntregas(actId){
+  const set = modoEliminarEntregas[actId];
+  if(!set || set.size === 0){ toast("No seleccionaste ninguna"); return; }
+  if(!confirm(`¿Borrar ${set.size} entrega(s) seleccionada(s)?`)) return;
+  const r = await apiPost({action:"deleteEntregas", ids:[...set]});
+  if(r.ok){ toast("Entregas borradas 🗑️"); await cargarDatos(); }
+  else toast("Error: " + (r.error||""));
 }
 
 async function borrarActividad(id){
@@ -598,12 +671,40 @@ async function borrarActividad(id){
   else toast("Error: " + (r.error||""));
 }
 
-async function enviarAAnuario(idActividad, nombreUsuario, detalle){
-  if(!confirm("¿Deseas añadir esta entrega al Anuario?")) return;
-  const r = await apiPost({action:"addToAnuario", idActividad, nombreUsuario, detalle});
-  if(r.ok){ toast("Agregado al Anuario 👑 (la actividad sigue en su pestaña normal)"); await cargarDatos(); }
-  else toast("Error: " + (r.error||""));
+/* ============================================================
+   MODAL ANUARIO (pill + 3 destinos)
+   ============================================================ */
+function abrirModalAnuario(idActividad, nombreUsuario, detalle, categoriaActual){
+  anuarioCtx = { idActividad, nombreUsuario, detalle };
+  document.getElementById("anuarioModalInfo").textContent = `${nombreUsuario} — ${detalle}`;
+  document.querySelectorAll(".anuario-pill").forEach(p=>{
+    p.classList.toggle("selected", p.dataset.cat === categoriaActual);
+  });
+  openModal("anuarioModal");
 }
+document.querySelectorAll(".anuario-pill").forEach(p=>{
+  p.onclick = () => {
+    document.querySelectorAll(".anuario-pill").forEach(x=>x.classList.remove("selected"));
+    p.classList.add("selected");
+  };
+});
+document.querySelectorAll("[data-dest]").forEach(btn=>{
+  btn.onclick = async () => {
+    if(!anuarioCtx) return;
+    const pillSel = document.querySelector(".anuario-pill.selected");
+    const categoriaCorregida = pillSel ? pillSel.dataset.cat : "";
+    const r = await apiPost({
+      action:"addToAnuario",
+      idActividad: anuarioCtx.idActividad,
+      categoriaCorregida,
+      destino: btn.dataset.dest,
+      nombreUsuario: anuarioCtx.nombreUsuario,
+      detalle: anuarioCtx.detalle
+    });
+    if(r.ok){ toast("Agregado al Anuario 👑"); closeModal("anuarioModal"); await cargarDatos(); }
+    else toast("Error: " + (r.error||""));
+  };
+});
 
 /* ============================================================
    RENDER: ANUARIO
@@ -620,14 +721,9 @@ function renderAnuario(){
       <span class="crown-badge">👑</span>
       ${a.imagenUrl ? `<img class="js-longpress" data-filename="${escAttr((a.titulo||'anuario')+'.jpg')}" src="${escAttr(a.imagenUrl)}" alt="">` : `<div style="aspect-ratio:1/1;background:var(--card-bg-2);"></div>`}
       <div class="tile-title">${escHtml(a.titulo||"")}</div>
-    </div>
-  `).join("");
-  document.querySelectorAll("[data-anuario]").forEach(tile=>{
-    tile.onclick = () => openAnuarioDetail(tile.dataset.anuario);
-  });
-  document.querySelectorAll("#anuarioGrid img.js-longpress").forEach(img=>{
-    enableLongPress(img, img.dataset.filename);
-  });
+    </div>`).join("");
+  document.querySelectorAll("[data-anuario]").forEach(tile=>tile.onclick = () => openAnuarioDetail(tile.dataset.anuario));
+  document.querySelectorAll("#anuarioGrid img.js-longpress").forEach(img=>enableLongPress(img, img.dataset.filename));
 }
 
 function openAnuarioDetail(id){
@@ -641,14 +737,15 @@ function openAnuarioDetail(id){
       ${a.ganadorCanto ? `<div>🥇 <strong>Mejor Canto:</strong> ${escHtml(a.ganadorCanto)}</div>` : ""}
       ${a.ganadorDoblaje ? `<div>🎙️ <strong>Mejor Doblaje:</strong> ${escHtml(a.ganadorDoblaje)}</div>` : ""}
       ${a.mencionesHonorificas ? `<div>✨ <strong>Menciones Honoríficas:</strong><br>${escHtml(a.mencionesHonorificas)}</div>` : ""}
+      ${(!a.ganadorCanto && !a.ganadorDoblaje && !a.mencionesHonorificas) ? `<div style="color:var(--text-dim);">Todavía sin ganadores asignados.</div>` : ""}
     </div>
     ${entregasDeEsta.length ? `
       <div class="section-label">🎧 Audios</div>
       ${entregasDeEsta.map(e=>`<div style="margin:6px 0;"><a href="${escAttr(e.linkGrabacion)}" target="_blank">▶ ${escHtml(e.nombreUsuario)} - ${escHtml(e.detalleEntrega)}</a></div>`).join("")}
     ` : ""}
     ${staffPin ? `<div style="display:flex;gap:8px;margin-top:12px;">
-      <button class="btn-small btn-admin" style="flex:1;" data-edit-anuario="${a.id}">✏️ Editar</button>
-      <button class="btn-small btn-danger" style="flex:1;" data-delete-anuario="${a.id}">🗑️ Borrar</button>
+      <button class="btn-small btn-admin" style="flex:1;" data-edit-anuario="${a.id}">✏️ Editar (o borrar un ganador)</button>
+      <button class="btn-small btn-danger" style="flex:1;" data-delete-anuario="${a.id}">🗑️ Borrar tarjeta</button>
     </div>` : ""}
   `;
   openModal("memberModal");
@@ -658,7 +755,7 @@ function openAnuarioDetail(id){
   if(editBtn) editBtn.onclick = () => { closeModal("memberModal"); openActivityForm(a.id); };
   const delBtn = document.querySelector("[data-delete-anuario]");
   if(delBtn) delBtn.onclick = async () => {
-    if(!confirm("¿Seguro que quieres borrar esta edición del Anuario?")) return;
+    if(!confirm("¿Seguro que quieres borrar esta tarjeta completa del Anuario?")) return;
     const r = await apiPost({action:"deleteActividad", id:a.id});
     if(r.ok){ toast("Borrado 🗑️"); closeModal("memberModal"); await cargarDatos(); }
     else toast("Error: " + (r.error||""));
@@ -668,11 +765,6 @@ function openAnuarioDetail(id){
 /* ============================================================
    RENDER: MIEMBROS
    ============================================================ */
-function avatarImgTag(m, cssClass){
-  const url = escAttr(m.avatarUrl || LOGO_DEFAULT);
-  return `<img class="${cssClass}" src="${url}" alt="" onerror="this.onerror=null;this.src='${LOGO_DEFAULT}';">`;
-}
-
 function renderMiembros(filtro=""){
   const f = filtro.trim().toLowerCase();
   const conNombre = m => m.nombre && String(m.nombre).trim() !== "";
@@ -680,18 +772,14 @@ function renderMiembros(filtro=""){
     .join(" ").toLowerCase().includes(f));
 
   const staffList = DB.miembros.filter(m => esTrue(m.staff) && filtrar(m));
-  const carousel = document.getElementById("staffCarousel");
-  carousel.innerHTML = staffList.length ? staffList.map(m => `
-    <div class="member-avatar-item" data-member="${m.id}">
-      ${avatarImgTag(m,"")}
-      <div class="m-name">${escHtml(m.nombre||"")}</div>
-    </div>`).join("") : `<div style="color:var(--text-dim);font-size:13px;">Sin resultados.</div>`;
+  document.getElementById("staffCarousel").innerHTML = staffList.length ? staffList.map(m => `
+    <div class="member-avatar-item" data-member="${m.id}">${avatarImgTag(m)}<div class="m-name">${escHtml(m.nombre||"")}</div></div>`).join("")
+    : `<div style="color:var(--text-dim);font-size:13px;">Sin resultados.</div>`;
 
   const todos = DB.miembros.filter(filtrar).slice().sort((a,b)=>(a.nombre||"").localeCompare(b.nombre||""));
-  const list = document.getElementById("miembrosList");
-  list.innerHTML = todos.length ? todos.map(m => `
+  document.getElementById("miembrosList").innerHTML = todos.length ? todos.map(m => `
     <div class="member-row" data-member="${m.id}">
-      ${avatarImgTag(m,"")}
+      ${avatarImgTag(m)}
       <div class="m-info">
         <div class="m-name">${escHtml(m.nombre||"")}</div>
         <div class="badges-row">
@@ -702,24 +790,25 @@ function renderMiembros(filtro=""){
       </div>
     </div>`).join("") : `<div class="empty-state">Sin resultados.</div>`;
 
-  document.querySelectorAll("[data-member]").forEach(el=>{
-    el.onclick = () => openMemberModal(el.dataset.member);
-  });
+  document.querySelectorAll("[data-member]").forEach(el=>el.onclick = () => openMemberModal(el.dataset.member));
+  bindAvatarFallbacks();
 }
 
 function openMemberModal(id){
   const m = DB.miembros.find(x => String(x.id) === String(id));
   if(!m) return;
-  const strikes = Number(m.strikes)||0;
-  const faltas = Number(m.faltas)||0;
+  const strikes = Number(m.strikes)||0, faltas = Number(m.faltas)||0;
   document.getElementById("memberModalContent").innerHTML = `
-    <div class="member-modal-header">
-      <img id="memberDetailAvatar" data-filename="${escAttr((m.nombre||'miembro')+'.jpg')}" src="${escAttr(m.avatarUrl || LOGO_DEFAULT)}" onerror="this.onerror=null;this.src='${LOGO_DEFAULT}';">
-      <div style="font-weight:800;font-size:17px;">${escHtml(m.nombre||"")}</div>
-      <div class="badges-row" style="justify-content:center;">
-        ${esTrue(m.staff) ? `<span class="badge badge-staff">Staff</span>`:""}
-        ${esTrue(m.canto) ? `<span class="badge badge-canto">Canto</span>`:""}
-        ${esTrue(m.doblaje) ? `<span class="badge badge-doblaje">Doblaje</span>`:""}
+    <div class="modal-relative">
+      ${staffPin ? `<button class="edit-pencil" data-edit-member="${m.id}">✏️</button>` : ""}
+      <div class="member-modal-header">
+        <img id="memberDetailAvatar" class="js-avatar" data-filename="${escAttr((m.nombre||'miembro')+'.jpg')}" src="${escAttr(m.avatarUrl || LOGO_DEFAULT)}">
+        <div style="font-weight:800;font-size:17px;">${escHtml(m.nombre||"")}</div>
+        <div class="badges-row" style="justify-content:center;">
+          ${esTrue(m.staff) ? `<span class="badge badge-staff">Staff</span>`:""}
+          ${esTrue(m.canto) ? `<span class="badge badge-canto">Canto</span>`:""}
+          ${esTrue(m.doblaje) ? `<span class="badge badge-doblaje">Doblaje</span>`:""}
+        </div>
       </div>
     </div>
     ${strikes >= 3 ? `<div class="expelled-banner">🛑 EXPULSADO / FUERA DEL TEAM</div>` : ""}
@@ -730,11 +819,13 @@ function openMemberModal(id){
     </table>
     <div class="platform-row">
       ${m.usuarioSmule ? `<a class="platform-btn" target="_blank" href="${escAttr(m.usuarioSmule)}">
-        <img src="https://blog.smule.com/wp-content/uploads/smule-icon.png"><span>Smule</span></a>`:""}
+        <img src="https://raw.githubusercontent.com/TeamPeachesOff/TeamPeachesHub/main/Logos/SmuleLogo.png" onerror="this.onerror=null;this.src='https://blog.smule.com/wp-content/uploads/smule-icon.png';"><span>Smule</span></a>`:""}
       ${m.usuarioBandlab ? `<a class="platform-btn" target="_blank" href="${escAttr(m.usuarioBandlab)}">
-        <img src="https://onbukei.com/wp-content/uploads/2021/10/bandlab-music-making-studio.png"><span>BandLab</span></a>`:""}
+        <img src="https://raw.githubusercontent.com/TeamPeachesOff/TeamPeachesHub/main/Logos/BandLabLogo.png" onerror="this.onerror=null;this.src='https://onbukei.com/wp-content/uploads/2021/10/bandlab-music-making-studio.png';"><span>BandLab</span></a>`:""}
       ${m.usuarioDiscord ? `<button class="platform-btn" data-copy-discord="${escAttr(m.usuarioDiscord)}">
-        <img src="https://freelogopng.com/images/all_img/1691730767discord-logo-transparent.png"><span>Copiar Discord</span></button>`:""}
+        <img src="https://raw.githubusercontent.com/TeamPeachesOff/TeamPeachesHub/main/Logos/DiscordLogo.webp" onerror="this.onerror=null;this.src='https://freelogopng.com/images/all_img/1691730767discord-logo-transparent.png';"><span>Copiar Discord</span></button>`:""}
+      ${m.telefono ? `<a class="platform-btn" target="_blank" href="https://wa.me/${escAttr(String(m.telefono).replace(/\\D/g,''))}">
+        <img src="https://raw.githubusercontent.com/TeamPeachesOff/TeamPeachesHub/main/Logos/WhatsAppLogo.png" onerror="this.onerror=null;this.src='https://upload.wikimedia.org/wikipedia/commons/5/5e/WhatsApp_icon.png';"><span>WhatsApp</span></a>`:""}
     </div>
     <div class="castigos-box">
       <div class="ct-title">Castigos</div>
@@ -745,28 +836,17 @@ function openMemberModal(id){
         <button class="btn-falta" data-falta="${m.id}">+ Falta</button>
         <button class="btn-strike" data-strike="${m.id}">+ Strike</button>
       </div>
-      <button class="btn-reset-castigos" data-reset="${m.id}">🔄 Borrar Castigos</button>
-      ` : ""}
+      <button class="btn-reset-castigos" data-reset="${m.id}">🔄 Borrar Castigos</button>` : ""}
     </div>
   `;
   openModal("memberModal");
-
-  const avatarImg = document.getElementById("memberDetailAvatar");
-  if(avatarImg) enableLongPress(avatarImg, avatarImg.dataset.filename);
-
+  bindAvatarFallbacks();
   const copyBtn = document.querySelector("[data-copy-discord]");
-  if(copyBtn){
-    copyBtn.onclick = () => {
-      navigator.clipboard.writeText(copyBtn.dataset.copyDiscord);
-      toast("Usuario de Discord copiado ✅");
-    };
-  }
-  const faltaBtn = document.querySelector("[data-falta]");
-  if(faltaBtn) faltaBtn.onclick = () => registrarFalta(m.id);
-  const strikeBtn = document.querySelector("[data-strike]");
-  if(strikeBtn) strikeBtn.onclick = () => registrarStrike(m.id);
-  const resetBtn = document.querySelector("[data-reset]");
-  if(resetBtn) resetBtn.onclick = () => borrarCastigos(m.id);
+  if(copyBtn) copyBtn.onclick = () => { navigator.clipboard.writeText(copyBtn.dataset.copyDiscord); toast("Usuario de Discord copiado ✅"); };
+  const faltaBtn = document.querySelector("[data-falta]"); if(faltaBtn) faltaBtn.onclick = () => registrarFalta(m.id);
+  const strikeBtn = document.querySelector("[data-strike]"); if(strikeBtn) strikeBtn.onclick = () => registrarStrike(m.id);
+  const resetBtn = document.querySelector("[data-reset]"); if(resetBtn) resetBtn.onclick = () => borrarCastigos(m.id);
+  const editBtn = document.querySelector("[data-edit-member]"); if(editBtn) editBtn.onclick = () => { closeModal("memberModal"); openMemberEditForm(m.id); };
 }
 
 async function registrarFalta(idMiembro){
@@ -787,16 +867,78 @@ async function borrarCastigos(idMiembro){
 }
 
 /* ============================================================
+   FORM: Editar miembro
+   ============================================================ */
+function openMemberEditForm(id){
+  const m = DB.miembros.find(x=>String(x.id)===String(id));
+  if(!m) return;
+  document.getElementById("me_id").value = m.id;
+  document.getElementById("me_nombre").value = m.nombre||"";
+  document.getElementById("me_avatarUrl").value = m.avatarUrl||"";
+  document.getElementById("me_avatarFile").value = "";
+  document.getElementById("me_uploadStatus").textContent = "";
+  document.getElementById("me_smule").value = m.usuarioSmule||"";
+  document.getElementById("me_discord").value = m.usuarioDiscord||"";
+  document.getElementById("me_bandlab").value = m.usuarioBandlab||"";
+  document.getElementById("me_telefono").value = m.telefono||"";
+  document.getElementById("me_rango").value = m.rangoVocal||"";
+  document.getElementById("me_cumple").value = m.cumpleanos||"";
+  document.getElementById("me_ingreso").value = toDateInput(m.fechaIngreso);
+  document.getElementById("me_staff").checked = esTrue(m.staff);
+  document.getElementById("me_canto").checked = esTrue(m.canto);
+  document.getElementById("me_doblaje").checked = esTrue(m.doblaje);
+  openModal("memberEditModal");
+}
+document.getElementById("me_avatarFile").addEventListener("change", async (e)=>{
+  const file = e.target.files[0]; if(!file) return;
+  const st = document.getElementById("me_uploadStatus");
+  st.textContent = "Subiendo imagen...";
+  try{
+    const base64Data = await fileToBase64(file);
+    const r = await apiPost({action:"uploadImage", filename:file.name, base64Data});
+    if(r.ok){ document.getElementById("me_avatarUrl").value = r.url; st.textContent = "Imagen subida ✅"; }
+    else st.textContent = "Error: " + (r.error||"");
+  }catch(err){ st.textContent = "Error al leer la imagen"; }
+});
+document.getElementById("memberEditForm").addEventListener("submit", async (e)=>{
+  e.preventDefault();
+  const submitBtn = e.target.querySelector('button[type="submit"]');
+  submitBtn.disabled = true;
+  const data = {
+    id: document.getElementById("me_id").value,
+    nombre: document.getElementById("me_nombre").value,
+    avatarUrl: document.getElementById("me_avatarUrl").value,
+    usuarioSmule: document.getElementById("me_smule").value,
+    usuarioDiscord: document.getElementById("me_discord").value,
+    usuarioBandlab: document.getElementById("me_bandlab").value,
+    telefono: document.getElementById("me_telefono").value,
+    rangoVocal: document.getElementById("me_rango").value,
+    cumpleanos: document.getElementById("me_cumple").value,
+    fechaIngreso: document.getElementById("me_ingreso").value,
+    staff: document.getElementById("me_staff").checked ? "TRUE" : "FALSE",
+    canto: document.getElementById("me_canto").checked ? "TRUE" : "FALSE",
+    doblaje: document.getElementById("me_doblaje").checked ? "TRUE" : "FALSE",
+  };
+  const r = await apiPost({action:"editMiembro", data});
+  submitBtn.disabled = false;
+  if(r.ok){ toast("Miembro actualizado ✅"); closeModal("memberEditModal"); await cargarDatos(); }
+  else toast("Error: " + (r.error||"revisa el PIN"));
+});
+document.getElementById("me_deleteBtn").onclick = async () => {
+  const id = document.getElementById("me_id").value;
+  if(!confirm("¿Seguro que quieres borrar a este miembro por completo?")) return;
+  const r = await apiPost({action:"deleteMiembro", id});
+  if(r.ok){ toast("Miembro borrado 🗑️"); closeModal("memberEditModal"); await cargarDatos(); }
+  else toast("Error: " + (r.error||"revisa el PIN"));
+};
+
+/* ============================================================
    MODALES genéricos
    ============================================================ */
 function openModal(id){ document.getElementById(id).classList.add("open"); }
 function closeModal(id){ document.getElementById(id).classList.remove("open"); }
-document.querySelectorAll("[data-close]").forEach(btn=>{
-  btn.onclick = () => closeModal(btn.dataset.close);
-});
-document.querySelectorAll(".modal-overlay").forEach(ov=>{
-  ov.addEventListener("click", e => { if(e.target === ov) ov.classList.remove("open"); });
-});
+document.querySelectorAll("[data-close]").forEach(btn=>btn.onclick = () => closeModal(btn.dataset.close));
+document.querySelectorAll(".modal-overlay").forEach(ov=>ov.addEventListener("click", e => { if(e.target === ov) ov.classList.remove("open"); }));
 
 /* ============================================================
    FORM: Actividad (crear / editar)
@@ -816,8 +958,13 @@ function openActivityForm(id){
   document.getElementById("af_fechaInicio").value = a ? toDateInput(a.fechaInicio) : "";
   document.getElementById("af_fechaFin").value = a ? toDateInput(a.fechaFin) : "";
   document.getElementById("af_linkForms").value = a ? a.linkForms||"" : "";
+  document.getElementById("af_linkUnirse").value = a ? a.linkUnirse||"" : "";
+  document.getElementById("af_linkScript").value = a ? a.linkScript||"" : "";
+  document.getElementById("af_scriptFile").value = "";
+  document.getElementById("af_scriptStatus").textContent = "";
   const catVal = a ? (a.categoria||"") : "";
   document.querySelectorAll('input[name="af_categoria"]').forEach(r => { r.checked = (r.value === catVal); });
+  document.getElementById("af_participacion").value = a ? (a.participacion||"opcional") : "opcional";
   document.getElementById("af_esAnuario").checked = a ? esTrue(a.esAnuario) : false;
   document.getElementById("af_ganadorCanto").value = a ? a.ganadorCanto||"" : "";
   document.getElementById("af_ganadorDoblaje").value = a ? a.ganadorDoblaje||"" : "";
@@ -825,19 +972,16 @@ function openActivityForm(id){
   toggleAnuarioFields();
   openModal("activityFormModal");
 }
-
 function toDateInput(v){
   if(!v) return "";
   const d = new Date(v);
   if(isNaN(d)) return "";
   return d.toISOString().slice(0,10);
 }
-
 document.getElementById("af_esAnuario").addEventListener("change", toggleAnuarioFields);
 function toggleAnuarioFields(){
   document.getElementById("af_anuarioFields").classList.toggle("hidden", !document.getElementById("af_esAnuario").checked);
 }
-
 function fileToBase64(file){
   return new Promise((resolve,reject)=>{
     const reader = new FileReader();
@@ -846,29 +990,34 @@ function fileToBase64(file){
     reader.readAsDataURL(file);
   });
 }
-
 document.getElementById("af_imagenFile").addEventListener("change", async (e)=>{
-  const file = e.target.files[0];
-  if(!file) return;
-  const statusEl = document.getElementById("af_uploadStatus");
-  statusEl.textContent = "Subiendo imagen...";
+  const file = e.target.files[0]; if(!file) return;
+  const st = document.getElementById("af_uploadStatus");
+  st.textContent = "Subiendo imagen...";
   try{
     const base64Data = await fileToBase64(file);
-    const r = await apiPost({action:"uploadImage", filename:file.name, mimeType:file.type, base64Data});
-    if(r.ok){
-      document.getElementById("af_imagenUrl").value = r.url;
-      statusEl.textContent = "Imagen subida ✅";
-    } else {
-      statusEl.textContent = "Error: " + (r.error||"no se pudo subir");
-    }
-  }catch(err){
-    statusEl.textContent = "Error al leer la imagen";
-    console.error(err);
-  }
+    const r = await apiPost({action:"uploadImage", filename:file.name, base64Data});
+    if(r.ok){ document.getElementById("af_imagenUrl").value = r.url; st.textContent = "Imagen subida ✅"; }
+    else st.textContent = "Error: " + (r.error||"no se pudo subir");
+  }catch(err){ st.textContent = "Error al leer la imagen"; }
 });
-
+document.getElementById("af_scriptFile").addEventListener("change", async (e)=>{
+  const file = e.target.files[0]; if(!file) return;
+  const st = document.getElementById("af_scriptStatus");
+  st.textContent = "Subiendo PDF...";
+  try{
+    const base64Data = await fileToBase64(file);
+    const r = await apiPost({action:"uploadScript", filename:file.name, base64Data});
+    if(r.ok){ document.getElementById("af_linkScript").value = r.url; st.textContent = "PDF subido ✅"; }
+    else st.textContent = "Error: " + (r.error||"no se pudo subir");
+  }catch(err){ st.textContent = "Error al leer el archivo"; }
+});
 document.getElementById("activityForm").addEventListener("submit", async (e) => {
   e.preventDefault();
+  const cat = document.querySelector('input[name="af_categoria"]:checked');
+  if(!cat){ toast("Elegí una categoría: Canto o Doblaje ❌"); return; }
+  const submitBtn = e.target.querySelector('button[type="submit"]');
+  submitBtn.disabled = true;
   const id = document.getElementById("af_id").value;
   const data = {
     titulo: document.getElementById("af_titulo").value,
@@ -878,20 +1027,19 @@ document.getElementById("activityForm").addEventListener("submit", async (e) => 
     fechaInicio: document.getElementById("af_fechaInicio").value,
     fechaFin: document.getElementById("af_fechaFin").value,
     linkForms: document.getElementById("af_linkForms").value,
-    categoria: (document.querySelector('input[name="af_categoria"]:checked') || {}).value || "",
+    linkUnirse: document.getElementById("af_linkUnirse").value,
+    linkScript: document.getElementById("af_linkScript").value,
+    categoria: cat.value,
+    participacion: document.getElementById("af_participacion").value,
     esAnuario: document.getElementById("af_esAnuario").checked ? "TRUE" : "FALSE",
     ganadorCanto: document.getElementById("af_ganadorCanto").value,
     ganadorDoblaje: document.getElementById("af_ganadorDoblaje").value,
     mencionesHonorificas: document.getElementById("af_menciones").value,
   };
   let r;
-  if(id){
-    data.id = id;
-    r = await apiPost({action:"editActividad", data});
-  } else {
-    data.id = "ACT-" + Date.now();
-    r = await apiPost({action:"addActividad", data});
-  }
+  if(id){ data.id = id; r = await apiPost({action:"editActividad", data}); }
+  else { data.id = "ACT-" + Date.now(); r = await apiPost({action:"addActividad", data}); }
+  submitBtn.disabled = false;
   if(r.ok){ toast("Guardado ✅"); closeModal("activityFormModal"); await cargarDatos(); }
   else toast("Error: " + (r.error || "revisa el PIN"));
 });
@@ -906,9 +1054,10 @@ function openEntregaForm(idActividad){
   document.getElementById("en_link").value = "";
   openModal("entregaFormModal");
 }
-
 document.getElementById("entregaForm").addEventListener("submit", async (e) => {
   e.preventDefault();
+  const submitBtn = e.target.querySelector('button[type="submit"]');
+  submitBtn.disabled = true;
   const data = {
     id: "ENT-" + Date.now(),
     idActividad: document.getElementById("en_idActividad").value,
@@ -917,6 +1066,7 @@ document.getElementById("entregaForm").addEventListener("submit", async (e) => {
     linkGrabacion: document.getElementById("en_link").value,
   };
   const r = await apiPost({action:"addEntrega", data});
+  submitBtn.disabled = false;
   if(r.ok){ toast("Entrega registrada ✅"); closeModal("entregaFormModal"); await cargarDatos(); }
   else toast("Error: " + (r.error || "revisa el PIN"));
 });
@@ -924,18 +1074,14 @@ document.getElementById("entregaForm").addEventListener("submit", async (e) => {
 /* ============================================================
    NAVEGACIÓN: TABS, DRAWER, STAFF
    ============================================================ */
-document.querySelectorAll(".tab-btn").forEach(btn=>{
-  btn.onclick = () => switchTab(btn.dataset.tab);
-});
+document.querySelectorAll(".tab-btn").forEach(btn=>btn.onclick = () => switchTab(btn.dataset.tab));
 function switchTab(tab){
-  currentTab = tab;
   document.querySelectorAll(".tab-btn").forEach(b=>b.classList.toggle("active", b.dataset.tab===tab));
   document.getElementById("viewActividades").classList.toggle("hidden", tab!=="actividades");
   document.getElementById("viewAnuario").classList.toggle("hidden", tab!=="anuario");
   document.getElementById("viewMiembros").classList.add("hidden");
   document.getElementById("viewStaffPin").classList.add("hidden");
 }
-
 document.getElementById("hamburgerBtn").onclick = () => {
   document.getElementById("drawer").classList.add("open");
   document.getElementById("drawerOverlay").style.display = "block";
@@ -945,7 +1091,6 @@ function closeDrawer(){
   document.getElementById("drawer").classList.remove("open");
   document.getElementById("drawerOverlay").style.display = "none";
 }
-
 document.getElementById("miembrosDrawerBtn").onclick = () => {
   closeDrawer();
   document.getElementById("viewActividades").classList.add("hidden");
@@ -954,27 +1099,18 @@ document.getElementById("miembrosDrawerBtn").onclick = () => {
   document.getElementById("viewMiembros").classList.remove("hidden");
   renderMiembros();
 };
-
 document.getElementById("staffDrawerBtn").onclick = () => {
   closeDrawer();
-  if(staffPin){
-    toast("Ya estás en modo Staff 🛠️");
-    return;
-  }
+  if(staffPin){ toast("Ya estás en modo Staff 🛠️"); return; }
   document.getElementById("viewActividades").classList.add("hidden");
   document.getElementById("viewAnuario").classList.add("hidden");
   document.getElementById("viewMiembros").classList.add("hidden");
   document.getElementById("viewStaffPin").classList.remove("hidden");
 };
-
-document.getElementById("searchMiembros").addEventListener("input", (e)=>{
-  renderMiembros(e.target.value);
-});
+document.getElementById("searchMiembros").addEventListener("input", (e)=>renderMiembros(e.target.value));
 
 document.getElementById("pinSubmitBtn").onclick = verificarPin;
-document.getElementById("pinInput").addEventListener("keydown", e=>{
-  if(e.key === "Enter") verificarPin();
-});
+document.getElementById("pinInput").addEventListener("keydown", e=>{ if(e.key === "Enter") verificarPin(); });
 async function verificarPin(){
   const val = document.getElementById("pinInput").value.trim();
   if(!val){ document.getElementById("pinMsg").textContent = "Escribe un PIN."; return; }
@@ -993,7 +1129,6 @@ async function verificarPin(){
     document.getElementById("pinMsg").textContent = "PIN incorrecto ❌";
   }
 }
-
 document.getElementById("staffStatusBadge").onclick = () => {
   if(confirm("¿Deseas salir del modo staff?")){
     staffPin = null;
@@ -1009,9 +1144,7 @@ document.getElementById("staffStatusBadge").onclick = () => {
    ESCAPE HELPERS
    ============================================================ */
 function escHtml(str){
-  return String(str).replace(/[&<>"']/g, s => ({
-    "&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;","'":"&#39;"
-  }[s]));
+  return String(str).replace(/[&<>"']/g, s => ({"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;","'":"&#39;"}[s]));
 }
 function escAttr(str){ return escHtml(str); }
 
