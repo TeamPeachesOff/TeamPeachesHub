@@ -1,0 +1,864 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Team Peaches Hub 🍑</title>
+<style>
+  :root{
+    --peach-1:#ff8fb1;
+    --peach-2:#ff5f9e;
+    --peach-dark:#3d1f2a;
+    --bg:#1a1020;
+    --card-bg:#2a1830;
+    --card-bg-2:#33203a;
+    --text:#fbeaf2;
+    --text-dim:#c9a8bb;
+    --green:#2ecc71;
+    --yellow:#f1c40f;
+    --red:#e74c3c;
+    --gold:#ffd700;
+    --radius:16px;
+  }
+  *{box-sizing:border-box;}
+  body{
+    margin:0;
+    font-family:'Segoe UI',Arial,sans-serif;
+    background:linear-gradient(160deg,var(--bg),#241228 60%,#170b1c);
+    color:var(--text);
+    min-height:100vh;
+  }
+  a{color:inherit;text-decoration:none;}
+  button{font-family:inherit;cursor:pointer;border:none;}
+  img{max-width:100%;display:block;}
+
+  /* ===== HEADER ===== */
+  header{
+    position:sticky;top:0;z-index:50;
+    display:flex;align-items:center;justify-content:space-between;
+    padding:14px 18px;
+    background:rgba(26,16,32,0.92);
+    backdrop-filter:blur(8px);
+    border-bottom:1px solid rgba(255,143,177,0.25);
+  }
+  .header-left{display:flex;align-items:center;gap:12px;}
+  #hamburgerBtn{
+    background:none;font-size:26px;color:var(--peach-1);padding:4px 8px;border-radius:8px;
+  }
+  #hamburgerBtn:hover{background:rgba(255,143,177,0.15);}
+  .logo{font-weight:800;font-size:19px;letter-spacing:0.5px;
+    background:linear-gradient(90deg,var(--peach-1),var(--gold));
+    -webkit-background-clip:text;background-clip:text;color:transparent;
+  }
+  .tabs{display:flex;gap:6px;background:var(--card-bg);padding:4px;border-radius:999px;}
+  .tab-btn{
+    padding:8px 16px;border-radius:999px;background:none;color:var(--text-dim);font-weight:600;font-size:14px;
+  }
+  .tab-btn.active{background:linear-gradient(90deg,var(--peach-2),var(--peach-1));color:#2a0f1c;}
+
+  /* ===== DRAWER ===== */
+  #drawerOverlay{
+    position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:99;
+    display:none;
+  }
+  #drawer{
+    position:fixed;top:0;left:0;height:100%;width:280px;max-width:82vw;
+    background:var(--card-bg);z-index:100;
+    transform:translateX(-100%);transition:transform .25s ease;
+    display:flex;flex-direction:column;padding:20px 16px;gap:18px;
+    box-shadow:4px 0 20px rgba(0,0,0,0.4);
+  }
+  #drawer.open{transform:translateX(0);}
+  .drawer-title{font-weight:800;font-size:18px;color:var(--peach-1);margin-bottom:4px;}
+  .social-row{display:flex;flex-direction:column;gap:10px;}
+  .social-link{
+    display:flex;align-items:center;gap:12px;padding:10px 12px;border-radius:12px;
+    background:var(--card-bg-2);transition:background .15s;
+  }
+  .social-link:hover{background:rgba(255,143,177,0.18);}
+  .social-link img{width:28px;height:28px;object-fit:contain;border-radius:6px;}
+  .social-link span{font-weight:600;font-size:14px;}
+  .drawer-divider{height:1px;background:rgba(255,255,255,0.08);}
+  .drawer-nav-btn{
+    display:flex;align-items:center;gap:10px;padding:12px;border-radius:12px;
+    background:var(--card-bg-2);font-weight:700;font-size:15px;color:var(--text);
+    justify-content:flex-start;
+  }
+  .drawer-nav-btn:hover{background:rgba(255,143,177,0.18);}
+  #staffDrawerBtn{margin-top:auto;background:linear-gradient(90deg,#6a3d8f,#a45fc7);color:#fff;}
+
+  /* ===== MAIN ===== */
+  main{max-width:640px;margin:0 auto;padding:16px 12px 60px;}
+  .hidden{display:none !important;}
+
+  #addActBtn{
+    display:block;width:100%;margin-bottom:16px;padding:12px;border-radius:14px;
+    background:linear-gradient(90deg,var(--peach-2),var(--gold));color:#2a0f1c;font-weight:800;font-size:15px;
+  }
+
+  /* ===== ACTIVITY CARD ===== */
+  .card{
+    background:var(--card-bg);border-radius:var(--radius);margin-bottom:18px;overflow:hidden;
+    border:1px solid rgba(255,255,255,0.06);
+  }
+  .card.anuario-card{border:1px solid var(--gold);box-shadow:0 0 18px rgba(255,215,0,0.15);}
+  .card-top{display:flex;gap:0;padding:14px;}
+  @media (max-width:480px){.card-top{flex-direction:column;}}
+  .card-img-wrap{
+    position:relative;flex:0 0 120px;width:120px;height:120px;border-radius:12px;overflow:hidden;
+    background:var(--card-bg-2);
+  }
+  @media (max-width:480px){.card-img-wrap{width:100%;height:180px;}}
+  .card-img-wrap img{width:100%;height:100%;object-fit:cover;}
+  .crown-badge{
+    position:absolute;top:-6px;left:-6px;font-size:26px;filter:drop-shadow(0 2px 3px rgba(0,0,0,0.6));
+  }
+  .card-info{flex:1;padding-left:14px;display:flex;flex-direction:column;gap:6px;min-width:0;}
+  @media (max-width:480px){.card-info{padding-left:0;padding-top:10px;}}
+  .card-title{font-weight:800;font-size:16px;line-height:1.25;}
+  .card-dates{font-size:12.5px;color:var(--text-dim);}
+  .status-tag{
+    display:inline-block;padding:3px 10px;border-radius:999px;font-size:12px;font-weight:700;width:fit-content;
+  }
+  .status-green{background:rgba(46,204,113,0.18);color:var(--green);}
+  .status-yellow{background:rgba(241,196,15,0.18);color:var(--yellow);}
+  .status-red{background:rgba(231,76,60,0.18);color:var(--red);}
+  .card-actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:4px;}
+  .btn-small{
+    padding:7px 12px;border-radius:10px;font-size:12.5px;font-weight:700;
+  }
+  .btn-primary{background:linear-gradient(90deg,var(--peach-2),var(--peach-1));color:#2a0f1c;}
+  .btn-ghost{background:var(--card-bg-2);color:var(--text);}
+  .btn-admin{background:rgba(164,95,199,0.25);color:#d9b6f5;}
+
+  .accordion{border-top:1px solid rgba(255,255,255,0.07);}
+  .accordion-toggle{
+    width:100%;text-align:left;padding:12px 16px;background:none;color:var(--peach-1);
+    font-weight:700;font-size:13.5px;display:flex;justify-content:space-between;align-items:center;
+  }
+  .accordion-body{padding:0 16px 16px;font-size:13.5px;color:var(--text-dim);line-height:1.5;display:none;white-space:pre-wrap;}
+  .accordion-body.open{display:block;}
+  .wishlist-block{margin-top:10px;padding:10px;background:var(--card-bg-2);border-radius:10px;white-space:pre-wrap;}
+  .hashtags{margin-top:8px;color:var(--peach-1);font-size:12.5px;}
+
+  table.entregas-table{width:100%;border-collapse:collapse;font-size:13px;}
+  table.entregas-table th{text-align:left;color:var(--peach-1);padding:6px 4px;border-bottom:1px solid rgba(255,255,255,0.1);}
+  table.entregas-table td{padding:6px 4px;border-bottom:1px solid rgba(255,255,255,0.05);}
+  table.entregas-table a{color:var(--peach-1);text-decoration:underline;}
+
+  /* ===== ANUARIO GRID ===== */
+  #anuarioGrid{display:grid;grid-template-columns:1fr 1fr;gap:12px;}
+  @media (max-width:420px){#anuarioGrid{grid-template-columns:1fr;}}
+  .anuario-tile{
+    position:relative;border-radius:14px;overflow:hidden;background:var(--card-bg);
+    border:1px solid var(--gold);box-shadow:0 0 14px rgba(255,215,0,0.12);cursor:pointer;
+  }
+  .anuario-tile img{width:100%;height:120px;object-fit:cover;}
+  .anuario-tile .crown-badge{top:6px;left:6px;}
+  .anuario-tile .tile-title{padding:10px;font-weight:800;font-size:13.5px;}
+
+  /* ===== MIEMBROS ===== */
+  #searchMiembros{
+    width:100%;padding:12px 14px;border-radius:12px;border:1px solid rgba(255,255,255,0.1);
+    background:var(--card-bg-2);color:var(--text);font-size:14px;margin-bottom:14px;
+  }
+  .section-label{font-weight:800;color:var(--peach-1);margin:16px 0 10px;font-size:14px;}
+  #staffCarousel{display:flex;gap:12px;overflow-x:auto;padding-bottom:8px;}
+  .member-avatar-item{flex:0 0 auto;width:78px;text-align:center;cursor:pointer;}
+  .member-avatar-item img{width:64px;height:64px;border-radius:50%;object-fit:cover;border:2px solid var(--peach-1);margin:0 auto;}
+  .member-avatar-item .m-name{font-size:11px;margin-top:6px;color:var(--text-dim);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+
+  #miembrosList{display:flex;flex-direction:column;gap:10px;}
+  .member-row{
+    display:flex;align-items:center;gap:12px;background:var(--card-bg);padding:10px 12px;border-radius:14px;cursor:pointer;
+  }
+  .member-row img{width:46px;height:46px;border-radius:50%;object-fit:cover;}
+  .member-row .m-info{flex:1;min-width:0;}
+  .member-row .m-name{font-weight:700;font-size:14px;}
+  .badges-row{display:flex;gap:6px;margin-top:3px;flex-wrap:wrap;}
+  .badge{padding:2px 8px;border-radius:999px;font-size:10.5px;font-weight:700;}
+  .badge-staff{background:rgba(164,95,199,0.25);color:#d9b6f5;}
+  .badge-canto{background:rgba(46,204,113,0.2);color:var(--green);}
+  .badge-doblaje{background:rgba(52,152,219,0.2);color:#5dade2;}
+
+  /* ===== PIN / STAFF SCREEN ===== */
+  .center-screen{max-width:340px;margin:60px auto;text-align:center;padding:0 16px;}
+  #pinInput{
+    width:100%;text-align:center;font-size:24px;letter-spacing:8px;padding:14px;border-radius:12px;
+    border:1px solid rgba(255,255,255,0.15);background:var(--card-bg-2);color:var(--text);margin:16px 0;
+  }
+  #pinMsg{font-size:13px;color:var(--red);min-height:18px;}
+  #staffStatusBadge{
+    display:none;position:fixed;bottom:14px;right:14px;background:linear-gradient(90deg,#6a3d8f,#a45fc7);
+    color:#fff;padding:8px 14px;border-radius:999px;font-size:12.5px;font-weight:700;z-index:60;
+    box-shadow:0 4px 14px rgba(0,0,0,0.4);
+  }
+
+  /* ===== MODALS ===== */
+  .modal-overlay{
+    position:fixed;inset:0;background:rgba(0,0,0,0.6);z-index:200;
+    display:none;align-items:flex-start;justify-content:center;padding:30px 12px;overflow-y:auto;
+  }
+  .modal-overlay.open{display:flex;}
+  .modal-box{
+    background:var(--card-bg);border-radius:18px;padding:20px;width:100%;max-width:440px;
+    max-height:85vh;overflow-y:auto;-webkit-overflow-scrolling:touch;
+  }
+  .modal-box h3{margin-top:0;color:var(--peach-1);}
+  .modal-close{float:right;background:none;color:var(--text-dim);font-size:20px;}
+  .form-group{margin-bottom:12px;}
+  .form-group label{display:block;font-size:12.5px;color:var(--text-dim);margin-bottom:5px;font-weight:600;}
+  .form-group input, .form-group textarea, .form-group select{
+    width:100%;padding:10px;border-radius:10px;border:1px solid rgba(255,255,255,0.12);
+    background:var(--card-bg-2);color:var(--text);font-family:inherit;font-size:13.5px;
+  }
+  .form-group textarea{min-height:70px;resize:vertical;}
+  .modal-actions{display:flex;gap:10px;margin-top:16px;}
+  .modal-actions button{flex:1;padding:12px;border-radius:12px;font-weight:800;}
+
+  .member-modal-header{text-align:center;}
+  .member-modal-header img{width:90px;height:90px;border-radius:50%;object-fit:cover;margin:0 auto 10px;border:3px solid var(--peach-1);}
+  .expelled-banner{background:var(--red);color:#fff;padding:8px;border-radius:10px;font-weight:800;text-align:center;margin-bottom:12px;font-size:13px;}
+  .info-table{width:100%;margin-top:14px;font-size:13.5px;}
+  .info-table td{padding:6px 0;border-bottom:1px solid rgba(255,255,255,0.06);}
+  .info-table td:first-child{color:var(--text-dim);width:50%;}
+  .platform-row{display:flex;gap:10px;margin-top:14px;}
+  .platform-btn{flex:1;display:flex;flex-direction:column;align-items:center;gap:6px;padding:10px;background:var(--card-bg-2);border-radius:12px;}
+  .platform-btn img{width:28px;height:28px;object-fit:contain;}
+  .platform-btn span{font-size:11px;color:var(--text-dim);}
+  .castigos-box{margin-top:16px;background:var(--card-bg-2);border-radius:12px;padding:12px;}
+  .castigos-box .ct-title{font-weight:800;color:var(--peach-1);margin-bottom:8px;font-size:13px;}
+  .castigos-box .ct-row{display:flex;justify-content:space-between;font-size:13.5px;padding:3px 0;}
+  .admin-strike-btns{display:flex;gap:8px;margin-top:12px;}
+  .admin-strike-btns button{flex:1;padding:10px;border-radius:10px;font-weight:700;font-size:12.5px;}
+  .btn-falta{background:rgba(241,196,15,0.2);color:var(--yellow);}
+  .btn-strike{background:rgba(231,76,60,0.2);color:var(--red);}
+
+  .winners-block{background:var(--card-bg-2);border-radius:12px;padding:14px;margin-top:10px;}
+  .winners-block div{margin:6px 0;font-size:14px;}
+  .toast{
+    position:fixed;bottom:70px;left:50%;transform:translateX(-50%);background:#222;color:#fff;
+    padding:10px 18px;border-radius:999px;font-size:13px;z-index:300;opacity:0;transition:opacity .25s;
+  }
+  .toast.show{opacity:1;}
+  .empty-state{text-align:center;color:var(--text-dim);padding:40px 10px;font-size:14px;}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="header-left">
+    <button id="hamburgerBtn">☰</button>
+    <div class="logo">🍑 Peaches Hub</div>
+  </div>
+  <div class="tabs">
+    <button class="tab-btn active" data-tab="actividades">Actividades</button>
+    <button class="tab-btn" data-tab="anuario">Anuario</button>
+  </div>
+</header>
+
+<div id="drawerOverlay"></div>
+<div id="drawer">
+  <div class="drawer-title">Team Peaches</div>
+  <div class="social-row">
+    <a class="social-link" target="_blank" href="https://youtube.com/@teampeachesoff">
+      <img src="https://pngimg.com/uploads/youtube/youtube_PNG102352.png" alt="YouTube"><span>YouTube</span>
+    </a>
+    <a class="social-link" target="_blank" href="https://www.instagram.com/team_peaches_off/">
+      <img src="https://pngimg.com/uploads/instagram/instagram_PNG10.png" alt="Instagram"><span>Instagram</span>
+    </a>
+    <a class="social-link" target="_blank" href="https://www.tiktok.com/@team_peaches_off">
+      <img src="https://static.vecteezy.com/system/resources/previews/016/716/450/original/tiktok-icon-free-png.png" alt="TikTok"><span>TikTok</span>
+    </a>
+  </div>
+  <div class="drawer-divider"></div>
+  <button class="drawer-nav-btn" id="miembrosDrawerBtn">👥 Miembros</button>
+  <button class="drawer-nav-btn" id="staffDrawerBtn">🛠️ Staff</button>
+</div>
+
+<main>
+
+  <!-- ACTIVIDADES -->
+  <section id="viewActividades">
+    <button id="addActBtn" class="hidden">(+) Añadir Actividad</button>
+    <div id="actividadesFeed"></div>
+  </section>
+
+  <!-- ANUARIO -->
+  <section id="viewAnuario" class="hidden">
+    <div id="anuarioGrid"></div>
+  </section>
+
+  <!-- MIEMBROS -->
+  <section id="viewMiembros" class="hidden">
+    <input type="text" id="searchMiembros" placeholder="🔍 Buscar por nombre, rol o rango vocal...">
+    <div class="section-label">👑 Staff & Coordinación</div>
+    <div id="staffCarousel"></div>
+    <div class="section-label">Directorio Global</div>
+    <div id="miembrosList"></div>
+  </section>
+
+  <!-- STAFF PIN -->
+  <section id="viewStaffPin" class="hidden">
+    <div class="center-screen">
+      <div style="font-size:40px;">🍑🔒</div>
+      <h3>Introduce el PIN de Staff</h3>
+      <input type="password" id="pinInput" maxlength="6" inputmode="numeric">
+      <div id="pinMsg"></div>
+      <button class="btn-primary" style="width:100%;padding:12px;border-radius:12px;font-weight:800;" id="pinSubmitBtn">Desbloquear</button>
+    </div>
+  </section>
+
+</main>
+
+<div id="staffStatusBadge">🛠️ Modo Staff activo</div>
+<div class="toast" id="toast"></div>
+
+<!-- MODAL: Detalle de miembro -->
+<div class="modal-overlay" id="memberModal">
+  <div class="modal-box">
+    <button class="modal-close" data-close="memberModal">✕</button>
+    <div id="memberModalContent"></div>
+  </div>
+</div>
+
+<!-- MODAL: Detalle / edición de actividad -->
+<div class="modal-overlay" id="activityFormModal">
+  <div class="modal-box">
+    <button class="modal-close" data-close="activityFormModal">✕</button>
+    <h3 id="activityFormTitle">Nueva actividad</h3>
+    <form id="activityForm">
+      <input type="hidden" id="af_id">
+      <div class="form-group"><label>Título</label><input type="text" id="af_titulo" required></div>
+      <div class="form-group"><label>Imagen (URL)</label><input type="text" id="af_imagenUrl"></div>
+      <div class="form-group"><label>Descripción</label><textarea id="af_descripcion"></textarea></div>
+      <div class="form-group"><label>Wishlist (ideas, una por línea)</label><textarea id="af_wishlist"></textarea></div>
+      <div class="form-group"><label>Fecha inicio</label><input type="date" id="af_fechaInicio"></div>
+      <div class="form-group"><label>Fecha fin</label><input type="date" id="af_fechaFin"></div>
+      <div class="form-group"><label>Link de entrega (Forms)</label><input type="text" id="af_linkForms"></div>
+      <div class="form-group">
+        <label><input type="checkbox" id="af_esAnuario" style="width:auto;"> Mover al Anuario</label>
+      </div>
+      <div id="af_anuarioFields" class="hidden">
+        <div class="form-group"><label>🥇 Mejor Canto</label><input type="text" id="af_ganadorCanto"></div>
+        <div class="form-group"><label>🎙️ Mejor Doblaje</label><input type="text" id="af_ganadorDoblaje"></div>
+        <div class="form-group"><label>✨ Menciones Honoríficas</label><textarea id="af_menciones"></textarea></div>
+      </div>
+      <div class="modal-actions">
+        <button type="submit" class="btn-primary">Guardar</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- MODAL: Registrar entrega -->
+<div class="modal-overlay" id="entregaFormModal">
+  <div class="modal-box">
+    <button class="modal-close" data-close="entregaFormModal">✕</button>
+    <h3>Registrar entrega</h3>
+    <form id="entregaForm">
+      <input type="hidden" id="en_idActividad">
+      <div class="form-group"><label>Nombre</label><input type="text" id="en_nombre" required></div>
+      <div class="form-group"><label>Canción / Escena</label><input type="text" id="en_detalle" required></div>
+      <div class="form-group"><label>Enlace</label><input type="text" id="en_link"></div>
+      <div class="modal-actions"><button type="submit" class="btn-primary">Guardar</button></div>
+    </form>
+  </div>
+</div>
+
+<script>
+/* ============================================================
+   CONFIGURACIÓN — cambia esto por tu propia URL de Apps Script
+   ============================================================ */
+const APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwcnPM10DeRLE6ReNX_AqeViRfKkHjpflT-QCw05oW_L8n5ohrDhfR_iPuzTqYNrG8H4A/exec";
+
+/* ============================================================
+   ESTADO GLOBAL
+   ============================================================ */
+let DB = { actividades: [], entregas: [], miembros: [] };
+let staffPin = localStorage.getItem("tph_pin") || null; // null = no es staff
+let currentTab = "actividades";
+
+/* ============================================================
+   UTILIDADES
+   ============================================================ */
+function toast(msg){
+  const t = document.getElementById("toast");
+  t.textContent = msg;
+  t.classList.add("show");
+  setTimeout(()=>t.classList.remove("show"), 2200);
+}
+
+function estadoActividad(fechaFinStr){
+  if(!fechaFinStr) return {clase:"status-green", texto:"🟢 Actividad Activa"};
+  const hoy = new Date(); hoy.setHours(0,0,0,0);
+  const fin = new Date(fechaFinStr); fin.setHours(0,0,0,0);
+  const diffDias = Math.round((fin - hoy) / (1000*60*60*24));
+  if(diffDias < 0) return {clase:"status-red", texto:"🔴 Actividad Finalizada"};
+  if(diffDias <= 2) return {clase:"status-yellow", texto:"🟡 Últimos Días"};
+  return {clase:"status-green", texto:"🟢 Actividad Activa"};
+}
+
+function fmtFecha(f){
+  if(!f) return "";
+  const d = new Date(f);
+  if(isNaN(d)) return f;
+  return d.toLocaleDateString("es-CR",{day:"2-digit",month:"short",year:"numeric"});
+}
+
+function esTrue(v){
+  return v === true || v === "TRUE" || v === "true" || v === 1;
+}
+
+async function apiGet(){
+  const res = await fetch(APPS_SCRIPT_URL);
+  return res.json();
+}
+
+async function apiPost(payload){
+  payload.pin = staffPin || "";
+  const res = await fetch(APPS_SCRIPT_URL, {
+    method: "POST",
+    headers: {"Content-Type":"text/plain;charset=utf-8"}, // evita preflight CORS
+    body: JSON.stringify(payload)
+  });
+  return res.json();
+}
+
+/* ============================================================
+   CARGA DE DATOS
+   ============================================================ */
+async function cargarDatos(){
+  try{
+    DB = await apiGet();
+    renderActividades();
+    renderAnuario();
+    renderMiembros();
+  }catch(err){
+    document.getElementById("actividadesFeed").innerHTML =
+      `<div class="empty-state">No se pudo conectar con la base de datos.<br>Revisa la URL del Apps Script.</div>`;
+    console.error(err);
+  }
+}
+
+/* ============================================================
+   RENDER: ACTIVIDADES
+   ============================================================ */
+function renderActividades(){
+  const feed = document.getElementById("actividadesFeed");
+  const activas = DB.actividades.filter(a => !esTrue(a.esAnuario)).slice().reverse(); // LIFO
+  if(activas.length === 0){
+    feed.innerHTML = `<div class="empty-state">Todavía no hay actividades. ${staffPin ? '¡Agrega la primera!' : ''}</div>`;
+    return;
+  }
+  feed.innerHTML = activas.map(a => cardHTML(a)).join("");
+  attachCardEvents();
+}
+
+function cardHTML(a){
+  const estado = estadoActividad(a.fechaFin);
+  const entregasDeEsta = DB.entregas.filter(e => String(e.idActividad) === String(a.id));
+  const fechasTxt = `${fmtFecha(a.fechaInicio)} → ${fmtFecha(a.fechaFin)}`;
+  return `
+  <div class="card" data-id="${a.id}">
+    <div class="card-top">
+      <div class="card-img-wrap">
+        ${a.imagenUrl ? `<img src="${escAttr(a.imagenUrl)}" alt="">` : ""}
+      </div>
+      <div class="card-info">
+        <div class="card-title">${escHtml(a.titulo || "")}</div>
+        <div class="card-dates">${fechasTxt}</div>
+        <span class="status-tag ${estado.clase}">${estado.texto}</span>
+        <div class="card-actions">
+          ${a.linkForms ? `<a class="btn-small btn-primary" target="_blank" href="${escAttr(a.linkForms)}">🎙️ Ir a Forms</a>` : ""}
+          ${staffPin ? `<button class="btn-small btn-admin" data-edit="${a.id}">✏️ Editar</button>` : ""}
+        </div>
+      </div>
+    </div>
+    <div class="accordion">
+      <button class="accordion-toggle" data-toggle="info-${a.id}">▼ Más Info & Wishlist</button>
+      <div class="accordion-body" id="info-${a.id}">
+        ${escHtml(a.descripcion || "Sin descripción.")}
+        ${a.wishlist ? `<div class="wishlist-block"><strong>🎵 Wishlist:</strong><br>${escHtml(a.wishlist)}</div>` : ""}
+      </div>
+    </div>
+    <div class="accordion">
+      <button class="accordion-toggle" data-toggle="entregas-${a.id}">▶ Ver Actividades Entregadas (${entregasDeEsta.length})</button>
+      <div class="accordion-body" id="entregas-${a.id}">
+        ${entregasDeEsta.length ? `
+        <table class="entregas-table">
+          <tr><th>Persona</th><th>Canción/Escena</th><th>Enlace</th></tr>
+          ${entregasDeEsta.map(e => `<tr>
+            <td>${escHtml(e.nombreUsuario||"")}</td>
+            <td>${escHtml(e.detalleEntrega||"")}</td>
+            <td>${e.linkGrabacion ? `<a href="${escAttr(e.linkGrabacion)}" target="_blank">🔗 Escuchar</a>`:""}</td>
+          </tr>`).join("")}
+        </table>` : `<div style="color:var(--text-dim);">Todavía no hay entregas registradas.</div>`}
+        ${staffPin ? `<button class="btn-small btn-admin" style="margin-top:10px;" data-add-entrega="${a.id}">(+) Registrar Entrega</button>` : ""}
+      </div>
+    </div>
+  </div>`;
+}
+
+function attachCardEvents(){
+  document.querySelectorAll("[data-toggle]").forEach(btn=>{
+    btn.onclick = () => {
+      const body = document.getElementById(btn.dataset.toggle);
+      body.classList.toggle("open");
+      btn.textContent = btn.textContent.replace(/^./, body.classList.contains("open") ? "▲" : "▼");
+    };
+  });
+  document.querySelectorAll("[data-edit]").forEach(btn=>{
+    btn.onclick = () => openActivityForm(btn.dataset.edit);
+  });
+  document.querySelectorAll("[data-add-entrega]").forEach(btn=>{
+    btn.onclick = () => openEntregaForm(btn.dataset.addEntrega);
+  });
+}
+
+/* ============================================================
+   RENDER: ANUARIO
+   ============================================================ */
+function renderAnuario(){
+  const grid = document.getElementById("anuarioGrid");
+  const items = DB.actividades.filter(a => esTrue(a.esAnuario));
+  if(items.length === 0){
+    grid.innerHTML = `<div class="empty-state" style="grid-column:1/-1;">Aún no hay ediciones en el Anuario.</div>`;
+    return;
+  }
+  grid.innerHTML = items.map(a => `
+    <div class="anuario-tile" data-anuario="${a.id}">
+      <span class="crown-badge">👑</span>
+      ${a.imagenUrl ? `<img src="${escAttr(a.imagenUrl)}" alt="">` : `<div style="height:120px;background:var(--card-bg-2);"></div>`}
+      <div class="tile-title">${escHtml(a.titulo||"")}</div>
+    </div>
+  `).join("");
+  document.querySelectorAll("[data-anuario]").forEach(tile=>{
+    tile.onclick = () => openAnuarioDetail(tile.dataset.anuario);
+  });
+}
+
+function openAnuarioDetail(id){
+  const a = DB.actividades.find(x => String(x.id) === String(id));
+  if(!a) return;
+  const entregasDeEsta = DB.entregas.filter(e => String(e.idActividad) === String(a.id));
+  document.getElementById("memberModalContent").innerHTML = `
+    <h3>👑 ${escHtml(a.titulo||"")}</h3>
+    ${a.imagenUrl ? `<img src="${escAttr(a.imagenUrl)}" style="border-radius:12px;width:100%;margin-bottom:10px;">` : ""}
+    <div class="winners-block">
+      ${a.ganadorCanto ? `<div>🥇 <strong>Mejor Canto:</strong> ${escHtml(a.ganadorCanto)}</div>` : ""}
+      ${a.ganadorDoblaje ? `<div>🎙️ <strong>Mejor Doblaje:</strong> ${escHtml(a.ganadorDoblaje)}</div>` : ""}
+      ${a.mencionesHonorificas ? `<div>✨ <strong>Menciones Honoríficas:</strong><br>${escHtml(a.mencionesHonorificas)}</div>` : ""}
+    </div>
+    ${entregasDeEsta.length ? `
+      <div class="section-label">🎧 Audios</div>
+      ${entregasDeEsta.map(e=>`<div style="margin:6px 0;"><a href="${escAttr(e.linkGrabacion)}" target="_blank">▶ ${escHtml(e.nombreUsuario)} - ${escHtml(e.detalleEntrega)}</a></div>`).join("")}
+    ` : ""}
+    ${staffPin ? `<button class="btn-small btn-admin" style="margin-top:12px;width:100%;" data-edit-anuario="${a.id}">✏️ Editar</button>` : ""}
+  `;
+  openModal("memberModal");
+  const editBtn = document.querySelector("[data-edit-anuario]");
+  if(editBtn) editBtn.onclick = () => { closeModal("memberModal"); openActivityForm(a.id); };
+}
+
+/* ============================================================
+   RENDER: MIEMBROS
+   ============================================================ */
+function renderMiembros(filtro=""){
+  const f = filtro.trim().toLowerCase();
+  const filtrar = m => !f || [m.nombre, m.rangoVocal, esTrue(m.staff)?"staff":"", esTrue(m.canto)?"canto":"", esTrue(m.doblaje)?"doblaje":""]
+    .join(" ").toLowerCase().includes(f);
+
+  const staffList = DB.miembros.filter(m => esTrue(m.staff) && filtrar(m));
+  const carousel = document.getElementById("staffCarousel");
+  carousel.innerHTML = staffList.length ? staffList.map(m => `
+    <div class="member-avatar-item" data-member="${m.id}">
+      <img src="${escAttr(m.avatarUrl || placeholderAvatar())}" alt="">
+      <div class="m-name">${escHtml(m.nombre||"")}</div>
+    </div>`).join("") : `<div style="color:var(--text-dim);font-size:13px;">Sin resultados.</div>`;
+
+  const todos = DB.miembros.filter(filtrar).slice().sort((a,b)=>(a.nombre||"").localeCompare(b.nombre||""));
+  const list = document.getElementById("miembrosList");
+  list.innerHTML = todos.length ? todos.map(m => `
+    <div class="member-row" data-member="${m.id}">
+      <img src="${escAttr(m.avatarUrl || placeholderAvatar())}" alt="">
+      <div class="m-info">
+        <div class="m-name">${escHtml(m.nombre||"")}</div>
+        <div class="badges-row">
+          ${esTrue(m.staff) ? `<span class="badge badge-staff">Staff</span>`:""}
+          ${esTrue(m.canto) ? `<span class="badge badge-canto">Canto</span>`:""}
+          ${esTrue(m.doblaje) ? `<span class="badge badge-doblaje">Doblaje</span>`:""}
+        </div>
+      </div>
+    </div>`).join("") : `<div class="empty-state">Sin resultados.</div>`;
+
+  document.querySelectorAll("[data-member]").forEach(el=>{
+    el.onclick = () => openMemberModal(el.dataset.member);
+  });
+}
+
+function placeholderAvatar(){
+  return "https://ui-avatars.com/api/?background=ff5f9e&color=fff&name=%3F";
+}
+
+function openMemberModal(id){
+  const m = DB.miembros.find(x => String(x.id) === String(id));
+  if(!m) return;
+  const strikes = Number(m.strikes)||0;
+  const faltas = Number(m.faltas)||0;
+  document.getElementById("memberModalContent").innerHTML = `
+    <div class="member-modal-header">
+      <img src="${escAttr(m.avatarUrl || placeholderAvatar())}">
+      <div style="font-weight:800;font-size:17px;">${escHtml(m.nombre||"")}</div>
+      <div class="badges-row" style="justify-content:center;">
+        ${esTrue(m.staff) ? `<span class="badge badge-staff">Staff</span>`:""}
+        ${esTrue(m.canto) ? `<span class="badge badge-canto">Canto</span>`:""}
+        ${esTrue(m.doblaje) ? `<span class="badge badge-doblaje">Doblaje</span>`:""}
+      </div>
+    </div>
+    ${strikes >= 3 ? `<div class="expelled-banner">🛑 EXPULSADO / FUERA DEL TEAM</div>` : ""}
+    <table class="info-table">
+      <tr><td>🎵 Rango Vocal</td><td>${escHtml(m.rangoVocal||"—")}</td></tr>
+      <tr><td>🎂 Cumpleaños</td><td>${escHtml(m.cumpleanos||"—")}</td></tr>
+      <tr><td>📅 Miembro desde</td><td>${fmtFecha(m.fechaIngreso)||"—"}</td></tr>
+    </table>
+    <div class="platform-row">
+      ${m.usuarioSmule ? `<a class="platform-btn" target="_blank" href="${escAttr(m.usuarioSmule)}">
+        <img src="https://play-lh.googleusercontent.com/Wv-IXc8zXJRVqTAhr30il408Fh-FI8AhZZOyoPC440Mc7gYsxzoBMn777wal6MRLdCM"><span>Smule</span></a>`:""}
+      ${m.usuarioBandlab ? `<a class="platform-btn" target="_blank" href="${escAttr(m.usuarioBandlab)}">
+        <img src="https://tse3.mm.bing.net/th/id/OIP.p-wv60aUTPfSQ3BwhZyaCAHaHa?r=0&rs=1&pid=ImgDetMain&o=7&rm=3"><span>BandLab</span></a>`:""}
+      ${m.usuarioDiscord ? `<button class="platform-btn" data-copy-discord="${escAttr(m.usuarioDiscord)}">
+        <span style="font-size:22px;">💬</span><span>Copiar Discord</span></button>`:""}
+    </div>
+    <div class="castigos-box">
+      <div class="ct-title">Castigos</div>
+      <div class="ct-row"><span>⚠️ Strikes</span><strong>${strikes}</strong></div>
+      <div class="ct-row"><span>📉 Faltas</span><strong>${faltas}</strong></div>
+      ${staffPin ? `
+      <div class="admin-strike-btns">
+        <button class="btn-falta" data-falta="${m.id}">+ Falta</button>
+        <button class="btn-strike" data-strike="${m.id}">+ Strike</button>
+      </div>` : ""}
+    </div>
+  `;
+  openModal("memberModal");
+
+  const copyBtn = document.querySelector("[data-copy-discord]");
+  if(copyBtn){
+    copyBtn.onclick = () => {
+      navigator.clipboard.writeText(copyBtn.dataset.copyDiscord);
+      toast("Usuario de Discord copiado ✅");
+    };
+  }
+  const faltaBtn = document.querySelector("[data-falta]");
+  if(faltaBtn) faltaBtn.onclick = () => registrarFalta(m.id);
+  const strikeBtn = document.querySelector("[data-strike]");
+  if(strikeBtn) strikeBtn.onclick = () => registrarStrike(m.id);
+}
+
+async function registrarFalta(idMiembro){
+  const r = await apiPost({action:"addFalta", idMiembro});
+  if(r.ok){ toast("Falta registrada"); await cargarDatos(); openMemberModal(idMiembro); }
+  else toast("Error: " + (r.error||"revisa el PIN"));
+}
+async function registrarStrike(idMiembro){
+  const r = await apiPost({action:"addStrike", idMiembro});
+  if(r.ok){ toast("Strike registrado"); await cargarDatos(); openMemberModal(idMiembro); }
+  else toast("Error: " + (r.error||"revisa el PIN"));
+}
+
+/* ============================================================
+   MODALES genéricos
+   ============================================================ */
+function openModal(id){ document.getElementById(id).classList.add("open"); }
+function closeModal(id){ document.getElementById(id).classList.remove("open"); }
+document.querySelectorAll("[data-close]").forEach(btn=>{
+  btn.onclick = () => closeModal(btn.dataset.close);
+});
+document.querySelectorAll(".modal-overlay").forEach(ov=>{
+  ov.addEventListener("click", e => { if(e.target === ov) ov.classList.remove("open"); });
+});
+
+/* ============================================================
+   FORM: Actividad (crear / editar)
+   ============================================================ */
+document.getElementById("addActBtn").onclick = () => openActivityForm(null);
+
+function openActivityForm(id){
+  const a = id ? DB.actividades.find(x=>String(x.id)===String(id)) : null;
+  document.getElementById("activityFormTitle").textContent = a ? "Editar actividad" : "Nueva actividad";
+  document.getElementById("af_id").value = a ? a.id : "";
+  document.getElementById("af_titulo").value = a ? a.titulo||"" : "";
+  document.getElementById("af_imagenUrl").value = a ? a.imagenUrl||"" : "";
+  document.getElementById("af_descripcion").value = a ? a.descripcion||"" : "";
+  document.getElementById("af_wishlist").value = a ? a.wishlist||"" : "";
+  document.getElementById("af_fechaInicio").value = a ? toDateInput(a.fechaInicio) : "";
+  document.getElementById("af_fechaFin").value = a ? toDateInput(a.fechaFin) : "";
+  document.getElementById("af_linkForms").value = a ? a.linkForms||"" : "";
+  document.getElementById("af_esAnuario").checked = a ? esTrue(a.esAnuario) : false;
+  document.getElementById("af_ganadorCanto").value = a ? a.ganadorCanto||"" : "";
+  document.getElementById("af_ganadorDoblaje").value = a ? a.ganadorDoblaje||"" : "";
+  document.getElementById("af_menciones").value = a ? a.mencionesHonorificas||"" : "";
+  toggleAnuarioFields();
+  openModal("activityFormModal");
+}
+
+function toDateInput(v){
+  if(!v) return "";
+  const d = new Date(v);
+  if(isNaN(d)) return "";
+  return d.toISOString().slice(0,10);
+}
+
+document.getElementById("af_esAnuario").addEventListener("change", toggleAnuarioFields);
+function toggleAnuarioFields(){
+  document.getElementById("af_anuarioFields").classList.toggle("hidden", !document.getElementById("af_esAnuario").checked);
+}
+
+document.getElementById("activityForm").addEventListener("submit", async (e) => {
+  e.preventDefault();
+  const id = document.getElementById("af_id").value;
+  const data = {
+    titulo: document.getElementById("af_titulo").value,
+    imagenUrl: document.getElementById("af_imagenUrl").value,
+    descripcion: document.getElementById("af_descripcion").value,
+    wishlist: document.getElementById("af_wishlist").value,
+    fechaInicio: document.getElementById("af_fechaInicio").value,
+    fechaFin: document.getElementById("af_fechaFin").value,
+    linkForms: document.getElementById("af_linkForms").value,
+    esAnuario: document.getElementById("af_esAnuario").checked ? "TRUE" : "FALSE",
+    ganadorCanto: document.getElementById("af_ganadorCanto").value,
+    ganadorDoblaje: document.getElementById("af_ganadorDoblaje").value,
+    mencionesHonorificas: document.getElementById("af_menciones").value,
+  };
+  let r;
+  if(id){
+    data.id = id;
+    r = await apiPost({action:"editActividad", data});
+  } else {
+    data.id = "ACT-" + Date.now();
+    r = await apiPost({action:"addActividad", data});
+  }
+  if(r.ok){ toast("Guardado ✅"); closeModal("activityFormModal"); await cargarDatos(); }
+  else toast("Error: " + (r.error || "revisa el PIN"));
+});
+
+/* ============================================================
+   FORM: Entrega
+   ============================================================ */
+function openEntregaForm(idActividad){
+  document.getElementById("en_idActividad").value = idActividad;
+  document.getElementById("en_nombre").value = "";
+  document.getElementById("en_detalle").value = "";
+  document.getElementById("en_link").value = "";
+  openModal("entregaFormModal");
+}
+
+document.getElementById("entregaForm").addEventListener("submit", async (e) => {
+  e.preventDefault();
+  const data = {
+    id: "ENT-" + Date.now(),
+    idActividad: document.getElementById("en_idActividad").value,
+    nombreUsuario: document.getElementById("en_nombre").value,
+    detalleEntrega: document.getElementById("en_detalle").value,
+    linkGrabacion: document.getElementById("en_link").value,
+  };
+  const r = await apiPost({action:"addEntrega", data});
+  if(r.ok){ toast("Entrega registrada ✅"); closeModal("entregaFormModal"); await cargarDatos(); }
+  else toast("Error: " + (r.error || "revisa el PIN"));
+});
+
+/* ============================================================
+   NAVEGACIÓN: TABS, DRAWER, STAFF
+   ============================================================ */
+document.querySelectorAll(".tab-btn").forEach(btn=>{
+  btn.onclick = () => switchTab(btn.dataset.tab);
+});
+function switchTab(tab){
+  currentTab = tab;
+  document.querySelectorAll(".tab-btn").forEach(b=>b.classList.toggle("active", b.dataset.tab===tab));
+  document.getElementById("viewActividades").classList.toggle("hidden", tab!=="actividades");
+  document.getElementById("viewAnuario").classList.toggle("hidden", tab!=="anuario");
+  document.getElementById("viewMiembros").classList.add("hidden");
+  document.getElementById("viewStaffPin").classList.add("hidden");
+}
+
+document.getElementById("hamburgerBtn").onclick = () => {
+  document.getElementById("drawer").classList.add("open");
+  document.getElementById("drawerOverlay").style.display = "block";
+};
+document.getElementById("drawerOverlay").onclick = closeDrawer;
+function closeDrawer(){
+  document.getElementById("drawer").classList.remove("open");
+  document.getElementById("drawerOverlay").style.display = "none";
+}
+
+document.getElementById("miembrosDrawerBtn").onclick = () => {
+  closeDrawer();
+  document.getElementById("viewActividades").classList.add("hidden");
+  document.getElementById("viewAnuario").classList.add("hidden");
+  document.getElementById("viewStaffPin").classList.add("hidden");
+  document.getElementById("viewMiembros").classList.remove("hidden");
+  renderMiembros();
+};
+
+document.getElementById("staffDrawerBtn").onclick = () => {
+  closeDrawer();
+  if(staffPin){
+    toast("Ya estás en modo Staff 🛠️");
+    return;
+  }
+  document.getElementById("viewActividades").classList.add("hidden");
+  document.getElementById("viewAnuario").classList.add("hidden");
+  document.getElementById("viewMiembros").classList.add("hidden");
+  document.getElementById("viewStaffPin").classList.remove("hidden");
+};
+
+document.getElementById("searchMiembros").addEventListener("input", (e)=>{
+  renderMiembros(e.target.value);
+});
+
+document.getElementById("pinSubmitBtn").onclick = verificarPin;
+document.getElementById("pinInput").addEventListener("keydown", e=>{
+  if(e.key === "Enter") verificarPin();
+});
+async function verificarPin(){
+  const val = document.getElementById("pinInput").value.trim();
+  if(!val){ document.getElementById("pinMsg").textContent = "Escribe un PIN."; return; }
+  staffPin = val;
+  const r = await apiPost({action:"validarPin"});
+  if(r.ok){
+    localStorage.setItem("tph_pin", val);
+    document.getElementById("pinMsg").textContent = "";
+    toast("Modo Staff activado 🛠️");
+    document.getElementById("staffStatusBadge").style.display = "block";
+    document.getElementById("addActBtn").classList.remove("hidden");
+    switchTab("actividades");
+    renderActividades(); renderAnuario(); renderMiembros();
+  } else {
+    staffPin = null;
+    document.getElementById("pinMsg").textContent = "PIN incorrecto ❌";
+  }
+}
+
+/* ============================================================
+   ESCAPE HELPERS (seguridad básica al insertar texto en HTML)
+   ============================================================ */
+function escHtml(str){
+  return String(str).replace(/[&<>"']/g, s => ({
+    "&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;","'":"&#39;"
+  }[s]));
+}
+function escAttr(str){ return escHtml(str); }
+
+/* ============================================================
+   INICIO
+   ============================================================ */
+if(staffPin){
+  document.getElementById("staffStatusBadge").style.display = "block";
+  document.getElementById("addActBtn").classList.remove("hidden");
+}
+cargarDatos();
+</script>
+</body>
+</html>
