@@ -49,7 +49,7 @@
   }
   #hamburgerBtn:hover{background:rgba(239,8,112,0.15);}
   .logo{font-weight:800;font-size:19px;letter-spacing:0.5px;
-    background:linear-gradient(90deg,var(--peach-2),var(--gold));
+    background:linear-gradient(90deg,var(--peach-2),#ffffff);
     -webkit-background-clip:text;background-clip:text;color:transparent;
   }
   .tabs{display:flex;gap:6px;background:var(--card-bg);padding:4px;border-radius:999px;}
@@ -78,7 +78,7 @@
     background:var(--card-bg-2);transition:background .15s;
   }
   .social-link:hover{background:rgba(239,8,112,0.18);}
-  .social-link img{width:28px;height:28px;object-fit:contain;border-radius:6px;background:#fff;padding:2px;}
+  .social-link img{width:28px;height:28px;object-fit:contain;border-radius:6px;}
   .social-link span{font-weight:600;font-size:14px;}
   .drawer-divider{height:1px;background:rgba(255,255,255,0.08);}
   .drawer-nav-btn{
@@ -228,7 +228,7 @@
   .info-table td:first-child{color:var(--text-dim);width:50%;}
   .platform-row{display:flex;gap:10px;margin-top:14px;}
   .platform-btn{flex:1;display:flex;flex-direction:column;align-items:center;gap:6px;padding:10px;background:var(--card-bg-2);border-radius:12px;}
-  .platform-btn img{width:28px;height:28px;object-fit:contain;background:#fff;border-radius:5px;padding:2px;}
+  .platform-btn img{width:28px;height:28px;object-fit:contain;}
   .platform-btn span{font-size:11px;color:var(--text-dim);}
   .castigos-box{margin-top:16px;background:var(--card-bg-2);border-radius:12px;padding:12px;}
   .castigos-box .ct-title{font-weight:800;color:var(--peach-2);margin-bottom:8px;font-size:13px;}
@@ -280,7 +280,7 @@
       <img src="https://static.vecteezy.com/system/resources/previews/016/716/450/original/tiktok-icon-free-png.png" alt="TikTok"><span>TikTok</span>
     </a>
     <a class="social-link" target="_blank" href="https://www.smule.com/groups/1934104?utm_source=web&utm_campaign=share&utm_medium=copylink">
-      <img src="https://blog.smule.com/wp-content/uploads/smule-icon.png" alt="Smule"><span>Únete en Smule</span>
+      <img src="https://blog.smule.com/wp-content/uploads/smule-icon.png" alt="Smule"><span>Smule</span>
     </a>
   </div>
   <div class="drawer-divider"></div>
@@ -306,7 +306,7 @@
     <input type="text" id="searchMiembros" placeholder="🔍 Buscar por nombre, rol o rango vocal...">
     <div class="section-label">👑 Staff & Coordinación</div>
     <div id="staffCarousel"></div>
-    <div class="section-label">Directorio Global</div>
+    <div class="section-label">🍑 Miembros</div>
     <div id="miembrosList"></div>
   </section>
 
@@ -356,6 +356,14 @@
       <div class="form-group"><label>Fecha inicio</label><input type="date" id="af_fechaInicio"></div>
       <div class="form-group"><label>Fecha fin</label><input type="date" id="af_fechaFin"></div>
       <div class="form-group"><label>Link de entrega (Forms)</label><input type="text" id="af_linkForms"></div>
+      <div class="form-group">
+        <label>Categoría (elige solo una)</label>
+        <div style="display:flex;gap:16px;">
+          <label style="display:flex;align-items:center;gap:6px;font-weight:400;"><input type="radio" name="af_categoria" value="canto" style="width:auto;"> 🎤 Canto</label>
+          <label style="display:flex;align-items:center;gap:6px;font-weight:400;"><input type="radio" name="af_categoria" value="doblaje" style="width:auto;"> 🎙️ Doblaje</label>
+          <label style="display:flex;align-items:center;gap:6px;font-weight:400;"><input type="radio" name="af_categoria" value="" style="width:auto;" checked> Ninguna</label>
+        </div>
+      </div>
       <div class="form-group">
         <label><input type="checkbox" id="af_esAnuario" style="width:auto;"> Mover al Anuario</label>
       </div>
@@ -591,16 +599,9 @@ async function borrarActividad(id){
 }
 
 async function enviarAAnuario(idActividad, nombreUsuario, detalle){
-  if(!confirm("¿Deseas añadir esto al Anuario?")) return;
-  let tipo = prompt("¿Canto o Doblaje? (escribe: canto / doblaje)");
-  if(!tipo) return;
-  tipo = tipo.trim().toLowerCase();
-  if(tipo !== "canto" && tipo !== "doblaje"){
-    toast("Escribe exactamente 'canto' o 'doblaje' ❌");
-    return;
-  }
-  const r = await apiPost({action:"addToAnuario", idActividad, tipo, nombreUsuario, detalle});
-  if(r.ok){ toast("Agregado al Anuario 👑"); await cargarDatos(); }
+  if(!confirm("¿Deseas añadir esta entrega al Anuario?")) return;
+  const r = await apiPost({action:"addToAnuario", idActividad, nombreUsuario, detalle});
+  if(r.ok){ toast("Agregado al Anuario 👑 (la actividad sigue en su pestaña normal)"); await cargarDatos(); }
   else toast("Error: " + (r.error||""));
 }
 
@@ -667,16 +668,22 @@ function openAnuarioDetail(id){
 /* ============================================================
    RENDER: MIEMBROS
    ============================================================ */
+function avatarImgTag(m, cssClass){
+  const url = escAttr(m.avatarUrl || LOGO_DEFAULT);
+  return `<img class="${cssClass}" src="${url}" alt="" onerror="this.onerror=null;this.src='${LOGO_DEFAULT}';">`;
+}
+
 function renderMiembros(filtro=""){
   const f = filtro.trim().toLowerCase();
-  const filtrar = m => !f || [m.nombre, m.rangoVocal, esTrue(m.staff)?"staff":"", esTrue(m.canto)?"canto":"", esTrue(m.doblaje)?"doblaje":""]
-    .join(" ").toLowerCase().includes(f);
+  const conNombre = m => m.nombre && String(m.nombre).trim() !== "";
+  const filtrar = m => conNombre(m) && (!f || [m.nombre, m.rangoVocal, esTrue(m.staff)?"staff":"", esTrue(m.canto)?"canto":"", esTrue(m.doblaje)?"doblaje":""]
+    .join(" ").toLowerCase().includes(f));
 
   const staffList = DB.miembros.filter(m => esTrue(m.staff) && filtrar(m));
   const carousel = document.getElementById("staffCarousel");
   carousel.innerHTML = staffList.length ? staffList.map(m => `
     <div class="member-avatar-item" data-member="${m.id}">
-      <img src="${escAttr(m.avatarUrl || LOGO_DEFAULT)}" alt="">
+      ${avatarImgTag(m,"")}
       <div class="m-name">${escHtml(m.nombre||"")}</div>
     </div>`).join("") : `<div style="color:var(--text-dim);font-size:13px;">Sin resultados.</div>`;
 
@@ -684,7 +691,7 @@ function renderMiembros(filtro=""){
   const list = document.getElementById("miembrosList");
   list.innerHTML = todos.length ? todos.map(m => `
     <div class="member-row" data-member="${m.id}">
-      <img src="${escAttr(m.avatarUrl || LOGO_DEFAULT)}" alt="">
+      ${avatarImgTag(m,"")}
       <div class="m-info">
         <div class="m-name">${escHtml(m.nombre||"")}</div>
         <div class="badges-row">
@@ -707,7 +714,7 @@ function openMemberModal(id){
   const faltas = Number(m.faltas)||0;
   document.getElementById("memberModalContent").innerHTML = `
     <div class="member-modal-header">
-      <img id="memberDetailAvatar" data-filename="${escAttr((m.nombre||'miembro')+'.jpg')}" src="${escAttr(m.avatarUrl || LOGO_DEFAULT)}">
+      <img id="memberDetailAvatar" data-filename="${escAttr((m.nombre||'miembro')+'.jpg')}" src="${escAttr(m.avatarUrl || LOGO_DEFAULT)}" onerror="this.onerror=null;this.src='${LOGO_DEFAULT}';">
       <div style="font-weight:800;font-size:17px;">${escHtml(m.nombre||"")}</div>
       <div class="badges-row" style="justify-content:center;">
         ${esTrue(m.staff) ? `<span class="badge badge-staff">Staff</span>`:""}
@@ -809,6 +816,8 @@ function openActivityForm(id){
   document.getElementById("af_fechaInicio").value = a ? toDateInput(a.fechaInicio) : "";
   document.getElementById("af_fechaFin").value = a ? toDateInput(a.fechaFin) : "";
   document.getElementById("af_linkForms").value = a ? a.linkForms||"" : "";
+  const catVal = a ? (a.categoria||"") : "";
+  document.querySelectorAll('input[name="af_categoria"]').forEach(r => { r.checked = (r.value === catVal); });
   document.getElementById("af_esAnuario").checked = a ? esTrue(a.esAnuario) : false;
   document.getElementById("af_ganadorCanto").value = a ? a.ganadorCanto||"" : "";
   document.getElementById("af_ganadorDoblaje").value = a ? a.ganadorDoblaje||"" : "";
@@ -869,6 +878,7 @@ document.getElementById("activityForm").addEventListener("submit", async (e) => 
     fechaInicio: document.getElementById("af_fechaInicio").value,
     fechaFin: document.getElementById("af_fechaFin").value,
     linkForms: document.getElementById("af_linkForms").value,
+    categoria: (document.querySelector('input[name="af_categoria"]:checked') || {}).value || "",
     esAnuario: document.getElementById("af_esAnuario").checked ? "TRUE" : "FALSE",
     ganadorCanto: document.getElementById("af_ganadorCanto").value,
     ganadorDoblaje: document.getElementById("af_ganadorDoblaje").value,
