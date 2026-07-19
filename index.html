@@ -48,7 +48,8 @@
   .drawer-nav-btn{display:flex;align-items:center;gap:10px;padding:12px;border-radius:12px;background:var(--card-bg-2);font-weight:700;font-size:15px;color:var(--text);justify-content:flex-start;}
   .drawer-nav-btn:hover{background:rgba(239,8,112,0.18);}
   .drawer-nav-btn img{width:26px;height:26px;border-radius:50%;object-fit:cover;}
-  #staffDrawerBtn{margin-top:auto;background:linear-gradient(90deg,#6a3d8f,#a45fc7);color:#fff;}
+  #staffDrawerBtn{background:linear-gradient(90deg,#6a3d8f,#a45fc7);color:#fff;}
+  .staff-bottom-group{margin-top:auto;display:flex;flex-direction:column;gap:10px;}
 
   main{max-width:640px;margin:0 auto;padding:16px 12px 60px;}
   .hidden{display:none !important;}
@@ -83,7 +84,7 @@
   .part-purga{background:rgba(231,76,60,0.22);color:var(--red);}
   .cat-tag{background:rgba(164,95,199,0.2);color:#d9b6f5;}
   .card-actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:4px;}
-  .btn-small{padding:7px 12px;border-radius:10px;font-size:12.5px;font-weight:700;}
+  .btn-small{padding:6px 12px;border-radius:10px;font-size:12.5px;font-weight:700;}
   .btn-primary{background:linear-gradient(90deg,var(--peach-2),var(--peach-1));color:#fff;}
   .btn-family{background:linear-gradient(90deg,rgba(239,8,112,0.55),rgba(255,143,177,0.55));color:#fff;border:1px solid rgba(239,8,112,0.5);}
   .btn-admin{background:rgba(164,95,199,0.25);color:#d9b6f5;}
@@ -186,6 +187,7 @@
   .win-row{display:flex;justify-content:space-between;align-items:center;gap:10px;padding:8px 10px;font-size:13.5px;border-radius:10px;margin-bottom:6px;}
   .win-row:last-child{margin-bottom:0;}
   .win-row.win-cancion{background:linear-gradient(90deg,rgba(239,8,112,0.22),rgba(255,143,177,0.12));border:1px solid rgba(239,8,112,0.35);}
+  .win-row.win-doblaje{background:linear-gradient(90deg,rgba(93,173,226,0.22),rgba(93,173,226,0.1));border:1px solid rgba(93,173,226,0.35);}
   .win-row.win-mencion{background:rgba(255,215,0,0.12);border:1px solid rgba(255,215,0,0.3);}
   .win-listen{background:var(--gold);color:#3d1f2a;padding:6px 12px;border-radius:999px;font-size:12px;font-weight:800;white-space:nowrap;box-shadow:0 2px 8px rgba(255,215,0,0.3);}
   .anuario-pill-group{display:flex;gap:8px;margin:10px 0;}
@@ -215,6 +217,9 @@
 <div id="drawer">
   <div class="drawer-title">Team Peaches</div>
   <div class="social-row">
+    <a class="social-link" target="_blank" href="https://rigodemianrobledo.my.canva.site/peaches/#menuprincipal">
+      <img src="https://raw.githubusercontent.com/TeamPeachesOff/TeamPeachesHub/main/Logos/PeachesLogo.jpeg" onerror="this.onerror=null;this.src='https://i.imgur.com/wusLyff.jpeg';" alt="Peaches"><span>Peaches</span>
+    </a>
     <a class="social-link" target="_blank" href="https://youtube.com/@teampeachesoff">
       <img src="https://raw.githubusercontent.com/TeamPeachesOff/TeamPeachesHub/main/Logos/YoutubeLogo.png" onerror="this.onerror=null;this.src='https://pngimg.com/uploads/youtube/youtube_PNG102352.png';" alt="YouTube"><span>YouTube</span>
     </a>
@@ -230,19 +235,17 @@
   </div>
   <div class="drawer-divider"></div>
   <button class="drawer-nav-btn" id="miembrosDrawerBtn">👥 Miembros</button>
-  <a class="drawer-nav-btn" target="_blank" href="https://rigodemianrobledo.my.canva.site/peaches/#menuprincipal">
-    <img src="https://raw.githubusercontent.com/TeamPeachesOff/TeamPeachesHub/main/Logos/PeachesLogo.jpeg" onerror="this.onerror=null;this.src='https://i.imgur.com/wusLyff.jpeg';" alt="Peaches">
-    <span>Peaches</span>
-  </a>
-  <div class="hidden" id="staffToolsRow" style="display:flex;gap:10px;">
-    <a class="drawer-nav-btn" style="justify-content:center;flex:1;padding:10px;" target="_blank" href="https://docs.google.com/spreadsheets/d/13Mca1Xlt9XUWgHLBqLn5HJ8YrgTTeSX1tU25LqWC-Mc/edit?gid=1284989132#gid=1284989132">
-      <img src="https://raw.githubusercontent.com/TeamPeachesOff/TeamPeachesHub/main/Logos/SheetsLogo.png" style="width:24px;height:24px;border-radius:0;" alt="Sheets">
-    </a>
-    <a class="drawer-nav-btn" style="justify-content:center;flex:1;padding:10px;" target="_blank" href="https://github.com/TeamPeachesOff/TeamPeachesHub">
-      <img src="https://raw.githubusercontent.com/TeamPeachesOff/TeamPeachesHub/main/Logos/GithubLogo.png" style="width:24px;height:24px;border-radius:0;" alt="GitHub">
-    </a>
+  <div class="staff-bottom-group">
+    <div class="hidden" id="staffToolsRow" style="display:flex;gap:10px;">
+      <a class="drawer-nav-btn" style="justify-content:center;flex:1;padding:10px;" target="_blank" href="https://docs.google.com/spreadsheets/d/13Mca1Xlt9XUWgHLBqLn5HJ8YrgTTeSX1tU25LqWC-Mc/edit?gid=1284989132#gid=1284989132">
+        <img src="https://raw.githubusercontent.com/TeamPeachesOff/TeamPeachesHub/main/Logos/SheetsLogo.png" style="width:24px;height:24px;border-radius:0;" alt="Sheets"><span>Datos</span>
+      </a>
+      <a class="drawer-nav-btn" style="justify-content:center;flex:1;padding:10px;" target="_blank" href="https://github.com/TeamPeachesOff/TeamPeachesHub">
+        <img src="https://raw.githubusercontent.com/TeamPeachesOff/TeamPeachesHub/main/Logos/GithubLogo.png" style="width:24px;height:24px;border-radius:0;" alt="GitHub"><span>GitHub</span>
+      </a>
+    </div>
+    <button class="drawer-nav-btn" id="staffDrawerBtn">🛠️ Staff</button>
   </div>
-  <button class="drawer-nav-btn" id="staffDrawerBtn">🛠️ Staff</button>
 </div>
 
 <main>
@@ -388,7 +391,7 @@
     <h3>Registrar entrega</h3>
     <form id="entregaForm">
       <input type="hidden" id="en_idActividad">
-      <div class="form-group"><label>Nombre</label><input type="text" id="en_nombre" required></div>
+      <div class="form-group"><label>Nombre(s)</label><input type="text" id="en_nombre" placeholder="Si es grupal, poné a todos juntos (ej: Ana, Luis y Karla)" required></div>
       <div class="form-group"><label>Canción / Escena</label><input type="text" id="en_detalle" required></div>
       <div class="form-group"><label>Enlace</label><input type="text" id="en_link"></div>
       <div class="modal-actions"><button type="submit" class="btn-primary">Guardar</button></div>
@@ -513,7 +516,7 @@ function parseWinnerLines(text){
 function winnersGroupHTML(emoji,label,text,tipo){
   const entries=parseWinnerLines(text);
   if(!entries.length) return "";
-  const rowClass = tipo==="cancion" ? "win-cancion" : tipo==="mencion" ? "win-mencion" : "";
+  const rowClass = tipo==="cancion" ? "win-cancion" : tipo==="doblaje" ? "win-doblaje" : tipo==="mencion" ? "win-mencion" : "";
   return `<div class="win-group">
     <div class="win-group-title">${emoji} ${label}</div>
     ${entries.map(e=>`<div class="win-row ${rowClass}"><span>${escHtml(e.texto)}</span>${e.link?`<a class="win-listen" target="_blank" href="${escAttr(e.link)}">🎧 Escuchar</a>`:""}</div>`).join("")}
@@ -569,35 +572,58 @@ function fileToBase64(file){
   });
 }
 
+function toTimeHHMM(v){
+  if(!v) return "";
+  const s=String(v);
+  const directo=s.match(/^(\d{2}):(\d{2})/);
+  if(directo) return directo[1]+":"+directo[2];
+  // Si Sheets convirtió la hora en una fecha/hora serializada (como pasa con cumpleanos),
+  // viene en UTC; la reconvertimos a GMT-6 (hora del Team) para recuperar el valor original.
+  const iso=s.match(/T(\d{2}):(\d{2})/);
+  if(iso){
+    let h=parseInt(iso[1],10)-6;
+    if(h<0) h+=24;
+    return String(h).padStart(2,"0")+":"+iso[2];
+  }
+  return "";
+}
+function fmt12Hora(d){
+  let h=d.getHours(); const m=d.getMinutes();
+  const ampm=h>=12?"PM":"AM";
+  h=h%12; if(h===0) h=12;
+  return h+":"+String(m).padStart(2,"0")+" "+ampm;
+}
 function streamBlockHTML(a){
   if(!a.streamNombre || !a.streamFecha || !a.streamHora) return "";
   const fechaStr=toDateInput(a.streamFecha);
   if(!fechaStr) return "";
-  const d=new Date(fechaStr+"T"+a.streamHora+":00-06:00");
+  const horaStr=toTimeHHMM(a.streamHora);
+  if(!horaStr) return "";
+  const d=new Date(fechaStr+"T"+horaStr+":00-06:00");
   if(isNaN(d)) return "";
-  const endD=new Date(d.getTime()+60*60*1000);
-  const opciones={weekday:"long",day:"numeric",month:"long",hour:"numeric",minute:"2-digit",hour12:true};
-  let localStr; try{ localStr=d.toLocaleString("es-ES",opciones); }catch(e){ localStr=d.toString(); }
+  const endD=new Date(d.getTime()+4*60*60*1000);
+  const opcionesFecha={weekday:"long",day:"numeric",month:"long"};
+  let fechaLarga; try{ fechaLarga=d.toLocaleDateString("es-ES",opcionesFecha); }catch(e){ fechaLarga=d.toDateString(); }
+  const localStr=fechaLarga+", "+fmt12Hora(d);
   const tz=Intl.DateTimeFormat().resolvedOptions().timeZone;
   const isoStart=d.toISOString().replace(/[-:]/g,"").split(".")[0]+"Z";
   const isoEnd=endD.toISOString().replace(/[-:]/g,"").split(".")[0]+"Z";
-  const gcalUrl=`https://calendar.google.com/calendar/render?action=TEMPLATE&text=${encodeURIComponent(a.streamNombre)}&dates=${isoStart}/${isoEnd}&details=${encodeURIComponent("Stream de "+(a.titulo||""))}`;
   return `<div class="stream-block">
     <div class="stream-title">📺 ${escHtml(a.streamNombre)}</div>
     <div class="stream-time">🗓️ ${localStr}<br><span style="opacity:0.75;">(convertido a tu zona horaria: ${tz})</span></div>
     <div class="stream-actions">
-      <a class="btn-small btn-family" target="_blank" href="${gcalUrl}">📅 Google Calendar</a>
-      <button class="btn-small btn-family" data-ics data-ics-nombre="${escAttr(a.streamNombre)}" data-ics-start="${isoStart}" data-ics-end="${isoEnd}" data-ics-desc="${escAttr('Stream de '+(a.titulo||''))}">📥 Descargar (.ics)</button>
+      <button class="btn-small btn-family" data-ics data-ics-nombre="${escAttr(a.streamNombre)}" data-ics-start="${isoStart}" data-ics-end="${isoEnd}" data-ics-desc="${escAttr(a.descripcion||'')}">📅 Agregar a Calendario</button>
     </div>
   </div>`;
 }
+function escIcs(s){ return String(s||"").replace(/\\/g,"\\\\").replace(/;/g,"\\;").replace(/,/g,"\\,").replace(/\n/g,"\\n"); }
 function descargarICS(nombre,isoStart,isoEnd,descripcion){
-  const ics="BEGIN:VCALENDAR\nVERSION:2.0\nBEGIN:VEVENT\nSUMMARY:"+nombre+"\nDTSTART:"+isoStart+"\nDTEND:"+isoEnd+"\nDESCRIPTION:"+descripcion+"\nEND:VEVENT\nEND:VCALENDAR";
+  const ics="BEGIN:VCALENDAR\nVERSION:2.0\nBEGIN:VEVENT\nSUMMARY:"+escIcs(nombre)+"\nDTSTART:"+isoStart+"\nDTEND:"+isoEnd+"\nLOCATION:Server de Peaches\nDESCRIPTION:"+escIcs(descripcion)+"\nBEGIN:VALARM\nACTION:DISPLAY\nDESCRIPTION:Recordatorio\nTRIGGER:-PT30M\nEND:VALARM\nEND:VEVENT\nEND:VCALENDAR";
   const blob=new Blob([ics],{type:"text/calendar"});
   const url=URL.createObjectURL(blob);
   const a=document.createElement("a"); a.href=url; a.download=nombre.replace(/[^a-z0-9]/gi,"_")+".ics";
   document.body.appendChild(a); a.click(); a.remove(); URL.revokeObjectURL(url);
-  toast("Evento descargado ✅ (Apple/Samsung/Outlook lo abren directo)");
+  toast("Evento descargado ✅ (ábrelo para agregarlo a tu calendario)");
 }
 
 /* ---------- carga ---------- */
@@ -648,10 +674,12 @@ function cardHTML(a){
           ${a.linkForms?`<a class="btn-small btn-primary" target="_blank" href="${escAttr(a.linkForms)}">🎙️ Ir a Forms</a>`:""}
           ${a.linkUnirse?`<a class="btn-small btn-family" target="_blank" href="${escAttr(a.linkUnirse)}">🤝 Unirse</a>`:""}
           ${a.linkScript?`<a class="btn-small btn-family" target="_blank" href="${escAttr(a.linkScript)}">📄 Script</a>`:""}
-          ${staffPin?`<button class="btn-small btn-bell" data-bell="${a.id}">🔔</button>`:""}
-          ${staffPin?`<button class="btn-small btn-admin" data-edit="${a.id}">✏️ Editar</button>`:""}
-          ${staffPin?`<button class="btn-small btn-danger" data-delete="${a.id}">🗑️ Borrar</button>`:""}
         </div>
+        ${staffPin?`<div class="card-actions">
+          <button class="btn-small btn-bell" data-bell="${a.id}">🔔</button>
+          <button class="btn-small btn-admin" data-edit="${a.id}">✏️ Editar</button>
+          <button class="btn-small btn-danger" data-delete="${a.id}">🗑️ Borrar</button>
+        </div>`:""}
       </div>
     </div>
     <div class="accordion">
@@ -1048,7 +1076,7 @@ function openActivityForm(id){
   document.getElementById("af_descripcion").value=a?a.descripcion||"":"";
   document.getElementById("af_streamNombre").value=a?a.streamNombre||"":"";
   document.getElementById("af_streamFecha").value=a?toDateInput(a.streamFecha):"";
-  document.getElementById("af_streamHora").value=a?a.streamHora||"":"";
+  document.getElementById("af_streamHora").value=a?toTimeHHMM(a.streamHora):"";
   document.getElementById("af_wishlist").value=a?a.wishlist||"":"";
   document.getElementById("af_fechaInicio").value=a?toDateInput(a.fechaInicio):"";
   document.getElementById("af_fechaFin").value=a?toDateInput(a.fechaFin):"";
