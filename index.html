@@ -16,9 +16,7 @@
   button{font-family:inherit;cursor:pointer;border:none;}
   img{max-width:100%;display:block;}
 
-  /* loading overlay: 3 peaches bouncing in chain */
-  #loadingOverlay{position:fixed;inset:0;background:rgba(15,8,20,0.72);backdrop-filter:blur(3px);z-index:500;
-    display:none;align-items:center;justify-content:center;flex-direction:column;gap:14px;}
+  #loadingOverlay{position:fixed;inset:0;background:rgba(15,8,20,0.72);backdrop-filter:blur(3px);z-index:500;display:none;align-items:center;justify-content:center;flex-direction:column;gap:14px;}
   #loadingOverlay.show{display:flex;}
   .peach-loader{display:flex;gap:12px;}
   .peach-loader span{font-size:34px;display:inline-block;animation:peachBounce 1.1s infinite ease-in-out;}
@@ -32,15 +30,13 @@
   .header-left{display:flex;align-items:center;gap:12px;}
   #hamburgerBtn{background:none;font-size:26px;color:var(--peach-1);padding:4px 8px;border-radius:8px;}
   #hamburgerBtn:hover{background:rgba(239,8,112,0.15);}
-  .logo{font-weight:800;font-size:19px;letter-spacing:0.5px;background:linear-gradient(90deg,var(--peach-2),#ffffff);
-    -webkit-background-clip:text;background-clip:text;color:transparent;}
+  .logo{font-weight:800;font-size:19px;letter-spacing:0.5px;background:linear-gradient(90deg,var(--peach-2),#ffffff);-webkit-background-clip:text;background-clip:text;color:transparent;}
   .tabs{display:flex;gap:6px;background:var(--card-bg);padding:4px;border-radius:999px;}
   .tab-btn{padding:8px 16px;border-radius:999px;background:none;color:var(--text-dim);font-weight:600;font-size:14px;}
   .tab-btn.active{background:linear-gradient(90deg,var(--peach-2),var(--peach-1));color:#fff;}
 
   #drawerOverlay{position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:99;display:none;}
-  #drawer{position:fixed;top:0;left:0;height:100%;width:280px;max-width:82vw;background:var(--card-bg);z-index:100;
-    transform:translateX(-100%);transition:transform .25s ease;display:flex;flex-direction:column;padding:20px 16px;gap:18px;box-shadow:4px 0 20px rgba(0,0,0,0.4);}
+  #drawer{position:fixed;top:0;left:0;height:100%;width:280px;max-width:82vw;background:var(--card-bg);z-index:100;transform:translateX(-100%);transition:transform .25s ease;display:flex;flex-direction:column;padding:20px 16px;gap:18px;box-shadow:4px 0 20px rgba(0,0,0,0.4);}
   #drawer.open{transform:translateX(0);}
   .drawer-title{font-weight:800;font-size:18px;color:var(--peach-2);margin-bottom:4px;}
   .social-row{display:flex;flex-direction:column;gap:10px;}
@@ -57,8 +53,7 @@
   main{max-width:640px;margin:0 auto;padding:16px 12px 60px;}
   .hidden{display:none !important;}
 
-  #addActBtn,#addMemberBtn{display:block;width:100%;margin-bottom:14px;padding:12px;border-radius:14px;
-    background:linear-gradient(90deg,var(--peach-2),#ffffff);color:#3d1f2a;font-weight:800;font-size:15px;}
+  #addActBtn,#addMemberBtn{display:block;width:100%;margin-bottom:14px;padding:12px;border-radius:14px;background:linear-gradient(90deg,var(--peach-2),#ffffff);color:#3d1f2a;font-weight:800;font-size:15px;}
 
   .filter-pills{display:flex;gap:8px;margin-bottom:16px;}
   .pill-toggle{flex:1;padding:9px;border-radius:999px;background:var(--card-bg-2);color:var(--text-dim);font-weight:700;font-size:13px;text-align:center;transition:all .15s;}
@@ -74,7 +69,6 @@
   .card-img-wrap{position:relative;flex:0 0 120px;width:120px;aspect-ratio:1/1;border-radius:12px;overflow:hidden;background:var(--card-bg-2);}
   @media (max-width:480px){.card-img-wrap{width:100%;flex-basis:auto;}}
   .card-img-wrap img{width:100%;height:100%;object-fit:contain;}
-  .crown-badge{position:absolute;top:-6px;left:-6px;font-size:26px;filter:drop-shadow(0 2px 3px rgba(0,0,0,0.6));}
   .card-info{flex:1;padding-left:14px;display:flex;flex-direction:column;gap:6px;min-width:0;}
   @media (max-width:480px){.card-info{padding-left:0;padding-top:10px;}}
   .card-title{font-weight:800;font-size:16px;line-height:1.25;}
@@ -110,12 +104,17 @@
   .anuario-mini-btn{background:rgba(255,215,0,0.18);color:var(--gold);padding:5px 8px;border-radius:8px;font-size:11px;font-weight:700;white-space:nowrap;}
   .entregas-toolbar{display:flex;gap:8px;margin-top:10px;flex-wrap:wrap;}
 
-  #anuarioGrid{display:grid;grid-template-columns:1fr 1fr;gap:12px;}
-  @media (max-width:420px){#anuarioGrid{grid-template-columns:1fr;}}
-  .anuario-tile{position:relative;border-radius:14px;overflow:hidden;background:var(--card-bg);border:1px solid var(--gold);box-shadow:0 0 14px rgba(255,215,0,0.12);cursor:pointer;}
-  .anuario-tile img{width:100%;aspect-ratio:1/1;object-fit:contain;background:var(--card-bg-2);}
-  .anuario-tile .crown-badge{top:6px;left:6px;}
-  .anuario-tile .tile-title{padding:10px;font-weight:800;font-size:13.5px;}
+  /* ===== ANUARIO: años / meses / bloques ===== */
+  .anuario-year-group{position:relative;}
+  .anuario-year-label{position:sticky;top:58px;z-index:15;text-align:center;font-size:30px;font-weight:900;color:var(--gold);
+    background:linear-gradient(180deg,var(--bg) 65%,transparent);padding:10px 0 16px;text-shadow:0 2px 10px rgba(0,0,0,0.5);}
+  .anuario-month-label{text-align:center;font-weight:800;color:var(--peach-2);font-size:15px;margin:10px 0 12px;text-transform:capitalize;}
+  .anuario-date-row{display:flex;gap:14px;justify-content:center;flex-wrap:wrap;margin-bottom:22px;}
+  .anuario-block{width:250px;max-width:44vw;background:var(--card-bg);border-radius:16px;overflow:hidden;border:1px solid var(--gold);box-shadow:0 0 14px rgba(255,215,0,0.12);cursor:pointer;}
+  @media (max-width:420px){.anuario-block{max-width:100%;width:100%;}}
+  .anuario-block img{width:100%;aspect-ratio:1/1;object-fit:contain;background:var(--card-bg-2);}
+  .anuario-block .ab-cat{text-align:center;padding:8px 8px 0;}
+  .anuario-block .ab-title{padding:10px;font-weight:800;font-size:13.5px;text-align:center;}
 
   #searchMiembros{width:100%;padding:12px 14px;border-radius:12px;border:1px solid rgba(255,255,255,0.1);background:var(--card-bg-2);color:var(--text);font-size:14px;margin-bottom:14px;display:block;}
   .section-label{font-weight:800;color:var(--peach-2);margin:16px 0 10px;font-size:14px;text-align:center;}
@@ -177,7 +176,11 @@
   .btn-reset-castigos{width:100%;margin-top:8px;padding:9px;border-radius:10px;font-weight:700;font-size:12.5px;background:rgba(255,255,255,0.08);color:var(--text-dim);}
 
   .winners-block{background:var(--card-bg-2);border-radius:12px;padding:14px;margin-top:10px;}
-  .winners-block .win-row{display:flex;justify-content:space-between;align-items:center;gap:8px;margin:6px 0;font-size:14px;}
+  .win-group{margin-bottom:12px;}
+  .win-group:last-child{margin-bottom:0;}
+  .win-group-title{font-weight:800;color:var(--peach-2);font-size:13px;margin-bottom:6px;}
+  .win-row{display:flex;justify-content:space-between;align-items:center;gap:10px;padding:5px 0;font-size:13.5px;border-bottom:1px solid rgba(255,255,255,0.05);}
+  .win-row:last-child{border-bottom:none;}
   .win-listen{background:rgba(255,215,0,0.18);color:var(--gold);padding:4px 10px;border-radius:8px;font-size:11px;font-weight:700;white-space:nowrap;}
   .anuario-pill-group{display:flex;gap:8px;margin:10px 0;}
   .anuario-pill{flex:1;padding:10px;border-radius:999px;background:var(--card-bg-2);color:var(--text-dim);font-weight:700;font-size:13px;text-align:center;}
@@ -243,7 +246,8 @@
   <section id="viewMiembros" class="hidden">
     <input type="text" id="searchMiembros" placeholder="🔍 Buscar por nombre, rol o rango vocal...">
     <button id="addMemberBtn" class="hidden">(+) Añadir Miembro</button>
-    <button class="btn-small btn-bell hidden" id="testCumpleBtn" style="width:100%;margin-bottom:14px;">🔔 Probar aviso de cumpleaños</button>
+    <button class="btn-small btn-bell hidden" id="testCumpleBtn" style="width:100%;margin-bottom:10px;">🔔 Probar aviso de cumpleaños</button>
+    <button class="btn-small btn-family hidden" id="refreshPhotosBtn" style="width:100%;margin-bottom:14px;">🔄 Actualizar Imágenes (Smule)</button>
     <div class="section-label">👑 Reinas Peachy</div>
     <div class="avatar-row" id="reinasCarousel"></div>
     <div class="section-label">💎 Staff</div>
@@ -350,8 +354,8 @@
       </div>
       <div id="af_anuarioFields" class="hidden">
         <div class="section-label" style="text-align:left;">👑 Datos del Anuario (esta actividad ya está en el Anuario)</div>
-        <div class="form-group"><label>🥇 Mejor Canto</label><input type="text" id="af_ganadorCanto"></div>
-        <div class="form-group"><label>🎙️ Mejor Doblaje</label><input type="text" id="af_ganadorDoblaje"></div>
+        <div class="form-group"><label>🥇 Mejor Canto (una entrada por línea, se van acumulando)</label><textarea id="af_ganadorCanto"></textarea></div>
+        <div class="form-group"><label>🎙️ Mejor Doblaje</label><textarea id="af_ganadorDoblaje"></textarea></div>
         <div class="form-group"><label>✨ Menciones Honoríficas</label><textarea id="af_menciones"></textarea></div>
       </div>
       <div class="modal-actions"><button type="submit" class="btn-primary">Guardar</button></div>
@@ -393,6 +397,8 @@
 const APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwcnPM10DeRLE6ReNX_AqeViRfKkHjpflT-QCw05oW_L8n5ohrDhfR_iPuzTqYNrG8H4A/exec";
 const LOGO_DEFAULT = "https://raw.githubusercontent.com/TeamPeachesOff/TeamPeachesHub/main/Logos/PeachesLogo.jpeg";
 const LOGO_FALLBACK = "https://i.imgur.com/wusLyff.jpeg";
+const MESES = ["ene","feb","mar","abr","may","jun","jul","ago","sep","oct","nov","dic"];
+const MESES_LARGO = ["Enero","Febrero","Marzo","Abril","Mayo","Junio","Julio","Agosto","Septiembre","Octubre","Noviembre","Diciembre"];
 
 let DB = { actividades: [], entregas: [], miembros: [] };
 let staffPin = localStorage.getItem("tph_pin") || null;
@@ -433,7 +439,6 @@ function categoriaTag(c){
   if(c==="doblaje") return `<span class="cat-tag">🎙️ Doblaje</span>`;
   return "";
 }
-const MESES=["ene","feb","mar","abr","may","jun","jul","ago","sep","oct","nov","dic"];
 function fmtFecha(f){
   if(!f) return "";
   const d=new Date(f);
@@ -476,7 +481,28 @@ function toSmuleUrl(raw){
   return "https://www.smule.com/"+v;
 }
 function limpiarTelefono(raw){ return String(raw||"").replace(/\D/g,""); }
-function nl2br(s){ return escHtml(s||"").replace(/\n/g,"<br>"); }
+function rankCategoria(c){ return c==="canto"?0:c==="doblaje"?1:2; }
+function compararFechaCantoFirst(a,b,campo){
+  const da=new Date(a[campo]||0).getTime(), db=new Date(b[campo]||0).getTime();
+  if(db!==da) return db-da;
+  return rankCategoria(a.categoria)-rankCategoria(b.categoria);
+}
+function parseWinnerLines(text){
+  if(!text) return [];
+  return String(text).split("\n").filter(l=>l.trim()!=="").map(line=>{
+    const idx=line.indexOf("::");
+    if(idx>=0) return {texto:line.slice(0,idx), link:line.slice(idx+2)};
+    return {texto:line, link:""};
+  });
+}
+function winnersGroupHTML(emoji,label,text){
+  const entries=parseWinnerLines(text);
+  if(!entries.length) return "";
+  return `<div class="win-group">
+    <div class="win-group-title">${emoji} ${label}</div>
+    ${entries.map(e=>`<div class="win-row"><span>${escHtml(e.texto)}</span>${e.link?`<a class="win-listen" target="_blank" href="${escAttr(e.link)}">▶ Escuchar</a>`:""}</div>`).join("")}
+  </div>`;
+}
 
 async function apiGet(){
   showLoading("Cargando datos...");
@@ -543,12 +569,13 @@ function syncFilterPills(){
 
 function renderActividades(){
   const feed=document.getElementById("actividadesFeed");
-  let activas=DB.actividades.filter(a=>!esTrue(a.esAnuario)).slice().reverse();
+  let activas=DB.actividades.filter(a=>!esTrue(a.esAnuario));
   activas=activas.filter(a=>{
     if(a.categoria==="canto") return filtroCanto;
     if(a.categoria==="doblaje") return filtroDoblaje;
     return true;
   });
+  activas=activas.slice().sort((a,b)=>compararFechaCantoFirst(a,b,"fechaFin"));
   if(activas.length===0){ feed.innerHTML=`<div class="empty-state">No hay actividades con este filtro. ${staffPin?'¡Agrega una!':''}</div>`; return; }
   feed.innerHTML=activas.map(a=>cardHTML(a)).join("");
   attachCardEvents(); bindAvatarFallbacks();
@@ -700,34 +727,61 @@ document.querySelectorAll("[data-dest]").forEach(btn=>{
   };
 });
 
-/* ---------- anuario ---------- */
+/* ---------- anuario: años > meses > fechas ---------- */
 function renderAnuario(){
   const grid=document.getElementById("anuarioGrid");
-  const items=DB.actividades.filter(a=>esTrue(a.esAnuario));
-  if(items.length===0){ grid.innerHTML=`<div class="empty-state" style="grid-column:1/-1;">Aún no hay ediciones en el Anuario.</div>`; return; }
-  grid.innerHTML=items.map(a=>`
-    <div class="anuario-tile" data-anuario="${a.id}">
-      <span class="crown-badge">👑</span>
-      ${a.imagenUrl?`<img class="js-longpress" data-filename="${escAttr((a.titulo||'anuario')+'.jpg')}" src="${escAttr(a.imagenUrl)}" alt="">`:`<div style="aspect-ratio:1/1;background:var(--card-bg-2);"></div>`}
-      <div class="tile-title">${escHtml(a.titulo||"")}</div>
-    </div>`).join("");
+  const items=DB.actividades.filter(a=>esTrue(a.esAnuario) && a.fechaInicio);
+  if(items.length===0){ grid.innerHTML=`<div class="empty-state">Aún no hay ediciones en el Anuario.</div>`; return; }
+
+  const porAnio={};
+  items.forEach(a=>{
+    const d=new Date(a.fechaInicio); if(isNaN(d)) return;
+    const anio=d.getFullYear(), mes=d.getMonth(), key=d.toISOString().slice(0,10);
+    porAnio[anio]=porAnio[anio]||{};
+    porAnio[anio][mes]=porAnio[anio][mes]||{};
+    porAnio[anio][mes][key]=porAnio[anio][mes][key]||[];
+    porAnio[anio][mes][key].push(a);
+  });
+
+  const anios=Object.keys(porAnio).map(Number).sort((a,b)=>b-a);
+  let html="";
+  anios.forEach(anio=>{
+    html+=`<div class="anuario-year-group"><div class="anuario-year-label">${anio}</div>`;
+    const meses=Object.keys(porAnio[anio]).map(Number).sort((a,b)=>b-a);
+    meses.forEach(mes=>{
+      html+=`<div class="anuario-month-label">${MESES_LARGO[mes]}</div>`;
+      const fechas=Object.keys(porAnio[anio][mes]).sort((a,b)=>b.localeCompare(a));
+      fechas.forEach(fecha=>{
+        const bloques=porAnio[anio][mes][fecha].slice().sort((a,b)=>rankCategoria(a.categoria)-rankCategoria(b.categoria));
+        html+=`<div class="anuario-date-row">${bloques.map(a=>anuarioBlockHTML(a)).join("")}</div>`;
+      });
+    });
+    html+=`</div>`;
+  });
+  grid.innerHTML=html;
   document.querySelectorAll("[data-anuario]").forEach(tile=>tile.onclick=()=>openAnuarioDetail(tile.dataset.anuario));
-  document.querySelectorAll("#anuarioGrid img.js-longpress").forEach(img=>enableLongPress(img,img.dataset.filename));
+  document.querySelectorAll(".anuario-block img.js-longpress").forEach(img=>enableLongPress(img,img.dataset.filename));
+}
+function anuarioBlockHTML(a){
+  const cat=categoriaTag(a.categoria);
+  return `<div class="anuario-block" data-anuario="${a.id}">
+    ${cat?`<div class="ab-cat">${cat}</div>`:""}
+    ${a.imagenUrl?`<img class="js-longpress" data-filename="${escAttr((a.titulo||'anuario')+'.jpg')}" src="${escAttr(a.imagenUrl)}" alt="">`:`<div style="aspect-ratio:1/1;background:var(--card-bg-2);"></div>`}
+    <div class="ab-title">👑 ${escHtml(a.titulo||"")}</div>
+  </div>`;
 }
 function openAnuarioDetail(id){
   const a=DB.actividades.find(x=>String(x.id)===String(id));
   if(!a) return;
-  const entregasDeEsta=DB.entregas.filter(e=>String(e.idActividad)===String(a.id));
   document.getElementById("memberModalContent").innerHTML=`
     <h3>👑 ${escHtml(a.titulo||"")}</h3>
     ${a.imagenUrl?`<img id="anuarioDetailImg" data-filename="${escAttr((a.titulo||'anuario')+'.jpg')}" src="${escAttr(a.imagenUrl)}" style="border-radius:12px;width:100%;aspect-ratio:1/1;object-fit:contain;background:var(--card-bg-2);margin-bottom:10px;">`:""}
     <div class="winners-block">
-      ${a.ganadorCanto?`<div class="win-row"><span>🥇 <strong>Mejor Canto:</strong> ${escHtml(a.ganadorCanto)}</span>${a.ganadorCantoLink?`<a class="win-listen" target="_blank" href="${escAttr(a.ganadorCantoLink)}">▶ Escuchar</a>`:""}</div>`:""}
-      ${a.ganadorDoblaje?`<div class="win-row"><span>🎙️ <strong>Mejor Doblaje:</strong> ${escHtml(a.ganadorDoblaje)}</span>${a.ganadorDoblajeLink?`<a class="win-listen" target="_blank" href="${escAttr(a.ganadorDoblajeLink)}">▶ Escuchar</a>`:""}</div>`:""}
-      ${a.mencionesHonorificas?`<div>✨ <strong>Menciones Honoríficas:</strong><br>${nl2br(a.mencionesHonorificas)}</div>`:""}
+      ${winnersGroupHTML("🥇","Mejor Canto", a.ganadorCanto)}
+      ${winnersGroupHTML("🎙️","Mejor Doblaje", a.ganadorDoblaje)}
+      ${winnersGroupHTML("✨","Menciones Honoríficas", a.mencionesHonorificas)}
       ${(!a.ganadorCanto&&!a.ganadorDoblaje&&!a.mencionesHonorificas)?`<div style="color:var(--text-dim);">Todavía sin ganadores asignados.</div>`:""}
     </div>
-    ${entregasDeEsta.length?`<div class="section-label" style="text-align:left;">🎧 Audios</div>${entregasDeEsta.map(e=>`<div style="margin:6px 0;"><a href="${escAttr(e.linkGrabacion)}" target="_blank">▶ ${escHtml(e.nombreUsuario)} - ${escHtml(e.detalleEntrega)}</a></div>`).join("")}`:""}
     ${staffPin?`<div style="display:flex;gap:8px;margin-top:12px;">
       <button class="btn-small btn-admin" style="flex:1;" data-edit-anuario="${a.id}">✏️ Editar</button>
       <button class="btn-small btn-danger" style="flex:1;" data-delete-anuario="${a.id}">🗑️ Borrar tarjeta</button>
@@ -747,6 +801,12 @@ function openAnuarioDetail(id){
 document.getElementById("testCumpleBtn").onclick=async()=>{
   const r=await apiPost({action:"testCumpleanos"},"Enviando aviso de prueba...");
   if(r.ok) toast("Mensaje de prueba enviado a Discord 🔔"); else toast("Error: "+(r.error||""));
+};
+document.getElementById("refreshPhotosBtn").onclick=async()=>{
+  if(!confirm("¿Actualizar automáticamente las fotos de todos los miembros con Smule? Puede tardar un momento.")) return;
+  const r=await apiPost({action:"actualizarTodasLasFotos"},"Actualizando fotos desde Smule...");
+  if(r.ok){ toast(`Fotos actualizadas: ${r.actualizados}/${r.revisados}`); await cargarDatos(); }
+  else toast("Error: "+(r.error||""));
 };
 
 function renderMiembros(filtro=""){
@@ -832,16 +892,10 @@ async function borrarCastigos(idMiembro){ if(!confirm("¿Poner faltas y strikes 
 
 /* ---------- toggles multi-select (roles / reina) ---------- */
 function bindToggleGroup(containerId){
-  document.getElementById(containerId).querySelectorAll("button").forEach(btn=>{
-    btn.onclick=()=>btn.classList.toggle("sel");
-  });
+  document.getElementById(containerId).querySelectorAll("button").forEach(btn=>{ btn.onclick=()=>btn.classList.toggle("sel"); });
 }
-function setToggleGroup(containerId, activos){
-  document.getElementById(containerId).querySelectorAll("button").forEach(b=>b.classList.toggle("sel", activos.includes(b.dataset.val)));
-}
-function getToggleGroupValues(containerId){
-  return [...document.getElementById(containerId).querySelectorAll("button.sel")].map(b=>b.dataset.val);
-}
+function setToggleGroup(containerId, activos){ document.getElementById(containerId).querySelectorAll("button").forEach(b=>b.classList.toggle("sel", activos.includes(b.dataset.val))); }
+function getToggleGroupValues(containerId){ return [...document.getElementById(containerId).querySelectorAll("button.sel")].map(b=>b.dataset.val); }
 bindToggleGroup("me_rolesToggle");
 bindToggleGroup("me_reinaToggle");
 
@@ -929,9 +983,7 @@ document.querySelectorAll(".modal-overlay").forEach(ov=>ov.addEventListener("cli
 /* ---------- pill switches (categoría / participación) ---------- */
 function bindSwitchPill(containerId){
   const box=document.getElementById(containerId);
-  box.querySelectorAll("button").forEach(btn=>{
-    btn.onclick=()=>{ box.querySelectorAll("button").forEach(b=>b.classList.remove("sel")); btn.classList.add("sel"); };
-  });
+  box.querySelectorAll("button").forEach(btn=>{ btn.onclick=()=>{ box.querySelectorAll("button").forEach(b=>b.classList.remove("sel")); btn.classList.add("sel"); }; });
 }
 function setSwitchPill(containerId, val){ document.getElementById(containerId).querySelectorAll("button").forEach(b=>b.classList.toggle("sel", b.dataset.val===val)); }
 function getSwitchPillValue(containerId){ const sel=document.querySelector(`#${containerId} button.sel`); return sel?sel.dataset.val:""; }
@@ -1042,6 +1094,7 @@ document.getElementById("miembrosDrawerBtn").onclick=()=>{
   document.getElementById("viewActividades").classList.add("hidden"); document.getElementById("viewAnuario").classList.add("hidden"); document.getElementById("viewStaffPin").classList.add("hidden");
   document.getElementById("viewMiembros").classList.remove("hidden");
   document.getElementById("testCumpleBtn").classList.toggle("hidden", !staffPin);
+  document.getElementById("refreshPhotosBtn").classList.toggle("hidden", !staffPin);
   document.getElementById("addMemberBtn").classList.toggle("hidden", !staffPin);
   renderMiembros();
 };
@@ -1078,6 +1131,7 @@ document.getElementById("staffStatusBadge").onclick=()=>{
     document.getElementById("addActBtn").classList.add("hidden");
     document.getElementById("addMemberBtn").classList.add("hidden");
     document.getElementById("testCumpleBtn").classList.add("hidden");
+    document.getElementById("refreshPhotosBtn").classList.add("hidden");
     toast("Saliste del modo staff");
     renderActividades(); renderAnuario(); renderMiembros();
   }
