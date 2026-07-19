@@ -96,6 +96,10 @@
   .accordion-body{padding:0 14px 14px;font-size:13.5px;color:var(--text-dim);line-height:1.5;display:none;white-space:pre-wrap;}
   .accordion-body.open{display:block;}
   .wishlist-block{margin-top:8px;padding:8px 10px;background:var(--card-bg-2);border-radius:10px;white-space:pre-wrap;}
+  .stream-block{background:linear-gradient(135deg,rgba(239,8,112,0.18),rgba(255,143,177,0.08));border:1px solid rgba(239,8,112,0.35);border-radius:14px;padding:12px;margin-bottom:12px;}
+  .stream-title{font-weight:800;color:var(--text);font-size:14px;margin-bottom:4px;}
+  .stream-time{font-size:12.5px;color:var(--text-dim);margin-bottom:10px;}
+  .stream-actions{display:flex;gap:8px;flex-wrap:wrap;}
 
   table.entregas-table{width:100%;border-collapse:collapse;font-size:13px;}
   table.entregas-table th{text-align:left;color:var(--peach-2);padding:6px 4px;border-bottom:1px solid rgba(255,255,255,0.1);}
@@ -106,8 +110,8 @@
 
   /* ===== ANUARIO: años / meses / bloques ===== */
   .anuario-year-group{position:relative;}
-  .anuario-year-label{position:sticky;top:58px;z-index:15;text-align:center;font-size:30px;font-weight:900;color:var(--gold);
-    background:linear-gradient(180deg,var(--bg) 65%,transparent);padding:10px 0 16px;text-shadow:0 2px 10px rgba(0,0,0,0.5);}
+  .anuario-year-label{position:sticky;top:62px;z-index:15;text-align:center;font-size:30px;font-weight:900;color:var(--gold);
+    background:linear-gradient(180deg,var(--bg) 65%,transparent);padding:16px 0 16px;text-shadow:0 2px 10px rgba(0,0,0,0.5);}
   .anuario-month-label{text-align:center;font-weight:800;color:var(--peach-2);font-size:15px;margin:10px 0 12px;text-transform:capitalize;}
   .anuario-date-row{display:flex;gap:14px;justify-content:center;flex-wrap:wrap;margin-bottom:22px;}
   .anuario-block{width:250px;max-width:44vw;background:var(--card-bg);border-radius:16px;overflow:hidden;border:1px solid var(--gold);box-shadow:0 0 14px rgba(255,215,0,0.12);cursor:pointer;}
@@ -176,12 +180,14 @@
   .btn-reset-castigos{width:100%;margin-top:8px;padding:9px;border-radius:10px;font-weight:700;font-size:12.5px;background:rgba(255,255,255,0.08);color:var(--text-dim);}
 
   .winners-block{background:var(--card-bg-2);border-radius:12px;padding:14px;margin-top:10px;}
-  .win-group{margin-bottom:12px;}
+  .win-group{margin-bottom:14px;}
   .win-group:last-child{margin-bottom:0;}
   .win-group-title{font-weight:800;color:var(--peach-2);font-size:13px;margin-bottom:6px;}
-  .win-row{display:flex;justify-content:space-between;align-items:center;gap:10px;padding:5px 0;font-size:13.5px;border-bottom:1px solid rgba(255,255,255,0.05);}
-  .win-row:last-child{border-bottom:none;}
-  .win-listen{background:rgba(255,215,0,0.18);color:var(--gold);padding:4px 10px;border-radius:8px;font-size:11px;font-weight:700;white-space:nowrap;}
+  .win-row{display:flex;justify-content:space-between;align-items:center;gap:10px;padding:8px 10px;font-size:13.5px;border-radius:10px;margin-bottom:6px;}
+  .win-row:last-child{margin-bottom:0;}
+  .win-row.win-cancion{background:linear-gradient(90deg,rgba(239,8,112,0.22),rgba(255,143,177,0.12));border:1px solid rgba(239,8,112,0.35);}
+  .win-row.win-mencion{background:rgba(255,215,0,0.12);border:1px solid rgba(255,215,0,0.3);}
+  .win-listen{background:var(--gold);color:#3d1f2a;padding:6px 12px;border-radius:999px;font-size:12px;font-weight:800;white-space:nowrap;box-shadow:0 2px 8px rgba(255,215,0,0.3);}
   .anuario-pill-group{display:flex;gap:8px;margin:10px 0;}
   .anuario-pill{flex:1;padding:10px;border-radius:999px;background:var(--card-bg-2);color:var(--text-dim);font-weight:700;font-size:13px;text-align:center;}
   .anuario-pill.selected{background:linear-gradient(90deg,var(--peach-2),var(--peach-1));color:#fff;}
@@ -228,6 +234,14 @@
     <img src="https://raw.githubusercontent.com/TeamPeachesOff/TeamPeachesHub/main/Logos/PeachesLogo.jpeg" onerror="this.onerror=null;this.src='https://i.imgur.com/wusLyff.jpeg';" alt="Peaches">
     <span>Peaches</span>
   </a>
+  <div class="hidden" id="staffToolsRow" style="display:flex;gap:10px;">
+    <a class="drawer-nav-btn" style="justify-content:center;flex:1;padding:10px;" target="_blank" href="https://docs.google.com/spreadsheets/d/13Mca1Xlt9XUWgHLBqLn5HJ8YrgTTeSX1tU25LqWC-Mc/edit?gid=1284989132#gid=1284989132">
+      <img src="https://raw.githubusercontent.com/TeamPeachesOff/TeamPeachesHub/main/Logos/SheetsLogo.png" style="width:24px;height:24px;border-radius:0;" alt="Sheets">
+    </a>
+    <a class="drawer-nav-btn" style="justify-content:center;flex:1;padding:10px;" target="_blank" href="https://github.com/TeamPeachesOff/TeamPeachesHub">
+      <img src="https://raw.githubusercontent.com/TeamPeachesOff/TeamPeachesHub/main/Logos/GithubLogo.png" style="width:24px;height:24px;border-radius:0;" alt="GitHub">
+    </a>
+  </div>
   <button class="drawer-nav-btn" id="staffDrawerBtn">🛠️ Staff</button>
 </div>
 
@@ -326,6 +340,12 @@
         <div class="upload-status" id="af_uploadStatus"></div>
       </div>
       <div class="form-group"><label>Descripción</label><textarea id="af_descripcion"></textarea></div>
+      <div class="form-group" style="background:var(--card-bg-2);padding:10px;border-radius:12px;">
+        <label style="color:var(--peach-2);">📺 Stream (opcional, déjalo vacío si no aplica)</label>
+        <input type="text" id="af_streamNombre" placeholder="Nombre del stream" style="margin-bottom:8px;">
+        <input type="date" id="af_streamFecha" style="margin-bottom:8px;">
+        <input type="time" id="af_streamHora" placeholder="Hora (GMT-6, México/CR)">
+      </div>
       <div class="form-group"><label>Wishlist (ideas, una por línea)</label><textarea id="af_wishlist"></textarea></div>
       <div class="form-group"><label>Fecha inicio</label><input type="date" id="af_fechaInicio"></div>
       <div class="form-group"><label>Fecha fin</label><input type="date" id="af_fechaFin"></div>
@@ -379,12 +399,7 @@
 <div class="modal-overlay" id="anuarioModal">
   <div class="modal-box"><button class="modal-close" data-close="anuarioModal">✕</button>
     <h3>👑 Añadir al Anuario</h3>
-    <div id="anuarioModalInfo" style="font-size:13.5px;color:var(--text-dim);margin-bottom:6px;"></div>
-    <div style="font-size:12.5px;color:var(--text-dim);margin-top:10px;">Categoría (corrige si hace falta):</div>
-    <div class="anuario-pill-group">
-      <button type="button" class="anuario-pill" data-cat="canto">🎤 Canto</button>
-      <button type="button" class="anuario-pill" data-cat="doblaje">🎙️ Doblaje</button>
-    </div>
+    <div id="anuarioModalInfo" style="font-size:13.5px;color:var(--text-dim);margin-bottom:10px;"></div>
     <div class="anuario-dest-btns">
       <button type="button" data-dest="cancion">🥇 Mejor Canción</button>
       <button type="button" data-dest="doblaje">🎙️ Mejor Doblaje</button>
@@ -495,12 +510,13 @@ function parseWinnerLines(text){
     return {texto:line, link:""};
   });
 }
-function winnersGroupHTML(emoji,label,text){
+function winnersGroupHTML(emoji,label,text,tipo){
   const entries=parseWinnerLines(text);
   if(!entries.length) return "";
+  const rowClass = tipo==="cancion" ? "win-cancion" : tipo==="mencion" ? "win-mencion" : "";
   return `<div class="win-group">
     <div class="win-group-title">${emoji} ${label}</div>
-    ${entries.map(e=>`<div class="win-row"><span>${escHtml(e.texto)}</span>${e.link?`<a class="win-listen" target="_blank" href="${escAttr(e.link)}">▶ Escuchar</a>`:""}</div>`).join("")}
+    ${entries.map(e=>`<div class="win-row ${rowClass}"><span>${escHtml(e.texto)}</span>${e.link?`<a class="win-listen" target="_blank" href="${escAttr(e.link)}">🎧 Escuchar</a>`:""}</div>`).join("")}
   </div>`;
 }
 
@@ -551,6 +567,37 @@ function fileToBase64(file){
     reader.onload=()=>resolve(reader.result.split(",")[1]);
     reader.onerror=reject; reader.readAsDataURL(file);
   });
+}
+
+function streamBlockHTML(a){
+  if(!a.streamNombre || !a.streamFecha || !a.streamHora) return "";
+  const fechaStr=toDateInput(a.streamFecha);
+  if(!fechaStr) return "";
+  const d=new Date(fechaStr+"T"+a.streamHora+":00-06:00");
+  if(isNaN(d)) return "";
+  const endD=new Date(d.getTime()+60*60*1000);
+  const opciones={weekday:"long",day:"numeric",month:"long",hour:"numeric",minute:"2-digit",hour12:true};
+  let localStr; try{ localStr=d.toLocaleString("es-ES",opciones); }catch(e){ localStr=d.toString(); }
+  const tz=Intl.DateTimeFormat().resolvedOptions().timeZone;
+  const isoStart=d.toISOString().replace(/[-:]/g,"").split(".")[0]+"Z";
+  const isoEnd=endD.toISOString().replace(/[-:]/g,"").split(".")[0]+"Z";
+  const gcalUrl=`https://calendar.google.com/calendar/render?action=TEMPLATE&text=${encodeURIComponent(a.streamNombre)}&dates=${isoStart}/${isoEnd}&details=${encodeURIComponent("Stream de "+(a.titulo||""))}`;
+  return `<div class="stream-block">
+    <div class="stream-title">📺 ${escHtml(a.streamNombre)}</div>
+    <div class="stream-time">🗓️ ${localStr}<br><span style="opacity:0.75;">(convertido a tu zona horaria: ${tz})</span></div>
+    <div class="stream-actions">
+      <a class="btn-small btn-family" target="_blank" href="${gcalUrl}">📅 Google Calendar</a>
+      <button class="btn-small btn-family" data-ics data-ics-nombre="${escAttr(a.streamNombre)}" data-ics-start="${isoStart}" data-ics-end="${isoEnd}" data-ics-desc="${escAttr('Stream de '+(a.titulo||''))}">📥 Descargar (.ics)</button>
+    </div>
+  </div>`;
+}
+function descargarICS(nombre,isoStart,isoEnd,descripcion){
+  const ics="BEGIN:VCALENDAR\nVERSION:2.0\nBEGIN:VEVENT\nSUMMARY:"+nombre+"\nDTSTART:"+isoStart+"\nDTEND:"+isoEnd+"\nDESCRIPTION:"+descripcion+"\nEND:VEVENT\nEND:VCALENDAR";
+  const blob=new Blob([ics],{type:"text/calendar"});
+  const url=URL.createObjectURL(blob);
+  const a=document.createElement("a"); a.href=url; a.download=nombre.replace(/[^a-z0-9]/gi,"_")+".ics";
+  document.body.appendChild(a); a.click(); a.remove(); URL.revokeObjectURL(url);
+  toast("Evento descargado ✅ (Apple/Samsung/Outlook lo abren directo)");
 }
 
 /* ---------- carga ---------- */
@@ -622,7 +669,7 @@ function cardHTML(a){
             <td>${escHtml(e.nombreUsuario||"")}</td>
             <td>${escHtml(e.detalleEntrega||"")}</td>
             <td>${e.linkGrabacion?`<a href="${escAttr(e.linkGrabacion)}" target="_blank">🔗 Escuchar</a>`:""}</td>
-            ${staffPin?`<td><button class="anuario-mini-btn" data-anuario-entrega="${a.id}" data-nombre="${escAttr(e.nombreUsuario||"")}" data-detalle="${escAttr(e.detalleEntrega||"")}" data-link="${escAttr(e.linkGrabacion||"")}" data-cat="${escAttr(a.categoria||"")}">👑</button></td>`:""}
+            ${staffPin?`<td><button class="anuario-mini-btn" data-anuario-entrega="${a.id}" data-titulo="${escAttr(a.titulo||"")}" data-nombre="${escAttr(e.nombreUsuario||"")}" data-detalle="${escAttr(e.detalleEntrega||"")}" data-link="${escAttr(e.linkGrabacion||"")}">👑</button></td>`:""}
           </tr>`).join("")}
         </table>`:`<div style="color:var(--text-dim);">Todavía no hay entregas registradas.</div>`}
         ${staffPin?`
@@ -650,9 +697,12 @@ function attachCardEvents(){
       if(opening && body.id.startsWith("info-") && !body.dataset.filled){
         const id=body.id.replace("info-","");
         const a=DB.actividades.find(x=>String(x.id)===String(id));
-        let html=escHtml(a.descripcion||"Sin descripción.");
+        let html=streamBlockHTML(a);
+        html+=escHtml(a.descripcion||"Sin descripción.");
         if(a.wishlist) html+=`<div class="wishlist-block"><strong>🎵 Wishlist:</strong><br>${escHtml(a.wishlist)}</div>`;
         body.innerHTML=html; body.dataset.filled="1";
+        const icsBtn=body.querySelector("[data-ics]");
+        if(icsBtn) icsBtn.onclick=()=>descargarICS(icsBtn.dataset.icsNombre, icsBtn.dataset.icsStart, icsBtn.dataset.icsEnd, icsBtn.dataset.icsDesc);
       }
     };
   });
@@ -661,7 +711,7 @@ function attachCardEvents(){
   document.querySelectorAll("[data-bell]").forEach(btn=>btn.onclick=()=>probarRecordatorio(btn.dataset.bell));
   document.querySelectorAll("[data-add-entrega]").forEach(btn=>btn.onclick=()=>openEntregaForm(btn.dataset.addEntrega));
   document.querySelectorAll("[data-import-entregas]").forEach(btn=>btn.onclick=()=>importarEntregas(btn.dataset.importEntregas));
-  document.querySelectorAll("[data-anuario-entrega]").forEach(btn=>btn.onclick=()=>abrirModalAnuario(btn.dataset.anuarioEntrega,btn.dataset.nombre,btn.dataset.detalle,btn.dataset.cat,btn.dataset.link));
+  document.querySelectorAll("[data-anuario-entrega]").forEach(btn=>btn.onclick=()=>abrirModalAnuario(btn.dataset.anuarioEntrega,btn.dataset.titulo,btn.dataset.nombre,btn.dataset.detalle,btn.dataset.link));
   document.querySelectorAll("[data-toggle-borrar]").forEach(btn=>btn.onclick=()=>toggleModoBorrarEntregas(btn.dataset.toggleBorrar,true));
   document.querySelectorAll("[data-cancel-borrar]").forEach(btn=>btn.onclick=()=>toggleModoBorrarEntregas(btn.dataset.cancelBorrar,false));
   document.querySelectorAll("[data-confirm-borrar]").forEach(btn=>btn.onclick=()=>confirmarBorrarEntregas(btn.dataset.confirmBorrar));
@@ -706,22 +756,17 @@ async function borrarActividad(id){
 }
 
 /* ---------- modal anuario ---------- */
-function abrirModalAnuario(idActividad,nombreUsuario,detalle,categoriaActual,link){
+function abrirModalAnuario(idActividad,titulo,nombreUsuario,detalle,link){
   anuarioCtx={idActividad,nombreUsuario,detalle,link};
-  document.getElementById("anuarioModalInfo").textContent=`${nombreUsuario} — ${detalle}`;
-  document.querySelectorAll(".anuario-pill").forEach(p=>p.classList.toggle("selected",p.dataset.cat===categoriaActual));
+  document.getElementById("anuarioModalInfo").innerHTML=`Actividad: <strong>${escHtml(titulo)}</strong><br>Entrega: <strong>${escHtml(nombreUsuario)}</strong> — ${escHtml(detalle)}`;
   document.querySelectorAll("#anuarioModal [data-dest]").forEach(b=>b.disabled=false);
   openModal("anuarioModal");
 }
-document.querySelectorAll(".anuario-pill").forEach(p=>{
-  p.onclick=()=>{ document.querySelectorAll(".anuario-pill").forEach(x=>x.classList.remove("selected")); p.classList.add("selected"); };
-});
 document.querySelectorAll("[data-dest]").forEach(btn=>{
   btn.onclick=async()=>{
     if(!anuarioCtx) return;
     document.querySelectorAll("#anuarioModal [data-dest]").forEach(b=>b.disabled=true);
-    const pillSel=document.querySelector(".anuario-pill.selected");
-    const r=await apiPost({action:"addToAnuario", idActividad:anuarioCtx.idActividad, categoriaCorregida:pillSel?pillSel.dataset.cat:"", destino:btn.dataset.dest, nombreUsuario:anuarioCtx.nombreUsuario, detalle:anuarioCtx.detalle, link:anuarioCtx.link},"Agregando al Anuario...");
+    const r=await apiPost({action:"addToAnuario", idActividad:anuarioCtx.idActividad, destino:btn.dataset.dest, nombreUsuario:anuarioCtx.nombreUsuario, detalle:anuarioCtx.detalle, link:anuarioCtx.link},"Agregando al Anuario...");
     if(r.ok){ toast("Agregado al Anuario 👑"); closeModal("anuarioModal"); await cargarDatos(); }
     else{ toast("Error: "+(r.error||"")); document.querySelectorAll("#anuarioModal [data-dest]").forEach(b=>b.disabled=false); }
   };
@@ -777,9 +822,9 @@ function openAnuarioDetail(id){
     <h3>👑 ${escHtml(a.titulo||"")}</h3>
     ${a.imagenUrl?`<img id="anuarioDetailImg" data-filename="${escAttr((a.titulo||'anuario')+'.jpg')}" src="${escAttr(a.imagenUrl)}" style="border-radius:12px;width:100%;aspect-ratio:1/1;object-fit:contain;background:var(--card-bg-2);margin-bottom:10px;">`:""}
     <div class="winners-block">
-      ${winnersGroupHTML("🥇","Mejor Canto", a.ganadorCanto)}
-      ${winnersGroupHTML("🎙️","Mejor Doblaje", a.ganadorDoblaje)}
-      ${winnersGroupHTML("✨","Menciones Honoríficas", a.mencionesHonorificas)}
+      ${winnersGroupHTML("🥇","Mejor Canto", a.ganadorCanto, "cancion")}
+      ${winnersGroupHTML("🎙️","Mejor Doblaje", a.ganadorDoblaje, "doblaje")}
+      ${winnersGroupHTML("✨","Menciones Honoríficas", a.mencionesHonorificas, "mencion")}
       ${(!a.ganadorCanto&&!a.ganadorDoblaje&&!a.mencionesHonorificas)?`<div style="color:var(--text-dim);">Todavía sin ganadores asignados.</div>`:""}
     </div>
     ${staffPin?`<div style="display:flex;gap:8px;margin-top:12px;">
@@ -1001,6 +1046,9 @@ function openActivityForm(id){
   document.getElementById("af_imagenUrl").value=a?a.imagenUrl||"":"";
   document.getElementById("af_imagenFile").value=""; document.getElementById("af_uploadStatus").textContent="";
   document.getElementById("af_descripcion").value=a?a.descripcion||"":"";
+  document.getElementById("af_streamNombre").value=a?a.streamNombre||"":"";
+  document.getElementById("af_streamFecha").value=a?toDateInput(a.streamFecha):"";
+  document.getElementById("af_streamHora").value=a?a.streamHora||"":"";
   document.getElementById("af_wishlist").value=a?a.wishlist||"":"";
   document.getElementById("af_fechaInicio").value=a?toDateInput(a.fechaInicio):"";
   document.getElementById("af_fechaFin").value=a?toDateInput(a.fechaFin):"";
@@ -1041,6 +1089,9 @@ document.getElementById("activityForm").addEventListener("submit", async(e)=>{
     titulo: document.getElementById("af_titulo").value,
     imagenUrl: document.getElementById("af_imagenUrl").value,
     descripcion: document.getElementById("af_descripcion").value,
+    streamNombre: document.getElementById("af_streamNombre").value,
+    streamFecha: document.getElementById("af_streamFecha").value,
+    streamHora: document.getElementById("af_streamHora").value,
     wishlist: document.getElementById("af_wishlist").value,
     fechaInicio: document.getElementById("af_fechaInicio").value,
     fechaFin: document.getElementById("af_fechaFin").value,
@@ -1120,6 +1171,7 @@ async function verificarPin(){
     toast("Modo Staff activado 🛠️");
     document.getElementById("staffStatusBadge").style.display="block";
     document.getElementById("addActBtn").classList.remove("hidden");
+    document.getElementById("staffToolsRow").classList.remove("hidden");
     switchTab("actividades");
     renderActividades(); renderAnuario(); renderMiembros();
   } else { staffPin=null; document.getElementById("pinMsg").textContent="PIN incorrecto ❌"; }
@@ -1129,6 +1181,7 @@ document.getElementById("staffStatusBadge").onclick=()=>{
     staffPin=null; localStorage.removeItem("tph_pin");
     document.getElementById("staffStatusBadge").style.display="none";
     document.getElementById("addActBtn").classList.add("hidden");
+    document.getElementById("staffToolsRow").classList.add("hidden");
     document.getElementById("addMemberBtn").classList.add("hidden");
     document.getElementById("testCumpleBtn").classList.add("hidden");
     document.getElementById("refreshPhotosBtn").classList.add("hidden");
@@ -1143,6 +1196,7 @@ function escAttr(str){ return escHtml(str); }
 if(staffPin){
   document.getElementById("staffStatusBadge").style.display="block";
   document.getElementById("addActBtn").classList.remove("hidden");
+  document.getElementById("staffToolsRow").classList.remove("hidden");
 }
 cargarDatos();
 </script>
