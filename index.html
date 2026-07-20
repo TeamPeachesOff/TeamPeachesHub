@@ -140,6 +140,8 @@
   .badge-canto{background:rgba(46,204,113,0.2);color:var(--green);}
   .badge-doblaje{background:rgba(52,152,219,0.2);color:#5dade2;}
   .badge-reina{background:rgba(255,215,0,0.22);color:var(--gold);}
+  .badge-conserje{background:rgba(217,119,6,0.18);color:#e0a458;}
+  .badge-inactivo{background:rgba(160,160,170,0.18);color:#a0a0aa;}
 
   .center-screen{max-width:340px;margin:60px auto;text-align:center;padding:0 16px;}
   #pinInput{width:100%;text-align:center;font-size:24px;letter-spacing:8px;padding:14px;border-radius:12px;border:1px solid rgba(255,255,255,0.15);background:var(--card-bg-2);color:var(--text);margin:16px 0;}
@@ -322,6 +324,8 @@
         <div class="switch-pill" id="me_reinaToggle">
           <button type="button" data-val="fundadora">👑 Fundadora</button>
           <button type="button" data-val="lider">👑 Líder</button>
+          <button type="button" data-val="conserje">🧹 Conserje</button>
+          <button type="button" data-val="inactivo">😴 Inactivo</button>
         </div>
       </div>
       <div class="modal-actions"><button type="submit" class="btn-primary">Guardar</button></div>
@@ -902,6 +906,8 @@ function renderMiembros(filtro=""){
         <div class="badges-row">
           ${esTrue(m.canto)?`<span class="badge badge-canto">Canto</span>`:""}
           ${esTrue(m.doblaje)?`<span class="badge badge-doblaje">Doblaje</span>`:""}
+          ${esTrue(m.conserje)?`<span class="badge badge-conserje">🧹 Conserje</span>`:""}
+          ${esTrue(m.inactivo)?`<span class="badge badge-inactivo">😴 Inactivo</span>`:""}
         </div>
       </div>
     </div>`).join(""):`<div class="empty-state">Sin resultados.</div>`;
@@ -927,6 +933,8 @@ function openMemberModal(id){
         ${esTrue(m.staff)?`<span class="badge badge-staff">Staff</span>`:""}
         ${esTrue(m.canto)?`<span class="badge badge-canto">Canto</span>`:""}
         ${esTrue(m.doblaje)?`<span class="badge badge-doblaje">Doblaje</span>`:""}
+        ${esTrue(m.conserje)?`<span class="badge badge-conserje">🧹 Conserje</span>`:""}
+        ${esTrue(m.inactivo)?`<span class="badge badge-inactivo">😴 Inactivo</span>`:""}
       </div>
     </div>
     ${strikes>=3?`<div class="expelled-banner">🛑 EXPULSADO / FUERA DEL TEAM</div>`:""}
@@ -991,6 +999,7 @@ function openMemberEditForm(id){
   const roles=[]; if(m&&esTrue(m.staff)) roles.push("staff"); if(m&&esTrue(m.canto)) roles.push("canto"); if(m&&esTrue(m.doblaje)) roles.push("doblaje");
   setToggleGroup("me_rolesToggle", roles);
   const reina=[]; if(m&&esTrue(m.fundadora)) reina.push("fundadora"); if(m&&esTrue(m.lider)) reina.push("lider");
+  if(m&&esTrue(m.conserje)) reina.push("conserje"); if(m&&esTrue(m.inactivo)) reina.push("inactivo");
   setToggleGroup("me_reinaToggle", reina);
   document.getElementById("me_deleteBtn").classList.toggle("hidden", !m);
   openModal("memberEditModal");
@@ -1031,6 +1040,8 @@ document.getElementById("memberEditForm").addEventListener("submit", async(e)=>{
     doblaje: roles.includes("doblaje")?"TRUE":"FALSE",
     fundadora: reina.includes("fundadora")?"TRUE":"FALSE",
     lider: reina.includes("lider")?"TRUE":"FALSE",
+    conserje: reina.includes("conserje")?"TRUE":"FALSE",
+    inactivo: reina.includes("inactivo")?"TRUE":"FALSE",
     faltas: 0, strikes: 0
   };
   let r;
