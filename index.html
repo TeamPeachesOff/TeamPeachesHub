@@ -94,7 +94,8 @@
 
   .accordion{border-top:1px solid rgba(255,255,255,0.07);}
   .accordion-toggle{width:100%;text-align:left;padding:12px 14px;background:none;color:var(--peach-2);font-weight:700;font-size:13.5px;display:flex;justify-content:space-between;align-items:center;}
-  .accordion-body{padding:0 14px 14px;font-size:13.5px;color:var(--text-dim);line-height:1.5;display:none;white-space:pre-wrap;}
+  .accordion-body{padding:0 14px 14px;font-size:13.5px;color:var(--text-dim);line-height:1.5;display:none;}
+  .desc-text{white-space:pre-wrap;}
   .accordion-body.open{display:block;}
   .wishlist-block{margin-top:8px;padding:8px 10px;background:var(--card-bg-2);border-radius:10px;white-space:pre-wrap;}
   .stream-block{background:linear-gradient(135deg,rgba(239,8,112,0.18),rgba(255,143,177,0.08));border:1px solid rgba(239,8,112,0.35);border-radius:14px;padding:12px;margin-bottom:12px;}
@@ -137,7 +138,7 @@
   .badges-row{display:flex;gap:6px;margin-top:3px;flex-wrap:wrap;}
   .badge{padding:2px 8px;border-radius:999px;font-size:10.5px;font-weight:700;}
   .badge-staff{background:rgba(164,95,199,0.25);color:#d9b6f5;}
-  .badge-canto{background:rgba(46,204,113,0.2);color:var(--green);}
+  .badge-canto{background:rgba(155,66,193,0.22);color:#c77dff;}
   .badge-doblaje{background:rgba(52,152,219,0.2);color:#5dade2;}
   .badge-reina{background:rgba(255,215,0,0.22);color:var(--gold);}
   .badge-conserje{background:rgba(217,119,6,0.18);color:#e0a458;}
@@ -303,10 +304,10 @@
         <input type="file" id="me_avatarFile" accept=".jpg,.jpeg,.png,image/jpeg,image/png">
         <div class="upload-status" id="me_uploadStatus"></div>
       </div>
-      <div class="form-group"><label>Usuario Smule (URL o @usuario)</label><input type="text" id="me_smule"></div>
+      <div class="form-group"><label>Usuario Smule (exacto, sin @ ni link — ej: WagnerObando1)</label><input type="text" id="me_smule" placeholder="usuario exacto"></div>
       <button type="button" class="btn-small btn-family" id="me_fetchSmuleBtn" style="width:100%;margin:-4px 0 12px;">🔄 Actualizar foto desde Smule</button>
       <div class="form-group"><label>Usuario Discord</label><input type="text" id="me_discord"></div>
-      <div class="form-group"><label>Usuario BandLab (URL)</label><input type="text" id="me_bandlab"></div>
+      <div class="form-group"><label>Usuario BandLab (exacto, sin @ ni link)</label><input type="text" id="me_bandlab" placeholder="usuario exacto"></div>
       <div class="form-group"><label>Teléfono (WhatsApp, ej: 50688888888)</label><input type="text" id="me_telefono"></div>
       <div class="form-group"><label>Rango vocal</label><input type="text" id="me_rango"></div>
       <div class="form-group"><label>Cumpleaños</label><input type="date" id="me_cumple"></div>
@@ -314,19 +315,25 @@
       <div class="form-group">
         <label>Roles (podés elegir varios)</label>
         <div class="switch-pill" id="me_rolesToggle">
-          <button type="button" data-val="staff">💎 Staff</button>
           <button type="button" data-val="canto">🎤 Canto</button>
           <button type="button" data-val="doblaje">🎙️ Doblaje</button>
         </div>
       </div>
       <div class="form-group">
-        <label>Rango especial</label>
-        <div class="switch-pill" id="me_reinaToggle">
+        <label>Rango</label>
+        <div class="switch-pill" id="me_rangoToggle">
           <button type="button" data-val="fundadora">👑 Fundadora</button>
           <button type="button" data-val="lider">👑 Líder</button>
+          <button type="button" data-val="staff">💎 Staff</button>
+        </div>
+      </div>
+      <div class="form-group">
+        <label>Especial</label>
+        <div class="switch-pill" id="me_especialToggle">
           <button type="button" data-val="conserje">🧹 Conserje</button>
           <button type="button" data-val="inactivo">😴 Inactivo</button>
         </div>
+      </div>
       </div>
       <div class="modal-actions"><button type="submit" class="btn-primary">Guardar</button></div>
       <button type="button" class="btn-small btn-danger" style="width:100%;margin-top:10px;" id="me_deleteBtn">🗑️ Borrar miembro</button>
@@ -495,12 +502,29 @@ function toDateInputCumple(v){
 function toDateInput(v){ if(!v) return ""; const d=new Date(v); if(isNaN(d)) return ""; return d.toISOString().slice(0,10); }
 function esTrue(v){ return v===true||v==="TRUE"||v==="true"||v===1; }
 function normalizar(s){ return String(s||"").normalize("NFD").replace(/[\u0300-\u036f]/g,"").toLowerCase(); }
-function toSmuleUrl(raw){
+function limpiarUsuarioSmule(raw){
   if(!raw) return "";
   let v=String(raw).trim();
-  if(v.startsWith("http")) return v;
-  if(v.startsWith("@")) v=v.slice(1);
-  return "https://www.smule.com/"+v;
+  v=v.replace(/^https?:\/\/(www\.)?smule\.com\//i,"");
+  v=v.replace(/^@/,"");
+  v=v.split(/[?#/]/)[0];
+  return v.trim();
+}
+function limpiarUsuarioBandlab(raw){
+  if(!raw) return "";
+  let v=String(raw).trim();
+  v=v.replace(/^https?:\/\/(www\.)?bandlab\.com\//i,"");
+  v=v.replace(/^@/,"");
+  v=v.split(/[?#/]/)[0];
+  return v.trim();
+}
+function toSmuleUrl(raw){
+  const v=limpiarUsuarioSmule(raw);
+  return v?"https://www.smule.com/"+v:"";
+}
+function toBandlabUrl(raw){
+  const v=limpiarUsuarioBandlab(raw);
+  return v?"https://www.bandlab.com/"+v:"";
 }
 function limpiarTelefono(raw){ return String(raw||"").replace(/\D/g,""); }
 function rankCategoria(c){ return c==="canto"?0:c==="doblaje"?1:2; }
@@ -612,13 +636,7 @@ function streamBlockHTML(a){
   const tz=Intl.DateTimeFormat().resolvedOptions().timeZone;
   const isoStart=d.toISOString().replace(/[-:]/g,"").split(".")[0]+"Z";
   const isoEnd=endD.toISOString().replace(/[-:]/g,"").split(".")[0]+"Z";
-  return `<div class="stream-block">
-    <div class="stream-title">📺 ${escHtml(a.streamNombre)}</div>
-    <div class="stream-time">🗓️ ${localStr}<br><span style="opacity:0.75;">(convertido a tu zona horaria: ${tz})</span></div>
-    <div class="stream-actions">
-      <button class="btn-small btn-family" data-ics data-ics-nombre="${escAttr(a.streamNombre)}" data-ics-start="${isoStart}" data-ics-end="${isoEnd}" data-ics-desc="${escAttr(a.descripcion||'')}">📅 Agregar a Calendario</button>
-    </div>
-  </div>`;
+  return `<div class="stream-block"><div class="stream-title">📺 ${escHtml(a.streamNombre)}</div><div class="stream-time">🗓️ ${localStr}<br><span style="opacity:0.75;">(convertido a tu zona horaria: ${tz})</span></div><div class="stream-actions"><button class="btn-small btn-family" data-ics data-ics-nombre="${escAttr(a.streamNombre)}" data-ics-start="${isoStart}" data-ics-end="${isoEnd}" data-ics-desc="${escAttr(a.descripcion||'')}">📅 Agregar a Calendario</button></div></div>`;
 }
 function escIcs(s){ return String(s||"").replace(/\\/g,"\\\\").replace(/;/g,"\\;").replace(/,/g,"\\,").replace(/\n/g,"\\n"); }
 function descargarICS(nombre,isoStart,isoEnd,descripcion){
@@ -730,7 +748,7 @@ function attachCardEvents(){
         const id=body.id.replace("info-","");
         const a=DB.actividades.find(x=>String(x.id)===String(id));
         let html=streamBlockHTML(a);
-        html+=escHtml(a.descripcion||"Sin descripción.");
+        html+=`<div class="desc-text">${escHtml(a.descripcion||"Sin descripción.")}</div>`;
         if(a.wishlist) html+=`<div class="wishlist-block"><strong>🎵 Wishlist:</strong><br>${escHtml(a.wishlist)}</div>`;
         body.innerHTML=html; body.dataset.filled="1";
         const icsBtn=body.querySelector("[data-ics]");
@@ -904,8 +922,8 @@ function renderMiembros(filtro=""){
       <div class="m-info">
         <div class="m-name">${escHtml(m.nombre||"")}</div>
         <div class="badges-row">
-          ${esTrue(m.canto)?`<span class="badge badge-canto">Canto</span>`:""}
-          ${esTrue(m.doblaje)?`<span class="badge badge-doblaje">Doblaje</span>`:""}
+          ${esTrue(m.canto)?`<span class="badge badge-canto">🎤 Canto</span>`:""}
+          ${esTrue(m.doblaje)?`<span class="badge badge-doblaje">🎙️ Doblaje</span>`:""}
           ${esTrue(m.conserje)?`<span class="badge badge-conserje">🧹 Conserje</span>`:""}
           ${esTrue(m.inactivo)?`<span class="badge badge-inactivo">😴 Inactivo</span>`:""}
         </div>
@@ -931,8 +949,8 @@ function openMemberModal(id){
         ${esTrue(m.fundadora)?`<span class="badge badge-reina">👑 Fundadora</span>`:""}
         ${esTrue(m.lider)?`<span class="badge badge-reina">👑 Líder</span>`:""}
         ${esTrue(m.staff)?`<span class="badge badge-staff">Staff</span>`:""}
-        ${esTrue(m.canto)?`<span class="badge badge-canto">Canto</span>`:""}
-        ${esTrue(m.doblaje)?`<span class="badge badge-doblaje">Doblaje</span>`:""}
+        ${esTrue(m.canto)?`<span class="badge badge-canto">🎤 Canto</span>`:""}
+        ${esTrue(m.doblaje)?`<span class="badge badge-doblaje">🎙️ Doblaje</span>`:""}
         ${esTrue(m.conserje)?`<span class="badge badge-conserje">🧹 Conserje</span>`:""}
         ${esTrue(m.inactivo)?`<span class="badge badge-inactivo">😴 Inactivo</span>`:""}
       </div>
@@ -946,7 +964,7 @@ function openMemberModal(id){
     <div class="platform-row">
       ${m.usuarioSmule?`<a class="platform-btn" target="_blank" href="${escAttr(toSmuleUrl(m.usuarioSmule))}">
         <img src="https://raw.githubusercontent.com/TeamPeachesOff/TeamPeachesHub/main/Logos/SmuleLogo.png" onerror="this.onerror=null;this.src='https://blog.smule.com/wp-content/uploads/smule-icon.png';"><span>Smule</span></a>`:""}
-      ${m.usuarioBandlab?`<a class="platform-btn" target="_blank" href="${escAttr(m.usuarioBandlab)}">
+      ${m.usuarioBandlab?`<a class="platform-btn" target="_blank" href="${escAttr(toBandlabUrl(m.usuarioBandlab))}">
         <img src="https://raw.githubusercontent.com/TeamPeachesOff/TeamPeachesHub/main/Logos/BandLabLogo.png" onerror="this.onerror=null;this.src='https://onbukei.com/wp-content/uploads/2021/10/bandlab-music-making-studio.png';"><span>BandLab</span></a>`:""}
       ${m.usuarioDiscord?`<button class="platform-btn" data-copy-discord="${escAttr(m.usuarioDiscord)}">
         <img src="https://raw.githubusercontent.com/TeamPeachesOff/TeamPeachesHub/main/Logos/DiscordLogo.webp" onerror="this.onerror=null;this.src='https://freelogopng.com/images/all_img/1691730767discord-logo-transparent.png';"><span>Copiar Discord</span></button>`:""}
@@ -978,7 +996,8 @@ function bindToggleGroup(containerId){
 function setToggleGroup(containerId, activos){ document.getElementById(containerId).querySelectorAll("button").forEach(b=>b.classList.toggle("sel", activos.includes(b.dataset.val))); }
 function getToggleGroupValues(containerId){ return [...document.getElementById(containerId).querySelectorAll("button.sel")].map(b=>b.dataset.val); }
 bindToggleGroup("me_rolesToggle");
-bindToggleGroup("me_reinaToggle");
+bindToggleGroup("me_rangoToggle");
+bindToggleGroup("me_especialToggle");
 
 /* ---------- editar / añadir miembro ---------- */
 document.getElementById("addMemberBtn").onclick=()=>openMemberEditForm(null);
@@ -996,11 +1015,12 @@ function openMemberEditForm(id){
   document.getElementById("me_rango").value=m?m.rangoVocal||"":"";
   document.getElementById("me_cumple").value=m?toDateInputCumple(m.cumpleanos):"";
   document.getElementById("me_ingreso").value=m?toDateInput(m.fechaIngreso):"";
-  const roles=[]; if(m&&esTrue(m.staff)) roles.push("staff"); if(m&&esTrue(m.canto)) roles.push("canto"); if(m&&esTrue(m.doblaje)) roles.push("doblaje");
+  const roles=[]; if(m&&esTrue(m.canto)) roles.push("canto"); if(m&&esTrue(m.doblaje)) roles.push("doblaje");
   setToggleGroup("me_rolesToggle", roles);
-  const reina=[]; if(m&&esTrue(m.fundadora)) reina.push("fundadora"); if(m&&esTrue(m.lider)) reina.push("lider");
-  if(m&&esTrue(m.conserje)) reina.push("conserje"); if(m&&esTrue(m.inactivo)) reina.push("inactivo");
-  setToggleGroup("me_reinaToggle", reina);
+  const rango=[]; if(m&&esTrue(m.fundadora)) rango.push("fundadora"); if(m&&esTrue(m.lider)) rango.push("lider"); if(m&&esTrue(m.staff)) rango.push("staff");
+  setToggleGroup("me_rangoToggle", rango);
+  const especial=[]; if(m&&esTrue(m.conserje)) especial.push("conserje"); if(m&&esTrue(m.inactivo)) especial.push("inactivo");
+  setToggleGroup("me_especialToggle", especial);
   document.getElementById("me_deleteBtn").classList.toggle("hidden", !m);
   openModal("memberEditModal");
 }
@@ -1013,7 +1033,7 @@ document.getElementById("me_avatarFile").addEventListener("change", async(e)=>{
 });
 document.getElementById("me_fetchSmuleBtn").onclick=async()=>{
   const smuleVal=document.getElementById("me_smule").value;
-  if(!smuleVal){ toast("Primero poné el usuario/link de Smule"); return; }
+  if(!smuleVal){ toast("Primero poné el usuario de Smule"); return; }
   const st=document.getElementById("me_uploadStatus"); st.textContent="Buscando foto en Smule...";
   const r=await apiPost({action:"fetchSmulePhoto", smuleUrl:toSmuleUrl(smuleVal)},"Buscando foto en Smule...");
   if(r.ok){ document.getElementById("me_avatarUrl").value=r.url; st.textContent="Foto encontrada ✅"; }
@@ -1023,25 +1043,26 @@ document.getElementById("memberEditForm").addEventListener("submit", async(e)=>{
   e.preventDefault();
   const btn=e.target.querySelector('button[type="submit"]'); btn.disabled=true;
   const roles=getToggleGroupValues("me_rolesToggle");
-  const reina=getToggleGroupValues("me_reinaToggle");
+  const rango=getToggleGroupValues("me_rangoToggle");
+  const especial=getToggleGroupValues("me_especialToggle");
   const id=document.getElementById("me_id").value;
   const data={
     nombre: document.getElementById("me_nombre").value,
     avatarUrl: document.getElementById("me_avatarUrl").value,
-    usuarioSmule: document.getElementById("me_smule").value,
+    usuarioSmule: limpiarUsuarioSmule(document.getElementById("me_smule").value),
     usuarioDiscord: document.getElementById("me_discord").value,
-    usuarioBandlab: document.getElementById("me_bandlab").value,
+    usuarioBandlab: limpiarUsuarioBandlab(document.getElementById("me_bandlab").value),
     telefono: document.getElementById("me_telefono").value,
     rangoVocal: document.getElementById("me_rango").value,
     cumpleanos: document.getElementById("me_cumple").value,
     fechaIngreso: document.getElementById("me_ingreso").value,
-    staff: roles.includes("staff")?"TRUE":"FALSE",
+    staff: rango.includes("staff")?"TRUE":"FALSE",
     canto: roles.includes("canto")?"TRUE":"FALSE",
     doblaje: roles.includes("doblaje")?"TRUE":"FALSE",
-    fundadora: reina.includes("fundadora")?"TRUE":"FALSE",
-    lider: reina.includes("lider")?"TRUE":"FALSE",
-    conserje: reina.includes("conserje")?"TRUE":"FALSE",
-    inactivo: reina.includes("inactivo")?"TRUE":"FALSE",
+    fundadora: rango.includes("fundadora")?"TRUE":"FALSE",
+    lider: rango.includes("lider")?"TRUE":"FALSE",
+    conserje: especial.includes("conserje")?"TRUE":"FALSE",
+    inactivo: especial.includes("inactivo")?"TRUE":"FALSE",
     faltas: 0, strikes: 0
   };
   let r;
