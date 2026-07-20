@@ -46,6 +46,7 @@
   .social-link span{font-weight:600;font-size:14px;}
   .drawer-divider{height:1px;background:rgba(255,255,255,0.08);}
   .drawer-nav-btn{display:flex;align-items:center;gap:10px;padding:12px;border-radius:12px;background:var(--card-bg-2);font-weight:700;font-size:15px;color:var(--text);justify-content:flex-start;}
+  .drawer-nav-group{display:flex;flex-direction:column;gap:10px;}
   .drawer-nav-btn:hover{background:rgba(239,8,112,0.18);}
   .drawer-nav-btn img{width:26px;height:26px;border-radius:50%;object-fit:cover;}
   #staffDrawerBtn{background:linear-gradient(90deg,#6a3d8f,#a45fc7);color:#fff;}
@@ -245,9 +246,11 @@
     </a>
   </div>
   <div class="drawer-divider"></div>
-  <button class="drawer-nav-btn" id="miembrosDrawerBtn">👥 Miembros</button>
-  <button class="drawer-nav-btn" id="buzonDrawerBtn">📮 Buzón de Quejas</button>
-  <button class="drawer-nav-btn" id="reporteDrawerBtn">🐞 Reportar Error</button>
+  <div class="drawer-nav-group">
+    <button class="drawer-nav-btn" id="miembrosDrawerBtn">👥 Miembros</button>
+    <button class="drawer-nav-btn" id="buzonDrawerBtn">📮 Buzón de Quejas</button>
+    <button class="drawer-nav-btn" id="reporteDrawerBtn">🐞 Reportar Error</button>
+  </div>
   <div class="staff-bottom-group">
     <div class="hidden" id="staffToolsRow" style="display:flex;gap:10px;">
       <a class="drawer-nav-btn" style="justify-content:center;flex:1;padding:10px;" target="_blank" href="https://docs.google.com/spreadsheets/d/13Mca1Xlt9XUWgHLBqLn5HJ8YrgTTeSX1tU25LqWC-Mc/edit?gid=1284989132#gid=1284989132">
@@ -257,7 +260,6 @@
         <img src="https://raw.githubusercontent.com/TeamPeachesOff/TeamPeachesHub/main/Logos/GithubLogo.png" style="width:24px;height:24px;border-radius:0;" alt="GitHub"><span>GitHub</span>
       </a>
     </div>
-    <button class="drawer-nav-btn" id="memberDrawerBtn">🍑 Modo Miembro</button>
     <button class="drawer-nav-btn" id="staffDrawerBtn">🛠️ Staff</button>
   </div>
 </div>
@@ -728,10 +730,14 @@ function descargarICS(nombre,isoStart,isoEnd,descripcion){
 async function cargarDatos(){
   try{
     DB=await apiGet();
+    if(!DB || typeof DB!=="object" || !Array.isArray(DB.actividades)) throw new Error("Respuesta inesperada del servidor: "+JSON.stringify(DB).slice(0,200));
     nivel = DB.nivel || (staffPin ? "staff" : (memberPin ? "miembro" : "publico"));
     renderActividades(); renderAnuario(); renderMiembros();
   }
-  catch(err){ document.getElementById("actividadesFeed").innerHTML=`<div class="empty-state">No se pudo conectar con la base de datos.</div>`; }
+  catch(err){
+    console.error("Error cargando datos:", err);
+    document.getElementById("actividadesFeed").innerHTML=`<div class="empty-state">No se pudo conectar con la base de datos.<br><span style="font-size:11px;opacity:0.6;">${escHtml(err.message||String(err))}</span></div>`;
+  }
 }
 
 /* ---------- actividades ---------- */
@@ -1265,7 +1271,9 @@ function openEntregaForm(idActividad){
 document.getElementById("entregaForm").addEventListener("submit", async(e)=>{
   e.preventDefault();
   const btn=e.target.querySelector('button[type="submit"]'); btn.disabled=true;
-  const data={ id:"ENT-"+Date.now(), idActividad:document.getElementById("en_idActividad").value,
+  const idActividad=document.getElementById("en_idActividad").value;
+  const actividad=DB.actividades.find(a=>String(a.id)===String(idActividad));
+  const data={ id:"ENT-"+Date.now(), idActividad:idActividad, tituloActividad:actividad?(actividad.titulo||""):"",
     nombreUsuario:document.getElementById("en_nombre").value, detalleEntrega:document.getElementById("en_detalle").value,
     linkGrabacion:document.getElementById("en_link").value };
   const r=await apiPost({action:"addEntrega", data},"Registrando entrega..."); btn.disabled=false;
@@ -1367,13 +1375,23 @@ document.getElementById("drawerOverlay").onclick=closeDrawer;
 function closeDrawer(){ document.getElementById("drawer").classList.remove("open"); document.getElementById("drawerOverlay").style.display="none"; }
 document.getElementById("miembrosDrawerBtn").onclick=()=>{
   closeDrawer();
+  if(staffPin||memberPin){ mostrarViewMiembros(); return; }
+  // Sin acceso todavía: no tiene sentido mostrar la jerarquía de Miembros vacía,
+  // así que primero se pide la clave (la misma del Modo Miembro).
+  document.querySelectorAll(".tab-btn").forEach(b=>b.classList.remove("active"));
+  document.getElementById("viewActividades").classList.add("hidden"); document.getElementById("viewAnuario").classList.add("hidden"); document.getElementById("viewStaffPin").classList.add("hidden"); document.getElementById("viewMiembros").classList.add("hidden");
+  document.getElementById("viewMemberPin").classList.remove("hidden");
+  document.getElementById("memberPinInput").value=localStorage.getItem("tph_member_clave")||""; // autocompleta, pero no activa solo
+  despuesDeClaveMiembro="miembros";
+};
+function mostrarViewMiembros(){
   document.querySelectorAll(".tab-btn").forEach(b=>b.classList.remove("active"));
   document.getElementById("viewActividades").classList.add("hidden"); document.getElementById("viewAnuario").classList.add("hidden"); document.getElementById("viewStaffPin").classList.add("hidden"); document.getElementById("viewMemberPin").classList.add("hidden");
   document.getElementById("viewMiembros").classList.remove("hidden");
   document.getElementById("memberToolsRow1").classList.toggle("hidden", !staffPin);
   document.getElementById("memberToolsRow2").classList.toggle("hidden", !staffPin);
   renderMiembros();
-};
+}
 document.getElementById("staffDrawerBtn").onclick=()=>{
   closeDrawer();
   if(staffPin){ toast("Ya estás en modo Staff 🛠️"); return; }
@@ -1381,15 +1399,6 @@ document.getElementById("staffDrawerBtn").onclick=()=>{
   document.getElementById("viewActividades").classList.add("hidden"); document.getElementById("viewAnuario").classList.add("hidden"); document.getElementById("viewMiembros").classList.add("hidden"); document.getElementById("viewMemberPin").classList.add("hidden");
   document.getElementById("viewStaffPin").classList.remove("hidden");
   document.getElementById("pinInput").value=localStorage.getItem("tph_pin")||""; // autocompleta, pero no activa solo
-};
-document.getElementById("memberDrawerBtn").onclick=()=>{
-  closeDrawer();
-  if(staffPin){ toast("Ya tenés acceso completo en modo Staff 🛠️"); return; }
-  if(memberPin){ toast("Ya estás en modo Miembro 🍑"); return; }
-  document.querySelectorAll(".tab-btn").forEach(b=>b.classList.remove("active"));
-  document.getElementById("viewActividades").classList.add("hidden"); document.getElementById("viewAnuario").classList.add("hidden"); document.getElementById("viewMiembros").classList.add("hidden"); document.getElementById("viewStaffPin").classList.add("hidden");
-  document.getElementById("viewMemberPin").classList.remove("hidden");
-  document.getElementById("memberPinInput").value=localStorage.getItem("tph_member_clave")||""; // autocompleta, pero no activa solo
 };
 document.getElementById("searchMiembros").addEventListener("input", e=>renderMiembros(e.target.value));
 
@@ -1435,20 +1444,27 @@ document.getElementById("memberPinInput").addEventListener("keydown", e=>{ if(e.
 // Mismo candado silencioso que el PIN de Staff: a los 20 intentos fallidos EN ESTA CARGA de la
 // página, deja de mandar la clave al servidor y siempre dice "Clave incorrecta", hasta recargar.
 let memberIntentosFallidos=0;
-async function verificarClaveMiembro(){
+// Si la clave se pidió porque apretaron "Miembros" sin acceso todavía, al validar hay que
+// llevarlos directo a esa vista en vez de a Actividades.
+let despuesDeClaveMiembro=null;
+async function verificarClaveMiembro(silencioso){
   const val=document.getElementById("memberPinInput").value.trim();
-  if(!val){ document.getElementById("memberPinMsg").textContent="Escribe la clave."; return; }
+  if(!val){ if(!silencioso) document.getElementById("memberPinMsg").textContent="Escribe la clave."; return; }
   if(memberIntentosFallidos>=20){ document.getElementById("memberPinMsg").textContent="Clave incorrecta ❌"; return; }
   const r=await apiPost({action:"validarClaveMiembro", clave:val},"Verificando clave...");
   if(r.ok){
     memberPin=val;
     localStorage.setItem("tph_member_clave",val);
     document.getElementById("memberPinMsg").textContent="";
-    toast("Modo Miembro activado 🍑");
     document.getElementById("memberStatusBadge").style.display="block";
-    switchTab("actividades");
+    if(!silencioso) toast("Modo Miembro activado 🍑");
+    if(despuesDeClaveMiembro==="miembros"){ despuesDeClaveMiembro=null; mostrarViewMiembros(); } else switchTab("actividades");
     await cargarDatos(); // vuelve a pedir los datos, ahora con la clave, para traer todo completo
-  } else { memberIntentosFallidos++; document.getElementById("memberPinMsg").textContent="Clave incorrecta ❌"; }
+  } else {
+    memberIntentosFallidos++;
+    localStorage.removeItem("tph_member_clave");
+    if(!silencioso) document.getElementById("memberPinMsg").textContent="Clave incorrecta ❌";
+  }
 }
 document.getElementById("memberStatusBadge").onclick=()=>{
   if(confirm("¿Deseas salir del modo miembro?")){
@@ -1462,7 +1478,19 @@ document.getElementById("memberStatusBadge").onclick=()=>{
 function escHtml(str){ return String(str).replace(/[&<>"']/g, s=>({"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;","'":"&#39;"}[s])); }
 function escAttr(str){ return escHtml(str); }
 
-cargarDatos();
+// A diferencia de Staff (que a propósito NUNCA se auto-activa), el modo Miembro es de solo
+// lectura y de bajo riesgo, así que si ya lo validaste antes, no hace falta pedirlo de nuevo
+// cada vez que recargás la página.
+(async function restaurarModoMiembro(){
+  const claveGuardada = localStorage.getItem("tph_member_clave");
+  if (claveGuardada) {
+    document.getElementById("memberPinInput").value = claveGuardada;
+    await verificarClaveMiembro(true); // silencioso: sin toasts ni mensajes de error si ya no sirve; ya recarga los datos si sigue siendo válida
+    if (!memberPin) await cargarDatos(); // la clave guardada ya no sirve: cargar igual la versión pública
+  } else {
+    await cargarDatos();
+  }
+})();
 </script>
 </body>
 </html>
