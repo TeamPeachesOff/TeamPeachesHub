@@ -54,7 +54,7 @@
   main{max-width:640px;margin:0 auto;padding:16px 12px 60px;}
   .hidden{display:none !important;}
 
-  #addActBtn,#addMemberBtn{display:block;width:100%;margin-bottom:14px;padding:12px;border-radius:14px;background:linear-gradient(90deg,var(--peach-2),#ffffff);color:#3d1f2a;font-weight:800;font-size:15px;}
+  #addActBtn{display:block;width:100%;margin-bottom:14px;padding:12px;border-radius:14px;background:linear-gradient(90deg,var(--peach-2),#ffffff);color:#3d1f2a;font-weight:800;font-size:15px;}
 
   .filter-pills{display:flex;gap:8px;margin-bottom:16px;}
   .pill-toggle{flex:1;padding:9px;border-radius:999px;background:var(--card-bg-2);color:var(--text-dim);font-weight:700;font-size:13px;text-align:center;transition:all .15s;}
@@ -265,9 +265,14 @@
 
   <section id="viewMiembros" class="hidden">
     <input type="text" id="searchMiembros" placeholder="🔍 Buscar por nombre, rol o rango vocal...">
-    <button id="addMemberBtn" class="hidden">(+) Añadir Miembro</button>
-    <button class="btn-small btn-bell hidden" id="testCumpleBtn" style="width:100%;margin-bottom:10px;">🔔 Probar aviso de cumpleaños</button>
-    <button class="btn-small btn-family hidden" id="refreshPhotosBtn" style="width:100%;margin-bottom:14px;">🔄 Actualizar Imágenes (Smule)</button>
+    <div class="hidden" id="memberToolsRow1" style="display:flex;gap:10px;margin-bottom:10px;">
+      <button id="addMemberBtn" class="btn-small btn-admin" style="flex:1;">➕ Añadir Miembro</button>
+      <button class="btn-small btn-family" id="refreshPhotosBtn" style="flex:1;">🔄 Actualizar pfp</button>
+    </div>
+    <div class="hidden" id="memberToolsRow2" style="display:flex;gap:10px;margin-bottom:14px;">
+      <button class="btn-small btn-bell" id="testCumpleBtn" style="flex:1;">🎂 Aviso de cumpleaños</button>
+      <button class="btn-small btn-danger" id="testSeguridadBtn" style="flex:1;">🔒 Aviso de seguridad</button>
+    </div>
     <div class="section-label">👑 Reinas Peachy</div>
     <div class="avatar-row" id="reinasCarousel"></div>
     <div class="section-label">💎 Staff</div>
@@ -917,6 +922,10 @@ document.getElementById("testCumpleBtn").onclick=async()=>{
   const r=await apiPost({action:"testCumpleanos"},"Enviando aviso de prueba...");
   if(r.ok) toast("Mensaje de prueba enviado a Discord 🔔"); else toast("Error: "+(r.error||""));
 };
+document.getElementById("testSeguridadBtn").onclick=async()=>{
+  const r=await apiPost({action:"testSeguridad"},"Enviando alerta de prueba...");
+  if(r.ok) toast("Alerta de seguridad de prueba enviada 🔒"); else toast("Error: "+(r.error||""));
+};
 document.getElementById("refreshPhotosBtn").onclick=async()=>{
   if(!confirm("¿Actualizar automáticamente las fotos de todos los miembros con Smule? Puede tardar un momento.")) return;
   const r=await apiPost({action:"actualizarTodasLasFotos"},"Actualizando fotos desde Smule...");
@@ -1224,9 +1233,8 @@ document.getElementById("miembrosDrawerBtn").onclick=()=>{
   document.querySelectorAll(".tab-btn").forEach(b=>b.classList.remove("active"));
   document.getElementById("viewActividades").classList.add("hidden"); document.getElementById("viewAnuario").classList.add("hidden"); document.getElementById("viewStaffPin").classList.add("hidden");
   document.getElementById("viewMiembros").classList.remove("hidden");
-  document.getElementById("testCumpleBtn").classList.toggle("hidden", !staffPin);
-  document.getElementById("refreshPhotosBtn").classList.toggle("hidden", !staffPin);
-  document.getElementById("addMemberBtn").classList.toggle("hidden", !staffPin);
+  document.getElementById("memberToolsRow1").classList.toggle("hidden", !staffPin);
+  document.getElementById("memberToolsRow2").classList.toggle("hidden", !staffPin);
   renderMiembros();
 };
 document.getElementById("staffDrawerBtn").onclick=()=>{
@@ -1241,9 +1249,14 @@ document.getElementById("searchMiembros").addEventListener("input", e=>renderMie
 
 document.getElementById("pinSubmitBtn").onclick=verificarPin;
 document.getElementById("pinInput").addEventListener("keydown", e=>{ if(e.key==="Enter") verificarPin(); });
+// Bloqueo silencioso local: a los 20 intentos fallidos EN ESTA CARGA de la página, deja de mandar
+// el PIN al servidor y siempre dice "PIN incorrecto", sin avisar que está bloqueado.
+// Se resetea solo al recargar la página (no se guarda en localStorage a propósito).
+let pinIntentosFallidos=0;
 async function verificarPin(){
   const val=document.getElementById("pinInput").value.trim();
   if(!val){ document.getElementById("pinMsg").textContent="Escribe un PIN."; return; }
+  if(pinIntentosFallidos>=20){ document.getElementById("pinMsg").textContent="PIN incorrecto ❌"; return; }
   staffPin=val;
   const r=await apiPost({action:"validarPin"},"Verificando PIN...");
   if(r.ok){
@@ -1255,7 +1268,7 @@ async function verificarPin(){
     document.getElementById("staffToolsRow").classList.remove("hidden");
     switchTab("actividades");
     await cargarDatos(); // vuelve a pedir los datos, ahora con el PIN, para traer todo completo
-  } else { staffPin=null; document.getElementById("pinMsg").textContent="PIN incorrecto ❌"; }
+  } else { staffPin=null; pinIntentosFallidos++; document.getElementById("pinMsg").textContent="PIN incorrecto ❌"; }
 }
 document.getElementById("staffStatusBadge").onclick=()=>{
   if(confirm("¿Deseas salir del modo staff?")){
@@ -1263,9 +1276,8 @@ document.getElementById("staffStatusBadge").onclick=()=>{
     document.getElementById("staffStatusBadge").style.display="none";
     document.getElementById("addActBtn").classList.add("hidden");
     document.getElementById("staffToolsRow").classList.add("hidden");
-    document.getElementById("addMemberBtn").classList.add("hidden");
-    document.getElementById("testCumpleBtn").classList.add("hidden");
-    document.getElementById("refreshPhotosBtn").classList.add("hidden");
+    document.getElementById("memberToolsRow1").classList.add("hidden");
+    document.getElementById("memberToolsRow2").classList.add("hidden");
     toast("Saliste del modo staff");
     cargarDatos(); // vuelve a pedir los datos sin PIN, así el servidor manda la versión pública
   }
