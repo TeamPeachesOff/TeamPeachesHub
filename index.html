@@ -113,7 +113,7 @@
   /* ===== ANUARIO: años / meses / bloques ===== */
   .anuario-year-group{position:relative;}
   .anuario-year-label{position:sticky;top:62px;z-index:15;text-align:center;font-size:30px;font-weight:900;color:var(--gold);
-    background:linear-gradient(180deg,var(--bg) 65%,transparent);padding:16px 0 16px;text-shadow:0 2px 10px rgba(0,0,0,0.5);}
+    padding:16px 0 16px;text-shadow:0 2px 10px rgba(0,0,0,0.5);}
   .anuario-month-label{text-align:center;font-weight:800;color:var(--peach-2);font-size:15px;margin:10px 0 12px;text-transform:capitalize;}
   .anuario-date-row{display:flex;gap:14px;justify-content:center;flex-wrap:wrap;margin-bottom:22px;}
   .anuario-block{width:250px;max-width:44vw;background:var(--card-bg);border-radius:16px;overflow:hidden;border:1px solid var(--gold);box-shadow:0 0 14px rgba(255,215,0,0.12);cursor:pointer;}
@@ -187,12 +187,13 @@
   .win-group{margin-bottom:14px;}
   .win-group:last-child{margin-bottom:0;}
   .win-group-title{font-weight:800;color:var(--peach-2);font-size:13px;margin-bottom:6px;}
-  .win-row{display:flex;justify-content:space-between;align-items:center;gap:10px;padding:8px 10px;font-size:13.5px;border-radius:10px;margin-bottom:6px;}
+  .win-row{display:flex;justify-content:space-between;align-items:flex-start;gap:10px;padding:8px 10px;font-size:13.5px;border-radius:10px;margin-bottom:6px;}
+  .win-row-text{line-height:1.5;}
   .win-row:last-child{margin-bottom:0;}
   .win-row.win-cancion{background:linear-gradient(90deg,rgba(239,8,112,0.22),rgba(255,143,177,0.12));border:1px solid rgba(239,8,112,0.35);}
   .win-row.win-doblaje{background:linear-gradient(90deg,rgba(93,173,226,0.22),rgba(93,173,226,0.1));border:1px solid rgba(93,173,226,0.35);}
   .win-row.win-mencion{background:rgba(255,215,0,0.12);border:1px solid rgba(255,215,0,0.3);}
-  .win-listen{background:var(--gold);color:#3d1f2a;padding:6px 12px;border-radius:999px;font-size:12px;font-weight:800;white-space:nowrap;box-shadow:0 2px 8px rgba(255,215,0,0.3);}
+  .win-listen{background:var(--gold);color:#3d1f2a;padding:6px 12px;border-radius:999px;font-size:12px;font-weight:800;white-space:nowrap;box-shadow:0 2px 8px rgba(255,215,0,0.3);flex-shrink:0;margin-top:2px;}
   .anuario-pill-group{display:flex;gap:8px;margin:10px 0;}
   .anuario-pill{flex:1;padding:10px;border-radius:999px;background:var(--card-bg-2);color:var(--text-dim);font-weight:700;font-size:13px;text-align:center;}
   .anuario-pill.selected{background:linear-gradient(90deg,var(--peach-2),var(--peach-1));color:#fff;}
@@ -266,12 +267,12 @@
   <section id="viewMiembros" class="hidden">
     <input type="text" id="searchMiembros" placeholder="🔍 Buscar por nombre, rol o rango vocal...">
     <div class="hidden" id="memberToolsRow1" style="display:flex;gap:10px;margin-bottom:10px;">
-      <button id="addMemberBtn" class="btn-small btn-admin" style="flex:1;">➕ Añadir Miembro</button>
+      <button id="addMemberBtn" class="btn-small btn-family" style="flex:1;">➕ Añadir Miembro</button>
       <button class="btn-small btn-family" id="refreshPhotosBtn" style="flex:1;">🔄 Actualizar pfp</button>
     </div>
     <div class="hidden" id="memberToolsRow2" style="display:flex;gap:10px;margin-bottom:14px;">
-      <button class="btn-small btn-bell" id="testCumpleBtn" style="flex:1;">🎂 Aviso de cumpleaños</button>
-      <button class="btn-small btn-danger" id="testSeguridadBtn" style="flex:1;">🔒 Aviso de seguridad</button>
+      <button class="btn-small btn-family" id="testCumpleBtn" style="flex:1;">🎂 Aviso de cumpleaños</button>
+      <button class="btn-small btn-family" id="testSeguridadBtn" style="flex:1;">🔒 Aviso de seguridad</button>
     </div>
     <div class="section-label">👑 Reinas Peachy</div>
     <div class="avatar-row" id="reinasCarousel"></div>
@@ -552,17 +553,37 @@ function parseWinnerLines(text){
   if(!text) return [];
   return String(text).split("\n").filter(l=>l.trim()!=="").map(line=>{
     const idx=line.indexOf("::");
-    if(idx>=0) return {texto:line.slice(0,idx), link:line.slice(idx+2)};
-    return {texto:line, link:""};
+    const main=idx>=0?line.slice(0,idx):line;
+    const link=idx>=0?line.slice(idx+2):"";
+    // formato guardado: "nombreUsuario - detalle" -> separamos por el primer " - "
+    const sepIdx=main.indexOf(" - ");
+    const nombre=sepIdx>=0?main.slice(0,sepIdx):main;
+    const detalle=sepIdx>=0?main.slice(sepIdx+3):"";
+    return {nombre, detalle, link};
   });
+}
+// Junta en un solo bloque a todas las personas que comparten la misma canción/escena y el mismo link
+// (caso de actividades grupales con 2+ participantes), en vez de repetir una tarjeta por persona.
+function agruparGanadores(entries){
+  const grupos=[]; const mapa={};
+  entries.forEach(e=>{
+    const key=(e.detalle||"")+"‡"+(e.link||"");
+    if(!mapa[key]){ mapa[key]={detalle:e.detalle, link:e.link, nombres:[]}; grupos.push(mapa[key]); }
+    mapa[key].nombres.push(e.nombre);
+  });
+  return grupos;
 }
 function winnersGroupHTML(emoji,label,text,tipo){
   const entries=parseWinnerLines(text);
   if(!entries.length) return "";
+  const grupos=agruparGanadores(entries);
   const rowClass = tipo==="cancion" ? "win-cancion" : tipo==="doblaje" ? "win-doblaje" : tipo==="mencion" ? "win-mencion" : "";
   return `<div class="win-group">
     <div class="win-group-title">${emoji} ${label}</div>
-    ${entries.map(e=>`<div class="win-row ${rowClass}"><span>${escHtml(e.texto)}</span>${e.link?`<a class="win-listen" target="_blank" href="${escAttr(e.link)}">🎧 Escuchar</a>`:""}</div>`).join("")}
+    ${grupos.map(g=>`<div class="win-row ${rowClass}">
+      <div class="win-row-text"><strong>${escHtml(g.detalle||"(sin título)")}</strong>${g.nombres.map(n=>`<br>${escHtml(n)}`).join("")}</div>
+      ${g.link?`<a class="win-listen" target="_blank" href="${escAttr(g.link)}">🎧 Escuchar</a>`:""}
+    </div>`).join("")}
   </div>`;
 }
 
