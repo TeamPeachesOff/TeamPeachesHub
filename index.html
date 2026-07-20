@@ -433,7 +433,10 @@ const MESES = ["ene","feb","mar","abr","may","jun","jul","ago","sep","oct","nov"
 const MESES_LARGO = ["Enero","Febrero","Marzo","Abril","Mayo","Junio","Julio","Agosto","Septiembre","Octubre","Noviembre","Diciembre"];
 
 let DB = { actividades: [], entregas: [], miembros: [] };
-let staffPin = localStorage.getItem("tph_pin") || null;
+// El PIN se guarda en localStorage solo para autocompletar el campo la próxima vez,
+// pero el modo Staff NO se auto-activa al recargar: siempre se abre en modo normal
+// y hay que apretar el botón Staff + confirmar el PIN cada vez, a propósito.
+let staffPin = null;
 let filtroCanto = true, filtroDoblaje = true;
 let modoEliminarEntregas = {};
 let anuarioCtx = null;
@@ -560,7 +563,9 @@ function winnersGroupHTML(emoji,label,text,tipo){
 
 async function apiGet(){
   showLoading("Cargando datos...");
-  try{ const res=await fetch(APPS_SCRIPT_URL); return await res.json(); }
+  // Si hay modo staff activo en esta sesión, se manda el PIN para que el servidor
+  // devuelva los datos completos; si no, el servidor ya filtra solo lo mostrable al público.
+  try{ const url=APPS_SCRIPT_URL+(staffPin?("?clave="+encodeURIComponent(staffPin)):""); const res=await fetch(url); return await res.json(); }
   finally{ hideLoading(); }
 }
 async function apiPost(payload, msg){
@@ -706,11 +711,11 @@ function cardHTML(a){
           ${categoriaTag(a.categoria)}
           ${participacionTag(a.participacion)}
         </div>
-        <div class="card-actions">
+        ${(a.linkForms||a.linkUnirse||a.linkScript)?`<div class="card-actions">
           ${a.linkForms?`<a class="btn-small btn-primary" target="_blank" href="${escAttr(a.linkForms)}">🎙️ Ir a Forms</a>`:""}
           ${a.linkUnirse?`<a class="btn-small btn-family" target="_blank" href="${escAttr(a.linkUnirse)}">🤝 Unirse</a>`:""}
           ${a.linkScript?`<a class="btn-small btn-family" target="_blank" href="${escAttr(a.linkScript)}">📄 Script</a>`:""}
-        </div>
+        </div>`:""}
         ${staffPin?`<div class="card-actions">
           <button class="btn-small btn-bell" data-bell="${a.id}">🔔</button>
           <button class="btn-small btn-admin" data-edit="${a.id}">✏️ Editar</button>
@@ -718,10 +723,11 @@ function cardHTML(a){
         </div>`:""}
       </div>
     </div>
+    ${(a.descripcion||a.wishlist||a.streamNombre)?`
     <div class="accordion">
       <button class="accordion-toggle" data-toggle="info-${a.id}">▼ Más Info & Wishlist</button>
       <div class="accordion-body" id="info-${a.id}"></div>
-    </div>
+    </div>`:""}
     <div class="accordion">
       <button class="accordion-toggle" data-toggle="entregas-${a.id}">▼ Ver Actividades Entregadas (${entregasDeEsta.length})</button>
       <div class="accordion-body" id="entregas-${a.id}">
@@ -1229,6 +1235,7 @@ document.getElementById("staffDrawerBtn").onclick=()=>{
   document.querySelectorAll(".tab-btn").forEach(b=>b.classList.remove("active"));
   document.getElementById("viewActividades").classList.add("hidden"); document.getElementById("viewAnuario").classList.add("hidden"); document.getElementById("viewMiembros").classList.add("hidden");
   document.getElementById("viewStaffPin").classList.remove("hidden");
+  document.getElementById("pinInput").value=localStorage.getItem("tph_pin")||""; // autocompleta, pero no activa solo
 };
 document.getElementById("searchMiembros").addEventListener("input", e=>renderMiembros(e.target.value));
 
@@ -1247,7 +1254,7 @@ async function verificarPin(){
     document.getElementById("addActBtn").classList.remove("hidden");
     document.getElementById("staffToolsRow").classList.remove("hidden");
     switchTab("actividades");
-    renderActividades(); renderAnuario(); renderMiembros();
+    await cargarDatos(); // vuelve a pedir los datos, ahora con el PIN, para traer todo completo
   } else { staffPin=null; document.getElementById("pinMsg").textContent="PIN incorrecto ❌"; }
 }
 document.getElementById("staffStatusBadge").onclick=()=>{
@@ -1260,18 +1267,13 @@ document.getElementById("staffStatusBadge").onclick=()=>{
     document.getElementById("testCumpleBtn").classList.add("hidden");
     document.getElementById("refreshPhotosBtn").classList.add("hidden");
     toast("Saliste del modo staff");
-    renderActividades(); renderAnuario(); renderMiembros();
+    cargarDatos(); // vuelve a pedir los datos sin PIN, así el servidor manda la versión pública
   }
 };
 
 function escHtml(str){ return String(str).replace(/[&<>"']/g, s=>({"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;","'":"&#39;"}[s])); }
 function escAttr(str){ return escHtml(str); }
 
-if(staffPin){
-  document.getElementById("staffStatusBadge").style.display="block";
-  document.getElementById("addActBtn").classList.remove("hidden");
-  document.getElementById("staffToolsRow").classList.remove("hidden");
-}
 cargarDatos();
 </script>
 </body>
