@@ -89,6 +89,11 @@
   .btn-family{background:linear-gradient(90deg,rgba(239,8,112,0.55),rgba(255,143,177,0.55));color:#fff;border:1px solid rgba(239,8,112,0.5);}
   .btn-admin{background:rgba(164,95,199,0.25);color:#d9b6f5;}
   .btn-danger{background:rgba(231,76,60,0.22);color:var(--red);}
+  /* Misma "calidad" visual que btn-family (degradado + borde), pero con su propio color para
+     distinguir de un vistazo cada botón de la sección Miembros. */
+  .btn-update{background:linear-gradient(90deg,rgba(46,204,113,0.55),rgba(120,224,143,0.5));color:#fff;border:1px solid rgba(46,204,113,0.55);}
+  .btn-cumple{background:linear-gradient(90deg,rgba(255,215,0,0.5),rgba(255,193,7,0.35));color:#3a2a00;border:1px solid rgba(255,215,0,0.6);}
+  .btn-seguridad{background:linear-gradient(90deg,rgba(231,76,60,0.55),rgba(255,143,143,0.4));color:#fff;border:1px solid rgba(231,76,60,0.55);}
   .btn-bell{background:rgba(255,215,0,0.18);color:var(--gold);}
   button:disabled{opacity:0.5;cursor:not-allowed;}
 
@@ -148,6 +153,8 @@
   #pinInput{width:100%;text-align:center;font-size:24px;letter-spacing:8px;padding:14px;border-radius:12px;border:1px solid rgba(255,255,255,0.15);background:var(--card-bg-2);color:var(--text);margin:16px 0;}
   #pinMsg{font-size:13px;color:var(--red);min-height:18px;}
   #staffStatusBadge{display:none;position:fixed;bottom:14px;right:14px;background:linear-gradient(90deg,#6a3d8f,#a45fc7);color:#fff;padding:8px 14px;border-radius:999px;font-size:12.5px;font-weight:700;z-index:60;box-shadow:0 4px 14px rgba(0,0,0,0.4);cursor:pointer;}
+  /* Discreto a propósito: modo Miembro es solo lectura, no necesita tanta prominencia como Staff. */
+  #memberStatusBadge{display:none;position:fixed;bottom:14px;left:14px;background:linear-gradient(90deg,rgba(239,8,112,0.75),rgba(255,143,177,0.6));color:#fff;padding:6px 12px;border-radius:999px;font-size:11.5px;font-weight:700;z-index:60;box-shadow:0 4px 14px rgba(0,0,0,0.4);cursor:pointer;}
 
   .modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,0.6);z-index:200;display:none;align-items:flex-start;justify-content:center;padding:30px 12px;overflow-y:auto;}
   .modal-overlay.open{display:flex;}
@@ -239,6 +246,8 @@
   </div>
   <div class="drawer-divider"></div>
   <button class="drawer-nav-btn" id="miembrosDrawerBtn">👥 Miembros</button>
+  <button class="drawer-nav-btn" id="buzonDrawerBtn">📮 Buzón de Quejas</button>
+  <button class="drawer-nav-btn" id="reporteDrawerBtn">🐞 Reportar Error</button>
   <div class="staff-bottom-group">
     <div class="hidden" id="staffToolsRow" style="display:flex;gap:10px;">
       <a class="drawer-nav-btn" style="justify-content:center;flex:1;padding:10px;" target="_blank" href="https://docs.google.com/spreadsheets/d/13Mca1Xlt9XUWgHLBqLn5HJ8YrgTTeSX1tU25LqWC-Mc/edit?gid=1284989132#gid=1284989132">
@@ -248,6 +257,7 @@
         <img src="https://raw.githubusercontent.com/TeamPeachesOff/TeamPeachesHub/main/Logos/GithubLogo.png" style="width:24px;height:24px;border-radius:0;" alt="GitHub"><span>GitHub</span>
       </a>
     </div>
+    <button class="drawer-nav-btn" id="memberDrawerBtn">🍑 Modo Miembro</button>
     <button class="drawer-nav-btn" id="staffDrawerBtn">🛠️ Staff</button>
   </div>
 </div>
@@ -268,11 +278,11 @@
     <input type="text" id="searchMiembros" placeholder="🔍 Buscar por nombre, rol o rango vocal...">
     <div class="hidden" id="memberToolsRow1" style="display:flex;gap:10px;margin-bottom:10px;">
       <button id="addMemberBtn" class="btn-small btn-family" style="flex:1;">➕ Añadir Miembro</button>
-      <button class="btn-small btn-family" id="refreshPhotosBtn" style="flex:1;">🔄 Actualizar pfp</button>
+      <button class="btn-small btn-update" id="refreshPhotosBtn" style="flex:1;">🔄 Actualizar pfp</button>
     </div>
     <div class="hidden" id="memberToolsRow2" style="display:flex;gap:10px;margin-bottom:14px;">
-      <button class="btn-small btn-family" id="testCumpleBtn" style="flex:1;">🎂 Aviso de cumpleaños</button>
-      <button class="btn-small btn-family" id="testSeguridadBtn" style="flex:1;">🔒 Aviso de seguridad</button>
+      <button class="btn-small btn-cumple" id="testCumpleBtn" style="flex:1;">🎂 Aviso de cumpleaños</button>
+      <button class="btn-small btn-seguridad" id="testSeguridadBtn" style="flex:1;">🔒 Aviso de seguridad</button>
     </div>
     <div class="section-label">👑 Reinas Peachy</div>
     <div class="avatar-row" id="reinasCarousel"></div>
@@ -291,9 +301,20 @@
       <button class="btn-primary" style="width:100%;padding:12px;border-radius:12px;font-weight:800;" id="pinSubmitBtn">Desbloquear</button>
     </div>
   </section>
+
+  <section id="viewMemberPin" class="hidden">
+    <div class="center-screen">
+      <div style="font-size:40px;">🍑🔑</div>
+      <h3>Introduce la clave de Miembro</h3>
+      <input type="password" id="memberPinInput">
+      <div id="memberPinMsg"></div>
+      <button class="btn-primary" style="width:100%;padding:12px;border-radius:12px;font-weight:800;" id="memberPinSubmitBtn">Desbloquear</button>
+    </div>
+  </section>
 </main>
 
 <div id="staffStatusBadge">🛠️ Modo Staff activo</div>
+<div id="memberStatusBadge">🍑 Modo Miembro (solo lectura)</div>
 <div class="toast" id="toast"></div>
 
 <div class="modal-overlay" id="memberModal"><div class="modal-box"><button class="modal-close" data-close="memberModal">✕</button><div id="memberModalContent"></div></div></div>
@@ -443,6 +464,9 @@ let DB = { actividades: [], entregas: [], miembros: [] };
 // pero el modo Staff NO se auto-activa al recargar: siempre se abre en modo normal
 // y hay que apretar el botón Staff + confirmar el PIN cada vez, a propósito.
 let staffPin = null;
+// Modo Miembro: misma idea que staffPin (autocompleta pero no se auto-activa al recargar).
+let memberPin = null;
+let nivel = "publico"; // "staff" | "miembro" | "publico" -- lo manda el backend en cada carga
 let filtroCanto = true, filtroDoblaje = true;
 let modoEliminarEntregas = {};
 let anuarioCtx = null;
@@ -562,13 +586,18 @@ function parseWinnerLines(text){
     return {nombre, detalle, link};
   });
 }
-// Junta en un solo bloque a todas las personas que comparten la misma canción/escena y el mismo link
-// (caso de actividades grupales con 2+ participantes), en vez de repetir una tarjeta por persona.
+// Junta en un solo bloque a todas las personas que comparten la misma canción/escena (caso de
+// actividades grupales con 2+ participantes), en vez de repetir una tarjeta por persona.
+// OJO: se agrupa SOLO por el nombre de la canción/escena, NO por el link — cada persona suele
+// tener su propio link de grabación aunque hayan cantado la misma canción, y antes eso hacía que
+// el mismo grupo saliera partido en 2+ tarjetas. El botón "Escuchar" usa el primer link que haya
+// disponible dentro del grupo.
 function agruparGanadores(entries){
   const grupos=[]; const mapa={};
   entries.forEach(e=>{
-    const key=(e.detalle||"")+"‡"+(e.link||"");
-    if(!mapa[key]){ mapa[key]={detalle:e.detalle, link:e.link, nombres:[]}; grupos.push(mapa[key]); }
+    const key=(e.detalle||"").trim().toLowerCase();
+    if(!mapa[key]){ mapa[key]={detalle:e.detalle, link:e.link||"", nombres:[]}; grupos.push(mapa[key]); }
+    if(!mapa[key].link && e.link) mapa[key].link=e.link;
     mapa[key].nombres.push(e.nombre);
   });
   return grupos;
@@ -589,9 +618,11 @@ function winnersGroupHTML(emoji,label,text,tipo){
 
 async function apiGet(){
   showLoading("Cargando datos...");
-  // Si hay modo staff activo en esta sesión, se manda el PIN para que el servidor
-  // devuelva los datos completos; si no, el servidor ya filtra solo lo mostrable al público.
-  try{ const url=APPS_SCRIPT_URL+(staffPin?("?clave="+encodeURIComponent(staffPin)):""); const res=await fetch(url); return await res.json(); }
+  // Si hay modo staff o modo miembro activo en esta sesión, se manda la clave correspondiente
+  // para que el servidor devuelva los datos completos; si no, el servidor ya filtra solo lo
+  // mostrable al público. Staff tiene prioridad si por algún motivo ambos estuvieran seteados.
+  const clave = staffPin || memberPin || "";
+  try{ const url=APPS_SCRIPT_URL+(clave?("?clave="+encodeURIComponent(clave)):""); const res=await fetch(url); return await res.json(); }
   finally{ hideLoading(); }
 }
 async function apiPost(payload, msg){
@@ -695,7 +726,11 @@ function descargarICS(nombre,isoStart,isoEnd,descripcion){
 
 /* ---------- carga ---------- */
 async function cargarDatos(){
-  try{ DB=await apiGet(); renderActividades(); renderAnuario(); renderMiembros(); }
+  try{
+    DB=await apiGet();
+    nivel = DB.nivel || (staffPin ? "staff" : (memberPin ? "miembro" : "publico"));
+    renderActividades(); renderAnuario(); renderMiembros();
+  }
   catch(err){ document.getElementById("actividadesFeed").innerHTML=`<div class="empty-state">No se pudo conectar con la base de datos.</div>`; }
 }
 
@@ -737,7 +772,7 @@ function cardHTML(a){
           ${categoriaTag(a.categoria)}
           ${participacionTag(a.participacion)}
         </div>
-        ${(a.linkForms||a.linkUnirse||a.linkScript)?`<div class="card-actions">
+        ${(a.linkForms||a.linkUnirse||a.linkScript)&&nivel!=="miembro"?`<div class="card-actions">
           ${a.linkForms?`<a class="btn-small btn-primary" target="_blank" href="${escAttr(a.linkForms)}">🎙️ Ir a Forms</a>`:""}
           ${a.linkUnirse?`<a class="btn-small btn-family" target="_blank" href="${escAttr(a.linkUnirse)}">🤝 Unirse</a>`:""}
           ${a.linkScript?`<a class="btn-small btn-family" target="_blank" href="${escAttr(a.linkScript)}">📄 Script</a>`:""}
@@ -749,7 +784,7 @@ function cardHTML(a){
         </div>`:""}
       </div>
     </div>
-    ${(a.descripcion||a.wishlist||a.streamNombre)?`
+    ${(a.descripcion||a.wishlist||a.streamNombre)&&nivel!=="miembro"?`
     <div class="accordion">
       <button class="accordion-toggle" data-toggle="info-${a.id}">▼ Más Info & Wishlist</button>
       <div class="accordion-body" id="info-${a.id}"></div>
@@ -1237,6 +1272,86 @@ document.getElementById("entregaForm").addEventListener("submit", async(e)=>{
   if(r.ok){ toast("Entrega registrada ✅"); closeModal("entregaFormModal"); await cargarDatos(); } else toast("Error: "+(r.error||""));
 });
 
+/* ---------- Fase 4: Buzón de Quejas / Recomendaciones (público, sin PIN) ---------- */
+function openBuzonForm(){
+  document.getElementById("memberModalContent").innerHTML=`
+    <h3>📮 Buzón de Quejas y Recomendaciones</h3>
+    <div class="form-group"><label>Nombre (opcional)</label><input type="text" id="bz_nombre" placeholder="Podés dejarlo vacío si preferís ser anónimo"></div>
+    <div class="switch-pill" id="bz_tipoSwitch" style="margin-bottom:12px;">
+      <button type="button" data-val="Queja">😤 Queja</button>
+      <button type="button" data-val="Recomendación">💡 Recomendación</button>
+    </div>
+    <div class="form-group"><label>Detalles</label><textarea id="bz_detalle" rows="4"></textarea></div>
+    <div class="form-group"><label>Archivos adjuntos (opcional)</label>
+      <input type="file" id="bz_adjuntoInput" accept="image/*,.pdf,.doc,.docx" multiple>
+      <div id="bz_adjuntoStatus" style="font-size:12px;color:var(--text-dim);margin-top:4px;"></div>
+    </div>
+    <button class="btn-primary" style="width:100%;padding:12px;border-radius:12px;font-weight:800;margin-top:8px;" id="bz_submitBtn">Enviar</button>`;
+  openModal("memberModal");
+  bindSwitchPill("bz_tipoSwitch"); setSwitchPill("bz_tipoSwitch","Queja");
+  document.getElementById("bz_submitBtn").onclick=enviarQueja;
+}
+async function subirAdjuntos(inputEl, statusEl){
+  const files=Array.from(inputEl.files||[]);
+  if(!files.length) return "";
+  const urls=[];
+  for(const file of files){
+    statusEl.textContent=`Subiendo ${file.name}...`;
+    try{
+      const base64Data=await fileToBase64(file);
+      const r=await apiPost({action:"uploadAdjunto", filename:file.name, base64Data},"Subiendo adjunto...");
+      if(r.ok) urls.push(r.url); else { statusEl.textContent="Error subiendo "+file.name+": "+(r.error||""); }
+    }catch(err){ statusEl.textContent="Error al leer "+file.name; }
+  }
+  statusEl.textContent=urls.length?`${urls.length} archivo(s) subido(s) ✅`:"";
+  return urls.join(", ");
+}
+async function enviarQueja(){
+  const tipo=getSwitchPillValue("bz_tipoSwitch")||"Queja";
+  const nombre=document.getElementById("bz_nombre").value.trim();
+  const detalle=document.getElementById("bz_detalle").value.trim();
+  if(!detalle){ toast("Escribe los detalles antes de enviar"); return; }
+  const statusEl=document.getElementById("bz_adjuntoStatus");
+  const adjuntoUrl=await subirAdjuntos(document.getElementById("bz_adjuntoInput"), statusEl);
+  const r=await apiPost({action:"addQueja", data:{nombre, tipo, detalle, adjuntoUrl}},"Enviando...");
+  if(r.ok){ toast("¡Enviado, gracias! 🍑"); closeModal("memberModal"); } else toast("Error: "+(r.error||""));
+}
+
+/* ---------- Fase 4: Reportar Error (público, sin PIN) ---------- */
+function openReporteForm(){
+  document.getElementById("memberModalContent").innerHTML=`
+    <h3>🐞 Reportar un Error</h3>
+    <div class="form-group"><label>Título breve</label><input type="text" id="rp_titulo" placeholder="Ej: El botón de Escuchar no abre el link"></div>
+    <div class="form-group"><label>¿En qué sección pasó?</label>
+      <select id="rp_seccion">
+        <option value="Actividades">Actividades</option>
+        <option value="Anuario">Anuario</option>
+        <option value="Miembros">Miembros</option>
+        <option value="Otro">Otro</option>
+      </select>
+    </div>
+    <div class="form-group"><label>Descripción del error</label><textarea id="rp_descripcion" rows="4" placeholder="Contanos qué pasó y en qué momento"></textarea></div>
+    <div class="form-group"><label>Captura o archivo (opcional)</label>
+      <input type="file" id="rp_adjuntoInput" accept="image/*,.pdf" multiple>
+      <div id="rp_adjuntoStatus" style="font-size:12px;color:var(--text-dim);margin-top:4px;"></div>
+    </div>
+    <button class="btn-primary" style="width:100%;padding:12px;border-radius:12px;font-weight:800;margin-top:8px;" id="rp_submitBtn">Enviar reporte</button>`;
+  openModal("memberModal");
+  document.getElementById("rp_submitBtn").onclick=enviarReporte;
+}
+async function enviarReporte(){
+  const titulo=document.getElementById("rp_titulo").value.trim();
+  const seccion=document.getElementById("rp_seccion").value;
+  const descripcion=document.getElementById("rp_descripcion").value.trim();
+  if(!descripcion){ toast("Describe el error antes de enviar"); return; }
+  const statusEl=document.getElementById("rp_adjuntoStatus");
+  const adjuntoUrl=await subirAdjuntos(document.getElementById("rp_adjuntoInput"), statusEl);
+  const r=await apiPost({action:"addReporte", data:{titulo, seccion, descripcion, adjuntoUrl}},"Enviando...");
+  if(r.ok){ toast("¡Reporte enviado, gracias! 🐞"); closeModal("memberModal"); } else toast("Error: "+(r.error||""));
+}
+document.getElementById("buzonDrawerBtn").onclick=()=>{ closeDrawer(); openBuzonForm(); };
+document.getElementById("reporteDrawerBtn").onclick=()=>{ closeDrawer(); openReporteForm(); };
+
 /* ---------- navegación ---------- */
 document.querySelectorAll(".tab-btn").forEach(btn=>btn.onclick=()=>switchTab(btn.dataset.tab));
 function switchTab(tab){
@@ -1245,6 +1360,7 @@ function switchTab(tab){
   document.getElementById("viewAnuario").classList.toggle("hidden",tab!=="anuario");
   document.getElementById("viewMiembros").classList.add("hidden");
   document.getElementById("viewStaffPin").classList.add("hidden");
+  document.getElementById("viewMemberPin").classList.add("hidden");
 }
 document.getElementById("hamburgerBtn").onclick=()=>{ document.getElementById("drawer").classList.add("open"); document.getElementById("drawerOverlay").style.display="block"; };
 document.getElementById("drawerOverlay").onclick=closeDrawer;
@@ -1252,7 +1368,7 @@ function closeDrawer(){ document.getElementById("drawer").classList.remove("open
 document.getElementById("miembrosDrawerBtn").onclick=()=>{
   closeDrawer();
   document.querySelectorAll(".tab-btn").forEach(b=>b.classList.remove("active"));
-  document.getElementById("viewActividades").classList.add("hidden"); document.getElementById("viewAnuario").classList.add("hidden"); document.getElementById("viewStaffPin").classList.add("hidden");
+  document.getElementById("viewActividades").classList.add("hidden"); document.getElementById("viewAnuario").classList.add("hidden"); document.getElementById("viewStaffPin").classList.add("hidden"); document.getElementById("viewMemberPin").classList.add("hidden");
   document.getElementById("viewMiembros").classList.remove("hidden");
   document.getElementById("memberToolsRow1").classList.toggle("hidden", !staffPin);
   document.getElementById("memberToolsRow2").classList.toggle("hidden", !staffPin);
@@ -1262,9 +1378,18 @@ document.getElementById("staffDrawerBtn").onclick=()=>{
   closeDrawer();
   if(staffPin){ toast("Ya estás en modo Staff 🛠️"); return; }
   document.querySelectorAll(".tab-btn").forEach(b=>b.classList.remove("active"));
-  document.getElementById("viewActividades").classList.add("hidden"); document.getElementById("viewAnuario").classList.add("hidden"); document.getElementById("viewMiembros").classList.add("hidden");
+  document.getElementById("viewActividades").classList.add("hidden"); document.getElementById("viewAnuario").classList.add("hidden"); document.getElementById("viewMiembros").classList.add("hidden"); document.getElementById("viewMemberPin").classList.add("hidden");
   document.getElementById("viewStaffPin").classList.remove("hidden");
   document.getElementById("pinInput").value=localStorage.getItem("tph_pin")||""; // autocompleta, pero no activa solo
+};
+document.getElementById("memberDrawerBtn").onclick=()=>{
+  closeDrawer();
+  if(staffPin){ toast("Ya tenés acceso completo en modo Staff 🛠️"); return; }
+  if(memberPin){ toast("Ya estás en modo Miembro 🍑"); return; }
+  document.querySelectorAll(".tab-btn").forEach(b=>b.classList.remove("active"));
+  document.getElementById("viewActividades").classList.add("hidden"); document.getElementById("viewAnuario").classList.add("hidden"); document.getElementById("viewMiembros").classList.add("hidden"); document.getElementById("viewStaffPin").classList.add("hidden");
+  document.getElementById("viewMemberPin").classList.remove("hidden");
+  document.getElementById("memberPinInput").value=localStorage.getItem("tph_member_clave")||""; // autocompleta, pero no activa solo
 };
 document.getElementById("searchMiembros").addEventListener("input", e=>renderMiembros(e.target.value));
 
@@ -1301,6 +1426,36 @@ document.getElementById("staffStatusBadge").onclick=()=>{
     document.getElementById("memberToolsRow2").classList.add("hidden");
     toast("Saliste del modo staff");
     cargarDatos(); // vuelve a pedir los datos sin PIN, así el servidor manda la versión pública
+  }
+};
+
+/* ---------- modo miembro (Fase 3): lectura completa, sin edición ---------- */
+document.getElementById("memberPinSubmitBtn").onclick=verificarClaveMiembro;
+document.getElementById("memberPinInput").addEventListener("keydown", e=>{ if(e.key==="Enter") verificarClaveMiembro(); });
+// Mismo candado silencioso que el PIN de Staff: a los 20 intentos fallidos EN ESTA CARGA de la
+// página, deja de mandar la clave al servidor y siempre dice "Clave incorrecta", hasta recargar.
+let memberIntentosFallidos=0;
+async function verificarClaveMiembro(){
+  const val=document.getElementById("memberPinInput").value.trim();
+  if(!val){ document.getElementById("memberPinMsg").textContent="Escribe la clave."; return; }
+  if(memberIntentosFallidos>=20){ document.getElementById("memberPinMsg").textContent="Clave incorrecta ❌"; return; }
+  const r=await apiPost({action:"validarClaveMiembro", clave:val},"Verificando clave...");
+  if(r.ok){
+    memberPin=val;
+    localStorage.setItem("tph_member_clave",val);
+    document.getElementById("memberPinMsg").textContent="";
+    toast("Modo Miembro activado 🍑");
+    document.getElementById("memberStatusBadge").style.display="block";
+    switchTab("actividades");
+    await cargarDatos(); // vuelve a pedir los datos, ahora con la clave, para traer todo completo
+  } else { memberIntentosFallidos++; document.getElementById("memberPinMsg").textContent="Clave incorrecta ❌"; }
+}
+document.getElementById("memberStatusBadge").onclick=()=>{
+  if(confirm("¿Deseas salir del modo miembro?")){
+    memberPin=null; localStorage.removeItem("tph_member_clave");
+    document.getElementById("memberStatusBadge").style.display="none";
+    toast("Saliste del modo miembro");
+    cargarDatos(); // vuelve a pedir los datos sin clave, así el servidor manda la versión pública
   }
 };
 
