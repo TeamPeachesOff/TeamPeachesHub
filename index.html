@@ -312,6 +312,8 @@
       <div class="form-group"><label>Rango vocal</label><input type="text" id="me_rango"></div>
       <div class="form-group"><label>Cumpleaños</label><input type="date" id="me_cumple"></div>
       <div class="form-group"><label>Miembro desde</label><input type="date" id="me_ingreso"></div>
+      <!-- 3 grupos independientes de multi-selección (cada uno usa bindToggleGroup/setToggleGroup/getToggleGroupValues por su cuenta):
+           Roles = canto/doblaje | Rango = fundadora/lider/staff | Especial = conserje/inactivo -->
       <div class="form-group">
         <label>Roles (podés elegir varios)</label>
         <div class="switch-pill" id="me_rolesToggle">
@@ -334,7 +336,8 @@
           <button type="button" data-val="inactivo">😴 Inactivo</button>
         </div>
       </div>
-      </div>
+      <!-- OJO: no agregar/quitar cierres de div sueltos acá, ya rompió el botón Guardar una vez.
+           Cada .form-group de arriba se abre y se cierra solo, este bloque de abajo va afuera de todos ellos. -->
       <div class="modal-actions"><button type="submit" class="btn-primary">Guardar</button></div>
       <button type="button" class="btn-small btn-danger" style="width:100%;margin-top:10px;" id="me_deleteBtn">🗑️ Borrar miembro</button>
     </form>
@@ -502,6 +505,10 @@ function toDateInputCumple(v){
 function toDateInput(v){ if(!v) return ""; const d=new Date(v); if(isNaN(d)) return ""; return d.toISOString().slice(0,10); }
 function esTrue(v){ return v===true||v==="TRUE"||v==="true"||v===1; }
 function normalizar(s){ return String(s||"").normalize("NFD").replace(/[\u0300-\u036f]/g,"").toLowerCase(); }
+// ===== Usuarios de Smule/BandLab =====
+// El staff solo debe escribir el username (sin @, sin link). Estas funciones son robustas:
+// si alguien pega el link completo o le pone @ por error, lo limpian solo y devuelven el username puro.
+// Eso es lo que se guarda en Sheets. Los links (toSmuleUrl/toBandlabUrl) siempre se arman con formato fijo a partir de ese username.
 function limpiarUsuarioSmule(raw){
   if(!raw) return "";
   let v=String(raw).trim();
@@ -629,14 +636,21 @@ function streamBlockHTML(a){
   if(!horaStr) return "";
   const d=new Date(fechaStr+"T"+horaStr+":00-06:00");
   if(isNaN(d)) return "";
-  const endD=new Date(d.getTime()+4*60*60*1000);
+  const endD=new Date(d.getTime()+4*60*60*1000); // los streams duran 4h por defecto
   const opcionesFecha={weekday:"long",day:"numeric",month:"long"};
   let fechaLarga; try{ fechaLarga=d.toLocaleDateString("es-ES",opcionesFecha); }catch(e){ fechaLarga=d.toDateString(); }
   const localStr=fechaLarga+", "+fmt12Hora(d);
   const tz=Intl.DateTimeFormat().resolvedOptions().timeZone;
   const isoStart=d.toISOString().replace(/[-:]/g,"").split(".")[0]+"Z";
   const isoEnd=endD.toISOString().replace(/[-:]/g,"").split(".")[0]+"Z";
-  return `<div class="stream-block"><div class="stream-title">📺 ${escHtml(a.streamNombre)}</div><div class="stream-time">🗓️ ${localStr}<br><span style="opacity:0.75;">(convertido a tu zona horaria: ${tz})</span></div><div class="stream-actions"><button class="btn-small btn-family" data-ics data-ics-nombre="${escAttr(a.streamNombre)}" data-ics-start="${isoStart}" data-ics-end="${isoEnd}" data-ics-desc="${escAttr(a.descripcion||'')}">📅 Agregar a Calendario</button></div></div>`;
+  // Botón 1: link directo a Google Calendar (funciona igual en PC y celular, no descarga nada, solo abre Google Calendar con el evento precargado)
+  const gcalUrl="https://calendar.google.com/calendar/render?action=TEMPLATE"
+    +"&text="+encodeURIComponent(a.streamNombre)
+    +"&dates="+isoStart+"/"+isoEnd
+    +"&details="+encodeURIComponent(a.descripcion||"")
+    +"&location="+encodeURIComponent("Server de Peaches");
+  // Botón 2: descarga un archivo .ics (sirve para Apple Calendar, Outlook, Samsung, etc. — en celular normalmente se agrega con un tap)
+  return `<div class="stream-block"><div class="stream-title">📺 ${escHtml(a.streamNombre)}</div><div class="stream-time">🗓️ ${localStr}<br><span style="opacity:0.75;">(convertido a tu zona horaria: ${tz})</span></div><div class="stream-actions"><a class="btn-small btn-primary" target="_blank" href="${escAttr(gcalUrl)}">📅 Google Calendar</a><button class="btn-small btn-family" data-ics data-ics-nombre="${escAttr(a.streamNombre)}" data-ics-start="${isoStart}" data-ics-end="${isoEnd}" data-ics-desc="${escAttr(a.descripcion||'')}">📅 Agregar a Calendario</button></div></div>`;
 }
 function escIcs(s){ return String(s||"").replace(/\\/g,"\\\\").replace(/;/g,"\\;").replace(/,/g,"\\,").replace(/\n/g,"\\n"); }
 function descargarICS(nombre,isoStart,isoEnd,descripcion){
