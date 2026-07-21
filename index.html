@@ -262,12 +262,12 @@
   <div class="staff-bottom-group">
     <button class="hidden drawer-nav-btn" id="staffHubDrawerBtn" style="justify-content:center;">🔗 Panel de Staff</button>
     <div class="hidden" id="staffToolsRow" style="display:flex;gap:10px;">
-      <a class="drawer-nav-btn" style="justify-content:center;flex:1;padding:10px;" target="_blank" href="https://docs.google.com/spreadsheets/d/13Mca1Xlt9XUWgHLBqLn5HJ8YrgTTeSX1tU25LqWC-Mc/edit?gid=1284989132#gid=1284989132">
+      <button class="drawer-nav-btn" id="staffToolsSheets" style="justify-content:center;flex:1;padding:10px;">
         <img src="https://raw.githubusercontent.com/TeamPeachesOff/TeamPeachesHub/main/Logos/SheetsLogo.png" style="width:24px;height:24px;border-radius:0;" alt="Sheets"><span>Datos</span>
-      </a>
-      <a class="drawer-nav-btn" style="justify-content:center;flex:1;padding:10px;" target="_blank" href="https://github.com/TeamPeachesOff/TeamPeachesHub">
+      </button>
+      <button class="drawer-nav-btn" id="staffToolsGithub" style="justify-content:center;flex:1;padding:10px;">
         <img src="https://raw.githubusercontent.com/TeamPeachesOff/TeamPeachesHub/main/Logos/GithubLogo.png" style="width:24px;height:24px;border-radius:0;" alt="GitHub"><span>GitHub</span>
-      </a>
+      </button>
     </div>
     <button class="drawer-nav-btn" id="staffDrawerBtn">🛠️ Staff</button>
   </div>
@@ -276,8 +276,8 @@
 <main>
   <section id="viewActividades">
     <button id="addActBtn" class="hidden">(+) Añadir Actividad</button>
-    <a class="hidden pill-toggle regalito-btn" id="staffRegalitoBtn" target="_blank" href="https://forms.gle/FgSeqD33wE1R8Y8r6">🎁 Enviar regalito</a>
-    <a class="pill-toggle regalito-btn" target="_blank" href="https://forms.gle/FgSeqD33wE1R8Y8r6">🎁 Enviar regalito</a>
+    <a class="hidden pill-toggle regalito-btn" id="staffRegalitoBtn" target="_blank" rel="noopener" href="https://forms.gle/FgSeqD33wE1R8Y8r6">🎁 Enviar regalito</a>
+    <a class="pill-toggle regalito-btn" id="publicRegalitoBtn" target="_blank" rel="noopener" href="https://forms.gle/FgSeqD33wE1R8Y8r6">🎁 Enviar regalito</a>
     <div class="filter-pills">
       <button class="pill-toggle on" id="filterCanto">🎤 Canto</button>
       <button class="pill-toggle on" id="filterDoblaje">🎙️ Doblaje</button>
@@ -497,6 +497,11 @@ let DB = { actividades: [], entregas: [], miembros: [] };
 let staffPin = null;
 // Modo Miembro: misma idea que staffPin (autocompleta pero no se auto-activa al recargar).
 let memberPin = null;
+// Enlaces privados (Sheets, GitHub, Cronograma, Editar Anuario, Editar Info): SOLO viven en esta
+// variable en memoria, y SOLO se rellenan después de validar el PIN de Staff contra el servidor
+// (ver obtenerEnlacesStaff en Code.gs). Nunca se escriben en el HTML ni en localStorage, así que
+// aunque alguien abra F12 sin PIN, no hay ningún href ni string con esas URLs para encontrar.
+let enlacesStaff = null;
 let nivel = "publico"; // "staff" | "miembro" | "publico" -- lo manda el backend en cada carga
 let filtroCanto = true, filtroDoblaje = true;
 let modoEliminarEntregas = {};
@@ -658,6 +663,50 @@ async function apiPost(payload, msg){
     return await res.json();
   } finally{ hideLoading(); }
 }
+// Se llama SOLO justo después de que el servidor confirmó que el PIN de Staff es correcto.
+// Si esto falla, enlacesStaff queda null y los botones simplemente avisan "no se pudo cargar".
+async function cargarEnlacesStaff(){
+  const r = await apiPost({action:"obtenerEnlacesStaff"});
+  enlacesStaff = (r && r.ok) ? r.enlaces : null;
+  if(!enlacesStaff) toast("No se pudieron cargar los enlaces de Staff");
+}
+function abrirEnlacePrivado(clave){
+  if(!enlacesStaff || !enlacesStaff[clave]){ toast("Enlace no disponible todavía, intenta de nuevo"); return; }
+  window.open(enlacesStaff[clave], "_blank", "noopener");
+}
+function abrirModalEnlaces(){
+  if(!enlacesStaff){ toast("Enlaces no disponibles, reintentando..."); cargarEnlacesStaff(); return; }
+  const campos = [
+    {clave:"CFG_REGALITO_LINK", label:"🎁 Regalito (público)"},
+    {clave:"CFG_ANUARIO_PUBLICO_LINK", label:"📺 Anuario público (público)"},
+    {clave:"CFG_CRONOGRAMA_LINK", label:"🗓️ Cronograma (staff)"},
+    {clave:"CFG_EDITAR_ANUARIO_LINK", label:"✏️ Editar Anuario (staff)"},
+    {clave:"CFG_EDITAR_INFO_LINK", label:"🖋️ Editar página de Info (staff)"},
+    {clave:"CFG_SHEETS_LINK", label:"🗂️ Base de Datos (staff)"},
+    {clave:"CFG_GITHUB_LINK", label:"💻 GitHub (staff)"}
+  ];
+  document.getElementById("memberModalContent").innerHTML = `
+    <h3>⚙️ Actualizar Enlaces</h3>
+    <div style="display:flex;flex-direction:column;gap:10px;">
+      ${campos.map(c=>`<div class="form-group"><label>${c.label}</label><input type="text" id="enl_${c.clave}" value="${escAttr(enlacesStaff[c.clave]||"")}"></div>`).join("")}
+    </div>
+    <div style="display:flex;gap:10px;margin-top:14px;">
+      <button class="btn-small btn-admin" id="enlacesVolverBtn">⬅️ Volver</button>
+      <button class="btn-small btn-primary" id="enlacesGuardarBtn">Guardar</button>
+    </div>`;
+  document.getElementById("enlacesVolverBtn").onclick = abrirStaffHub;
+  document.getElementById("enlacesGuardarBtn").onclick = async ()=>{
+    const enlaces = {};
+    campos.forEach(c=>{ enlaces[c.clave] = document.getElementById("enl_"+c.clave).value.trim(); });
+    const r = await apiPost({action:"guardarEnlacesStaff", enlaces}, "Guardando enlaces...");
+    if(r.ok){
+      enlacesStaff = r.enlaces;
+      toast("Enlaces actualizados ✅");
+      await cargarDatos(); // refresca DB.enlacesPublicos para que Regalito/Anuario público tomen el cambio
+      abrirStaffHub();
+    } else toast("Error: "+(r.error||""));
+  };
+}
 async function downloadImage(url, filename){
   try{
     const res=await fetch(url,{mode:"cors"}); const blob=await res.blob();
@@ -755,11 +804,24 @@ async function cargarDatos(){
     DB=await apiGet();
     if(!DB || typeof DB!=="object" || !Array.isArray(DB.actividades)) throw new Error("Respuesta inesperada del servidor: "+JSON.stringify(DB).slice(0,200));
     nivel = DB.nivel || (staffPin ? "staff" : (memberPin ? "miembro" : "publico"));
+    aplicarEnlacesPublicos();
     renderActividades(); renderAnuario(); renderMiembros();
   }
   catch(err){
     console.error("Error cargando datos:", err);
     document.getElementById("actividadesFeed").innerHTML=`<div class="empty-state">No se pudo conectar con la base de datos.<br><span style="font-size:11px;opacity:0.6;">${escHtml(err.message||String(err))}</span></div>`;
+  }
+}
+
+// Los enlaces públicos (Regalito, Anuario público) llegan en CADA carga de datos (enlacesPublicos,
+// visible sin PIN a propósito) y se aplican acá, así el panel "Actualizar Enlaces" realmente
+// cambia el comportamiento de la página sin tener que editar el HTML.
+function aplicarEnlacesPublicos(){
+  const ep = DB.enlacesPublicos || {};
+  const regalito = ep.CFG_REGALITO_LINK;
+  if(regalito){
+    document.getElementById("publicRegalitoBtn").href = regalito;
+    document.getElementById("staffRegalitoBtn").href = regalito;
   }
 }
 
@@ -1476,9 +1538,9 @@ document.getElementById("buzonDrawerBtn").onclick=()=>{ closeDrawer(); openBuzon
 document.getElementById("reporteDrawerBtn").onclick=()=>{ closeDrawer(); openReporteForm(); };
 
 /* ---------- navegación ---------- */
-const URL_ANUARIO_PUBLICO="https://youtu.be/dQw4w9WgXcQ"; // reemplazar cuando Krys entregue el anuario final
+const URL_ANUARIO_PUBLICO_DEFAULT="https://youtu.be/dQw4w9WgXcQ"; // solo se usa si el backend todavía no mandó el valor configurado
 document.querySelectorAll(".tab-btn").forEach(btn=>btn.onclick=()=>{
-  if(btn.dataset.tab==="anuario"){ window.open(URL_ANUARIO_PUBLICO,"_blank","noopener"); return; }
+  if(btn.dataset.tab==="anuario"){ window.open((DB.enlacesPublicos&&DB.enlacesPublicos.CFG_ANUARIO_PUBLICO_LINK)||URL_ANUARIO_PUBLICO_DEFAULT,"_blank","noopener"); return; }
   switchTab(btn.dataset.tab);
 });
 function switchTab(tab){
@@ -1505,13 +1567,14 @@ function abrirStaffHub(){
     </div>
     <div class="section-label" style="text-align:left;">🔗 Accesos</div>
     <div style="display:flex;flex-direction:column;gap:8px;">
-      <a class="drawer-nav-btn" target="_blank" href="https://docs.google.com/spreadsheets/d/13Mca1Xlt9XUWgHLBqLn5HJ8YrgTTeSX1tU25LqWC-Mc/edit?gid=1284989132#gid=1284989132">🗂️ Base de Datos</a>
-      <a class="drawer-nav-btn" target="_blank" href="https://github.com/TeamPeachesOff/TeamPeachesHub">💻 GitHub</a>
-      <a class="drawer-nav-btn" target="_blank" href="https://canva.link/5dq4x7j1oyqcvmd">🗓️ Cronograma</a>
-      <a class="drawer-nav-btn" target="_blank" href="https://canva.link/ng8biz2i64ccepn">✏️ Editar Anuario</a>
-      <a class="drawer-nav-btn" target="_blank" href="https://www.canva.com/design/DAHPUZAC2vQ/WynLMf7-ey5ht3S3ehSlDA/edit">🖋️ Editar página de Info</a>
+      <button class="drawer-nav-btn" id="hubSheets" style="text-align:left;">🗂️ Base de Datos</button>
+      <button class="drawer-nav-btn" id="hubGithub" style="text-align:left;">💻 GitHub</button>
+      <button class="drawer-nav-btn" id="hubCronograma" style="text-align:left;">🗓️ Cronograma</button>
+      <button class="drawer-nav-btn" id="hubEditarAnuario" style="text-align:left;">✏️ Editar Anuario</button>
+      <button class="drawer-nav-btn" id="hubEditarInfo" style="text-align:left;">🖋️ Editar página de Info</button>
       <button class="drawer-nav-btn" id="hubAnuario">📖 AnuarioHub</button>
       <button class="btn-small btn-family" id="hubLimpiar">🧹 Limpiar nombres BD (quitar @)</button>
+      <button class="btn-small btn-admin" id="hubEnlaces">⚙️ Actualizar Enlaces</button>
     </div>`;
   openModal("memberModal");
   document.getElementById("hubCumple").onclick=()=>probarHub("testCumpleanos","Cumpleaños");
@@ -1519,9 +1582,17 @@ function abrirStaffHub(){
   document.getElementById("hubRecordatorio").onclick=()=>{ const a=DB.actividades.find(x=>!esTrue(x.esAnuario)); if(!a){toast("No hay actividad para probar");return;} probarHub("testRecordatorio","Recordatorio",a.id); };
   document.getElementById("hubAnuario").onclick=()=>{ closeModal("memberModal"); switchTab("anuario"); };
   document.getElementById("hubLimpiar").onclick=async()=>{ if(!await confirmarAccion("¿Quitar @ de los nombres históricos?")) return; const r=await apiPost({action:"limpiarNombresBD"},"Limpiando..."); if(r.ok){toast((r.actualizados||0)+" registro(s) limpiados ✅"); await cargarDatos();} else toast("Error: "+(r.error||"")); };
+  document.getElementById("hubSheets").onclick=()=>abrirEnlacePrivado("CFG_SHEETS_LINK");
+  document.getElementById("hubGithub").onclick=()=>abrirEnlacePrivado("CFG_GITHUB_LINK");
+  document.getElementById("hubCronograma").onclick=()=>abrirEnlacePrivado("CFG_CRONOGRAMA_LINK");
+  document.getElementById("hubEditarAnuario").onclick=()=>abrirEnlacePrivado("CFG_EDITAR_ANUARIO_LINK");
+  document.getElementById("hubEditarInfo").onclick=()=>abrirEnlacePrivado("CFG_EDITAR_INFO_LINK");
+  document.getElementById("hubEnlaces").onclick=abrirModalEnlaces;
 }
 async function probarHub(action,nombre,idActividad){ const r=await apiPost({action:action,idActividad:idActividad},"Enviando prueba..."); toast(r.ok?nombre+" enviado ✅":"Error: "+(r.error||"")); }
 document.getElementById("staffHubDrawerBtn").onclick=abrirStaffHub;
+document.getElementById("staffToolsSheets").onclick=()=>abrirEnlacePrivado("CFG_SHEETS_LINK");
+document.getElementById("staffToolsGithub").onclick=()=>abrirEnlacePrivado("CFG_GITHUB_LINK");
 document.getElementById("miembrosDrawerBtn").onclick=()=>{
   closeDrawer();
   if(staffPin||memberPin){ mostrarViewMiembros(); return; }
@@ -1575,11 +1646,13 @@ async function verificarPin(){
     document.getElementById("staffHubDrawerBtn").classList.remove("hidden");
     switchTab("actividades");
     await cargarDatos(); // vuelve a pedir los datos, ahora con el PIN, para traer todo completo
+    await cargarEnlacesStaff(); // recién ahora, con el PIN ya validado en servidor, se piden los enlaces privados
   } else { staffPin=null; pinIntentosFallidos++; document.getElementById("pinMsg").textContent="PIN incorrecto ❌"; }
 }
 document.getElementById("staffStatusBadge").onclick=async()=>{
   if(await confirmarAccion("¿Deseas salir del modo staff?")){
     staffPin=null; localStorage.removeItem("tph_pin");
+    enlacesStaff=null; // se borran de memoria: sin PIN activo, no deben quedar accesibles ni un momento más
     document.getElementById("staffStatusBadge").style.display="none";
     document.getElementById("addActBtn").classList.add("hidden");
     document.getElementById("staffRegalitoBtn").classList.add("hidden");
