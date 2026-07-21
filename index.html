@@ -779,7 +779,7 @@ function cardHTML(a){
           ${categoriaTag(a.categoria)}
           ${participacionTag(a.participacion)}
         </div>
-        ${(a.linkForms||a.linkUnirse||a.linkScript)&&nivel!=="miembro"?`<div class="card-actions">
+        ${(a.linkForms||a.linkUnirse||a.linkScript)?`<div class="card-actions">
           ${a.linkForms?`<a class="btn-small btn-primary" target="_blank" href="${escAttr(a.linkForms)}">🎙️ Ir a Forms</a>`:""}
           ${a.linkUnirse?`<a class="btn-small btn-family" target="_blank" href="${escAttr(a.linkUnirse)}">🤝 Unirse</a>`:""}
           ${a.linkScript?`<a class="btn-small btn-family" target="_blank" href="${escAttr(a.linkScript)}">📄 Script</a>`:""}
@@ -791,7 +791,7 @@ function cardHTML(a){
         </div>`:""}
       </div>
     </div>
-    ${(a.descripcion||a.wishlist||a.streamNombre)&&nivel!=="miembro"?`
+    ${(a.descripcion||a.wishlist||a.streamNombre)?`
     <div class="accordion">
       <button class="accordion-toggle" data-toggle="info-${a.id}">▼ Más Info & Wishlist</button>
       <div class="accordion-body" id="info-${a.id}"></div>
