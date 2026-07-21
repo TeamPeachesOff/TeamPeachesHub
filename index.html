@@ -36,7 +36,7 @@
   .tab-btn.active{background:linear-gradient(90deg,var(--peach-2),var(--peach-1));color:#fff;}
 
   #drawerOverlay{position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:99;display:none;}
-  #drawer{position:fixed;top:0;left:0;height:100%;width:280px;max-width:82vw;background:var(--card-bg);z-index:100;transform:translateX(-100%);transition:transform .25s ease;display:flex;flex-direction:column;padding:20px 16px;gap:18px;box-shadow:4px 0 20px rgba(0,0,0,0.4);}
+  #drawer{position:fixed;top:0;left:0;height:100%;width:280px;max-width:82vw;background:var(--card-bg);z-index:100;transform:translateX(-100%);transition:transform .25s ease;display:flex;flex-direction:column;padding:20px 16px;gap:18px;box-shadow:4px 0 20px rgba(0,0,0,0.4);overflow-y:auto;-webkit-overflow-scrolling:touch;}
   #drawer.open{transform:translateX(0);}
   .drawer-title{font-weight:800;font-size:18px;color:var(--peach-2);margin-bottom:4px;}
   .social-row{display:flex;flex-direction:column;gap:10px;}
@@ -93,7 +93,7 @@
   /* Misma "calidad" visual que btn-family (degradado + borde), pero con su propio color para
      distinguir de un vistazo cada botón de la sección Miembros. */
   .btn-update{background:linear-gradient(90deg,rgba(46,204,113,0.55),rgba(120,224,143,0.5));color:#fff;border:1px solid rgba(46,204,113,0.55);}
-  .btn-cumple{background:linear-gradient(90deg,rgba(255,215,0,0.5),rgba(255,193,7,0.35));color:#3a2a00;border:1px solid rgba(255,215,0,0.6);}
+  .btn-cumple{background:linear-gradient(90deg,rgba(255,215,0,0.5),rgba(255,193,7,0.35));color:#fff;border:1px solid rgba(255,215,0,0.6);}
   .btn-seguridad{background:linear-gradient(90deg,rgba(231,76,60,0.55),rgba(255,143,143,0.4));color:#fff;border:1px solid rgba(231,76,60,0.55);}
   .btn-bell{background:rgba(255,215,0,0.18);color:var(--gold);}
   button:disabled{opacity:0.5;cursor:not-allowed;}
@@ -186,10 +186,11 @@
   .castigos-box{margin-top:16px;background:var(--card-bg-2);border-radius:12px;padding:12px;}
   .castigos-box .ct-title{font-weight:800;color:var(--peach-2);margin-bottom:8px;font-size:13px;}
   .castigos-box .ct-row{display:flex;justify-content:space-between;font-size:13.5px;padding:3px 0;}
-  .admin-strike-btns{display:flex;gap:8px;margin-top:12px;}
-  .admin-strike-btns button{flex:1;padding:10px;border-radius:10px;font-weight:700;font-size:12.5px;}
+  .admin-strike-btns{display:flex;gap:6px;margin-top:12px;}
+  .admin-strike-btns button{flex:1;padding:8px 4px;border-radius:10px;font-weight:700;font-size:11px;text-align:center;line-height:1.3;}
   .btn-falta{background:rgba(241,196,15,0.2);color:var(--yellow);}
   .btn-strike{background:rgba(231,76,60,0.2);color:var(--red);}
+  .btn-strike-permanente{background:rgba(120,20,20,0.4);color:#ff6b6b;border:1px solid rgba(255,107,107,0.4);}
   .btn-reset-castigos{width:100%;margin-top:8px;padding:9px;border-radius:10px;font-weight:700;font-size:12.5px;background:rgba(255,255,255,0.08);color:var(--text-dim);}
 
   .winners-block{background:var(--card-bg-2);border-radius:12px;padding:14px;margin-top:10px;}
@@ -279,11 +280,14 @@
 
   <section id="viewMiembros" class="hidden">
     <input type="text" id="searchMiembros" placeholder="🔍 Buscar por nombre, rol o rango vocal...">
-    <div class="hidden" id="memberToolsRow1" style="display:flex;gap:10px;margin-bottom:10px;">
-      <button id="addMemberBtn" class="btn-small btn-family" style="flex:1;">➕ Añadir Miembro</button>
-      <button class="btn-small btn-update" id="refreshPhotosBtn" style="flex:1;">🔄 Actualizar pfp</button>
+    <div class="hidden" id="memberToolsRow1" style="margin-bottom:10px;">
+      <button id="addMemberBtn" class="btn-small btn-family" style="width:100%;">➕ Añadir Miembro</button>
     </div>
-    <div class="hidden" id="memberToolsRow2" style="display:flex;gap:10px;margin-bottom:14px;">
+    <div class="hidden" id="memberToolsRow2" style="display:flex;gap:10px;margin-bottom:10px;">
+      <button class="btn-small btn-update" id="refreshPhotosBtn" style="flex:1;">🔄 Actualizar pfp</button>
+      <button class="btn-small btn-seguridad" id="resetStrikesGlobalBtn" style="flex:1;">🔄 Eliminar strikes</button>
+    </div>
+    <div class="hidden" id="memberToolsRow3" style="display:flex;gap:10px;margin-bottom:14px;">
       <button class="btn-small btn-cumple" id="testCumpleBtn" style="flex:1;">🎂 Aviso de cumpleaños</button>
       <button class="btn-small btn-seguridad" id="testSeguridadBtn" style="flex:1;">🔒 Aviso de seguridad</button>
     </div>
@@ -319,6 +323,16 @@
 <div id="staffStatusBadge">🛠️ Modo Staff activo</div>
 <div id="memberStatusBadge" title="Modo Miembro (solo lectura)">🍑</div>
 <div class="toast" id="toast"></div>
+
+<div class="modal-overlay" id="confirmDialog" style="z-index:400;">
+  <div class="modal-box" style="max-width:340px;text-align:center;">
+    <div id="confirmDialogMsg" style="font-size:15px;font-weight:600;margin-bottom:20px;line-height:1.5;"></div>
+    <div style="display:flex;gap:10px;">
+      <button class="btn-small" id="confirmDialogNo" style="flex:1;padding:10px;background:rgba(255,255,255,0.1);color:var(--text);border-radius:12px;font-weight:700;">Cancelar</button>
+      <button class="btn-small btn-danger" id="confirmDialogYes" style="flex:1;padding:10px;border-radius:12px;font-weight:700;">Sí, continuar</button>
+    </div>
+  </div>
+</div>
 
 <div class="modal-overlay" id="memberModal"><div class="modal-box"><button class="modal-close" data-close="memberModal">✕</button><div id="memberModalContent"></div></div></div>
 
@@ -860,7 +874,7 @@ async function probarRecordatorio(idActividad){
   if(r.ok) toast("Mensaje de prueba enviado a Discord 🔔"); else toast("Error: "+(r.error||""));
 }
 async function importarEntregas(idActividad){
-  if(!confirm("¿Importar todas las entregas de la hoja 'Importar' a esta actividad? Se vaciará esa hoja después.")) return;
+  if(!await confirmarAccion("¿Importar todas las entregas de la hoja 'Importar' a esta actividad? Se vaciará esa hoja después.")) return;
   const r=await apiPost({action:"importarEntregas", idActividad},"Importando entregas...");
   if(r.ok){ toast(`Se importaron ${r.count} entregas ✅`); await cargarDatos(); } else toast("Error: "+(r.error||""));
 }
@@ -873,12 +887,12 @@ function toggleModoBorrarEntregas(actId,on){
 async function confirmarBorrarEntregas(actId){
   const set=modoEliminarEntregas[actId];
   if(!set||set.size===0){ toast("No seleccionaste ninguna"); return; }
-  if(!confirm(`¿Borrar ${set.size} entrega(s) seleccionada(s)?`)) return;
+  if(!await confirmarAccion(`¿Borrar ${set.size} entrega(s) seleccionada(s)?`)) return;
   const r=await apiPost({action:"deleteEntregas", ids:[...set]});
   if(r.ok){ toast("Entregas borradas 🗑️"); await cargarDatos(); } else toast("Error: "+(r.error||""));
 }
 async function borrarActividad(id){
-  if(!confirm("¿Seguro que quieres borrar esta actividad? Esto también borra sus entregas.")) return;
+  if(!await confirmarAccion("¿Seguro que quieres borrar esta actividad? Esto también borra sus entregas.")) return;
   const r=await apiPost({action:"deleteActividad", id});
   if(r.ok){ toast("Actividad borrada 🗑️"); await cargarDatos(); } else toast("Error: "+(r.error||""));
 }
@@ -964,7 +978,7 @@ function openAnuarioDetail(id){
   const editBtn=document.querySelector("[data-edit-anuario]"); if(editBtn) editBtn.onclick=()=>{ closeModal("memberModal"); openActivityForm(a.id); };
   const delBtn=document.querySelector("[data-delete-anuario]");
   if(delBtn) delBtn.onclick=async()=>{
-    if(!confirm("¿Seguro que quieres borrar esta tarjeta completa del Anuario?")) return;
+    if(!await confirmarAccion("¿Seguro que quieres borrar esta tarjeta completa del Anuario?")) return;
     const r=await apiPost({action:"deleteActividad", id:a.id});
     if(r.ok){ toast("Borrado 🗑️"); closeModal("memberModal"); await cargarDatos(); } else toast("Error: "+(r.error||""));
   };
@@ -980,9 +994,15 @@ document.getElementById("testSeguridadBtn").onclick=async()=>{
   if(r.ok) toast("Alerta de seguridad de prueba enviada 🔒"); else toast("Error: "+(r.error||""));
 };
 document.getElementById("refreshPhotosBtn").onclick=async()=>{
-  if(!confirm("¿Actualizar automáticamente las fotos de todos los miembros con Smule? Puede tardar un momento.")) return;
+  if(!await confirmarAccion("¿Actualizar automáticamente las fotos de todos los miembros con Smule? Puede tardar un momento.")) return;
   const r=await apiPost({action:"actualizarTodasLasFotos"},"Actualizando fotos desde Smule...");
   if(r.ok){ toast(`Fotos actualizadas: ${r.actualizados}/${r.revisados}`); await cargarDatos(); }
+  else toast("Error: "+(r.error||""));
+};
+document.getElementById("resetStrikesGlobalBtn").onclick=async()=>{
+  if(!await confirmarAccion("¿Poner Faltas y Strikes en 0 de TODO el equipo? (Los Strikes Permanentes de cada quien NO se tocan). Esta acción no se puede deshacer.")) return;
+  const r=await apiPost({action:"resetStrikesGlobal"},"Reiniciando faltas y strikes de todo el equipo...");
+  if(r.ok){ toast(`Reiniciado: ${r.afectados} miembro(s) ✅`); await cargarDatos(); }
   else toast("Error: "+(r.error||""));
 };
 
@@ -1019,7 +1039,7 @@ function renderMiembros(filtro=""){
 function openMemberModal(id){
   const m=DB.miembros.find(x=>String(x.id)===String(id));
   if(!m) return;
-  const strikes=Number(m.strikes)||0, faltas=Number(m.faltas)||0;
+  const strikes=Number(m.strikes)||0, faltas=Number(m.faltas)||0, strikesPermanentes=Number(m.strikesPermanentes)||0;
   document.getElementById("memberModalContent").innerHTML=`
     <div class="member-modal-header">
       <img id="memberDetailAvatar" class="js-avatar" data-filename="${escAttr((m.nombre||'miembro')+'.jpg')}" src="${escAttr(m.avatarUrl||LOGO_DEFAULT)}">
@@ -1037,7 +1057,7 @@ function openMemberModal(id){
         ${esTrue(m.inactivo)?`<span class="badge badge-inactivo">😴 Inactivo</span>`:""}
       </div>
     </div>
-    ${strikes>=3?`<div class="expelled-banner">🛑 EXPULSADO / FUERA DEL TEAM</div>`:""}
+    ${(strikes+strikesPermanentes)>=3?`<div class="expelled-banner">🛑 EXPULSADO / FUERA DEL TEAM</div>`:""}
     <table class="info-table">
       <tr><td>🎵 Rango Vocal</td><td>${escHtml(m.rangoVocal||"—")}</td></tr>
       <tr><td>🎂 Cumpleaños</td><td>${fmtCumple(m.cumpleanos)||"—"}</td></tr>
@@ -1055,21 +1075,28 @@ function openMemberModal(id){
     </div>
     <div class="castigos-box">
       <div class="ct-title">Castigos</div>
+      <div class="ct-row"><span>☠️ Strike permanente</span><strong>${strikesPermanentes}</strong></div>
       <div class="ct-row"><span>⚠️ Strikes</span><strong>${strikes}</strong></div>
       <div class="ct-row"><span>📉 Faltas</span><strong>${faltas}</strong></div>
-      ${staffPin?`<div class="admin-strike-btns"><button class="btn-falta" data-falta="${m.id}">+ Falta</button><button class="btn-strike" data-strike="${m.id}">+ Strike</button></div>
+      ${staffPin?`<div class="admin-strike-btns"><button class="btn-falta" data-falta="${m.id}">+ Falta</button><button class="btn-strike" data-strike="${m.id}">+ Strike</button><button class="btn-strike-permanente" data-strike-permanente="${m.id}">+ Strike Permanente</button></div>
       <button class="btn-reset-castigos" data-reset="${m.id}">🔄 Borrar Castigos</button>`:""}
     </div>`;
   openModal("memberModal"); bindAvatarFallbacks();
   const copyBtn=document.querySelector("[data-copy-discord]"); if(copyBtn) copyBtn.onclick=()=>{navigator.clipboard.writeText(copyBtn.dataset.copyDiscord); toast("Discord copiado ✅");};
   const faltaBtn=document.querySelector("[data-falta]"); if(faltaBtn) faltaBtn.onclick=()=>registrarFalta(m.id);
   const strikeBtn=document.querySelector("[data-strike]"); if(strikeBtn) strikeBtn.onclick=()=>registrarStrike(m.id);
+  const strikePermBtn=document.querySelector("[data-strike-permanente]"); if(strikePermBtn) strikePermBtn.onclick=()=>registrarStrikePermanente(m.id);
   const resetBtn=document.querySelector("[data-reset]"); if(resetBtn) resetBtn.onclick=()=>borrarCastigos(m.id);
   const editBtn=document.querySelector("[data-edit-member]"); if(editBtn) editBtn.onclick=()=>{ closeModal("memberModal"); openMemberEditForm(m.id); };
 }
 async function registrarFalta(idMiembro){ const r=await apiPost({action:"addFalta", idMiembro}); if(r.ok){toast("Falta registrada"); await cargarDatos(); openMemberModal(idMiembro);} else toast("Error: "+(r.error||"")); }
 async function registrarStrike(idMiembro){ const r=await apiPost({action:"addStrike", idMiembro}); if(r.ok){toast("Strike registrado"); await cargarDatos(); openMemberModal(idMiembro);} else toast("Error: "+(r.error||"")); }
-async function borrarCastigos(idMiembro){ if(!confirm("¿Poner faltas y strikes en 0?")) return; const r=await apiPost({action:"resetCastigos", idMiembro}); if(r.ok){toast("Reiniciado ✅"); await cargarDatos(); openMemberModal(idMiembro);} else toast("Error: "+(r.error||"")); }
+async function registrarStrikePermanente(idMiembro){
+  if(!await confirmarAccion("¿Registrar un Strike Permanente? Solo se puede quitar con \"Borrar Castigos\" en la tarjeta del miembro (el reinicio anual global NO lo toca).")) return;
+  const r=await apiPost({action:"addStrikePermanente", idMiembro});
+  if(r.ok){toast("Strike Permanente registrado ☠️"); await cargarDatos(); openMemberModal(idMiembro);} else toast("Error: "+(r.error||""));
+}
+async function borrarCastigos(idMiembro){ if(!await confirmarAccion("¿Poner faltas y strikes en 0? (Esto también borra los Strikes Permanentes de este miembro)")) return; const r=await apiPost({action:"resetCastigos", idMiembro}); if(r.ok){toast("Reiniciado ✅"); await cargarDatos(); openMemberModal(idMiembro);} else toast("Error: "+(r.error||"")); }
 
 /* ---------- toggles multi-select (roles / reina) ---------- */
 function bindToggleGroup(containerId){
@@ -1144,9 +1171,9 @@ document.getElementById("memberEditForm").addEventListener("submit", async(e)=>{
     fundadora: rango.includes("fundadora")?"TRUE":"FALSE",
     lider: rango.includes("lider")?"TRUE":"FALSE",
     conserje: especial.includes("conserje")?"TRUE":"FALSE",
-    inactivo: especial.includes("inactivo")?"TRUE":"FALSE",
-    faltas: 0, strikes: 0
+    inactivo: especial.includes("inactivo")?"TRUE":"FALSE"
   };
+  if(!id){ data.faltas=0; data.strikes=0; data.strikesPermanentes=0; } // solo al crear; al editar NO se tocan (bug corregido)
   let r;
   if(id){ data.id=id; r=await apiPost({action:"editMiembro", data},"Guardando miembro..."); }
   else{ data.id="MIEM-"+Date.now(); r=await apiPost({action:"addMiembro", data},"Añadiendo miembro..."); }
@@ -1156,16 +1183,78 @@ document.getElementById("memberEditForm").addEventListener("submit", async(e)=>{
 document.getElementById("me_deleteBtn").onclick=async()=>{
   const id=document.getElementById("me_id").value;
   if(!id) return;
-  if(!confirm("¿Seguro que quieres borrar a este miembro?")) return;
+  if(!await confirmarAccion("¿Seguro que quieres borrar a este miembro?")) return;
   const r=await apiPost({action:"deleteMiembro", id});
   if(r.ok){ toast("Miembro borrado 🗑️"); closeModal("memberEditModal"); await cargarDatos(); } else toast("Error: "+(r.error||""));
 };
 
+/* ---------- confirmación personalizada (reemplaza confirm() nativo) ---------- */
+function confirmarAccion(mensaje){
+  return new Promise(resolve=>{
+    document.getElementById("confirmDialogMsg").textContent=mensaje;
+    document.getElementById("confirmDialog").classList.add("open");
+    const yes=document.getElementById("confirmDialogYes");
+    const no=document.getElementById("confirmDialogNo");
+    function limpiar(v){
+      document.getElementById("confirmDialog").classList.remove("open");
+      yes.onclick=null; no.onclick=null;
+      resolve(v);
+    }
+    yes.onclick=()=>limpiar(true);
+    no.onclick=()=>limpiar(false);
+  });
+}
+document.getElementById("confirmDialog").addEventListener("click", e=>{
+  if(e.target.id==="confirmDialog") document.getElementById("confirmDialogNo").click();
+});
+
 /* ---------- modales genéricos ---------- */
-function openModal(id){ document.getElementById(id).classList.add("open"); }
+// Estos modales tienen formulario real (se puede perder info si se cierran sin querer):
+// no se cierran tocando afuera, y avisan si hay cambios sin guardar al presionar la X.
+const FORM_MODALS=["memberEditModal","activityFormModal","entregaFormModal","anuarioModal"];
+let modalSnapshots={};
+function serializeForm(form){
+  const parts=[];
+  form.querySelectorAll("input,textarea,select").forEach(el=>{
+    if(el.type==="file") return; // los archivos no se comparan
+    if(el.type==="checkbox"||el.type==="radio") parts.push(el.id+":"+el.checked);
+    else parts.push(el.id+":"+el.value);
+  });
+  form.querySelectorAll(".switch-pill").forEach(sp=>{
+    const sel=sp.querySelector("button.sel");
+    parts.push(sp.id+":"+(sel?sel.dataset.val:""));
+  });
+  return parts.join("|");
+}
+function snapshotModalForm(id){
+  const form=document.querySelector("#"+id+" form");
+  modalSnapshots[id]=form?serializeForm(form):null;
+}
+function formTieneCambios(id){
+  const form=document.querySelector("#"+id+" form");
+  if(!form) return false;
+  return serializeForm(form)!==modalSnapshots[id];
+}
+function openModal(id){
+  document.getElementById(id).classList.add("open");
+  if(FORM_MODALS.includes(id)) snapshotModalForm(id); // snapshot al abrir, ya con los datos cargados
+}
 function closeModal(id){ document.getElementById(id).classList.remove("open"); }
-document.querySelectorAll("[data-close]").forEach(btn=>btn.onclick=()=>closeModal(btn.dataset.close));
-document.querySelectorAll(".modal-overlay").forEach(ov=>ov.addEventListener("click", e=>{ if(e.target===ov) ov.classList.remove("open"); }));
+document.querySelectorAll("[data-close]").forEach(btn=>btn.onclick=async()=>{
+  const id=btn.dataset.close;
+  if(FORM_MODALS.includes(id) && formTieneCambios(id)){
+    if(!await confirmarAccion("Tenés cambios sin guardar. ¿Deseas cerrar sin guardar?")) return;
+  }
+  closeModal(id);
+});
+document.querySelectorAll(".modal-overlay").forEach(ov=>{
+  if(ov.id==="confirmDialog") return; // este tiene su propio manejo de click afuera
+  ov.addEventListener("click", e=>{
+    if(e.target!==ov) return;
+    if(FORM_MODALS.includes(ov.id)) return; // formulario real: solo se cierra con la X, a propósito
+    ov.classList.remove("open");
+  });
+});
 
 /* ---------- pill switches (categoría / participación) ---------- */
 function bindSwitchPill(containerId){
@@ -1381,6 +1470,7 @@ function mostrarViewMiembros(){
   document.getElementById("viewMiembros").classList.remove("hidden");
   document.getElementById("memberToolsRow1").classList.toggle("hidden", !staffPin);
   document.getElementById("memberToolsRow2").classList.toggle("hidden", !staffPin);
+  document.getElementById("memberToolsRow3").classList.toggle("hidden", !staffPin);
   renderMiembros();
 }
 document.getElementById("staffDrawerBtn").onclick=()=>{
@@ -1416,14 +1506,15 @@ async function verificarPin(){
     await cargarDatos(); // vuelve a pedir los datos, ahora con el PIN, para traer todo completo
   } else { staffPin=null; pinIntentosFallidos++; document.getElementById("pinMsg").textContent="PIN incorrecto ❌"; }
 }
-document.getElementById("staffStatusBadge").onclick=()=>{
-  if(confirm("¿Deseas salir del modo staff?")){
+document.getElementById("staffStatusBadge").onclick=async()=>{
+  if(await confirmarAccion("¿Deseas salir del modo staff?")){
     staffPin=null; localStorage.removeItem("tph_pin");
     document.getElementById("staffStatusBadge").style.display="none";
     document.getElementById("addActBtn").classList.add("hidden");
     document.getElementById("staffToolsRow").classList.add("hidden");
     document.getElementById("memberToolsRow1").classList.add("hidden");
     document.getElementById("memberToolsRow2").classList.add("hidden");
+    document.getElementById("memberToolsRow3").classList.add("hidden");
     toast("Saliste del modo staff");
     cargarDatos(); // vuelve a pedir los datos sin PIN, así el servidor manda la versión pública
   }
@@ -1457,8 +1548,8 @@ async function verificarClaveMiembro(silencioso){
     if(!silencioso) document.getElementById("memberPinMsg").textContent="Clave incorrecta ❌";
   }
 }
-document.getElementById("memberStatusBadge").onclick=()=>{
-  if(confirm("¿Deseas salir del modo miembro?")){
+document.getElementById("memberStatusBadge").onclick=async()=>{
+  if(await confirmarAccion("¿Deseas salir del modo miembro?")){
     memberPin=null; localStorage.removeItem("tph_member_clave");
     document.getElementById("memberStatusBadge").style.display="none";
     toast("Saliste del modo miembro");
