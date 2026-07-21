@@ -271,6 +271,7 @@
 <main>
   <section id="viewActividades">
     <button id="addActBtn" class="hidden">(+) Añadir Actividad</button>
+    <a class="hidden pill-toggle regalito-btn" id="staffRegalitoBtn" target="_blank" href="#">🎁 Enviar regalito</a>
     <a class="pill-toggle regalito-btn" id="regalitoBtn" target="_blank" href="#">🎁 Enviar regalito</a>
     <div class="filter-pills">
       <button class="pill-toggle on" id="filterCanto">🎤 Canto</button>
@@ -327,6 +328,7 @@
         <button class="btn-small btn-cumple" id="hubTestCumpleBtn" style="flex:1;">🎂 Cumpleaños</button>
         <button class="btn-small btn-seguridad" id="hubTestSeguridadBtn" style="flex:1;">🔒 Seguridad</button>
       </div>
+      <button class="btn-small btn-bell" id="hubTestRecordatorioBtn" style="width:100%;margin-top:-8px;margin-bottom:16px;">🔔 Recordatorios</button>
       <div class="section-label" style="text-align:left;">🔗 Accesos</div>
       <div style="display:flex;flex-direction:column;gap:10px;margin-bottom:16px;">
         <a class="drawer-nav-btn" id="hubSheetsBtn" target="_blank" href="#">
@@ -508,6 +510,8 @@ const MESES = ["ene","feb","mar","abr","may","jun","jul","ago","sep","oct","nov"
 const MESES_LARGO = ["Enero","Febrero","Marzo","Abril","Mayo","Junio","Julio","Agosto","Septiembre","Octubre","Noviembre","Diciembre"];
 
 let DB = { actividades: [], entregas: [], miembros: [] };
+let config = { urlRegalito: "https://forms.gle/FgSeqD33wE1R8Y8r6", urlAnuarioPublico: "https://youtu.be/dQw4w9WgXcQ" };
+let configStaff = {};
 // El PIN se guarda en localStorage solo para autocompletar el campo la próxima vez,
 // pero el modo Staff NO se auto-activa al recargar: siempre se abre en modo normal
 // y hay que apretar el botón Staff + confirmar el PIN cada vez, a propósito.
@@ -767,6 +771,9 @@ async function cargarDatos(){
   try{
     DB=await apiGet();
     if(!DB || typeof DB!=="object" || !Array.isArray(DB.actividades)) throw new Error("Respuesta inesperada del servidor: "+JSON.stringify(DB).slice(0,200));
+    config=Object.assign(config,DB.config||{});
+    configStaff=DB.configStaff||{};
+    aplicarConfiguracionEnlaces();
     nivel = DB.nivel || (staffPin ? "staff" : (memberPin ? "miembro" : "publico"));
     renderActividades(); renderAnuario(); renderMiembros();
   }
@@ -774,6 +781,17 @@ async function cargarDatos(){
     console.error("Error cargando datos:", err);
     document.getElementById("actividadesFeed").innerHTML=`<div class="empty-state">No se pudo conectar con la base de datos.<br><span style="font-size:11px;opacity:0.6;">${escHtml(err.message||String(err))}</span></div>`;
   }
+}
+
+function asignarHref(id,url){ const el=document.getElementById(id); if(el) el.href=url||"#"; }
+function aplicarConfiguracionEnlaces(){
+  asignarHref("regalitoBtn",config.urlRegalito);
+  asignarHref("staffRegalitoBtn",config.urlRegalito);
+  asignarHref("hubSheetsBtn",configStaff.urlSheets);
+  asignarHref("hubGithubBtn",configStaff.urlGithub);
+  asignarHref("hubCronogramaBtn",configStaff.urlCronograma);
+  asignarHref("hubEditarAnuarioBtn",configStaff.urlEditarAnuario);
+  asignarHref("hubEditarInfoBtn",configStaff.urlEditarInfo);
 }
 
 /* ---------- actividades ---------- */
@@ -1521,15 +1539,36 @@ document.getElementById("buzonDrawerBtn").onclick=()=>{ closeDrawer(); openBuzon
 document.getElementById("reporteDrawerBtn").onclick=()=>{ closeDrawer(); openReporteForm(); };
 
 /* ---------- navegación ---------- */
-document.querySelectorAll(".tab-btn").forEach(btn=>btn.onclick=()=>switchTab(btn.dataset.tab));
+document.querySelectorAll(".tab-btn").forEach(btn=>btn.onclick=()=>{
+  if(btn.dataset.tab==="anuario") { window.open(config.urlAnuarioPublico,"_blank","noopener"); return; }
+  switchTab(btn.dataset.tab);
+});
 function switchTab(tab){
   document.querySelectorAll(".tab-btn").forEach(b=>b.classList.toggle("active",b.dataset.tab===tab));
   document.getElementById("viewActividades").classList.toggle("hidden",tab!=="actividades");
   document.getElementById("viewAnuario").classList.toggle("hidden",tab!=="anuario");
+  document.getElementById("viewStaffHub").classList.add("hidden");
   document.getElementById("viewMiembros").classList.add("hidden");
   document.getElementById("viewStaffPin").classList.add("hidden");
   document.getElementById("viewMemberPin").classList.add("hidden");
 }
+function mostrarStaffHub(){
+  if(!staffPin){ toast("Activa el modo Staff primero"); return; }
+  closeDrawer();
+  document.querySelectorAll(".tab-btn").forEach(b=>b.classList.remove("active"));
+  ["viewActividades","viewAnuario","viewMiembros","viewStaffPin","viewMemberPin"].forEach(id=>document.getElementById(id).classList.add("hidden"));
+  document.getElementById("viewStaffHub").classList.remove("hidden");
+}
+document.getElementById("staffHubDrawerBtn").onclick=mostrarStaffHub;
+document.getElementById("hubAnuarioHubBtn").onclick=()=>switchTab("anuario");
+document.getElementById("hubTestCumpleBtn").onclick=async()=>{ const r=await apiPost({action:"testCumpleanos"},"Enviando aviso de prueba..."); toast(r.ok?"Prueba enviada a Discord 🎂":"Error: "+(r.error||"")); };
+document.getElementById("hubTestSeguridadBtn").onclick=async()=>{ const r=await apiPost({action:"testSeguridad"},"Enviando alerta de prueba..."); toast(r.ok?"Prueba enviada a Discord 🔒":"Error: "+(r.error||"")); };
+document.getElementById("hubTestRecordatorioBtn").onclick=async()=>{ const r=await apiPost({action:"testRecordatorio"},"Enviando recordatorio de prueba..."); toast(r.ok?"Prueba enviada a Discord 🔔":"Error: "+(r.error||"")); };
+document.getElementById("hubLimpiarNombresBtn").onclick=async()=>{
+  if(!await confirmarAccion("¿Limpiar los @ de los nombres históricos? Esta acción no borra entregas.")) return;
+  const r=await apiPost({action:"limpiarNombresBD"},"Limpiando nombres...");
+  if(r.ok){ toast((r.actualizados||0)+" registro(s) actualizados ✅"); await cargarDatos(); } else toast("Error: "+(r.error||""));
+};
 document.getElementById("hamburgerBtn").onclick=()=>{ document.getElementById("drawer").classList.add("open"); document.getElementById("drawerOverlay").style.display="block"; };
 document.getElementById("drawerOverlay").onclick=closeDrawer;
 function closeDrawer(){ document.getElementById("drawer").classList.remove("open"); document.getElementById("drawerOverlay").style.display="none"; }
@@ -1580,6 +1619,7 @@ async function verificarPin(){
     toast("Modo Staff activado 🛠️");
     document.getElementById("staffStatusBadge").style.display="block";
     document.getElementById("addActBtn").classList.remove("hidden");
+    document.getElementById("staffRegalitoBtn").classList.remove("hidden");
     document.getElementById("staffHubDrawerBtn").classList.remove("hidden");
     switchTab("actividades");
     await cargarDatos(); // vuelve a pedir los datos, ahora con el PIN, para traer todo completo
@@ -1590,6 +1630,7 @@ document.getElementById("staffStatusBadge").onclick=async()=>{
     staffPin=null; localStorage.removeItem("tph_pin");
     document.getElementById("staffStatusBadge").style.display="none";
     document.getElementById("addActBtn").classList.add("hidden");
+    document.getElementById("staffRegalitoBtn").classList.add("hidden");
     document.getElementById("staffHubDrawerBtn").classList.add("hidden");
     document.getElementById("memberToolsRow1").classList.add("hidden");
     document.getElementById("memberToolsRow2").classList.add("hidden");
