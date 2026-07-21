@@ -59,7 +59,6 @@
 
   .filter-pills{display:flex;gap:8px;margin-bottom:16px;}
   .pill-toggle{flex:1;padding:9px;border-radius:999px;background:var(--card-bg-2);color:var(--text-dim);font-weight:700;font-size:13px;text-align:center;transition:all .15s;}
-  .regalito-btn{display:block;width:100%;margin-bottom:8px;background:linear-gradient(90deg,rgba(239,8,112,0.55),rgba(255,143,177,0.55));color:#fff;border:1px solid rgba(239,8,112,0.5);box-sizing:border-box;}
   .pill-toggle.on{background:linear-gradient(90deg,var(--peach-2),var(--peach-1));color:#fff;}
 
   .switch-pill{display:flex;background:var(--card-bg-2);border-radius:999px;padding:4px;gap:4px;flex-wrap:wrap;}
@@ -171,14 +170,12 @@
   .modal-actions{display:flex;gap:10px;margin-top:16px;}
   .modal-actions button{flex:1;padding:12px;border-radius:12px;font-weight:800;}
   .upload-status{font-size:12px;color:var(--text-dim);margin-top:4px;}
-  /* Checkbox propio (el de borrar entregas), para que combine con la estética en vez del genérico del navegador */
-  .js-check-entrega{appearance:none;-webkit-appearance:none;width:20px;height:20px;border-radius:6px;border:2px solid var(--peach-1);background:var(--card-bg-2);cursor:pointer;position:relative;flex-shrink:0;}
+  .js-check-entrega{appearance:none;-webkit-appearance:none;width:20px;height:20px;border-radius:6px;border:2px solid var(--peach-1);background:var(--card-bg-2);cursor:pointer;position:relative;}
   .js-check-entrega:checked{background:linear-gradient(90deg,var(--peach-2),var(--peach-1));border-color:var(--peach-2);}
-  .js-check-entrega:checked::after{content:"✓";position:absolute;inset:0;display:flex;align-items:center;justify-content:center;color:#fff;font-size:13px;font-weight:800;}
+  .js-check-entrega:checked::after{content:"✓";position:absolute;inset:0;display:flex;align-items:center;justify-content:center;color:#fff;font-weight:800;}
+  .regalito-btn{display:block;width:100%;margin-bottom:8px;background:linear-gradient(90deg,rgba(239,8,112,0.55),rgba(255,143,177,0.55));color:#fff;border:1px solid rgba(239,8,112,0.5);}
   .custom-btn-row{background:var(--card-bg-2);border:1px solid rgba(255,255,255,0.1);border-radius:12px;padding:10px;margin-bottom:8px;}
-  .custom-btn-row input{margin-bottom:6px;}
-  .custom-btn-row input:last-of-type{margin-bottom:0;}
-  .cb-remove{width:100%;margin-top:6px;padding:7px;border-radius:8px;background:rgba(231,76,60,0.18);color:var(--red);font-weight:700;font-size:12px;}
+  .custom-btn-row input{width:100%;margin-bottom:6px;}
 
   .member-modal-header{display:flex;flex-direction:column;align-items:center;text-align:center;padding-top:6px;}
   .member-modal-header img{width:90px;height:90px;border-radius:50%;object-fit:cover;margin-bottom:10px;border:3px solid var(--peach-2);}
@@ -232,7 +229,7 @@
 <header>
   <div class="header-inner">
     <div class="header-left"><button id="hamburgerBtn">☰</button><div class="logo">🍑 Peaches Hub</div></div>
-    <div class="tabs"><button class="tab-btn active" data-tab="actividades">Actividades</button><button class="tab-btn" data-tab="anuario">Anuario ↗</button></div>
+    <div class="tabs"><button class="tab-btn active" data-tab="actividades">Actividades</button><button class="tab-btn" data-tab="anuario">Anuario</button></div>
   </div>
 </header>
 
@@ -264,6 +261,14 @@
   </div>
   <div class="staff-bottom-group">
     <button class="hidden drawer-nav-btn" id="staffHubDrawerBtn" style="justify-content:center;">🔗 Panel de Staff</button>
+    <div class="hidden" id="staffToolsRow" style="display:flex;gap:10px;">
+      <a class="drawer-nav-btn" style="justify-content:center;flex:1;padding:10px;" target="_blank" href="https://docs.google.com/spreadsheets/d/13Mca1Xlt9XUWgHLBqLn5HJ8YrgTTeSX1tU25LqWC-Mc/edit?gid=1284989132#gid=1284989132">
+        <img src="https://raw.githubusercontent.com/TeamPeachesOff/TeamPeachesHub/main/Logos/SheetsLogo.png" style="width:24px;height:24px;border-radius:0;" alt="Sheets"><span>Datos</span>
+      </a>
+      <a class="drawer-nav-btn" style="justify-content:center;flex:1;padding:10px;" target="_blank" href="https://github.com/TeamPeachesOff/TeamPeachesHub">
+        <img src="https://raw.githubusercontent.com/TeamPeachesOff/TeamPeachesHub/main/Logos/GithubLogo.png" style="width:24px;height:24px;border-radius:0;" alt="GitHub"><span>GitHub</span>
+      </a>
+    </div>
     <button class="drawer-nav-btn" id="staffDrawerBtn">🛠️ Staff</button>
   </div>
 </div>
@@ -271,8 +276,8 @@
 <main>
   <section id="viewActividades">
     <button id="addActBtn" class="hidden">(+) Añadir Actividad</button>
-    <a class="hidden pill-toggle regalito-btn" id="staffRegalitoBtn" target="_blank" href="#">🎁 Enviar regalito</a>
-    <a class="pill-toggle regalito-btn" id="regalitoBtn" target="_blank" href="#">🎁 Enviar regalito</a>
+    <a class="hidden pill-toggle regalito-btn" id="staffRegalitoBtn" target="_blank" href="https://forms.gle/FgSeqD33wE1R8Y8r6">🎁 Enviar regalito</a>
+    <a class="pill-toggle regalito-btn" target="_blank" href="https://forms.gle/FgSeqD33wE1R8Y8r6">🎁 Enviar regalito</a>
     <div class="filter-pills">
       <button class="pill-toggle on" id="filterCanto">🎤 Canto</button>
       <button class="pill-toggle on" id="filterDoblaje">🎙️ Doblaje</button>
@@ -287,9 +292,13 @@
     <div class="hidden" id="memberToolsRow1" style="margin-bottom:10px;">
       <button id="addMemberBtn" class="btn-small btn-family" style="width:100%;">➕ Añadir Miembro</button>
     </div>
-    <div class="hidden" id="memberToolsRow2" style="display:flex;gap:10px;margin-bottom:14px;">
+    <div class="hidden" id="memberToolsRow2" style="display:flex;gap:10px;margin-bottom:10px;">
       <button class="btn-small btn-update" id="refreshPhotosBtn" style="flex:1;">🔄 Actualizar pfp</button>
       <button class="btn-small btn-seguridad" id="resetStrikesGlobalBtn" style="flex:1;">🔄 Eliminar strikes</button>
+    </div>
+    <div class="hidden" id="memberToolsRow3" style="display:flex;gap:10px;margin-bottom:14px;">
+      <button class="btn-small btn-cumple" id="testCumpleBtn" style="flex:1;">🎂 Aviso de cumpleaños</button>
+      <button class="btn-small btn-seguridad" id="testSeguridadBtn" style="flex:1;">🔒 Aviso de seguridad</button>
     </div>
     <div class="section-label">👑 Reinas Peachy</div>
     <div class="avatar-row" id="reinasCarousel"></div>
@@ -316,34 +325,6 @@
       <input type="password" id="memberPinInput">
       <div id="memberPinMsg"></div>
       <button class="btn-primary" style="width:100%;padding:12px;border-radius:12px;font-weight:800;" id="memberPinSubmitBtn">Desbloquear</button>
-    </div>
-  </section>
-</main>
-
-  <section id="viewStaffHub" class="hidden">
-    <div class="center-screen" style="max-width:440px;">
-      <h3 style="text-align:center;">🔗 Panel de Staff</h3>
-      <div class="section-label" style="text-align:left;">📣 Avisos de prueba (Discord)</div>
-      <div style="display:flex;gap:10px;margin-bottom:16px;">
-        <button class="btn-small btn-cumple" id="hubTestCumpleBtn" style="flex:1;">🎂 Cumpleaños</button>
-        <button class="btn-small btn-seguridad" id="hubTestSeguridadBtn" style="flex:1;">🔒 Seguridad</button>
-      </div>
-      <button class="btn-small btn-bell" id="hubTestRecordatorioBtn" style="width:100%;margin-top:-8px;margin-bottom:16px;">🔔 Recordatorios</button>
-      <div class="section-label" style="text-align:left;">🔗 Accesos</div>
-      <div style="display:flex;flex-direction:column;gap:10px;margin-bottom:16px;">
-        <a class="drawer-nav-btn" id="hubSheetsBtn" target="_blank" href="#">
-          <img src="https://raw.githubusercontent.com/TeamPeachesOff/TeamPeachesHub/main/Logos/SheetsLogo.png" style="width:24px;height:24px;border-radius:0;" alt="Sheets"><span>Base de datos (Sheets)</span>
-        </a>
-        <a class="drawer-nav-btn" id="hubGithubBtn" target="_blank" href="#">
-          <img src="https://raw.githubusercontent.com/TeamPeachesOff/TeamPeachesHub/main/Logos/GithubLogo.png" style="width:24px;height:24px;border-radius:0;" alt="GitHub"><span>GitHub</span>
-        </a>
-        <a class="drawer-nav-btn" id="hubCronogramaBtn" target="_blank" href="#"><span>🗓️</span><span>Cronograma</span></a>
-        <a class="drawer-nav-btn" id="hubEditarAnuarioBtn" target="_blank" href="#"><span>✏️</span><span>Editar Anuario (Canva)</span></a>
-        <button class="drawer-nav-btn" id="hubAnuarioHubBtn"><span>📖</span><span>AnuarioHub (vista interna de siempre)</span></button>
-        <a class="drawer-nav-btn" id="hubEditarInfoBtn" target="_blank" href="#"><span>🖋️</span><span>Editar página de info (Peaches)</span></a>
-      </div>
-      <div class="section-label" style="text-align:left;">🧹 Mantenimiento</div>
-      <button class="btn-small btn-family" id="hubLimpiarNombresBtn" style="width:100%;">🧹 Limpiar nombres en la BD (quitar @)</button>
     </div>
   </section>
 </main>
@@ -447,9 +428,9 @@
         <div class="upload-status" id="af_scriptStatus"></div>
       </div>
       <div class="form-group">
-        <label>Botones personalizados (máx. 3) — texto, y un link o un archivo para subir</label>
+        <label>Botones personalizados (máx. 3)</label>
         <div id="af_customButtons"></div>
-        <button type="button" class="btn-small btn-family" id="af_addCustomBtnBtn" style="width:100%;margin-top:6px;">➕ Añadir botón personalizado</button>
+        <button type="button" class="btn-small btn-family" id="af_addCustomBtn" style="width:100%;">➕ Añadir botón personalizado</button>
       </div>
       <div class="form-group">
         <label>Categoría</label>
@@ -510,8 +491,6 @@ const MESES = ["ene","feb","mar","abr","may","jun","jul","ago","sep","oct","nov"
 const MESES_LARGO = ["Enero","Febrero","Marzo","Abril","Mayo","Junio","Julio","Agosto","Septiembre","Octubre","Noviembre","Diciembre"];
 
 let DB = { actividades: [], entregas: [], miembros: [] };
-let config = { urlRegalito: "https://forms.gle/FgSeqD33wE1R8Y8r6", urlAnuarioPublico: "https://youtu.be/dQw4w9WgXcQ" };
-let configStaff = {};
 // El PIN se guarda en localStorage solo para autocompletar el campo la próxima vez,
 // pero el modo Staff NO se auto-activa al recargar: siempre se abre en modo normal
 // y hay que apretar el botón Staff + confirmar el PIN cada vez, a propósito.
@@ -638,6 +617,10 @@ function parseWinnerLines(text){
     return {nombre, detalle, link};
   });
 }
+function botonesPersonalizadosDe(a){
+  try { const botones=JSON.parse(a.botonesPersonalizados||"[]"); return Array.isArray(botones)?botones.filter(b=>b&&b.texto&&b.url).slice(0,3):[]; }
+  catch(e) { return []; }
+}
 // Todas las líneas dentro de una misma celda (ganadorCanto/ganadorDoblaje/mencionesHonorificas)
 // pertenecen SIEMPRE a la misma actividad (así las junta el backend al guardarlas), así que ya
 // no tiene sentido agruparlas por el "detalle" que cada quien escribió a mano — eso es justo lo
@@ -652,7 +635,7 @@ function winnersGroupHTML(emoji,label,text,tipo,tituloActividad){
   return `<div class="win-group">
     <div class="win-group-title">${emoji} ${label}</div>
     <div class="win-row ${rowClass}">
-      <div class="win-row-text"><strong>${escHtml(titulo)}</strong>${entries.map(e=>`<br>${escHtml((e.nombre||"").replace(/@/g,""))}`).join("")}</div>
+      <div class="win-row-text"><strong>${escHtml(titulo)}</strong>${entries.map(e=>`<br>${escHtml(String(e.nombre||"").replace(/@/g,""))}`).join("")}</div>
       ${link?`<a class="win-listen" target="_blank" href="${escAttr(link)}" title="Escuchar">🔗▶️</a>`:""}
     </div>
   </div>`;
@@ -771,9 +754,6 @@ async function cargarDatos(){
   try{
     DB=await apiGet();
     if(!DB || typeof DB!=="object" || !Array.isArray(DB.actividades)) throw new Error("Respuesta inesperada del servidor: "+JSON.stringify(DB).slice(0,200));
-    config=Object.assign(config,DB.config||{});
-    configStaff=DB.configStaff||{};
-    aplicarConfiguracionEnlaces();
     nivel = DB.nivel || (staffPin ? "staff" : (memberPin ? "miembro" : "publico"));
     renderActividades(); renderAnuario(); renderMiembros();
   }
@@ -781,17 +761,6 @@ async function cargarDatos(){
     console.error("Error cargando datos:", err);
     document.getElementById("actividadesFeed").innerHTML=`<div class="empty-state">No se pudo conectar con la base de datos.<br><span style="font-size:11px;opacity:0.6;">${escHtml(err.message||String(err))}</span></div>`;
   }
-}
-
-function asignarHref(id,url){ const el=document.getElementById(id); if(el) el.href=url||"#"; }
-function aplicarConfiguracionEnlaces(){
-  asignarHref("regalitoBtn",config.urlRegalito);
-  asignarHref("staffRegalitoBtn",config.urlRegalito);
-  asignarHref("hubSheetsBtn",configStaff.urlSheets);
-  asignarHref("hubGithubBtn",configStaff.urlGithub);
-  asignarHref("hubCronogramaBtn",configStaff.urlCronograma);
-  asignarHref("hubEditarAnuarioBtn",configStaff.urlEditarAnuario);
-  asignarHref("hubEditarInfoBtn",configStaff.urlEditarInfo);
 }
 
 /* ---------- actividades ---------- */
@@ -816,10 +785,6 @@ function renderActividades(){
   attachCardEvents(); bindAvatarFallbacks();
 }
 
-// Lee los botones personalizados de una actividad (guardados como JSON en un solo campo).
-// Definida acá arriba porque cardHTML la usa; parseCustomButtons (más abajo, junto al formulario)
-// hace lo mismo, la reutilizamos para no duplicar el parseo.
-function botonesPersonalizadosDe(a){ return parseCustomButtons(a.botonesPersonalizados||"[]"); }
 function cardHTML(a){
   const estado=estadoActividad(a.fechaFin);
   const entregasDeEsta=DB.entregas.filter(e=>String(e.idActividad)===String(a.id));
@@ -1342,8 +1307,7 @@ function openActivityForm(id){
   document.getElementById("af_linkScript").value=a?a.linkScript||"":"";
   document.getElementById("af_scriptFile").value=""; document.getElementById("af_scriptStatus").textContent="";
   document.getElementById("af_customButtons").innerHTML="";
-  (a&&a.botonesPersonalizados?parseCustomButtons(a.botonesPersonalizados):[]).forEach(agregarFilaBotonPersonalizado);
-  actualizarBotonAgregarPersonalizado();
+  botonesPersonalizadosDe(a||{}).forEach(agregarFilaBotonPersonalizado);
   setSwitchPill("af_categoriaSwitch", a?(a.categoria||""):"");
   setSwitchPill("af_participacionSwitch", a?(a.participacion||"opcional"):"opcional");
   const esAnuarioActual=a?esTrue(a.esAnuario):false;
@@ -1367,45 +1331,18 @@ document.getElementById("af_scriptFile").addEventListener("change", async(e)=>{
     if(r.ok){ document.getElementById("af_linkScript").value=r.url; st.textContent="PDF subido ✅"; } else st.textContent="Error: "+(r.error||"");
   }catch(err){ st.textContent="Error al leer el archivo"; }
 });
-
-/* ---------- botones personalizados por actividad (máx. 3) ---------- */
-// Se guardan como UN solo campo JSON en la actividad ("botonesPersonalizados": [{texto,url}]),
-// así no hace falta una columna nueva por cada botón posible en Sheets.
-function parseCustomButtons(json){ try{ const arr=JSON.parse(json); return Array.isArray(arr)?arr:[]; }catch(e){ return []; } }
-function actualizarBotonAgregarPersonalizado(){
-  const cant=document.querySelectorAll("#af_customButtons .custom-btn-row").length;
-  document.getElementById("af_addCustomBtnBtn").classList.toggle("hidden", cant>=3);
-}
 function agregarFilaBotonPersonalizado(datos){
-  datos=datos||{texto:"",url:""};
-  const row=document.createElement("div");
-  row.className="custom-btn-row";
-  row.innerHTML=`
-    <input type="text" class="cb-texto" placeholder="Texto del botón (ej: Entregar en Drive)" value="${escAttr(datos.texto||"")}">
-    <input type="text" class="cb-link" placeholder="Pegá un link, o subí un archivo abajo" value="${escAttr(datos.url||"")}">
-    <input type="file" class="cb-file">
-    <div class="upload-status cb-status"></div>
-    <button type="button" class="cb-remove">✕ Quitar este botón</button>`;
-  document.getElementById("af_customButtons").appendChild(row);
-  row.querySelector(".cb-file").addEventListener("change", async(e)=>{
-    const file=e.target.files[0]; if(!file) return;
-    const st=row.querySelector(".cb-status"); st.textContent="Subiendo...";
-    const esImagen=/^image\//.test(file.type)||/\.(jpe?g|png|gif|webp)$/i.test(file.name);
-    try{
-      const base64Data=await fileToBase64(file);
-      const r=await apiPost({action: esImagen?"uploadImage":"uploadScript", filename:file.name, base64Data},"Subiendo archivo...");
-      if(r.ok){ row.querySelector(".cb-link").value=r.url; st.textContent="Archivo subido ✅"; } else st.textContent="Error: "+(r.error||"");
-    }catch(err){ st.textContent="Error al leer el archivo"; }
-  });
-  row.querySelector(".cb-remove").onclick=()=>{ row.remove(); actualizarBotonAgregarPersonalizado(); };
-  actualizarBotonAgregarPersonalizado();
+  const contenedor=document.getElementById("af_customButtons");
+  if(contenedor.children.length>=3) return;
+  const fila=document.createElement("div"); fila.className="custom-btn-row";
+  const texto=document.createElement("input"); texto.className="cb-texto"; texto.placeholder="Texto del botón"; texto.value=(datos&&datos.texto)||"";
+  const url=document.createElement("input"); url.className="cb-url"; url.placeholder="https://..."; url.value=(datos&&datos.url)||"";
+  const quitar=document.createElement("button"); quitar.type="button"; quitar.className="btn-small btn-danger"; quitar.style.width="100%"; quitar.textContent="Quitar"; quitar.onclick=()=>fila.remove();
+  fila.append(texto,url,quitar); contenedor.appendChild(fila);
 }
-document.getElementById("af_addCustomBtnBtn").onclick=()=>agregarFilaBotonPersonalizado();
+document.getElementById("af_addCustomBtn").onclick=()=>agregarFilaBotonPersonalizado();
 function leerBotonesPersonalizados(){
-  return Array.from(document.querySelectorAll("#af_customButtons .custom-btn-row")).map(row=>({
-    texto: row.querySelector(".cb-texto").value.trim(),
-    url: row.querySelector(".cb-link").value.trim()
-  })).filter(b=>b.texto && b.url).slice(0,3);
+  return Array.from(document.querySelectorAll("#af_customButtons .custom-btn-row")).map(fila=>({texto:fila.querySelector(".cb-texto").value.trim(),url:fila.querySelector(".cb-url").value.trim()})).filter(b=>b.texto&&b.url).slice(0,3);
 }
 document.getElementById("activityForm").addEventListener("submit", async(e)=>{
   e.preventDefault();
@@ -1539,39 +1476,52 @@ document.getElementById("buzonDrawerBtn").onclick=()=>{ closeDrawer(); openBuzon
 document.getElementById("reporteDrawerBtn").onclick=()=>{ closeDrawer(); openReporteForm(); };
 
 /* ---------- navegación ---------- */
+const URL_ANUARIO_PUBLICO="https://youtu.be/dQw4w9WgXcQ"; // reemplazar cuando Krys entregue el anuario final
 document.querySelectorAll(".tab-btn").forEach(btn=>btn.onclick=()=>{
-  if(btn.dataset.tab==="anuario") { window.open(config.urlAnuarioPublico,"_blank","noopener"); return; }
+  if(btn.dataset.tab==="anuario"){ window.open(URL_ANUARIO_PUBLICO,"_blank","noopener"); return; }
   switchTab(btn.dataset.tab);
 });
 function switchTab(tab){
   document.querySelectorAll(".tab-btn").forEach(b=>b.classList.toggle("active",b.dataset.tab===tab));
   document.getElementById("viewActividades").classList.toggle("hidden",tab!=="actividades");
   document.getElementById("viewAnuario").classList.toggle("hidden",tab!=="anuario");
-  document.getElementById("viewStaffHub").classList.add("hidden");
   document.getElementById("viewMiembros").classList.add("hidden");
   document.getElementById("viewStaffPin").classList.add("hidden");
   document.getElementById("viewMemberPin").classList.add("hidden");
 }
-function mostrarStaffHub(){
-  if(!staffPin){ toast("Activa el modo Staff primero"); return; }
-  closeDrawer();
-  document.querySelectorAll(".tab-btn").forEach(b=>b.classList.remove("active"));
-  ["viewActividades","viewAnuario","viewMiembros","viewStaffPin","viewMemberPin"].forEach(id=>document.getElementById(id).classList.add("hidden"));
-  document.getElementById("viewStaffHub").classList.remove("hidden");
-}
-document.getElementById("staffHubDrawerBtn").onclick=mostrarStaffHub;
-document.getElementById("hubAnuarioHubBtn").onclick=()=>switchTab("anuario");
-document.getElementById("hubTestCumpleBtn").onclick=async()=>{ const r=await apiPost({action:"testCumpleanos"},"Enviando aviso de prueba..."); toast(r.ok?"Prueba enviada a Discord 🎂":"Error: "+(r.error||"")); };
-document.getElementById("hubTestSeguridadBtn").onclick=async()=>{ const r=await apiPost({action:"testSeguridad"},"Enviando alerta de prueba..."); toast(r.ok?"Prueba enviada a Discord 🔒":"Error: "+(r.error||"")); };
-document.getElementById("hubTestRecordatorioBtn").onclick=async()=>{ const r=await apiPost({action:"testRecordatorio"},"Enviando recordatorio de prueba..."); toast(r.ok?"Prueba enviada a Discord 🔔":"Error: "+(r.error||"")); };
-document.getElementById("hubLimpiarNombresBtn").onclick=async()=>{
-  if(!await confirmarAccion("¿Limpiar los @ de los nombres históricos? Esta acción no borra entregas.")) return;
-  const r=await apiPost({action:"limpiarNombresBD"},"Limpiando nombres...");
-  if(r.ok){ toast((r.actualizados||0)+" registro(s) actualizados ✅"); await cargarDatos(); } else toast("Error: "+(r.error||""));
-};
 document.getElementById("hamburgerBtn").onclick=()=>{ document.getElementById("drawer").classList.add("open"); document.getElementById("drawerOverlay").style.display="block"; };
 document.getElementById("drawerOverlay").onclick=closeDrawer;
 function closeDrawer(){ document.getElementById("drawer").classList.remove("open"); document.getElementById("drawerOverlay").style.display="none"; }
+function abrirStaffHub(){
+  if(!staffPin){ toast("Activa el modo Staff primero"); return; }
+  closeDrawer();
+  document.getElementById("memberModalContent").innerHTML=`
+    <h3>🔗 Panel de Staff</h3>
+    <div class="section-label" style="text-align:left;">📣 Pruebas de Discord</div>
+    <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px;">
+      <button class="btn-small btn-cumple" id="hubCumple">🎂 Cumpleaños</button>
+      <button class="btn-small btn-seguridad" id="hubSeguridad">🔒 Seguridad</button>
+      <button class="btn-small btn-bell" id="hubRecordatorio">🔔 Recordatorios</button>
+    </div>
+    <div class="section-label" style="text-align:left;">🔗 Accesos</div>
+    <div style="display:flex;flex-direction:column;gap:8px;">
+      <a class="drawer-nav-btn" target="_blank" href="https://docs.google.com/spreadsheets/d/13Mca1Xlt9XUWgHLBqLn5HJ8YrgTTeSX1tU25LqWC-Mc/edit?gid=1284989132#gid=1284989132">🗂️ Base de Datos</a>
+      <a class="drawer-nav-btn" target="_blank" href="https://github.com/TeamPeachesOff/TeamPeachesHub">💻 GitHub</a>
+      <a class="drawer-nav-btn" target="_blank" href="https://canva.link/5dq4x7j1oyqcvmd">🗓️ Cronograma</a>
+      <a class="drawer-nav-btn" target="_blank" href="https://canva.link/ng8biz2i64ccepn">✏️ Editar Anuario</a>
+      <a class="drawer-nav-btn" target="_blank" href="https://www.canva.com/design/DAHPUZAC2vQ/WynLMf7-ey5ht3S3ehSlDA/edit">🖋️ Editar página de Info</a>
+      <button class="drawer-nav-btn" id="hubAnuario">📖 AnuarioHub</button>
+      <button class="btn-small btn-family" id="hubLimpiar">🧹 Limpiar nombres BD (quitar @)</button>
+    </div>`;
+  openModal("memberModal");
+  document.getElementById("hubCumple").onclick=()=>probarHub("testCumpleanos","Cumpleaños");
+  document.getElementById("hubSeguridad").onclick=()=>probarHub("testSeguridad","Seguridad");
+  document.getElementById("hubRecordatorio").onclick=()=>{ const a=DB.actividades.find(x=>!esTrue(x.esAnuario)); if(!a){toast("No hay actividad para probar");return;} probarHub("testRecordatorio","Recordatorio",a.id); };
+  document.getElementById("hubAnuario").onclick=()=>{ closeModal("memberModal"); switchTab("anuario"); };
+  document.getElementById("hubLimpiar").onclick=async()=>{ if(!await confirmarAccion("¿Quitar @ de los nombres históricos?")) return; const r=await apiPost({action:"limpiarNombresBD"},"Limpiando..."); if(r.ok){toast((r.actualizados||0)+" registro(s) limpiados ✅"); await cargarDatos();} else toast("Error: "+(r.error||"")); };
+}
+async function probarHub(action,nombre,idActividad){ const r=await apiPost({action:action,idActividad:idActividad},"Enviando prueba..."); toast(r.ok?nombre+" enviado ✅":"Error: "+(r.error||"")); }
+document.getElementById("staffHubDrawerBtn").onclick=abrirStaffHub;
 document.getElementById("miembrosDrawerBtn").onclick=()=>{
   closeDrawer();
   if(staffPin||memberPin){ mostrarViewMiembros(); return; }
@@ -1589,6 +1539,7 @@ function mostrarViewMiembros(){
   document.getElementById("viewMiembros").classList.remove("hidden");
   document.getElementById("memberToolsRow1").classList.toggle("hidden", !staffPin);
   document.getElementById("memberToolsRow2").classList.toggle("hidden", !staffPin);
+  document.getElementById("memberToolsRow3").classList.toggle("hidden", !staffPin);
   renderMiembros();
 }
 document.getElementById("staffDrawerBtn").onclick=()=>{
@@ -1620,6 +1571,7 @@ async function verificarPin(){
     document.getElementById("staffStatusBadge").style.display="block";
     document.getElementById("addActBtn").classList.remove("hidden");
     document.getElementById("staffRegalitoBtn").classList.remove("hidden");
+    document.getElementById("staffToolsRow").classList.remove("hidden");
     document.getElementById("staffHubDrawerBtn").classList.remove("hidden");
     switchTab("actividades");
     await cargarDatos(); // vuelve a pedir los datos, ahora con el PIN, para traer todo completo
@@ -1631,9 +1583,11 @@ document.getElementById("staffStatusBadge").onclick=async()=>{
     document.getElementById("staffStatusBadge").style.display="none";
     document.getElementById("addActBtn").classList.add("hidden");
     document.getElementById("staffRegalitoBtn").classList.add("hidden");
+    document.getElementById("staffToolsRow").classList.add("hidden");
     document.getElementById("staffHubDrawerBtn").classList.add("hidden");
     document.getElementById("memberToolsRow1").classList.add("hidden");
     document.getElementById("memberToolsRow2").classList.add("hidden");
+    document.getElementById("memberToolsRow3").classList.add("hidden");
     toast("Saliste del modo staff");
     cargarDatos(); // vuelve a pedir los datos sin PIN, así el servidor manda la versión pública
   }
