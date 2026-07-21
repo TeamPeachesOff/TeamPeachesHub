@@ -151,11 +151,12 @@
   .badge-inactivo{background:rgba(160,160,170,0.18);color:#a0a0aa;}
 
   .center-screen{max-width:340px;margin:60px auto;text-align:center;padding:0 16px;}
-  #pinInput{width:100%;text-align:center;font-size:24px;letter-spacing:8px;padding:14px;border-radius:12px;border:1px solid rgba(255,255,255,0.15);background:var(--card-bg-2);color:var(--text);margin:16px 0;}
+  #pinInput, #memberPinInput{width:100%;text-align:center;font-size:24px;letter-spacing:8px;padding:14px;border-radius:12px;border:1px solid rgba(255,255,255,0.15);background:var(--card-bg-2);color:var(--text);margin:16px 0;}
   #pinMsg{font-size:13px;color:var(--red);min-height:18px;}
   #staffStatusBadge{display:none;position:fixed;bottom:14px;right:14px;background:linear-gradient(90deg,#6a3d8f,#a45fc7);color:#fff;padding:8px 14px;border-radius:999px;font-size:12.5px;font-weight:700;z-index:60;box-shadow:0 4px 14px rgba(0,0,0,0.4);cursor:pointer;}
-  /* Discreto a propósito: modo Miembro es solo lectura, no necesita tanta prominencia como Staff. */
-  #memberStatusBadge{display:none;position:fixed;bottom:14px;left:14px;background:linear-gradient(90deg,rgba(239,8,112,0.75),rgba(255,143,177,0.6));color:#fff;padding:6px 12px;border-radius:999px;font-size:11.5px;font-weight:700;z-index:60;box-shadow:0 4px 14px rgba(0,0,0,0.4);cursor:pointer;}
+  /* Discreto a propósito: modo Miembro es solo lectura, no necesita tanta prominencia como Staff.
+     Es solo el emoji, sin texto, para que pase desapercibido. */
+  #memberStatusBadge{display:none;position:fixed;bottom:14px;left:14px;width:38px;height:38px;background:rgba(239,8,112,0.35);color:#fff;border-radius:50%;font-size:18px;z-index:60;box-shadow:0 4px 14px rgba(0,0,0,0.4);cursor:pointer;align-items:center;justify-content:center;}
 
   .modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,0.6);z-index:200;display:none;align-items:flex-start;justify-content:center;padding:30px 12px;overflow-y:auto;}
   .modal-overlay.open{display:flex;}
@@ -316,7 +317,7 @@
 </main>
 
 <div id="staffStatusBadge">🛠️ Modo Staff activo</div>
-<div id="memberStatusBadge">🍑 Modo Miembro (solo lectura)</div>
+<div id="memberStatusBadge" title="Modo Miembro (solo lectura)">🍑</div>
 <div class="toast" id="toast"></div>
 
 <div class="modal-overlay" id="memberModal"><div class="modal-box"><button class="modal-close" data-close="memberModal">✕</button><div id="memberModalContent"></div></div></div>
@@ -1456,7 +1457,7 @@ async function verificarClaveMiembro(silencioso){
     memberPin=val;
     localStorage.setItem("tph_member_clave",val);
     document.getElementById("memberPinMsg").textContent="";
-    document.getElementById("memberStatusBadge").style.display="block";
+    document.getElementById("memberStatusBadge").style.display="flex";
     if(!silencioso) toast("Modo Miembro activado 🍑");
     if(despuesDeClaveMiembro==="miembros"){ despuesDeClaveMiembro=null; mostrarViewMiembros(); } else switchTab("actividades");
     await cargarDatos(); // vuelve a pedir los datos, ahora con la clave, para traer todo completo
