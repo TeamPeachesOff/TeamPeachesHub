@@ -484,6 +484,13 @@
 </div>
 
 <script>
+// Si el navegador restaura esta página desde su caché de "atrás/adelante" (bfcache), el DOM puede
+// quedar congelado a mitad de una actualización (ej. justo cuando un innerHTML se estaba
+// reescribiendo) y se ve "crudo"/sin estilo. Para evitarlo, si detectamos que la página viene de
+// bfcache (event.persisted), forzamos una recarga limpia desde cero.
+window.addEventListener("pageshow", function(e){
+  if (e.persisted) location.reload();
+});
 const APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwcnPM10DeRLE6ReNX_AqeViRfKkHjpflT-QCw05oW_L8n5ohrDhfR_iPuzTqYNrG8H4A/exec";
 const LOGO_DEFAULT = "https://raw.githubusercontent.com/TeamPeachesOff/TeamPeachesHub/main/Logos/PeachesLogo.jpeg";
 const LOGO_FALLBACK = "https://i.imgur.com/wusLyff.jpeg";
