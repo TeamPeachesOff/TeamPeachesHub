@@ -589,33 +589,23 @@ function parseWinnerLines(text){
     return {nombre, detalle, link};
   });
 }
-// Junta en un solo bloque a todas las personas que comparten la misma canción/escena (caso de
-// actividades grupales con 2+ participantes), en vez de repetir una tarjeta por persona.
-// OJO: se agrupa SOLO por el nombre de la canción/escena, NO por el link — cada persona suele
-// tener su propio link de grabación aunque hayan cantado la misma canción, y antes eso hacía que
-// el mismo grupo saliera partido en 2+ tarjetas. El botón "Escuchar" usa el primer link que haya
-// disponible dentro del grupo.
-function agruparGanadores(entries){
-  const grupos=[]; const mapa={};
-  entries.forEach(e=>{
-    const key=(e.detalle||"").trim().toLowerCase();
-    if(!mapa[key]){ mapa[key]={detalle:e.detalle, link:e.link||"", nombres:[]}; grupos.push(mapa[key]); }
-    if(!mapa[key].link && e.link) mapa[key].link=e.link;
-    mapa[key].nombres.push(e.nombre);
-  });
-  return grupos;
-}
-function winnersGroupHTML(emoji,label,text,tipo){
+// Todas las líneas dentro de una misma celda (ganadorCanto/ganadorDoblaje/mencionesHonorificas)
+// pertenecen SIEMPRE a la misma actividad (así las junta el backend al guardarlas), así que ya
+// no tiene sentido agruparlas por el "detalle" que cada quien escribió a mano — eso es justo lo
+// que se rompía cuando alguien lo dejaba vacío o lo tipeaba distinto. Ahora es un solo bloque
+// siempre, usando el título real de la actividad como encabezado.
+function winnersGroupHTML(emoji,label,text,tipo,tituloActividad){
   const entries=parseWinnerLines(text);
   if(!entries.length) return "";
-  const grupos=agruparGanadores(entries);
+  const link=entries.find(e=>e.link)?.link||"";
+  const titulo=tituloActividad||entries.find(e=>e.detalle)?.detalle||"(sin título)";
   const rowClass = tipo==="cancion" ? "win-cancion" : tipo==="doblaje" ? "win-doblaje" : tipo==="mencion" ? "win-mencion" : "";
   return `<div class="win-group">
     <div class="win-group-title">${emoji} ${label}</div>
-    ${grupos.map(g=>`<div class="win-row ${rowClass}">
-      <div class="win-row-text"><strong>${escHtml(g.detalle||"(sin título)")}</strong>${g.nombres.map(n=>`<br>${escHtml(n)}`).join("")}</div>
-      ${g.link?`<a class="win-listen" target="_blank" href="${escAttr(g.link)}">🎧 Escuchar</a>`:""}
-    </div>`).join("")}
+    <div class="win-row ${rowClass}">
+      <div class="win-row-text"><strong>${escHtml(titulo)}</strong>${entries.map(e=>`<br>${escHtml(e.nombre)}`).join("")}</div>
+      ${link?`<a class="win-listen" target="_blank" href="${escAttr(link)}">🎧 Escuchar</a>`:""}
+    </div>
   </div>`;
 }
 
@@ -960,9 +950,9 @@ function openAnuarioDetail(id){
     <h3>👑 ${escHtml(a.titulo||"")}</h3>
     ${a.imagenUrl?`<img id="anuarioDetailImg" data-filename="${escAttr((a.titulo||'anuario')+'.jpg')}" src="${escAttr(a.imagenUrl)}" style="border-radius:12px;width:100%;aspect-ratio:1/1;object-fit:contain;background:var(--card-bg-2);margin-bottom:10px;">`:""}
     <div class="winners-block">
-      ${winnersGroupHTML("🥇","Mejor Canto", a.ganadorCanto, "cancion")}
-      ${winnersGroupHTML("🎙️","Mejor Doblaje", a.ganadorDoblaje, "doblaje")}
-      ${winnersGroupHTML("✨","Menciones Honoríficas", a.mencionesHonorificas, "mencion")}
+      ${winnersGroupHTML("🥇","Mejor Canto", a.ganadorCanto, "cancion", a.titulo)}
+      ${winnersGroupHTML("🎙️","Mejor Doblaje", a.ganadorDoblaje, "doblaje", a.titulo)}
+      ${winnersGroupHTML("✨","Menciones Honoríficas", a.mencionesHonorificas, "mencion", a.titulo)}
       ${(!a.ganadorCanto&&!a.ganadorDoblaje&&!a.mencionesHonorificas)?`<div style="color:var(--text-dim);">Todavía sin ganadores asignados.</div>`:""}
     </div>
     ${staffPin?`<div style="display:flex;gap:8px;margin-top:12px;">
