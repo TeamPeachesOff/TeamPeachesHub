@@ -5,7 +5,6 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Team Peaches Hub 🍑</title>
 <link id="favicon" rel="icon" type="image/jpeg" href="https://raw.githubusercontent.com/TeamPeachesOff/TeamPeachesHub/main/Logos/PeachesLogo.jpeg">
-
 <script>
 /*
 ****************************************************************************
@@ -69,8 +68,6 @@
 
 */
 </script>
-
-
 <style>
   :root{
     --peach-1:#ff8fb1; --peach-2:#EF0870; --bg:#1a1020; --card-bg:#2a1830; --card-bg-2:#33203a;
@@ -382,11 +379,15 @@
 
   <section id="viewMemberPin" class="hidden">
     <div class="center-screen">
-      <div style="font-size:40px;">🍑🔑</div>
-      <h3>Introduce la clave de Miembro</h3>
-      <input type="password" id="memberPinInput">
-      <div id="memberPinMsg"></div>
-      <button class="btn-primary" style="width:100%;padding:12px;border-radius:12px;font-weight:800;" id="memberPinSubmitBtn">Desbloquear</button>
+      <div style="font-size:40px;">🍑🔒</div>
+      <h3 style="font-size:22px;">Team Peaches</h3>
+      <p style="color:var(--text-dim);font-size:14px;line-height:1.5;">Esta es una página dedicada solo para los miembros del Team.<br>El modo de lectura no está disponible sin tu clave de Miembro.</p>
+      <button type="button" id="memberPinRevealBtn" style="background:none;color:var(--peach-1);font-weight:700;font-size:13px;margin-top:6px;text-decoration:underline;">¿Sos miembro? Ingresá tu clave</button>
+      <div id="memberPinFormBox" class="hidden" style="margin-top:14px;">
+        <input type="password" id="memberPinInput">
+        <div id="memberPinMsg"></div>
+        <button class="btn-primary" style="width:100%;padding:12px;border-radius:12px;font-weight:800;" id="memberPinSubmitBtn">Desbloquear</button>
+      </div>
     </div>
   </section>
 </main>
@@ -419,7 +420,7 @@
         <input type="file" id="me_avatarFile" accept=".jpg,.jpeg,.png,image/jpeg,image/png">
         <div class="upload-status" id="me_uploadStatus"></div>
       </div>
-      <div class="form-group"><label>Usuario Smule (exacto, sin @ ni link — ej: WagnerObando1)</label><input type="text" id="me_smule" placeholder="usuario exacto"></div>
+      <div class="form-group"><label>Usuario Smule (exacto, sin @ ni link)</label><input type="text" id="me_smule" placeholder="usuario exacto"></div>
       <button type="button" class="btn-small btn-family" id="me_fetchSmuleBtn" style="width:100%;margin:-4px 0 12px;">🔄 Actualizar foto desde Smule</button>
       <div class="form-group"><label>Usuario Discord</label><input type="text" id="me_discord"></div>
       <div class="form-group"><label>Usuario BandLab (exacto, sin @ ni link)</label><input type="text" id="me_bandlab" placeholder="usuario exacto"></div>
@@ -427,6 +428,7 @@
       <div class="form-group"><label>Rango vocal</label><input type="text" id="me_rango"></div>
       <div class="form-group"><label>Cumpleaños</label><input type="date" id="me_cumple"></div>
       <div class="form-group"><label>Miembro desde</label><input type="date" id="me_ingreso"></div>
+      <div class="form-group"><label>¿Número de generación? (ej: 3)</label><input type="number" id="me_generacion" min="1" step="1" placeholder="3"></div>
       <!-- 3 grupos independientes de multi-selección (cada uno usa bindToggleGroup/setToggleGroup/getToggleGroupValues por su cuenta):
            Roles = canto/doblaje | Rango = fundadora/lider/staff | Especial = conserje/inactivo -->
       <div class="form-group">
@@ -611,9 +613,19 @@ function categoriaTag(c){
 }
 function fmtFecha(f){
   if(!f) return "";
-  const d=new Date(f);
-  if(isNaN(d)) return f;
-  return d.getDate()+" "+MESES[d.getMonth()]+" "+d.getFullYear();
+  const s=String(f);
+  // BUG DE UN DÍA MENOS: construir un Date() y leer getDate()/getMonth() en el navegador
+  // aplica el timezone LOCAL sobre una fecha guardada en UTC, y eso corre el día hacia atrás.
+  // Igual que se resolvió antes para streamHora/cumpleaños: se extraen año/mes/día como texto
+  // directo del string, sin pasar nunca por un objeto Date.
+  const iso=s.match(/^(\d{4})-(\d{2})-(\d{2})/);
+  if(iso) return parseInt(iso[3],10)+" "+MESES[parseInt(iso[2],10)-1]+" "+iso[1];
+  const partes=s.split("/");
+  if(partes.length>=2){
+    const dd=parseInt(partes[0],10), mm=parseInt(partes[1],10), yyyy=partes[2]?partes[2].slice(0,4):"";
+    if(!isNaN(dd)&&!isNaN(mm)&&mm>=1&&mm<=12) return dd+" "+MESES[mm-1]+(yyyy?" "+yyyy:"");
+  }
+  return s;
 }
 function fmtCumple(v){
   if(!v) return "";
@@ -640,7 +652,24 @@ function toDateInputCumple(v){
   }
   return "";
 }
-function toDateInput(v){ if(!v) return ""; const d=new Date(v); if(isNaN(d)) return ""; return d.toISOString().slice(0,10); }
+function toDateInput(v){
+  if(!v) return "";
+  const s=String(v);
+  const iso=s.match(/^(\d{4})-(\d{2})-(\d{2})/);
+  if(iso) return iso[1]+"-"+iso[2]+"-"+iso[3];
+  const partes=s.split("/");
+  if(partes.length>=2){
+    const dd=partes[0].padStart(2,"0"), mm=partes[1].padStart(2,"0");
+    const yyyy=partes[2]?partes[2].slice(0,4):"2000";
+    return yyyy+"-"+mm+"-"+dd;
+  }
+  return "";
+}
+function fmtGeneracion(n){
+  const num=parseInt(n,10);
+  if(isNaN(num)) return "—";
+  return num+"° Generación";
+}
 function esTrue(v){ return v===true||v==="TRUE"||v==="true"||v===1; }
 function normalizar(s){ return String(s||"").normalize("NFD").replace(/[\u0300-\u036f]/g,"").toLowerCase(); }
 // ===== Usuarios de Smule/BandLab =====
@@ -1212,6 +1241,7 @@ function openMemberModal(id){
       <tr><td>🎵 Rango Vocal</td><td>${escHtml(m.rangoVocal||"—")}</td></tr>
       <tr><td>🎂 Cumpleaños</td><td>${fmtCumple(m.cumpleanos)||"—"}</td></tr>
       <tr><td>📅 Miembro desde</td><td>${fmtFecha(m.fechaIngreso)||"—"}</td></tr>
+      ${m.generacionNum?`<tr><td>🌱 Generación</td><td>${fmtGeneracion(m.generacionNum)}</td></tr>`:""}
     </table>
     <div class="platform-row">
       ${m.usuarioSmule?`<a class="platform-btn" target="_blank" href="${escAttr(toSmuleUrl(m.usuarioSmule))}">
@@ -1274,6 +1304,7 @@ function openMemberEditForm(id){
   document.getElementById("me_rango").value=m?m.rangoVocal||"":"";
   document.getElementById("me_cumple").value=m?toDateInputCumple(m.cumpleanos):"";
   document.getElementById("me_ingreso").value=m?toDateInput(m.fechaIngreso):"";
+  document.getElementById("me_generacion").value=m?(m.generacionNum||""):"";
   const roles=[]; if(m&&esTrue(m.canto)) roles.push("canto"); if(m&&esTrue(m.doblaje)) roles.push("doblaje");
   setToggleGroup("me_rolesToggle", roles);
   const rango=[]; if(m&&esTrue(m.fundadora)) rango.push("fundadora"); if(m&&esTrue(m.lider)) rango.push("lider"); if(m&&esTrue(m.staff)) rango.push("staff");
@@ -1315,6 +1346,7 @@ document.getElementById("memberEditForm").addEventListener("submit", async(e)=>{
     rangoVocal: document.getElementById("me_rango").value,
     cumpleanos: document.getElementById("me_cumple").value,
     fechaIngreso: document.getElementById("me_ingreso").value,
+    generacionNum: document.getElementById("me_generacion").value,
     staff: rango.includes("staff")?"TRUE":"FALSE",
     canto: roles.includes("canto")?"TRUE":"FALSE",
     doblaje: roles.includes("doblaje")?"TRUE":"FALSE",
@@ -1691,6 +1723,8 @@ document.getElementById("miembrosDrawerBtn").onclick=()=>{
   document.querySelectorAll(".tab-btn").forEach(b=>b.classList.remove("active"));
   document.getElementById("viewActividades").classList.add("hidden"); document.getElementById("viewAnuario").classList.add("hidden"); document.getElementById("viewStaffPin").classList.add("hidden"); document.getElementById("viewMiembros").classList.add("hidden");
   document.getElementById("viewMemberPin").classList.remove("hidden");
+  document.getElementById("memberPinFormBox").classList.add("hidden");
+  document.getElementById("memberPinRevealBtn").classList.remove("hidden");
   document.getElementById("memberPinInput").value=localStorage.getItem("tph_member_clave")||""; // autocompleta, pero no activa solo
   despuesDeClaveMiembro="miembros";
 };
@@ -1752,6 +1786,11 @@ document.getElementById("staffStatusBadge").onclick=async()=>{
 
 /* ---------- modo miembro (Fase 3): lectura completa, sin edición ---------- */
 document.getElementById("memberPinSubmitBtn").onclick=verificarClaveMiembro;
+document.getElementById("memberPinRevealBtn").onclick=()=>{
+  document.getElementById("memberPinFormBox").classList.remove("hidden");
+  document.getElementById("memberPinRevealBtn").classList.add("hidden");
+  document.getElementById("memberPinInput").focus();
+};
 document.getElementById("memberPinInput").addEventListener("keydown", e=>{ if(e.key==="Enter") verificarClaveMiembro(); });
 // Mismo candado silencioso que el PIN de Staff: a los 20 intentos fallidos EN ESTA CARGA de la
 // página, deja de mandar la clave al servidor y siempre dice "Clave incorrecta", hasta recargar.
