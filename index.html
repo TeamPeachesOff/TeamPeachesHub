@@ -276,8 +276,7 @@
 <main>
   <section id="viewActividades">
     <button id="addActBtn" class="hidden">(+) Añadir Actividad</button>
-    <a class="hidden pill-toggle regalito-btn" id="staffRegalitoBtn" target="_blank" rel="noopener" href="https://forms.gle/FgSeqD33wE1R8Y8r6">🎁 Enviar regalito</a>
-    <a class="pill-toggle regalito-btn" id="publicRegalitoBtn" target="_blank" rel="noopener" href="https://forms.gle/FgSeqD33wE1R8Y8r6">🎁 Enviar regalito</a>
+    <a class="hidden pill-toggle regalito-btn" id="regalitoBtn" target="_blank" rel="noopener" href="https://forms.gle/FgSeqD33wE1R8Y8r6">🎁 Enviar regalito</a>
     <div class="filter-pills">
       <button class="pill-toggle on" id="filterCanto">🎤 Canto</button>
       <button class="pill-toggle on" id="filterDoblaje">🎙️ Doblaje</button>
@@ -693,7 +692,7 @@ function abrirModalEnlaces(){
     {clave:"CFG_GITHUB_LINK", label:"💻 GitHub (staff)"}
   ];
   document.getElementById("memberModalContent").innerHTML = `
-    <h3>⚙️ Actualizar Enlaces</h3>
+    <h3>⚙️ Editar Enlaces</h3>
     <div style="display:flex;flex-direction:column;gap:10px;">
       ${campos.map(c=>`<div class="form-group"><label>${c.label}</label><input type="text" id="enl_${c.clave}" value="${escAttr(enlacesStaff[c.clave]||"")}"></div>`).join("")}
     </div>
@@ -826,10 +825,10 @@ async function cargarDatos(){
 function aplicarEnlacesPublicos(){
   const ep = DB.enlacesPublicos || {};
   const regalito = ep.CFG_REGALITO_LINK;
-  if(regalito){
-    document.getElementById("publicRegalitoBtn").href = regalito;
-    document.getElementById("staffRegalitoBtn").href = regalito;
-  }
+  const btnRegalito = document.getElementById("regalitoBtn");
+  if(regalito) btnRegalito.href = regalito;
+  // Oculto para visitantes sin clave; visible para Miembro y Staff.
+  btnRegalito.classList.toggle("hidden", nivel==="publico");
 }
 
 /* ---------- actividades ---------- */
@@ -1581,7 +1580,7 @@ function abrirStaffHub(){
       <button class="drawer-nav-btn" id="hubEditarInfo" style="text-align:left;">🖋️ Editar página de Info</button>
       <button class="drawer-nav-btn" id="hubAnuario">📖 AnuarioHub</button>
       <button class="btn-small btn-family" id="hubLimpiar">🧹 Limpiar nombres BD (quitar @)</button>
-      <button class="btn-small btn-admin" id="hubEnlaces">⚙️ Actualizar Enlaces</button>
+      <button class="btn-small btn-admin" id="hubEnlaces">⚙️ Editar Enlaces</button>
     </div>`;
   openModal("memberModal");
   document.getElementById("hubCumple").onclick=()=>probarHub("testCumpleanos","Cumpleaños");
@@ -1648,7 +1647,6 @@ async function verificarPin(){
     toast("Modo Staff activado 🛠️");
     document.getElementById("staffStatusBadge").style.display="block";
     document.getElementById("addActBtn").classList.remove("hidden");
-    document.getElementById("staffRegalitoBtn").classList.remove("hidden");
     document.getElementById("staffToolsRow").classList.remove("hidden");
     document.getElementById("staffHubDrawerBtn").classList.remove("hidden");
     switchTab("actividades");
@@ -1662,7 +1660,6 @@ document.getElementById("staffStatusBadge").onclick=async()=>{
     enlacesStaff=null; // se borran de memoria: sin PIN activo, no deben quedar accesibles ni un momento más
     document.getElementById("staffStatusBadge").style.display="none";
     document.getElementById("addActBtn").classList.add("hidden");
-    document.getElementById("staffRegalitoBtn").classList.add("hidden");
     document.getElementById("staffToolsRow").classList.add("hidden");
     document.getElementById("staffHubDrawerBtn").classList.add("hidden");
     document.getElementById("memberToolsRow1").classList.add("hidden");
