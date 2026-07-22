@@ -11,6 +11,12 @@
     --text:#fbeaf2; --text-dim:#c9a8bb; --green:#2ecc71; --yellow:#f1c40f; --red:#e74c3c; --gold:#ffd700; --radius:16px;
   }
   *{box-sizing:border-box;}
+  @media (min-width:768px) and (pointer:fine){
+    ::-webkit-scrollbar{width:6px;height:6px;}
+    ::-webkit-scrollbar-track{background:transparent;}
+    ::-webkit-scrollbar-thumb{background:rgba(255,255,255,0.15);border-radius:99px;}
+    ::-webkit-scrollbar-thumb:hover{background:rgba(255,255,255,0.35);}
+  }
   body{margin:0;font-family:'Segoe UI',Arial,sans-serif;background:linear-gradient(160deg,var(--bg),#241228 60%,#170b1c);color:var(--text);min-height:100vh;}
   a{color:inherit;text-decoration:none;}
   button{font-family:inherit;cursor:pointer;border:none;}
@@ -166,7 +172,7 @@
   .form-group{margin-bottom:12px;}
   .form-group label{display:block;font-size:12.5px;color:var(--text-dim);margin-bottom:5px;font-weight:600;}
   .form-group input, .form-group textarea, .form-group select{width:100%;padding:10px;border-radius:10px;border:1px solid rgba(255,255,255,0.12);background:var(--card-bg-2);color:var(--text);font-family:inherit;font-size:13.5px;}
-  .form-group textarea{min-height:70px;resize:vertical;}
+  .form-group textarea{min-height:120px;resize:none;overflow:hidden;}
   .modal-actions{display:flex;gap:10px;margin-top:16px;}
   .modal-actions button{flex:1;padding:12px;border-radius:12px;font-weight:800;}
   .upload-status{font-size:12px;color:var(--text-dim);margin-top:4px;}
@@ -260,15 +266,6 @@
     <button class="drawer-nav-btn" id="reporteDrawerBtn">🐞 Reportar Error</button>
   </div>
   <div class="staff-bottom-group">
-    <button class="hidden drawer-nav-btn" id="staffHubDrawerBtn" style="justify-content:center;">🔗 Panel de Staff</button>
-    <div class="hidden" id="staffToolsRow" style="display:flex;gap:10px;">
-      <button class="drawer-nav-btn" id="staffToolsSheets" style="justify-content:center;flex:1;padding:10px;">
-        <img src="https://raw.githubusercontent.com/TeamPeachesOff/TeamPeachesHub/main/Logos/SheetsLogo.png" style="width:24px;height:24px;border-radius:0;" alt="Sheets"><span>Datos</span>
-      </button>
-      <button class="drawer-nav-btn" id="staffToolsGithub" style="justify-content:center;flex:1;padding:10px;">
-        <img src="https://raw.githubusercontent.com/TeamPeachesOff/TeamPeachesHub/main/Logos/GithubLogo.png" style="width:24px;height:24px;border-radius:0;" alt="GitHub"><span>GitHub</span>
-      </button>
-    </div>
     <button class="drawer-nav-btn" id="staffDrawerBtn">🛠️ Staff</button>
   </div>
 </div>
@@ -1353,6 +1350,20 @@ function getSwitchPillValue(containerId){ const sel=document.querySelector(`#${c
 bindSwitchPill("af_categoriaSwitch");
 bindSwitchPill("af_participacionSwitch");
 
+/* ---------- textarea auto-ajustable (Ticket 1) ---------- */
+// Crece con el contenido en vez de mostrar scrollbar interna. Se aplica a TODOS los
+// textareas del sitio (no solo los de Actividades), y se re-dispara cada vez que se
+// asigna .value por JS (abrir para editar), no solo cuando el usuario escribe/pega.
+function autoExpandTextarea(el){
+  if(!el) return;
+  el.style.height="auto";
+  el.style.height=Math.max(el.scrollHeight, 120)+"px";
+}
+document.querySelectorAll("textarea").forEach(t=>{
+  t.addEventListener("input", ()=>autoExpandTextarea(t));
+  t.addEventListener("paste", ()=>setTimeout(()=>autoExpandTextarea(t), 0));
+});
+
 /* ---------- form actividad ---------- */
 document.getElementById("addActBtn").onclick=()=>openActivityForm(null);
 
@@ -1384,6 +1395,9 @@ function openActivityForm(id){
   document.getElementById("af_ganadorDoblaje").value=a?a.ganadorDoblaje||"":"";
   document.getElementById("af_menciones").value=a?a.mencionesHonorificas||"":"";
   openModal("activityFormModal");
+  // Los valores se asignaron por JS, no por tipeo, así que el 'input' event no se dispara solo:
+  // hay que forzar el ajuste de altura acá para que abra ya con el tamaño correcto.
+  document.querySelectorAll("#activityFormModal textarea").forEach(autoExpandTextarea);
 }
 document.getElementById("af_imagenFile").addEventListener("change", async(e)=>{
   const file=e.target.files[0]; if(!file) return;
@@ -1566,22 +1580,29 @@ function abrirStaffHub(){
   document.getElementById("memberModalContent").innerHTML=`
     <h3>🔗 Panel de Staff</h3>
     <div class="section-label" style="text-align:left;">📣 Pruebas de Discord</div>
-    <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px;">
+    <div style="display:flex;gap:8px;justify-content:center;flex-wrap:wrap;margin-bottom:16px;">
       <button class="btn-small btn-cumple" id="hubCumple">🎂 Cumpleaños</button>
       <button class="btn-small btn-seguridad" id="hubSeguridad">🔒 Seguridad</button>
       <button class="btn-small btn-bell" id="hubRecordatorio">🔔 Recordatorios</button>
     </div>
+    <div class="section-label" style="text-align:left;">🗂️ Página Web</div>
+    <div style="display:flex;gap:10px;margin-bottom:8px;">
+      <button class="drawer-nav-btn" id="hubSheets" style="justify-content:center;flex:1;padding:10px;">
+        <img src="https://raw.githubusercontent.com/TeamPeachesOff/TeamPeachesHub/main/Logos/SheetsLogo.png" style="width:24px;height:24px;border-radius:0;" alt="Sheets"><span>Datos</span>
+      </button>
+      <button class="drawer-nav-btn" id="hubGithub" style="justify-content:center;flex:1;padding:10px;">
+        <img src="https://raw.githubusercontent.com/TeamPeachesOff/TeamPeachesHub/main/Logos/GithubLogo.png" style="width:24px;height:24px;border-radius:0;" alt="GitHub"><span>GitHub</span>
+      </button>
+    </div>
+    <button class="drawer-nav-btn" id="hubAnuario" style="justify-content:center;width:100%;margin-bottom:16px;">📖 AnuarioHub</button>
     <div class="section-label" style="text-align:left;">🔗 Accesos</div>
-    <div style="display:flex;flex-direction:column;gap:8px;">
-      <button class="drawer-nav-btn" id="hubSheets" style="text-align:left;">🗂️ Base de Datos</button>
-      <button class="drawer-nav-btn" id="hubGithub" style="text-align:left;">💻 GitHub</button>
-      <button class="drawer-nav-btn" id="hubCronograma" style="text-align:left;">🗓️ Cronograma</button>
-      <button class="drawer-nav-btn" id="hubEditarAnuario" style="text-align:left;">✏️ Editar Anuario</button>
-      <button class="drawer-nav-btn" id="hubEditarInfo" style="text-align:left;">🖋️ Editar página de Info</button>
-      <button class="drawer-nav-btn" id="hubAnuario">📖 AnuarioHub</button>
+    <div style="display:flex;flex-direction:column;gap:8px;margin-bottom:14px;">
+      <button class="drawer-nav-btn" id="hubCronograma" style="text-align:left;">🗓️ Cronograma de actividades</button>
+      <button class="drawer-nav-btn" id="hubEditarInfo" style="text-align:left;">🖋️ Editar página de info</button>
+      <button class="drawer-nav-btn" id="hubEditarAnuario" style="text-align:left;">✏️ Editar anuario</button>
       <button class="btn-small btn-family" id="hubLimpiar">🧹 Limpiar nombres BD (quitar @)</button>
-      <button class="btn-small btn-admin" id="hubEnlaces">⚙️ Editar Enlaces</button>
-    </div>`;
+    </div>
+    <button class="btn-small btn-admin" id="hubEnlaces" style="width:100%;">⚙️ Editar Enlaces</button>`;
   openModal("memberModal");
   document.getElementById("hubCumple").onclick=()=>probarHub("testCumpleanos","Cumpleaños");
   document.getElementById("hubSeguridad").onclick=()=>probarHub("testSeguridad","Seguridad");
@@ -1596,9 +1617,6 @@ function abrirStaffHub(){
   document.getElementById("hubEnlaces").onclick=abrirModalEnlaces;
 }
 async function probarHub(action,nombre,idActividad){ const r=await apiPost({action:action,idActividad:idActividad},"Enviando prueba..."); toast(r.ok?nombre+" enviado ✅":"Error: "+(r.error||"")); }
-document.getElementById("staffHubDrawerBtn").onclick=abrirStaffHub;
-document.getElementById("staffToolsSheets").onclick=()=>abrirEnlacePrivado("CFG_SHEETS_LINK");
-document.getElementById("staffToolsGithub").onclick=()=>abrirEnlacePrivado("CFG_GITHUB_LINK");
 document.getElementById("miembrosDrawerBtn").onclick=()=>{
   closeDrawer();
   if(staffPin||memberPin){ mostrarViewMiembros(); return; }
@@ -1621,7 +1639,7 @@ function mostrarViewMiembros(){
 }
 document.getElementById("staffDrawerBtn").onclick=()=>{
   closeDrawer();
-  if(staffPin){ toast("Ya estás en modo Staff 🛠️"); return; }
+  if(staffPin){ abrirStaffHub(); return; }
   document.querySelectorAll(".tab-btn").forEach(b=>b.classList.remove("active"));
   document.getElementById("viewActividades").classList.add("hidden"); document.getElementById("viewAnuario").classList.add("hidden"); document.getElementById("viewMiembros").classList.add("hidden"); document.getElementById("viewMemberPin").classList.add("hidden");
   document.getElementById("viewStaffPin").classList.remove("hidden");
@@ -1647,8 +1665,6 @@ async function verificarPin(){
     toast("Modo Staff activado 🛠️");
     document.getElementById("staffStatusBadge").style.display="block";
     document.getElementById("addActBtn").classList.remove("hidden");
-    document.getElementById("staffToolsRow").classList.remove("hidden");
-    document.getElementById("staffHubDrawerBtn").classList.remove("hidden");
     switchTab("actividades");
     await cargarDatos(); // vuelve a pedir los datos, ahora con el PIN, para traer todo completo
     await cargarEnlacesStaff(); // recién ahora, con el PIN ya validado en servidor, se piden los enlaces privados
@@ -1660,8 +1676,6 @@ document.getElementById("staffStatusBadge").onclick=async()=>{
     enlacesStaff=null; // se borran de memoria: sin PIN activo, no deben quedar accesibles ni un momento más
     document.getElementById("staffStatusBadge").style.display="none";
     document.getElementById("addActBtn").classList.add("hidden");
-    document.getElementById("staffToolsRow").classList.add("hidden");
-    document.getElementById("staffHubDrawerBtn").classList.add("hidden");
     document.getElementById("memberToolsRow1").classList.add("hidden");
     document.getElementById("memberToolsRow2").classList.add("hidden");
     document.getElementById("memberToolsRow3").classList.add("hidden");
