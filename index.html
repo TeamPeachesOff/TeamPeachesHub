@@ -347,17 +347,13 @@
   <section id="viewAnuario" class="hidden"><div id="anuarioGrid"></div></section>
 
   <section id="viewMiembros" class="hidden">
-    <input type="text" id="searchMiembros" placeholder="🔍 Buscar por nombre, rol o rango vocal...">
+    <input type="text" id="searchMiembros" placeholder="🔍 Buscar por nombre, rol, rango vocal, generación o mes de cumpleaños...">
     <div class="hidden" id="memberToolsRow1" style="margin-bottom:10px;">
       <button id="addMemberBtn" class="btn-small btn-family" style="width:100%;">➕ Añadir Miembro</button>
     </div>
-    <div class="hidden" id="memberToolsRow2" style="display:flex;gap:10px;margin-bottom:10px;">
+    <div class="hidden" id="memberToolsRow2" style="display:flex;gap:10px;margin-bottom:14px;">
       <button class="btn-small btn-update" id="refreshPhotosBtn" style="flex:1;">🔄 Actualizar pfp</button>
       <button class="btn-small btn-seguridad" id="resetStrikesGlobalBtn" style="flex:1;">🔄 Eliminar strikes</button>
-    </div>
-    <div class="hidden" id="memberToolsRow3" style="display:flex;gap:10px;margin-bottom:14px;">
-      <button class="btn-small btn-cumple" id="testCumpleBtn" style="flex:1;">🎂 Aviso de cumpleaños</button>
-      <button class="btn-small btn-seguridad" id="testSeguridadBtn" style="flex:1;">🔒 Aviso de seguridad</button>
     </div>
     <div class="section-label">👑 Reinas Peachy</div>
     <div class="avatar-row" id="reinasCarousel"></div>
@@ -562,6 +558,19 @@ const MESES = ["ene","feb","mar","abr","may","jun","jul","ago","sep","oct","nov"
 const MESES_LARGO = ["Enero","Febrero","Marzo","Abril","Mayo","Junio","Julio","Agosto","Septiembre","Octubre","Noviembre","Diciembre"];
 
 let DB = { actividades: [], entregas: [], miembros: [] };
+
+// ---------- Ocultar de verdad para lectores accesibles (Ticket: fuga en Modo Lectura de Edge) ----------
+// El "Modo Lectura" de Edge (y lectores de pantalla similares) extraen el texto de TODO el DOM sin
+// respetar el CSS (display:none via la clase .hidden), así que mostraban el contenido de las
+// pantallas ocultas (PIN de Staff, formulario de Miembro, etc.) aunque nunca se vieran en pantalla.
+// El atributo NATIVO `hidden` de HTML sí es respetado por esas herramientas, así que lo mantenemos
+// sincronizado automáticamente con la clase .hidden en cualquier elemento del sitio, sin tener que
+// tocar cada uno de los toggles de "hidden" que ya existen en el código.
+function syncNativeHidden(el){ if(el && el.classList) el.hidden = el.classList.contains("hidden"); }
+document.querySelectorAll(".hidden").forEach(syncNativeHidden);
+new MutationObserver(muts=>{
+  muts.forEach(m=>syncNativeHidden(m.target));
+}).observe(document.body, {attributes:true, attributeFilter:["class"], subtree:true});
 // El PIN se guarda en localStorage solo para autocompletar el campo la próxima vez,
 // pero el modo Staff NO se auto-activa al recargar: siempre se abre en modo normal
 // y hay que apretar el botón Staff + confirmar el PIN cada vez, a propósito.
@@ -669,6 +678,24 @@ function fmtGeneracion(n){
   const num=parseInt(n,10);
   if(isNaN(num)) return "—";
   return num+"° Generación";
+}
+const ORDINALES_GENERACION = ["primera","segunda","tercera","cuarta","quinta","sexta","séptima","octava","novena","décima","undécima","duodécima"];
+function palabraGeneracion(n){
+  const num=parseInt(n,10);
+  if(isNaN(num)||num<1) return "";
+  return ORDINALES_GENERACION[num-1]||"";
+}
+function mesDeCumple(v){
+  if(!v) return "";
+  const s=String(v);
+  const iso=s.match(/^(\d{4})-(\d{2})-(\d{2})T/);
+  if(iso) return MESES_LARGO[parseInt(iso[2],10)-1]||"";
+  const partes=s.split("/");
+  if(partes.length>=2){
+    const mm=parseInt(partes[1],10);
+    if(!isNaN(mm)&&mm>=1&&mm<=12) return MESES_LARGO[mm-1];
+  }
+  return "";
 }
 function esTrue(v){ return v===true||v==="TRUE"||v==="true"||v===1; }
 function normalizar(s){ return String(s||"").normalize("NFD").replace(/[\u0300-\u036f]/g,"").toLowerCase(); }
@@ -1164,14 +1191,6 @@ function openAnuarioDetail(id){
 }
 
 /* ---------- miembros ---------- */
-document.getElementById("testCumpleBtn").onclick=async()=>{
-  const r=await apiPost({action:"testCumpleanos"},"Enviando aviso de prueba...");
-  if(r.ok) toast("Mensaje de prueba enviado a Discord 🔔"); else toast("Error: "+(r.error||""));
-};
-document.getElementById("testSeguridadBtn").onclick=async()=>{
-  const r=await apiPost({action:"testSeguridad"},"Enviando alerta de prueba...");
-  if(r.ok) toast("Alerta de seguridad de prueba enviada 🔒"); else toast("Error: "+(r.error||""));
-};
 document.getElementById("refreshPhotosBtn").onclick=async()=>{
   if(!await confirmarAccion("¿Actualizar automáticamente las fotos de todos los miembros con Smule? Puede tardar un momento.")) return;
   const r=await apiPost({action:"actualizarTodasLasFotos"},"Actualizando fotos desde Smule...");
@@ -1188,7 +1207,12 @@ document.getElementById("resetStrikesGlobalBtn").onclick=async()=>{
 function renderMiembros(filtro=""){
   const f=normalizar(filtro.trim());
   const conNombre=m=>m.nombre && String(m.nombre).trim()!=="";
-  const filtrar=m=>conNombre(m) && (!f || normalizar([m.nombre,m.rangoVocal,esTrue(m.staff)?"staff":"",esTrue(m.canto)?"canto":"",esTrue(m.doblaje)?"doblaje":""].join(" ")).includes(f));
+  const filtrar=m=>conNombre(m) && (!f || normalizar([
+    m.nombre, m.rangoVocal,
+    esTrue(m.staff)?"staff":"", esTrue(m.canto)?"canto":"", esTrue(m.doblaje)?"doblaje":"",
+    m.generacionNum||"", palabraGeneracion(m.generacionNum),
+    mesDeCumple(m.cumpleanos)
+  ].join(" ")).includes(f));
 
   const reinas=DB.miembros.filter(m=>(esTrue(m.fundadora)||esTrue(m.lider)) && filtrar(m));
   document.getElementById("reinasCarousel").innerHTML=reinas.length?reinas.map(m=>`<div class="member-avatar-item reina" data-member="${m.id}">${avatarImgTag(m)}<div class="m-name">${escHtml(m.nombre||"")}</div></div>`).join(""):`<div style="color:var(--text-dim);font-size:13px;">Sin resultados.</div>`;
@@ -1734,7 +1758,6 @@ function mostrarViewMiembros(){
   document.getElementById("viewMiembros").classList.remove("hidden");
   document.getElementById("memberToolsRow1").classList.toggle("hidden", !staffPin);
   document.getElementById("memberToolsRow2").classList.toggle("hidden", !staffPin);
-  document.getElementById("memberToolsRow3").classList.toggle("hidden", !staffPin);
   renderMiembros();
 }
 document.getElementById("staffDrawerBtn").onclick=()=>{
@@ -1778,7 +1801,6 @@ document.getElementById("staffStatusBadge").onclick=async()=>{
     document.getElementById("addActBtn").classList.add("hidden");
     document.getElementById("memberToolsRow1").classList.add("hidden");
     document.getElementById("memberToolsRow2").classList.add("hidden");
-    document.getElementById("memberToolsRow3").classList.add("hidden");
     toast("Saliste del modo staff");
     cargarDatos(); // vuelve a pedir los datos sin PIN, así el servidor manda la versión pública
   }
