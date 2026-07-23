@@ -384,14 +384,12 @@
   <section id="viewMemberPin" class="hidden">
     <div class="center-screen">
       <div style="font-size:40px;">🍑🔒</div>
-      <h3 style="font-size:22px;">Team Peaches</h3>
-      <p style="color:var(--text-dim);font-size:14px;line-height:1.5;">Esta es una página dedicada solo para los miembros del Team.<br>El modo de lectura no está disponible sin tu clave de Miembro.</p>
-      <button type="button" id="memberPinRevealBtn" style="background:none;color:var(--peach-1);font-weight:700;font-size:13px;margin-top:6px;text-decoration:underline;">¿Sos miembro? Ingresá tu clave</button>
-      <div id="memberPinFormBox" class="hidden" style="margin-top:14px;">
-        <input type="password" id="memberPinInput">
-        <div id="memberPinMsg"></div>
-        <button class="btn-primary" style="width:100%;padding:12px;border-radius:12px;font-weight:800;" id="memberPinSubmitBtn">Desbloquear</button>
-      </div>
+      <h3>Introduce la clave de Miembro</h3>
+      <input type="password" id="memberPinInput">
+      <div id="memberPinMsg"></div>
+      <button class="btn-primary" style="width:100%;padding:12px;border-radius:12px;font-weight:800;" id="memberPinSubmitBtn">Desbloquear</button>
+    </div>
+  </section>
     </div>
   </section>
 </main>
@@ -1756,8 +1754,6 @@ document.getElementById("miembrosDrawerBtn").onclick=()=>{
   document.querySelectorAll(".tab-btn").forEach(b=>b.classList.remove("active"));
   document.getElementById("viewActividades").classList.add("hidden"); document.getElementById("viewAnuario").classList.add("hidden"); document.getElementById("viewStaffPin").classList.add("hidden"); document.getElementById("viewMiembros").classList.add("hidden");
   document.getElementById("viewMemberPin").classList.remove("hidden");
-  document.getElementById("memberPinFormBox").classList.add("hidden");
-  document.getElementById("memberPinRevealBtn").classList.remove("hidden");
   document.getElementById("memberPinInput").value=localStorage.getItem("tph_member_clave")||""; // autocompleta, pero no activa solo
   despuesDeClaveMiembro="miembros";
 };
@@ -1817,11 +1813,6 @@ document.getElementById("staffStatusBadge").onclick=async()=>{
 
 /* ---------- modo miembro (Fase 3): lectura completa, sin edición ---------- */
 document.getElementById("memberPinSubmitBtn").onclick=verificarClaveMiembro;
-document.getElementById("memberPinRevealBtn").onclick=()=>{
-  document.getElementById("memberPinFormBox").classList.remove("hidden");
-  document.getElementById("memberPinRevealBtn").classList.add("hidden");
-  document.getElementById("memberPinInput").focus();
-};
 document.getElementById("memberPinInput").addEventListener("keydown", e=>{ if(e.key==="Enter") verificarClaveMiembro(); });
 // Mismo candado silencioso que el PIN de Staff: a los 20 intentos fallidos EN ESTA CARGA de la
 // página, deja de mandar la clave al servidor y siempre dice "Clave incorrecta", hasta recargar.
