@@ -79,6 +79,12 @@
     ::-webkit-scrollbar-track{background:transparent;}
     ::-webkit-scrollbar-thumb{background:rgba(255,255,255,0.15);border-radius:99px;}
     ::-webkit-scrollbar-thumb:hover{background:rgba(255,255,255,0.35);}
+    /* Fix scroll de la página principal: en algunos Chromium/Edge el selector universal
+       no alcanza el scrollbar del documento (html), hay que apuntarle explícito también. */
+    html::-webkit-scrollbar{width:6px;height:6px;}
+    html::-webkit-scrollbar-track{background:transparent;}
+    html::-webkit-scrollbar-thumb{background:rgba(255,255,255,0.15);border-radius:99px;}
+    html::-webkit-scrollbar-thumb:hover{background:rgba(255,255,255,0.35);}
   }
   body{margin:0;font-family:'Segoe UI',Arial,sans-serif;background:linear-gradient(160deg,var(--bg),#241228 60%,#170b1c);color:var(--text);min-height:100vh;}
   a{color:inherit;text-decoration:none;}
@@ -105,7 +111,10 @@
   .tab-btn.active{background:linear-gradient(90deg,var(--peach-2),var(--peach-1));color:#fff;}
 
   #drawerOverlay{position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:99;display:none;}
-  #drawer{position:fixed;top:0;left:0;height:100%;width:280px;max-width:82vw;background:var(--card-bg);z-index:100;transform:translateX(-100%);transition:transform .25s ease;display:flex;flex-direction:column;padding:20px 16px;gap:18px;box-shadow:4px 0 20px rgba(0,0,0,0.4);overflow-y:auto;-webkit-overflow-scrolling:touch;}
+  #drawer{position:fixed;top:0;left:0;height:100%;width:280px;max-width:82vw;background:var(--card-bg);z-index:100;transform:translateX(-100%);transition:transform .25s ease;display:flex;flex-direction:column;padding:20px 16px;gap:18px;box-shadow:4px 0 20px rgba(0,0,0,0.4);overflow-y:auto;-webkit-overflow-scrolling:touch;
+    /* Fallback para zoom >200%: a ese nivel Edge a veces descalibra el thumb ::-webkit-scrollbar
+       y cae al nativo blanco. scrollbar-width/color es el estándar que cubre ese caso extremo. */
+    scrollbar-width:thin;scrollbar-color:rgba(255,255,255,0.2) transparent;}
   #drawer.open{transform:translateX(0);}
   .drawer-title{font-weight:800;font-size:18px;color:var(--peach-2);margin-bottom:4px;}
   .social-row{display:flex;flex-direction:column;gap:10px;}
@@ -416,7 +425,7 @@
         <input type="file" id="me_avatarFile" accept=".jpg,.jpeg,.png,image/jpeg,image/png">
         <div class="upload-status" id="me_uploadStatus"></div>
       </div>
-      <div class="form-group"><label>Usuario Smule (exacto, sin @ ni link)</label><input type="text" id="me_smule" placeholder="usuario exacto"></div>
+      <div class="form-group"><label>Usuario Smule (exacto, sin @ ni link)</label><input type="text" id="me_smule" placeholder="Ingresa solo tu usuario (ej: TuUsuario)"></div>
       <button type="button" class="btn-small btn-family" id="me_fetchSmuleBtn" style="width:100%;margin:-4px 0 12px;">🔄 Actualizar foto desde Smule</button>
       <div class="form-group"><label>Usuario Discord</label><input type="text" id="me_discord"></div>
       <div class="form-group"><label>Usuario BandLab (exacto, sin @ ni link)</label><input type="text" id="me_bandlab" placeholder="usuario exacto"></div>
@@ -927,7 +936,7 @@ function descargarICS(nombre,isoStart,isoEnd,descripcion){
 async function cargarDatos(){
   try{
     DB=await apiGet();
-    if(!DB || typeof DB!=="object" || !Array.isArray(DB.actividades)) throw new Error("Respuesta inesperada del servidor: "+JSON.stringify(DB).slice(0,200));
+    if(!DB || typeof DB!=="object" || !Array.isArray(DB.actividades) || !Array.isArray(DB.anuario)) throw new Error("Respuesta inesperada del servidor: "+JSON.stringify(DB).slice(0,200));
     nivel = DB.nivel || (staffPin ? "staff" : (memberPin ? "miembro" : "publico"));
     aplicarEnlacesPublicos();
     renderActividades(); renderAnuario(); renderMiembros();
@@ -960,7 +969,7 @@ function syncFilterPills(){
 
 function renderActividades(){
   const feed=document.getElementById("actividadesFeed");
-  let activas=DB.actividades.filter(a=>!esTrue(a.esAnuario));
+  let activas=DB.actividades;
   activas=activas.filter(a=>{
     if(a.categoria==="canto") return filtroCanto;
     if(a.categoria==="doblaje") return filtroDoblaje;
@@ -1054,7 +1063,7 @@ function attachCardEvents(){
       }
     };
   });
-  document.querySelectorAll("[data-edit]").forEach(btn=>btn.onclick=()=>openActivityForm(btn.dataset.edit));
+  document.querySelectorAll("[data-edit]").forEach(btn=>btn.onclick=()=>openActivityForm(btn.dataset.edit, false));
   document.querySelectorAll("[data-delete]").forEach(btn=>btn.onclick=()=>borrarActividad(btn.dataset.delete));
   document.querySelectorAll("[data-bell]").forEach(btn=>btn.onclick=()=>probarRecordatorio(btn.dataset.bell));
   document.querySelectorAll("[data-add-entrega]").forEach(btn=>btn.onclick=()=>openEntregaForm(btn.dataset.addEntrega));
@@ -1123,7 +1132,7 @@ document.querySelectorAll("[data-dest]").forEach(btn=>{
 /* ---------- anuario: años > meses > fechas ---------- */
 function renderAnuario(){
   const grid=document.getElementById("anuarioGrid");
-  const items=DB.actividades.filter(a=>esTrue(a.esAnuario) && a.fechaInicio);
+  const items=DB.anuario.filter(a=>a.fechaInicio);
   if(items.length===0){ grid.innerHTML=`<div class="empty-state">Aún no hay ediciones en el Anuario.</div>`; return; }
 
   const porAnio={};
@@ -1164,7 +1173,7 @@ function anuarioBlockHTML(a){
   </div>`;
 }
 function openAnuarioDetail(id){
-  const a=DB.actividades.find(x=>String(x.id)===String(id));
+  const a=DB.anuario.find(x=>String(x.id)===String(id));
   if(!a) return;
   document.getElementById("memberModalContent").innerHTML=`
     <h3>👑 ${escHtml(a.titulo||"")}</h3>
@@ -1181,11 +1190,11 @@ function openAnuarioDetail(id){
     </div>`:""}`;
   openModal("memberModal");
   const img=document.getElementById("anuarioDetailImg"); if(img) enableLongPress(img,img.dataset.filename);
-  const editBtn=document.querySelector("[data-edit-anuario]"); if(editBtn) editBtn.onclick=()=>{ closeModal("memberModal"); openActivityForm(a.id); };
+  const editBtn=document.querySelector("[data-edit-anuario]"); if(editBtn) editBtn.onclick=()=>{ closeModal("memberModal"); openActivityForm(a.id, true); };
   const delBtn=document.querySelector("[data-delete-anuario]");
   if(delBtn) delBtn.onclick=async()=>{
     if(!await confirmarAccion("¿Seguro que quieres borrar esta tarjeta completa del Anuario?")) return;
-    const r=await apiPost({action:"deleteActividad", id:a.id});
+    const r=await apiPost({action:"deleteAnuario", id:a.id});
     if(r.ok){ toast("Borrado 🗑️"); closeModal("memberModal"); await cargarDatos(); } else toast("Error: "+(r.error||""));
   };
 }
@@ -1253,7 +1262,7 @@ function openMemberModal(id){
       <div class="badges-row" style="justify-content:center;">
         ${esTrue(m.fundadora)?`<span class="badge badge-reina">👑 Fundadora</span>`:""}
         ${esTrue(m.lider)?`<span class="badge badge-reina">👑 Líder</span>`:""}
-        ${esTrue(m.staff)?`<span class="badge badge-staff">Staff</span>`:""}
+        ${esTrue(m.staff)?`<span class="badge badge-staff">💎 Staff</span>`:""}
         ${esTrue(m.canto)?`<span class="badge badge-canto">🎤 Canto</span>`:""}
         ${esTrue(m.doblaje)?`<span class="badge badge-doblaje">🎙️ Doblaje</span>`:""}
         ${esTrue(m.conserje)?`<span class="badge badge-conserje">🧹 Conserje</span>`:""}
@@ -1487,10 +1496,10 @@ document.querySelectorAll("textarea").forEach(t=>{
 });
 
 /* ---------- form actividad ---------- */
-document.getElementById("addActBtn").onclick=()=>openActivityForm(null);
+document.getElementById("addActBtn").onclick=()=>openActivityForm(null, false);
 
-function openActivityForm(id){
-  const a=id?DB.actividades.find(x=>String(x.id)===String(id)):null;
+function openActivityForm(id, esAnuarioItem){
+  const a=id?(esAnuarioItem?DB.anuario:DB.actividades).find(x=>String(x.id)===String(id)):null;
   document.getElementById("activityFormTitle").textContent=a?"Editar actividad":"Nueva actividad";
   document.getElementById("af_id").value=a?a.id:"";
   document.getElementById("af_titulo").value=a?a.titulo||"":"";
@@ -1511,7 +1520,8 @@ function openActivityForm(id){
   botonesPersonalizadosDe(a||{}).forEach(agregarFilaBotonPersonalizado);
   setSwitchPill("af_categoriaSwitch", a?(a.categoria||""):"");
   setSwitchPill("af_participacionSwitch", a?(a.participacion||"opcional"):"opcional");
-  const esAnuarioActual=a?esTrue(a.esAnuario):false;
+  const esAnuarioActual=!!esAnuarioItem;
+  document.getElementById("activityForm").dataset.modoAnuario=esAnuarioActual?"1":"0";
   document.getElementById("af_anuarioFields").classList.toggle("hidden", !esAnuarioActual);
   document.getElementById("af_ganadorCanto").value=a?a.ganadorCanto||"":"";
   document.getElementById("af_ganadorDoblaje").value=a?a.ganadorDoblaje||"":"";
@@ -1574,9 +1584,11 @@ document.getElementById("activityForm").addEventListener("submit", async(e)=>{
     mencionesHonorificas: document.getElementById("af_menciones").value,
     botonesPersonalizados: JSON.stringify(leerBotonesPersonalizados()),
   };
+  const esModoAnuario=document.getElementById("activityForm").dataset.modoAnuario==="1";
   let r;
-  if(id){ data.id=id; r=await apiPost({action:"editActividad", data},"Guardando actividad..."); }
-  else{ data.id="ACT-"+Date.now(); data.esAnuario="FALSE"; r=await apiPost({action:"addActividad", data},"Guardando actividad..."); }
+  if(esModoAnuario){ data.id=id; r=await apiPost({action:"editAnuario", data},"Guardando tarjeta del Anuario..."); }
+  else if(id){ data.id=id; r=await apiPost({action:"editActividad", data},"Guardando actividad..."); }
+  else{ data.id="ACT-"+Date.now(); r=await apiPost({action:"addActividad", data},"Guardando actividad..."); }
   btn.disabled=false;
   if(r.ok){ toast("Guardado ✅"); closeModal("activityFormModal"); await cargarDatos(); } else toast("Error: "+(r.error||""));
 });
@@ -1728,7 +1740,7 @@ function abrirStaffHub(){
   openModal("memberModal");
   document.getElementById("hubCumple").onclick=()=>probarHub("testCumpleanos","Cumpleaños");
   document.getElementById("hubSeguridad").onclick=()=>probarHub("testSeguridad","Seguridad");
-  document.getElementById("hubRecordatorio").onclick=()=>{ const a=DB.actividades.find(x=>!esTrue(x.esAnuario)); if(!a){toast("No hay actividad para probar");return;} probarHub("testRecordatorio","Recordatorio",a.id); };
+  document.getElementById("hubRecordatorio").onclick=()=>{ const a=DB.actividades[0]; if(!a){toast("No hay actividad para probar");return;} probarHub("testRecordatorio","Recordatorio",a.id); };
   document.getElementById("hubAnuario").onclick=()=>{ closeModal("memberModal"); switchTab("anuario"); };
   document.getElementById("hubLimpiar").onclick=async()=>{ if(!await confirmarAccion("¿Quitar @ de los nombres históricos?")) return; const r=await apiPost({action:"limpiarNombresBD"},"Limpiando..."); if(r.ok){toast((r.actualizados||0)+" registro(s) limpiados ✅"); await cargarDatos();} else toast("Error: "+(r.error||"")); };
   document.getElementById("hubSheets").onclick=()=>abrirEnlacePrivado("CFG_SHEETS_LINK");
