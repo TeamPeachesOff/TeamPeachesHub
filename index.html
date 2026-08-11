@@ -225,9 +225,9 @@
   .mundo-resultado-item .mr-city{font-size:11.5px;color:var(--text-dim);}
   #globeContainer{flex:1;position:relative;touch-action:none;}
   .mundo-loading{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);color:var(--text-dim);font-size:14px;z-index:4;}
-  .mundo-avatar-pin{width:42px;height:42px;border-radius:50%;overflow:hidden;border:2px solid var(--peach-1);box-shadow:0 0 10px rgba(255,143,177,0.7);cursor:pointer;transform:translate(-50%,-50%) scale(var(--zoom-scale,1));transition:transform .12s;touch-action:none;-webkit-user-select:none;user-select:none;pointer-events:auto;}
+  .mundo-avatar-pin{width:42px;height:42px;border-radius:50%;overflow:hidden;border:2px solid var(--peach-1);box-shadow:0 0 10px rgba(255,143,177,0.7);cursor:pointer;transform:translate(-50%,-50%) scale(var(--zoom-scale,1)) translate(var(--off-x,0px),var(--off-y,0px));transition:transform .12s;touch-action:none;-webkit-user-select:none;user-select:none;pointer-events:auto;}
   .mundo-avatar-pin img{width:100%;height:100%;object-fit:cover;display:block;-webkit-user-drag:none;pointer-events:none;}
-  .mundo-avatar-pin.pressing{transform:translate(-50%,-50%) scale(calc(var(--zoom-scale,1) * 1.25));}
+  .mundo-avatar-pin.pressing{transform:translate(-50%,-50%) scale(calc(var(--zoom-scale,1) * 1.25)) translate(var(--off-x,0px),var(--off-y,0px));}
   .mundo-avatar-tip{position:absolute;bottom:-20px;left:50%;transform:translateX(-50%);white-space:nowrap;font-size:10.5px;background:rgba(0,0,0,0.7);color:#fff;padding:2px 6px;border-radius:6px;pointer-events:none;}
   /* Capa de cometas: vive encima del canvas WebGL del globo pero nunca intercepta toques/drag
      (pointer-events:none), así nunca compite con el tap/drag de los pines o la cámara. */
@@ -1461,47 +1461,51 @@ function agruparPorHub(lista){
   lista.forEach(m=>{ const clave=Number(m.lat).toFixed(2)+","+Number(m.lng).toFixed(2); (grupos[clave]=grupos[clave]||[]).push(m); });
   return Object.values(grupos);
 }
-// Reparto anti-solape EN PIXELES DE PANTALLA (no en grados de lat/lng). Esto es clave: separar por
-// grados fijos no garantiza nada, porque cuánto ocupa 1° en pantalla depende del zoom.
+// Reparto anti-solape EN PIXELES DE PANTALLA — 3ra versión, cambio de enfoque completo.
 //
-// IMPORTANTE — esta es la 2da versión: la primera usaba toGlobeCoords(x,y) para "traducir de
-// vuelta" cada pixel offset a lat/lng, pero ese método le hace un ray-cast a la esfera y devuelve
-// null en cuanto el punto cae cerca del borde visible del globo (su silueta en pantalla) — y con
-// grupos grandes (México, con el mapa "ocupando toda la pantalla") CASI SIEMPRE algún miembro de
-// la grilla caía justo en esa zona sin intersección, y el respaldo los mandaba TODOS de vuelta al
-// mismo punto hub exacto (por eso "solo se veía uno a la vez", literalmente apilados unos sobre
-// otros). Ahora, en vez de ida y vuelta por raycasting, se CALIBRA: se mide con getScreenCoords()
-// (proyección directa, nunca falla) cuántos pixeles reales ocupa 0.5° de lat y de lng ALREDEDOR
-// del hub en la vista actual, y con eso se calcula el offset en GRADOS que da exactamente los
-// pixeles de separación que se necesitan — sin ningún ray-cast de por medio, así que nunca puede
-// fallar ni colapsar a todos en el mismo punto.
-function repartirEnPantalla(globo, grupos){
+// Las dos versiones anteriores intentaban separar a la gente moviéndolos en GRADOS de lat/lng
+// (primero con toGlobeCoords, después calibrando con getScreenCoords). Ambas fallaban por la
+// misma razón de fondo: en una esfera con proyección en perspectiva, cuántos píxeles ocupa 1° de
+// lat/lng cambia según el zoom Y según qué tan cerca del borde visible del globo caiga el punto.
+// La calibración se medía con una muestra chiquita (0.5°) pero después se extrapolaba a offsets
+// grandes (a veces decenas de grados, en el zoom por defecto donde se ve el globo entero) — esa
+// extrapolación lineal se rompe en una esfera, y el resultado real en pantalla terminaba siendo
+// mucho menor a los píxeles buscados. Por eso hacía falta un zoom descomunal para recién empezar
+// a notar separación: los grados quedaban fijos desde el arranque y sólo por casualidad, al
+// acercar la cámara, esos mismos grados iban ocupando más píxeles.
+//
+// Fix real: dejar de mover a la gente en el mapa. TODOS los miembros de un mismo grupo comparten
+// exactamente las mismas coordenadas geográficas del hub (su ubicación real no cambia). La
+// separación visual se hace 100% en CSS, como un offset en píxeles de pantalla sobre el pin mismo
+// (ver --off-x/--off-y en crearPinMiembro y el transform de .mundo-avatar-pin). Un offset en
+// píxeles de pantalla es SIEMPRE la misma cantidad de píxeles en pantalla, sin importar el zoom,
+// la altitud de cámara, ni dónde caiga el hub en el globo — cero cálculo de proyección, cero
+// extrapolación, cero forma de que falle. Como pedido: la separación (PASO_PX) es el diámetro del
+// avatar (42px) + margen, es decir la suma de ambos radios, para que dos fotos nunca se toquen.
+function repartirEnPantalla(grupos){
   const PASO_PX=56; // separación en pixeles de pantalla entre cada foto (42px de avatar + margen)
   const out=[];
   grupos.forEach(grupo=>{
     const hubLat=Number(grupo[0].lat), hubLng=Number(grupo[0].lng);
     if(grupo.length===1){
       const m=grupo[0];
-      out.push(Object.assign({}, m, {_lat:hubLat, _lng:hubLng}));
+      out.push(Object.assign({}, m, {_lat:hubLat, _lng:hubLng, _offX:0, _offY:0}));
       return;
     }
-    const p0=globo.getScreenCoords(hubLat, hubLng, 0);
-    const pLat=globo.getScreenCoords(hubLat+0.5, hubLng, 0);
-    const pLng=globo.getScreenCoords(hubLat, hubLng+0.5, 0);
-    const pxPorGradoLat=Math.max(0.5, Math.hypot(pLat.x-p0.x, pLat.y-p0.y)/0.5);
-    const pxPorGradoLng=Math.max(0.5, Math.hypot(pLng.x-p0.x, pLng.y-p0.y)/0.5);
-    const pasoLat=PASO_PX/pxPorGradoLat;
-    const pasoLng=PASO_PX/pxPorGradoLng;
     const filas=distribuirEnFilas(grupo.length);
     const totalFilas=filas.length, offsetFilaInicial=-(totalFilas-1)/2;
     let idx=0;
     filas.forEach((cantidad,fi)=>{
-      const offLat=(offsetFilaInicial+fi)*pasoLat;
+      const offY=(offsetFilaInicial+fi)*PASO_PX;
       const offColInicial=-(cantidad-1)/2;
       for(let c=0;c<cantidad;c++){
         const m=grupo[idx++];
-        const offLng=(offColInicial+c)*pasoLng;
-        out.push(Object.assign({}, m, {_lat:hubLat+offLat, _lng:hubLng+offLng}));
+        const offX=(offColInicial+c)*PASO_PX;
+        // OJO: _lat/_lng son SIEMPRE el hub real (misma ubicación geográfica para todo el grupo).
+        // _offX/_offY es el offset en píxeles-base (a escala de zoom 1x) que separa a cada quien
+        // dentro de esa misma ubicación — ver el CSS transform del pin, que multiplica esto por
+        // el zoom actual automáticamente.
+        out.push(Object.assign({}, m, {_lat:hubLat, _lng:hubLng, _offX:offX, _offY:offY}));
       }
     });
   });
@@ -1714,11 +1718,12 @@ async function initGlobo(){
   globoInstancia=globo;
   const ajustarTamano=()=>{ globo.width(contenedor.clientWidth); globo.height(contenedor.clientHeight); };
   ajustarTamano();
-  // Hace falta esperar a que corra al menos un frame de render para que la cámara/controles queden
-  // con sus matrices al día — recién ahí getScreenCoords()/toGlobeCoords() (usados abajo para
-  // separar a todo el mundo EN PANTALLA) dan resultados correctos.
+  // Breve espera para que el primer frame de render deje la cámara/controles con sus matrices al
+  // día antes de calcular tamaños/posiciones (ya NO hace falta para repartirEnPantalla — esa
+  // separación ahora es pura CSS en píxeles, no depende de ningún cálculo de proyección — pero se
+  // deja por seguridad para el resto del setup que sigue).
   await new Promise(res=>setTimeout(res,60));
-  const datos=repartirEnPantalla(globo, grupos);
+  const datos=repartirEnPantalla(grupos);
   globo.htmlElementsData(datos);
   const ALTITUD_REF=2.4, ESCALA_MIN=0.6, ESCALA_MAX=2.8;
   let rafPendiente=false;
@@ -1745,6 +1750,10 @@ async function initGlobo(){
 function crearPinMiembro(m){
   const el=document.createElement("div");
   el.className="mundo-avatar-pin";
+  // Offset de desagrupamiento en píxeles-base (ver repartirEnPantalla) — el transform en CSS lo
+  // multiplica automáticamente por el zoom actual, así que la separación crece junto con la foto.
+  el.style.setProperty("--off-x", (m._offX||0)+"px");
+  el.style.setProperty("--off-y", (m._offY||0)+"px");
   el.innerHTML=`<img src="${escAttr(m.avatarUrl||LOGO_DEFAULT)}" alt="" draggable="false"><div class="mundo-avatar-tip">${escHtml(m.nombre||"")}${m.ciudadResuelta?(" · "+escHtml(m.ciudadResuelta)):""}</div>`;
   let holdTimer=null, mantuvo=false;
   // Dos fixes clave para que el tap funcione siempre:
