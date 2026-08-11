@@ -205,8 +205,30 @@
   .anuario-block .ab-cat{text-align:center;padding:8px 8px 0;}
   .anuario-block .ab-title{padding:10px;font-weight:800;font-size:13.5px;text-align:center;}
 
-  #searchMiembros{width:100%;padding:12px 14px;border-radius:12px;border:1px solid rgba(255,255,255,0.1);background:var(--card-bg-2);color:var(--text);font-size:14px;margin-bottom:14px;display:block;}
+  #searchMiembros{width:100%;padding:12px 14px;border-radius:12px;border:1px solid rgba(255,255,255,0.1);background:var(--card-bg-2);color:var(--text);font-size:14px;display:block;}
+  .search-row{display:flex;align-items:center;gap:10px;margin-bottom:14px;}
+  .search-row #searchMiembros{flex:1;margin-bottom:0;}
+  #mundoPeachesBtn{width:44px;height:44px;flex-shrink:0;object-fit:contain;cursor:pointer;filter:drop-shadow(0 0 6px rgba(93,173,226,0.55));transition:transform .15s;}
+  #mundoPeachesBtn:active{transform:scale(0.9);}
   .section-label{font-weight:800;color:var(--peach-2);margin:16px 0 10px;font-size:14px;text-align:center;}
+
+  /* ---- Mundo Peaches (globo 3D) ---- */
+  #viewMundo{position:fixed;inset:0;z-index:250;background:#050912;display:flex;flex-direction:column;padding:0;}
+  .mundo-topbar{display:flex;align-items:center;gap:10px;padding:12px 14px;background:rgba(10,14,25,0.85);backdrop-filter:blur(6px);z-index:5;}
+  .mundo-back-btn{flex-shrink:0;padding:10px 14px;border-radius:12px;background:var(--card-bg-2);color:var(--text);font-weight:700;font-size:13px;}
+  .mundo-topbar input{flex:1;padding:10px 12px;border-radius:12px;border:1px solid rgba(255,255,255,0.12);background:rgba(255,255,255,0.06);color:#fff;font-size:13.5px;}
+  .mundo-resultados{position:absolute;top:62px;left:14px;right:14px;z-index:6;background:var(--card-bg);border-radius:14px;max-height:50vh;overflow-y:auto;box-shadow:0 8px 24px rgba(0,0,0,0.5);}
+  .mundo-resultado-item{display:flex;align-items:center;gap:10px;padding:10px 12px;border-bottom:1px solid rgba(255,255,255,0.06);cursor:pointer;}
+  .mundo-resultado-item:last-child{border-bottom:none;}
+  .mundo-resultado-item img{width:34px;height:34px;border-radius:50%;object-fit:cover;}
+  .mundo-resultado-item .mr-name{font-size:13.5px;font-weight:700;}
+  .mundo-resultado-item .mr-city{font-size:11.5px;color:var(--text-dim);}
+  #globeContainer{flex:1;position:relative;touch-action:none;}
+  .mundo-loading{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);color:var(--text-dim);font-size:14px;z-index:4;}
+  .mundo-avatar-pin{width:42px;height:42px;border-radius:50%;overflow:hidden;border:2px solid var(--peach-1);box-shadow:0 0 10px rgba(93,173,226,0.7);cursor:pointer;transform:translate(-50%,-50%);transition:transform .15s;}
+  .mundo-avatar-pin img{width:100%;height:100%;object-fit:cover;display:block;}
+  .mundo-avatar-pin.pressing{transform:translate(-50%,-50%) scale(1.25);}
+  .mundo-avatar-tip{position:absolute;bottom:-20px;left:50%;transform:translateX(-50%);white-space:nowrap;font-size:10.5px;background:rgba(0,0,0,0.7);color:#fff;padding:2px 6px;border-radius:6px;pointer-events:none;}
   .avatar-row{display:flex;gap:12px;overflow-x:auto;padding-bottom:8px;justify-content:center;flex-wrap:wrap;}
   .member-avatar-item{flex:0 0 auto;width:78px;text-align:center;cursor:pointer;}
   .member-avatar-item img{width:64px;height:64px;border-radius:50%;object-fit:cover;border:2px solid var(--peach-2);margin:0 auto;}
@@ -355,13 +377,21 @@
   <section id="viewAnuario" class="hidden"><div id="anuarioGrid"></div></section>
 
   <section id="viewMiembros" class="hidden">
-    <input type="text" id="searchMiembros" placeholder="🔍 Buscar por nombre, rol, rango vocal, generación o mes de cumpleaños...">
+    <div class="search-row">
+      <input type="text" id="searchMiembros" placeholder="🔍 Buscar por nombre, rol, rango vocal, generación o mes de cumpleaños...">
+      <img id="mundoPeachesBtn" class="hidden" alt="Mundo Peaches" title="Mundo Peaches 🌍"
+        src="https://raw.githubusercontent.com/TeamPeachesOff/TeamPeachesHub/main/Logos/MundoPeaches.png"
+        onerror="this.onerror=null;this.style.display='none';">
+    </div>
     <div class="hidden" id="memberToolsRow1" style="margin-bottom:10px;">
       <button id="addMemberBtn" class="btn-small btn-family" style="width:100%;">➕ Añadir Miembro</button>
     </div>
-    <div class="hidden" id="memberToolsRow2" style="display:flex;gap:10px;margin-bottom:14px;">
+    <div class="hidden" id="memberToolsRow2" style="margin-bottom:10px;">
+      <button class="btn-small btn-seguridad" id="resetStrikesGlobalBtn" style="width:100%;">🔄 Eliminar strikes</button>
+    </div>
+    <div class="hidden" id="memberToolsRow3" style="display:flex;gap:10px;margin-bottom:14px;">
       <button class="btn-small btn-update" id="refreshPhotosBtn" style="flex:1;">🔄 Actualizar pfp</button>
-      <button class="btn-small btn-seguridad" id="resetStrikesGlobalBtn" style="flex:1;">🔄 Eliminar strikes</button>
+      <button class="btn-small btn-update" id="refreshMapBtn" style="flex:1;">🗺️ Actualizar Mapa</button>
     </div>
     <div class="section-label">👑 Reinas Peachy</div>
     <div class="avatar-row" id="reinasCarousel"></div>
@@ -369,6 +399,16 @@
     <div class="avatar-row" id="staffCarousel"></div>
     <div class="section-label">🍑 Miembros</div>
     <div id="miembrosList"></div>
+  </section>
+
+  <section id="viewMundo" class="hidden">
+    <div class="mundo-topbar">
+      <button id="closeMundoBtn" class="mundo-back-btn">← Volver</button>
+      <input type="text" id="searchMundo" placeholder="🔍 Buscar miembro en el globo...">
+    </div>
+    <div id="mundoResultados" class="mundo-resultados hidden"></div>
+    <div id="globeContainer"></div>
+    <div id="mundoLoading" class="mundo-loading hidden">🌍 Cargando el globo...</div>
   </section>
 
   <section id="viewStaffPin" class="hidden">
@@ -940,6 +980,7 @@ async function cargarDatos(){
     nivel = DB.nivel || (staffPin ? "staff" : (memberPin ? "miembro" : "publico"));
     aplicarEnlacesPublicos();
     aplicarVisibilidadBuzon();
+    aplicarVisibilidadMundo();
     renderActividades(); renderAnuario(); renderMiembros();
   }
   catch(err){
@@ -966,6 +1007,12 @@ function aplicarVisibilidadBuzon(){
   const esPublico = nivel==="publico";
   document.getElementById("buzonDrawerBtn").classList.toggle("hidden", esPublico);
   document.getElementById("reporteDrawerBtn").classList.toggle("hidden", esPublico);
+}
+
+// Mundo Peaches (globo 3D): solo Miembro + Staff, igual que la pestaña Miembros completa
+// (usa exactamente los mismos datos que ya viajan con nivel completo, teléfono incluido).
+function aplicarVisibilidadMundo(){
+  document.getElementById("mundoPeachesBtn").classList.toggle("hidden", nivel==="publico");
 }
 
 /* ---------- actividades ---------- */
@@ -1219,6 +1266,12 @@ document.getElementById("resetStrikesGlobalBtn").onclick=async()=>{
   if(r.ok){ toast(`Reiniciado: ${r.afectados} miembro(s) ✅`); await cargarDatos(); }
   else toast("Error: "+(r.error||""));
 };
+document.getElementById("refreshMapBtn").onclick=async()=>{
+  if(!await confirmarAccion("¿Recalcular la ubicación de todos los miembros con teléfono para Mundo Peaches?")) return;
+  const r=await apiPost({action:"actualizarMapaMundo"},"Ubicando al equipo en el mapa...");
+  if(r.ok){ toast(`Mapa actualizado: ${r.actualizados}/${r.revisados}`); await cargarDatos(); }
+  else toast("Error: "+(r.error||""));
+};
 
 function renderMiembros(filtro=""){
   const f=normalizar(filtro.trim());
@@ -1317,6 +1370,108 @@ async function registrarStrikePermanente(idMiembro){
   if(r.ok){toast("Strike Permanente registrado ☠️"); await cargarDatos(); openMemberModal(idMiembro);} else toast("Error: "+(r.error||""));
 }
 async function borrarCastigos(idMiembro){ if(!await confirmarAccion("¿Poner faltas y strikes en 0? (Esto también borra los Strikes Permanentes de este miembro)")) return; const r=await apiPost({action:"resetCastigos", idMiembro}); if(r.ok){toast("Reiniciado ✅"); await cargarDatos(); openMemberModal(idMiembro);} else toast("Error: "+(r.error||"")); }
+
+/* ---------- Mundo Peaches (globo 3D, Miembro+Staff) ---------- */
+let globoInstancia = null;
+let globoLibCargada = false;
+// Se carga desde CDN solo la primera vez que alguien abre Mundo Peaches, así el resto de la
+// app (incluida la vista pública) no paga el peso de una librería 3D que casi nadie va a usar.
+function cargarLibreriaGlobo(){
+  return new Promise((resolve, reject)=>{
+    if(globoLibCargada || window.Globe){ globoLibCargada=true; resolve(); return; }
+    const s=document.createElement("script");
+    s.src="https://unpkg.com/globe.gl";
+    s.onload=()=>{ globoLibCargada=true; resolve(); };
+    s.onerror=()=>reject(new Error("sin conexión con el CDN"));
+    document.head.appendChild(s);
+  });
+}
+document.getElementById("mundoPeachesBtn").onclick=abrirMundoPeaches;
+document.getElementById("closeMundoBtn").onclick=()=>{ document.getElementById("viewMundo").classList.add("hidden"); mostrarViewMiembros(); };
+async function abrirMundoPeaches(){
+  if(nivel==="publico"){ toast("Necesitas modo Miembro o Staff"); return; }
+  document.getElementById("viewMiembros").classList.add("hidden");
+  document.getElementById("viewMundo").classList.remove("hidden");
+  document.getElementById("mundoResultados").classList.add("hidden");
+  document.getElementById("searchMundo").value="";
+  document.getElementById("mundoLoading").classList.remove("hidden");
+  try{ await cargarLibreriaGlobo(); initGlobo(); }
+  catch(err){ toast("No se pudo cargar el globo: "+err.message); }
+  document.getElementById("mundoLoading").classList.add("hidden");
+}
+function miembrosConUbicacion(){
+  return (DB.miembros||[]).filter(m=>m.lat!==undefined && m.lat!=="" && m.lat!==null && m.lng!==undefined && m.lng!=="" && m.lng!==null && !isNaN(Number(m.lat)) && !isNaN(Number(m.lng)));
+}
+// Capa extra de anti-solape (además del jitter que ya guarda el backend en "Actualizar Mapa"):
+// si dos o más miembros caen en el mismo punto redondeado, se acomodan en un pequeño círculo
+// alrededor del punto original para que sus fotos NUNCA queden exactamente una encima de otra.
+function separarColisiones(lista){
+  const grupos={};
+  lista.forEach(m=>{ const clave=Number(m.lat).toFixed(2)+","+Number(m.lng).toFixed(2); (grupos[clave]=grupos[clave]||[]).push(m); });
+  const out=[];
+  Object.values(grupos).forEach(grupo=>{
+    grupo.forEach((m,i)=>{
+      if(grupo.length===1){ out.push(Object.assign({}, m, {_lat:Number(m.lat), _lng:Number(m.lng)})); return; }
+      const angulo=(i/grupo.length)*2*Math.PI, radio=0.35;
+      out.push(Object.assign({}, m, {_lat:Number(m.lat)+Math.sin(angulo)*radio, _lng:Number(m.lng)+Math.cos(angulo)*radio}));
+    });
+  });
+  return out;
+}
+function initGlobo(){
+  const datos=separarColisiones(miembrosConUbicacion());
+  const contenedor=document.getElementById("globeContainer");
+  contenedor.innerHTML="";
+  const globo=Globe()(contenedor)
+    .globeImageUrl("https://unpkg.com/three-globe/example/img/earth-night.jpg")
+    .backgroundImageUrl("https://unpkg.com/three-globe/example/img/night-sky.png")
+    .htmlElementsData(datos)
+    .htmlLat(d=>d._lat)
+    .htmlLng(d=>d._lng)
+    .htmlAltitude(0.015)
+    .htmlElement(d=>crearPinMiembro(d));
+  globo.controls().autoRotate=true;
+  globo.controls().autoRotateSpeed=0.35;
+  globo.controls().enableZoom=true; // habilita pinch-to-zoom (touch) y scroll (mouse) de fábrica
+  globo.pointOfView({lat:15,lng:-80,altitude:2.4},0);
+  globoInstancia=globo;
+  const ajustarTamano=()=>{ globo.width(contenedor.clientWidth); globo.height(contenedor.clientHeight); };
+  setTimeout(ajustarTamano,50);
+  window.addEventListener("resize", ()=>{ if(!document.getElementById("viewMundo").classList.contains("hidden")) ajustarTamano(); });
+}
+// Tap corto = la cámara vuela hacia ese miembro. Mantener presionado (≈480ms) = abre su tarjeta
+// completa (el mismo modal de perfil que ya existe en Miembros).
+function crearPinMiembro(m){
+  const el=document.createElement("div");
+  el.className="mundo-avatar-pin";
+  el.innerHTML=`<img src="${escAttr(m.avatarUrl||LOGO_DEFAULT)}" alt=""><div class="mundo-avatar-tip">${escHtml(m.nombre||"")}${m.ciudadResuelta?(" · "+escHtml(m.ciudadResuelta)):""}</div>`;
+  let holdTimer=null, mantuvo=false;
+  el.addEventListener("pointerdown", ()=>{
+    mantuvo=false; el.classList.add("pressing");
+    holdTimer=setTimeout(()=>{ mantuvo=true; el.classList.remove("pressing"); openMemberModal(m.id); },480);
+  });
+  el.addEventListener("pointerup", ()=>{
+    clearTimeout(holdTimer); el.classList.remove("pressing");
+    if(!mantuvo && globoInstancia) globoInstancia.pointOfView({lat:m._lat, lng:m._lng, altitude:0.6}, 1200);
+  });
+  el.addEventListener("pointerleave", ()=>{ clearTimeout(holdTimer); el.classList.remove("pressing"); });
+  return el;
+}
+document.getElementById("searchMundo").addEventListener("input", e=>{
+  const f=normalizar(e.target.value.trim());
+  const cont=document.getElementById("mundoResultados");
+  if(!f){ cont.classList.add("hidden"); cont.innerHTML=""; return; }
+  const resultados=miembrosConUbicacion().filter(m=>normalizar((m.nombre||"")+" "+(m.ciudadResuelta||"")).includes(f)).slice(0,8);
+  cont.classList.remove("hidden");
+  cont.innerHTML=resultados.length?resultados.map(m=>`<div class="mundo-resultado-item" data-id="${m.id}">${avatarImgTag(m)}<div><div class="mr-name">${escHtml(m.nombre||"")}</div><div class="mr-city">${escHtml(m.ciudadResuelta||"")}</div></div></div>`).join(""):`<div class="mundo-resultado-item"><div class="mr-name">Sin resultados</div></div>`;
+  bindAvatarFallbacks();
+  cont.querySelectorAll("[data-id]").forEach(item=>item.onclick=()=>{
+    const m=DB.miembros.find(x=>String(x.id)===String(item.dataset.id));
+    if(m && globoInstancia) globoInstancia.pointOfView({lat:Number(m.lat), lng:Number(m.lng), altitude:0.6}, 1600);
+    cont.classList.add("hidden");
+    document.getElementById("searchMundo").value=m?m.nombre:"";
+  });
+});
 
 /* ---------- toggles multi-select (roles / reina) ---------- */
 function bindToggleGroup(containerId){
@@ -1709,6 +1864,7 @@ function switchTab(tab){
   document.getElementById("viewActividades").classList.toggle("hidden",tab!=="actividades");
   document.getElementById("viewAnuario").classList.toggle("hidden",tab!=="anuario");
   document.getElementById("viewMiembros").classList.add("hidden");
+  document.getElementById("viewMundo").classList.add("hidden");
   document.getElementById("viewStaffPin").classList.add("hidden");
   document.getElementById("viewMemberPin").classList.add("hidden");
 }
@@ -1764,24 +1920,26 @@ document.getElementById("miembrosDrawerBtn").onclick=()=>{
   // Sin acceso todavía: no tiene sentido mostrar la jerarquía de Miembros vacía,
   // así que primero se pide la clave (la misma del Modo Miembro).
   document.querySelectorAll(".tab-btn").forEach(b=>b.classList.remove("active"));
-  document.getElementById("viewActividades").classList.add("hidden"); document.getElementById("viewAnuario").classList.add("hidden"); document.getElementById("viewStaffPin").classList.add("hidden"); document.getElementById("viewMiembros").classList.add("hidden");
+  document.getElementById("viewActividades").classList.add("hidden"); document.getElementById("viewAnuario").classList.add("hidden"); document.getElementById("viewStaffPin").classList.add("hidden"); document.getElementById("viewMiembros").classList.add("hidden"); document.getElementById("viewMundo").classList.add("hidden");
   document.getElementById("viewMemberPin").classList.remove("hidden");
   document.getElementById("memberPinInput").value=localStorage.getItem("tph_member_clave")||""; // autocompleta, pero no activa solo
   despuesDeClaveMiembro="miembros";
 };
 function mostrarViewMiembros(){
   document.querySelectorAll(".tab-btn").forEach(b=>b.classList.remove("active"));
-  document.getElementById("viewActividades").classList.add("hidden"); document.getElementById("viewAnuario").classList.add("hidden"); document.getElementById("viewStaffPin").classList.add("hidden"); document.getElementById("viewMemberPin").classList.add("hidden");
+  document.getElementById("viewActividades").classList.add("hidden"); document.getElementById("viewAnuario").classList.add("hidden"); document.getElementById("viewStaffPin").classList.add("hidden"); document.getElementById("viewMemberPin").classList.add("hidden"); document.getElementById("viewMundo").classList.add("hidden");
   document.getElementById("viewMiembros").classList.remove("hidden");
   document.getElementById("memberToolsRow1").classList.toggle("hidden", !staffPin);
   document.getElementById("memberToolsRow2").classList.toggle("hidden", !staffPin);
+  document.getElementById("memberToolsRow3").classList.toggle("hidden", !staffPin);
+  aplicarVisibilidadMundo();
   renderMiembros();
 }
 document.getElementById("staffDrawerBtn").onclick=()=>{
   closeDrawer();
   if(staffPin){ abrirStaffHub(); return; }
   document.querySelectorAll(".tab-btn").forEach(b=>b.classList.remove("active"));
-  document.getElementById("viewActividades").classList.add("hidden"); document.getElementById("viewAnuario").classList.add("hidden"); document.getElementById("viewMiembros").classList.add("hidden"); document.getElementById("viewMemberPin").classList.add("hidden");
+  document.getElementById("viewActividades").classList.add("hidden"); document.getElementById("viewAnuario").classList.add("hidden"); document.getElementById("viewMiembros").classList.add("hidden"); document.getElementById("viewMemberPin").classList.add("hidden"); document.getElementById("viewMundo").classList.add("hidden");
   document.getElementById("viewStaffPin").classList.remove("hidden");
   document.getElementById("pinInput").value=localStorage.getItem("tph_pin")||""; // autocompleta, pero no activa solo
 };
@@ -1818,6 +1976,7 @@ document.getElementById("staffStatusBadge").onclick=async()=>{
     document.getElementById("addActBtn").classList.add("hidden");
     document.getElementById("memberToolsRow1").classList.add("hidden");
     document.getElementById("memberToolsRow2").classList.add("hidden");
+    document.getElementById("memberToolsRow3").classList.add("hidden");
     toast("Saliste del modo staff");
     cargarDatos(); // vuelve a pedir los datos sin PIN, así el servidor manda la versión pública
   }
