@@ -208,7 +208,7 @@
   #searchMiembros{width:100%;padding:12px 14px;border-radius:12px;border:1px solid rgba(255,255,255,0.1);background:var(--card-bg-2);color:var(--text);font-size:14px;display:block;}
   .search-row{display:flex;align-items:center;gap:10px;margin-bottom:14px;}
   .search-row #searchMiembros{flex:1;margin-bottom:0;}
-  #mundoPeachesBtn{width:44px;height:44px;flex-shrink:0;object-fit:contain;cursor:pointer;filter:drop-shadow(0 0 6px rgba(93,173,226,0.55));transition:transform .15s;}
+  #mundoPeachesBtn{width:44px;height:44px;flex-shrink:0;object-fit:contain;cursor:pointer;filter:drop-shadow(0 0 7px rgba(255,143,177,0.75));transition:transform .15s;}
   #mundoPeachesBtn:active{transform:scale(0.9);}
   .section-label{font-weight:800;color:var(--peach-2);margin:16px 0 10px;font-size:14px;text-align:center;}
 
@@ -225,9 +225,9 @@
   .mundo-resultado-item .mr-city{font-size:11.5px;color:var(--text-dim);}
   #globeContainer{flex:1;position:relative;touch-action:none;}
   .mundo-loading{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);color:var(--text-dim);font-size:14px;z-index:4;}
-  .mundo-avatar-pin{width:42px;height:42px;border-radius:50%;overflow:hidden;border:2px solid var(--peach-1);box-shadow:0 0 10px rgba(93,173,226,0.7);cursor:pointer;transform:translate(-50%,-50%);transition:transform .15s;}
-  .mundo-avatar-pin img{width:100%;height:100%;object-fit:cover;display:block;}
-  .mundo-avatar-pin.pressing{transform:translate(-50%,-50%) scale(1.25);}
+  .mundo-avatar-pin{width:42px;height:42px;border-radius:50%;overflow:hidden;border:2px solid var(--peach-1);box-shadow:0 0 10px rgba(255,143,177,0.7);cursor:pointer;transform:translate(-50%,-50%) scale(var(--zoom-scale,1));transition:transform .12s;touch-action:none;-webkit-user-select:none;user-select:none;}
+  .mundo-avatar-pin img{width:100%;height:100%;object-fit:cover;display:block;-webkit-user-drag:none;pointer-events:none;}
+  .mundo-avatar-pin.pressing{transform:translate(-50%,-50%) scale(calc(var(--zoom-scale,1) * 1.25));}
   .mundo-avatar-tip{position:absolute;bottom:-20px;left:50%;transform:translateX(-50%);white-space:nowrap;font-size:10.5px;background:rgba(0,0,0,0.7);color:#fff;padding:2px 6px;border-radius:6px;pointer-events:none;}
   .avatar-row{display:flex;gap:12px;overflow-x:auto;padding-bottom:8px;justify-content:center;flex-wrap:wrap;}
   .member-avatar-item{flex:0 0 auto;width:78px;text-align:center;cursor:pointer;}
@@ -1402,18 +1402,50 @@ async function abrirMundoPeaches(){
 function miembrosConUbicacion(){
   return (DB.miembros||[]).filter(m=>m.lat!==undefined && m.lat!=="" && m.lat!==null && m.lng!==undefined && m.lng!=="" && m.lng!==null && !isNaN(Number(m.lat)) && !isNaN(Number(m.lng)));
 }
+// Reparte N miembros que cayeron en el mismo punto en una pequeña grilla ordenada (en vez de un
+// círculo), siguiendo el patrón pedido: 2 -> fila única de 2 | 3 -> 2 arriba/1 abajo centrado |
+// 4 -> 2+2 | 5 -> 3 arriba/2 abajo | 7 -> 2 arriba/3 en medio/2 abajo, y así en general.
+// Regla: filas = round(sqrt(n)); el resto de personas que no cae parejo en cada fila se reparte
+// priorizando la(s) fila(s) más cercanas al CENTRO vertical de la grilla (y entre empatadas, la de
+// más arriba), así el bloque siempre queda visualmente centrado y ordenado.
+function distribuirEnFilas(n){
+  if(n<=1) return [n];
+  const filas=Math.max(1, Math.round(Math.sqrt(n)));
+  const base=Math.floor(n/filas);
+  let resto=n-base*filas;
+  const conteos=new Array(filas).fill(base);
+  const centro=(filas-1)/2;
+  const orden=[...Array(filas).keys()].sort((a,b)=>{
+    const da=Math.abs(a-centro), db=Math.abs(b-centro);
+    return da!==db ? da-db : a-b;
+  });
+  for(let i=0;i<resto;i++) conteos[orden[i]]++;
+  return conteos;
+}
 // Capa extra de anti-solape (además del jitter que ya guarda el backend en "Actualizar Mapa"):
-// si dos o más miembros caen en el mismo punto redondeado, se acomodan en un pequeño círculo
-// alrededor del punto original para que sus fotos NUNCA queden exactamente una encima de otra.
+// si dos o más miembros caen en el mismo punto redondeado, se acomodan en una grilla compacta
+// centrada alrededor del punto original para que sus fotos NUNCA queden una encima de otra.
 function separarColisiones(lista){
   const grupos={};
   lista.forEach(m=>{ const clave=Number(m.lat).toFixed(2)+","+Number(m.lng).toFixed(2); (grupos[clave]=grupos[clave]||[]).push(m); });
   const out=[];
+  const PASO_LAT=0.55, PASO_LNG_BASE=0.7; // separación angular entre celdas de la grilla
   Object.values(grupos).forEach(grupo=>{
-    grupo.forEach((m,i)=>{
-      if(grupo.length===1){ out.push(Object.assign({}, m, {_lat:Number(m.lat), _lng:Number(m.lng)})); return; }
-      const angulo=(i/grupo.length)*2*Math.PI, radio=0.35;
-      out.push(Object.assign({}, m, {_lat:Number(m.lat)+Math.sin(angulo)*radio, _lng:Number(m.lng)+Math.cos(angulo)*radio}));
+    if(grupo.length===1){ const m=grupo[0]; out.push(Object.assign({}, m, {_lat:Number(m.lat), _lng:Number(m.lng)})); return; }
+    const filas=distribuirEnFilas(grupo.length);
+    const latBase=Number(grupo[0].lat), lngBase=Number(grupo[0].lng);
+    // corrección por longitud: cerca de los polos 1° de longitud ocupa menos espacio real que en el ecuador
+    const correccion=Math.max(0.3, Math.cos(latBase*Math.PI/180));
+    const totalFilas=filas.length, offsetFilaInicial=-(totalFilas-1)/2;
+    let idx=0;
+    filas.forEach((cantidad,fi)=>{
+      const offsetLat=(offsetFilaInicial+fi)*PASO_LAT;
+      const offsetColInicial=-(cantidad-1)/2;
+      for(let c=0;c<cantidad;c++){
+        const m=grupo[idx++];
+        const offsetLng=(offsetColInicial+c)*(PASO_LNG_BASE/correccion);
+        out.push(Object.assign({}, m, {_lat:latBase+offsetLat, _lng:lngBase+offsetLng}));
+      }
     });
   });
   return out;
@@ -1422,39 +1454,92 @@ function initGlobo(){
   const datos=separarColisiones(miembrosConUbicacion());
   const contenedor=document.getElementById("globeContainer");
   contenedor.innerHTML="";
+  contenedor.style.setProperty("--zoom-scale","1");
   const globo=Globe()(contenedor)
-    .globeImageUrl("https://unpkg.com/three-globe/example/img/earth-night.jpg")
-    .backgroundImageUrl("https://unpkg.com/three-globe/example/img/night-sky.png")
+    .globeImageUrl(texturaGloboRosa())
+    .backgroundColor("rgba(0,0,0,0)")
+    .showAtmosphere(true)
+    .atmosphereColor("#ff8fb1")
+    .atmosphereAltitude(0.18)
     .htmlElementsData(datos)
     .htmlLat(d=>d._lat)
     .htmlLng(d=>d._lng)
     .htmlAltitude(0.015)
     .htmlElement(d=>crearPinMiembro(d));
-  globo.controls().autoRotate=true;
-  globo.controls().autoRotateSpeed=0.35;
+  // Sin auto-rotación: como el team es todo LatAm, no hace falta que el globo gire solo.
+  globo.controls().autoRotate=false;
   globo.controls().enableZoom=true; // habilita pinch-to-zoom (touch) y scroll (mouse) de fábrica
   globo.pointOfView({lat:15,lng:-80,altitude:2.4},0);
   globoInstancia=globo;
+  const ALTITUD_REF=2.4, ESCALA_MIN=0.55, ESCALA_MAX=1.9;
+  let rafPendiente=false;
+  // Los pines HTML de Globe.gl escalan con la perspectiva 3D real (se agrandan/achican según qué
+  // tan cerca esté la cámara), por eso al hacer zoom se ven "ultra chiquitas". Esto lo compensa:
+  // en cada cambio de cámara, ajusta una variable CSS (--zoom-scale) para que el tamaño en pantalla
+  // se mantenga dentro de un rango legible sin importar cuánto te acerques o alejes.
+  const compensarEscala=()=>{
+    rafPendiente=false;
+    const alt=Math.max(globo.pointOfView().altitude, 0.05);
+    let factor=alt/ALTITUD_REF;
+    factor=Math.min(Math.max(factor, ESCALA_MIN), ESCALA_MAX);
+    contenedor.style.setProperty("--zoom-scale", factor.toFixed(3));
+  };
+  globo.controls().addEventListener("change", ()=>{ if(!rafPendiente){ rafPendiente=true; requestAnimationFrame(compensarEscala); } });
+  setTimeout(compensarEscala,80);
   const ajustarTamano=()=>{ globo.width(contenedor.clientWidth); globo.height(contenedor.clientHeight); };
   setTimeout(ajustarTamano,50);
   window.addEventListener("resize", ()=>{ if(!document.getElementById("viewMundo").classList.contains("hidden")) ajustarTamano(); });
 }
-// Tap corto = la cámara vuela hacia ese miembro. Mantener presionado (≈480ms) = abre su tarjeta
-// completa (el mismo modal de perfil que ya existe en Miembros).
+// Textura simple y liviana para el globo (en vez de bajar una foto satelital pesada de varios MB):
+// se dibuja una sola vez en un <canvas> chico con tonos rosados/celestes que combinan con la app,
+// continentes borrosos/simplificados a propósito (que se note que es un globo, sin detalle real),
+// y se cachea en base64 para no regenerarla cada vez que se abre Mundo Peaches.
+let _texturaGloboCache=null;
+function texturaGloboRosa(){
+  if(_texturaGloboCache) return _texturaGloboCache;
+  const cv=document.createElement("canvas");
+  cv.width=512; cv.height=256;
+  const ctx=cv.getContext("2d");
+  const oceano=ctx.createLinearGradient(0,0,0,256);
+  oceano.addColorStop(0,"#3a1f4d"); oceano.addColorStop(0.5,"#5c2a5e"); oceano.addColorStop(1,"#3a1f4d");
+  ctx.fillStyle=oceano; ctx.fillRect(0,0,512,256);
+  // "continentes" simplificados: manchas suaves en tonos rosa/durazno, solo para que se note textura
+  const manchas=[
+    [80,90,70,34],[130,110,55,28],[95,150,50,26],[230,70,60,30],[255,120,80,36],[240,175,55,24],
+    [330,60,50,22],[350,100,65,30],[300,150,55,26],[420,90,45,20],[440,140,50,24],[60,190,40,18]
+  ];
+  ctx.fillStyle="rgba(255,180,205,0.55)";
+  manchas.forEach(([x,y,rx,ry])=>{ ctx.beginPath(); ctx.ellipse(x,y,rx,ry,0,0,Math.PI*2); ctx.fill(); });
+  ctx.filter="blur(6px)";
+  ctx.drawImage(cv,0,0);
+  ctx.filter="none";
+  _texturaGloboCache=cv.toDataURL("image/png");
+  return _texturaGloboCache;
+}
+// Tap corto = la cámara enfoca y se acerca un poco a ese miembro. Mantener presionado (≈480ms) =
+// abre su tarjeta completa (el mismo modal de perfil que ya existe en Miembros).
 function crearPinMiembro(m){
   const el=document.createElement("div");
   el.className="mundo-avatar-pin";
-  el.innerHTML=`<img src="${escAttr(m.avatarUrl||LOGO_DEFAULT)}" alt=""><div class="mundo-avatar-tip">${escHtml(m.nombre||"")}${m.ciudadResuelta?(" · "+escHtml(m.ciudadResuelta)):""}</div>`;
+  el.innerHTML=`<img src="${escAttr(m.avatarUrl||LOGO_DEFAULT)}" alt="" draggable="false"><div class="mundo-avatar-tip">${escHtml(m.nombre||"")}${m.ciudadResuelta?(" · "+escHtml(m.ciudadResuelta)):""}</div>`;
   let holdTimer=null, mantuvo=false;
-  el.addEventListener("pointerdown", ()=>{
+  // stopPropagation es la parte clave del fix: sin esto, el pointerdown sobre el pin burbujea
+  // hasta los controles de cámara (OrbitControls) del globo, que capturan el puntero para manejar
+  // el drag-to-rotate; una vez capturado, el pointerup ya NO le llega al pin sino al globo, y por
+  // eso el tap nunca se detectaba. Cortando la propagación aquí, el pin maneja su propio tap/hold
+  // sin que el globo se entere ni intente rotar con ese mismo toque.
+  el.addEventListener("pointerdown", (e)=>{
+    e.stopPropagation();
     mantuvo=false; el.classList.add("pressing");
     holdTimer=setTimeout(()=>{ mantuvo=true; el.classList.remove("pressing"); openMemberModal(m.id); },480);
   });
-  el.addEventListener("pointerup", ()=>{
+  el.addEventListener("pointerup", (e)=>{
+    e.stopPropagation();
     clearTimeout(holdTimer); el.classList.remove("pressing");
-    if(!mantuvo && globoInstancia) globoInstancia.pointOfView({lat:m._lat, lng:m._lng, altitude:0.6}, 1200);
+    if(!mantuvo && globoInstancia) globoInstancia.pointOfView({lat:m._lat, lng:m._lng, altitude:0.55}, 1200);
   });
-  el.addEventListener("pointerleave", ()=>{ clearTimeout(holdTimer); el.classList.remove("pressing"); });
+  el.addEventListener("pointercancel", (e)=>{ e.stopPropagation(); clearTimeout(holdTimer); el.classList.remove("pressing"); });
+  el.addEventListener("pointerleave", (e)=>{ e.stopPropagation(); clearTimeout(holdTimer); el.classList.remove("pressing"); });
   return el;
 }
 document.getElementById("searchMundo").addEventListener("input", e=>{
@@ -1467,7 +1552,7 @@ document.getElementById("searchMundo").addEventListener("input", e=>{
   bindAvatarFallbacks();
   cont.querySelectorAll("[data-id]").forEach(item=>item.onclick=()=>{
     const m=DB.miembros.find(x=>String(x.id)===String(item.dataset.id));
-    if(m && globoInstancia) globoInstancia.pointOfView({lat:Number(m.lat), lng:Number(m.lng), altitude:0.6}, 1600);
+    if(m && globoInstancia) globoInstancia.pointOfView({lat:Number(m.lat), lng:Number(m.lng), altitude:0.55}, 1600);
     cont.classList.add("hidden");
     document.getElementById("searchMundo").value=m?m.nombre:"";
   });
