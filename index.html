@@ -276,7 +276,10 @@
      así que cualquier modal (ej. tarjeta de miembro) que se abriera desde el globo quedaba tapado
      por el fondo opaco del globo en vez de mostrarse encima. Esto es lo que causaba que la tarjeta
      "se abriera pero afuera del mapa": técnicamente sí se abría, solo que detrás de la vista Mundo. */
-  .modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,0.6);z-index:260;display:none;align-items:flex-start;justify-content:center;padding:30px 12px;overflow-y:auto;}
+  /* align-items:center en vez de flex-start — antes la tarjeta quedaba pegada arriba y dejaba una
+     franja grande del fondo oscuro (rgba(0,0,0,0.6)) vacía debajo, que sobre todo con la vista
+     Mundo detrás (ya de por sí oscura) se veía como "un bloque negro debajo de la tarjeta". */
+  .modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,0.6);z-index:260;display:none;align-items:center;justify-content:center;padding:30px 12px;overflow-y:auto;}
   .modal-overlay.open{display:flex;}
   .modal-box{position:relative;background:var(--card-bg);border-radius:18px;padding:20px;width:100%;max-width:440px;max-height:85vh;overflow-y:auto;-webkit-overflow-scrolling:touch;}
   .modal-box h3{margin-top:0;color:var(--peach-2);}
@@ -1451,69 +1454,67 @@ function distribuirEnFilas(n){
   for(let i=0;i<resto;i++) conteos[orden[i]]++;
   return conteos;
 }
-// Capa extra de anti-solape (además del jitter que ya guarda el backend en "Actualizar Mapa"):
-// si dos o más miembros caen en el mismo punto redondeado, se acomodan en una grilla compacta
-// centrada alrededor del punto original para que sus fotos NUNCA queden una encima de otra.
-// Guarda también el punto ORIGINAL sin desplazar (_hubLat/_hubLng) para poder dibujar después la
-// línea "aerolínea" que conecta a cada uno con el centro de su zona.
-function separarColisiones(lista){
+// Agrupa a los miembros que caen en el mismo punto (redondeado) — SOLO agrupa, todavía no decide
+// dónde va a parar cada uno en pantalla.
+function agruparPorHub(lista){
   const grupos={};
   lista.forEach(m=>{ const clave=Number(m.lat).toFixed(2)+","+Number(m.lng).toFixed(2); (grupos[clave]=grupos[clave]||[]).push(m); });
+  return Object.values(grupos);
+}
+// Reparto anti-solape EN PIXELES DE PANTALLA (no en grados de lat/lng). Esto es clave: separar por
+// grados fijos no garantiza nada, porque cuánto ocupa 1° en pantalla depende del zoom — por eso
+// antes, aunque se agrandara el offset, con el zoom por defecto ("100%") igual quedaban amontonados
+// y había que acercarse muchísimo para separarlos. Ahora se usa getScreenCoords()/toGlobeCoords()
+// (API real de globe.gl) para calcular, EN LA VISTA ACTUAL, cuántos pixeles ocupa cada foto y
+// acomodarlas en una grilla ya separada en pantalla desde el primer momento — sin importar que eso
+// signifique alejar un poco a alguien de su coordenada exacta (a propósito: la idea siempre fue
+// mostrar una zona aproximada, no la ubicación exacta de nadie).
+function repartirEnPantalla(globo, grupos){
+  const PASO_PX=56; // separación en pixeles de pantalla entre cada foto (42px de avatar + margen)
   const out=[];
-  // Antes esta separación (0.55°/0.7°) era demasiado chica: como los pines se compensan para verse
-  // SIEMPRE del mismo tamaño en pantalla sin importar el zoom (--zoom-scale), a la distancia por
-  // defecto esa distancia angular apenas ocupaba unos pixeles — los miembros de una misma ciudad
-  // quedaban amontonados y había que acercarse mucho para distinguirlos. Se triplica para que se
-  // vean separados desde la vista inicial; solo en grupos MUY grandes o si te alejas del todo
-  // debería notarse solapamiento.
-  const PASO_LAT=1.7, PASO_LNG_BASE=2.2; // separación angular entre celdas de la grilla
-  Object.values(grupos).forEach(grupo=>{
+  grupos.forEach(grupo=>{
     const hubLat=Number(grupo[0].lat), hubLng=Number(grupo[0].lng);
-    if(grupo.length===1){ const m=grupo[0]; out.push(Object.assign({}, m, {_lat:hubLat, _lng:hubLng, _hubLat:hubLat, _hubLng:hubLng, _grupo:1})); return; }
+    if(grupo.length===1){
+      const m=grupo[0];
+      out.push(Object.assign({}, m, {_lat:hubLat, _lng:hubLng}));
+      return;
+    }
+    const centro=globo.getScreenCoords(hubLat, hubLng, 0.02);
     const filas=distribuirEnFilas(grupo.length);
-    // corrección por longitud: cerca de los polos 1° de longitud ocupa menos espacio real que en el ecuador
-    const correccion=Math.max(0.3, Math.cos(hubLat*Math.PI/180));
     const totalFilas=filas.length, offsetFilaInicial=-(totalFilas-1)/2;
     let idx=0;
     filas.forEach((cantidad,fi)=>{
-      const offsetLat=(offsetFilaInicial+fi)*PASO_LAT;
-      const offsetColInicial=-(cantidad-1)/2;
+      const offY=(offsetFilaInicial+fi)*PASO_PX;
+      const offXInicial=-(cantidad-1)/2;
       for(let c=0;c<cantidad;c++){
         const m=grupo[idx++];
-        const offsetLng=(offsetColInicial+c)*(PASO_LNG_BASE/correccion);
-        out.push(Object.assign({}, m, {_lat:hubLat+offsetLat, _lng:hubLng+offsetLng, _hubLat:hubLat, _hubLng:hubLng, _grupo:grupo.length}));
+        const offX=(offXInicial+c)*PASO_PX;
+        let lat=hubLat, lng=hubLng; // respaldo por si el punto cae justo en el borde visible del globo
+        if(centro){
+          const destino=globo.toGlobeCoords(centro.x+offX, centro.y+offY);
+          if(destino){ lat=destino.lat; lng=destino.lng; }
+        }
+        out.push(Object.assign({}, m, {_lat:lat, _lng:lng}));
       }
     });
   });
   return out;
 }
-// "Aerolíneas": para cada zona con 2+ miembros, arma el punto central (hub) y una línea de cada
-// miembro hacia ese centro. Como estas líneas se dibujan en el canvas WebGL y las fotos son capas
-// HTML superpuestas ENCIMA del canvas, las líneas nunca pueden quedar por encima de una foto.
-function calcularArcosYHubs(datos){
-  const vistos=new Set(), hubs=[], arcosHub=[];
-  datos.forEach(m=>{
-    if(m._grupo<2) return;
-    const clave=m._hubLat.toFixed(2)+","+m._hubLng.toFixed(2);
-    arcosHub.push({startLat:m._lat, startLng:m._lng, endLat:m._hubLat, endLng:m._hubLng, tipo:"hub"});
-    if(!vistos.has(clave)){ vistos.add(clave); hubs.push({lat:m._hubLat, lng:m._hubLng, cantidad:m._grupo}); }
-  });
-  return {arcosHub, hubs};
-}
 let _arcoAleatorioActual=[];
-function actualizarCapaArcos(globo, arcosHub){
-  globo.arcsData(arcosHub.concat(_arcoAleatorioActual))
-    .arcColor(d=>d.tipo==="hub" ? "rgba(255,215,0,0.5)" : d.color)
-    .arcStroke(d=>d.tipo==="hub" ? 0.28 : 0.45)
-    .arcDashLength(d=>d.tipo==="hub" ? 1 : 0.4)
-    .arcDashGap(d=>d.tipo==="hub" ? 0 : 2.2)
-    .arcDashAnimateTime(d=>d.tipo==="hub" ? 0 : d.duracion)
-    .arcAltitude(d=>d.tipo==="hub" ? 0.01 : undefined)
+function actualizarCapaArcos(globo){
+  // Solo queda el arco aleatorio decorativo — se quitó por completo el punto dorado que marcaba
+  // el centro de cada zona y las líneas que conectaban a la gente con él (a pedido).
+  globo.arcsData(_arcoAleatorioActual)
+    .arcColor(d=>d.color)
+    .arcStroke(0.45)
+    .arcDashLength(0.4)
+    .arcDashGap(2.2)
+    .arcDashAnimateTime(d=>d.duracion)
     .arcAltitudeAutoScale(0.35);
 }
 // Cada 30-60s aparece UN arco animado entre dos miembros al azar (sin importar quién), con un
 // color al azar de la paleta y velocidad al azar — puro adorno, se autodestruye tras su animación.
-function iniciarArcosAleatorios(globo, datos, arcosHub){
+function iniciarArcosAleatorios(globo, datos){
   detenerArcosAleatorios();
   if(datos.length<2) return;
   const paleta=["#ff8fb1","#EF0870","#ffd700","#c084fc","#8fd3ff"];
@@ -1523,9 +1524,9 @@ function iniciarArcosAleatorios(globo, datos, arcosHub){
     while(b===a && intentos<8 && datos.length>1){ b=datos[Math.floor(Math.random()*datos.length)]; intentos++; }
     if(b!==a){
       const duracion=1400+Math.random()*2200; // velocidad aleatoria
-      _arcoAleatorioActual=[{startLat:a._lat,startLng:a._lng,endLat:b._lat,endLng:b._lng,tipo:"random",color:paleta[Math.floor(Math.random()*paleta.length)],duracion}];
-      actualizarCapaArcos(globo, arcosHub);
-      setTimeout(()=>{ _arcoAleatorioActual=[]; actualizarCapaArcos(globo, arcosHub); }, duracion+300);
+      _arcoAleatorioActual=[{startLat:a._lat,startLng:a._lng,endLat:b._lat,endLng:b._lng,color:paleta[Math.floor(Math.random()*paleta.length)],duracion}];
+      actualizarCapaArcos(globo);
+      setTimeout(()=>{ _arcoAleatorioActual=[]; actualizarCapaArcos(globo); }, duracion+300);
     }
     arcoLibTimer=setTimeout(disparar, 30000+Math.random()*30000); // cada 30-60s, solo 1 a la vez
   };
@@ -1609,53 +1610,76 @@ async function obtenerContinentes(){
   _continentesCache=(geo.features||[]).filter(f=>f.id!=="ATA"); // fuera la Antártida, no aporta
   return _continentesCache;
 }
+// El mapa de países ahora se "hornea" directo en la textura de la esfera (globeImageUrl) en vez de
+// dibujarse como polígonos 3D flotando por encima (polygonsData). Esto elimina de raíz el "choque
+// entre la tierra y el mar": antes cada país era un parche plano a una altitud fija sobre la
+// esfera, y por más que se bajara esa altitud, mientras más grande el país más se notaba el
+// borde/escalón entre el parche recto y la curvatura real de abajo. Pintando los países
+// directamente SOBRE la esfera (como una calcomanía, sin ninguna elevación) ese salto deja de
+// existir por completo, sin importar el tamaño del país.
+let _texturaMundoCache=null;
+async function texturaMundo(){
+  if(_texturaMundoCache) return _texturaMundoCache;
+  const W=4096, H=2048; // resolución alta a propósito: esto YA ES el mapa (no hay overlay 3D encima), tiene que verse nítido de cerca
+  const cv=document.createElement("canvas");
+  cv.width=W; cv.height=H;
+  const ctx=cv.getContext("2d");
+  const oceano=ctx.createLinearGradient(0,0,0,H);
+  oceano.addColorStop(0,"#3d2050"); oceano.addColorStop(1,"#2a1638");
+  ctx.fillStyle=oceano; ctx.fillRect(0,0,W,H);
+  let continentes=[];
+  try{ continentes=await obtenerContinentes(); }catch(e){ /* si falla, el globo queda liso (solo océano), no rompe nada */ }
+  const proyectar=(lng,lat)=>[(lng+180)/360*W, (90-lat)/180*H];
+  ctx.fillStyle="rgba(255,164,199,0.95)";
+  ctx.strokeStyle="rgba(255,220,235,0.6)";
+  ctx.lineWidth=2;
+  const dibujarAnillo=(anillo)=>{
+    if(!anillo || anillo.length<3) return;
+    // Países que cruzan el antimeridiano (Rusia, Fiji, Alaska/Aleutianas) generan una franja
+    // horizontal fea si se proyectan tal cual — se descartan (no afecta a Latam/EE.UU./España).
+    let lngMin=180, lngMax=-180;
+    anillo.forEach(([lng])=>{ if(lng<lngMin)lngMin=lng; if(lng>lngMax)lngMax=lng; });
+    if(lngMax-lngMin>180) return;
+    ctx.beginPath();
+    anillo.forEach(([lng,lat],i)=>{
+      const [x,y]=proyectar(lng,lat);
+      if(i===0) ctx.moveTo(x,y); else ctx.lineTo(x,y);
+    });
+    ctx.closePath(); ctx.fill(); ctx.stroke();
+  };
+  continentes.forEach(f=>{
+    const geom=f.geometry; if(!geom) return;
+    if(geom.type==="Polygon") geom.coordinates.forEach(dibujarAnillo);
+    else if(geom.type==="MultiPolygon") geom.coordinates.forEach(poly=>poly.forEach(dibujarAnillo));
+  });
+  _texturaMundoCache=cv.toDataURL("image/png");
+  return _texturaMundoCache;
+}
 async function initGlobo(){
-  const datos=separarColisiones(miembrosConUbicacion());
-  const {arcosHub, hubs}=calcularArcosYHubs(datos);
+  const grupos=agruparPorHub(miembrosConUbicacion());
   const contenedor=document.getElementById("globeContainer");
   contenedor.innerHTML="";
   contenedor.style.setProperty("--zoom-scale","1");
   let overlayCometas=document.getElementById("cometasOverlay");
   if(!overlayCometas){ overlayCometas=document.createElement("div"); overlayCometas.id="cometasOverlay"; }
   contenedor.appendChild(overlayCometas);
-  let continentes=[];
-  try{ continentes=await obtenerContinentes(); }catch(e){ /* si falla, el globo se ve liso en vez de con contornos, no rompe nada */ }
+  const fondoMundo=await texturaMundo();
   const globo=Globe()(contenedor)
     .backgroundColor("rgba(0,0,0,0)")
     .backgroundImageUrl(texturaEstrellas())
-    .showGlobe(true)            // sólido, no hollow — se pidió que NO se vea hueco
+    .globeImageUrl(fondoMundo)   // el mapa YA viene pintado en la textura de la esfera (ver texturaMundo) — nada de polígonos 3D flotando encima
+    .showGlobe(true)
     .showAtmosphere(true)
     .atmosphereColor("#ff8fb1")
     .atmosphereAltitude(0.22)
-    .polygonsData(continentes)  // contornos simplificados de países (look "vectorizado", no foto satelital)
-    .polygonCapColor(()=>"rgba(255,164,199,0.65)")
-    // Antes esto era mucho más opaco (0.25) y con una altitud (0.006) alta: cada país es un
-    // "parche" plano flotando sobre la esfera, y mientras más grande el país, más nota el ojo el
-    // salto entre el borde recto del parche y la curva real de la esfera de abajo ("la tierra
-    // choca con el mar"). Bajar la altitud casi a ras de la esfera y aclarar el color del lateral
-    // (para que no se vea como una "pared") disimula ese salto. polygonCapCurvatureResolution
-    // además subdivide los polígonos grandes en más triángulos para que sigan mejor la curvatura
-    // real del globo en vez de quedar como una plancha recta.
-    .polygonSideColor(()=>"rgba(120,40,90,0.08)")
-    .polygonStrokeColor(()=>"rgba(255,220,235,0.5)")
-    .polygonAltitude(0.0015)
-    .polygonCapCurvatureResolution(2)
-    .htmlElementsData(datos)
+    .htmlElementsData([])       // se llena más abajo, después de calcular el reparto en pantalla
     .htmlLat(d=>d._lat)
     .htmlLng(d=>d._lng)
     .htmlAltitude(0.02)
-    .htmlElement(d=>crearPinMiembro(d))
-    .pointsData(hubs)           // marca el centro de cada zona con 2+ miembros
-    .pointLat("lat").pointLng("lng")
-    .pointColor(()=>"#ffd700")
-    .pointRadius(d=>0.28+Math.min(d.cantidad,8)*0.045)
-    .pointAltitude(0.006)
-    .pointsMerge(true);
-  // tinte base del globo (debajo de los contornos de países): morado/rosa oscuro de la paleta
-  globo.globeMaterial().color.set("#3a1f4d");
+    .htmlElement(d=>crearPinMiembro(d));
+  globo.globeMaterial().color.set("#ffffff"); // blanco para no destiñir los colores ya horneados en la textura
   globo.globeMaterial().emissive.set("#1a0e22");
-  globo.globeMaterial().shininess=6;
-  actualizarCapaArcos(globo, arcosHub);
+  globo.globeMaterial().shininess=4;
   // Sin auto-rotación: como el team es todo LatAm, no hace falta que el globo gire solo.
   globo.controls().autoRotate=false;
   globo.controls().enableZoom=true; // habilita pinch-to-zoom (touch) y scroll (mouse) de fábrica
@@ -1667,27 +1691,38 @@ async function initGlobo(){
   globo.controls().dampingFactor=0.12;
   globo.controls().zoomSpeed=0.7;
   globo.controls().rotateSpeed=0.6;
-  globo.pointOfView({lat:15,lng:-80,altitude:2.4},0);
+  // Cap del pixel ratio: en celulares de gama alta (DPR 3-4) forzar a WebGL a renderizar a esa
+  // densidad completa en cada frame de arrastre/zoom es lo que más pesa y se siente "trabado" — se
+  // limita a 2, que ya se ve nítido, y baja bastante la carga en cada interacción.
+  try{ globo.renderer().setPixelRatio(Math.min(window.devicePixelRatio||1, 2)); }catch(e){}
+  globo.pointOfView({lat:15,lng:-80,altitude:2.4},0); // esta es la vista "100%" de referencia
   globoInstancia=globo;
-  const ALTITUD_REF=2.4, ESCALA_MIN=0.55, ESCALA_MAX=1.9;
+  const ajustarTamano=()=>{ globo.width(contenedor.clientWidth); globo.height(contenedor.clientHeight); };
+  ajustarTamano();
+  // Hace falta esperar a que corra al menos un frame de render para que la cámara/controles queden
+  // con sus matrices al día — recién ahí getScreenCoords()/toGlobeCoords() (usados abajo para
+  // separar a todo el mundo EN PANTALLA) dan resultados correctos.
+  await new Promise(res=>setTimeout(res,60));
+  const datos=repartirEnPantalla(globo, grupos);
+  globo.htmlElementsData(datos);
+  const ALTITUD_REF=2.4, ESCALA_MIN=0.6, ESCALA_MAX=2.3;
   let rafPendiente=false;
-  // Los pines HTML de Globe.gl escalan con la perspectiva 3D real (se agrandan/achican según qué
-  // tan cerca esté la cámara), por eso al hacer zoom se ven "ultra chiquitas". Esto lo compensa:
-  // en cada cambio de cámara, ajusta una variable CSS (--zoom-scale) para que el tamaño en pantalla
-  // se mantenga dentro de un rango legible sin importar cuánto te acerques o alejes.
+  // Antes: factor = altitud/ALTITUD_REF — eso significa que al hacer zoom IN (menor altitud) el
+  // factor bajaba y las fotos se hacían CHIQUITAS justo cuando el usuario se acerca para ver mejor
+  // (al revés de lo que se necesita). Se invierte: mientras más cerca la cámara, MÁS grande la
+  // foto (hasta el tope ESCALA_MAX), y mientras más lejos, más chica (hasta el piso ESCALA_MIN)
+  // para no saturar la pantalla cuando se ve todo el globo de lejos.
   const compensarEscala=()=>{
     rafPendiente=false;
     const alt=Math.max(globo.pointOfView().altitude, 0.05);
-    let factor=alt/ALTITUD_REF;
+    let factor=ALTITUD_REF/alt;
     factor=Math.min(Math.max(factor, ESCALA_MIN), ESCALA_MAX);
     contenedor.style.setProperty("--zoom-scale", factor.toFixed(3));
   };
   globo.controls().addEventListener("change", ()=>{ if(!rafPendiente){ rafPendiente=true; requestAnimationFrame(compensarEscala); } });
-  setTimeout(compensarEscala,80);
-  const ajustarTamano=()=>{ globo.width(contenedor.clientWidth); globo.height(contenedor.clientHeight); };
-  setTimeout(ajustarTamano,50);
+  compensarEscala();
   window.addEventListener("resize", ()=>{ if(!document.getElementById("viewMundo").classList.contains("hidden")) ajustarTamano(); });
-  iniciarArcosAleatorios(globo, datos, arcosHub);
+  iniciarArcosAleatorios(globo, datos);
   iniciarCometas(overlayCometas);
 }
 // Tap corto = la cámara enfoca y se acerca un poco a ese miembro. Mantener presionado (≈480ms) =
