@@ -333,8 +333,8 @@
   <div class="drawer-divider"></div>
   <div class="drawer-nav-group">
     <button class="drawer-nav-btn" id="miembrosDrawerBtn">👥 Miembros</button>
-    <button class="drawer-nav-btn" id="buzonDrawerBtn">📮 Buzón Anónimo</button>
-    <button class="drawer-nav-btn" id="reporteDrawerBtn">🐞 Reportar Error</button>
+    <button class="drawer-nav-btn hidden" id="buzonDrawerBtn">📮 Buzón Anónimo</button>
+    <button class="drawer-nav-btn hidden" id="reporteDrawerBtn">🐞 Reportar Error</button>
   </div>
   <div class="staff-bottom-group">
     <button class="drawer-nav-btn" id="staffDrawerBtn">🛠️ Staff</button>
@@ -430,7 +430,7 @@
       <div class="form-group"><label>Rango vocal</label><input type="text" id="me_rango"></div>
       <div class="form-group"><label>Cumpleaños</label><input type="date" id="me_cumple"></div>
       <div class="form-group"><label>Miembro desde</label><input type="date" id="me_ingreso"></div>
-      <div class="form-group"><label>¿Número de generación? (ej: 3)</label><input type="number" id="me_generacion" min="1" step="1" placeholder="3"></div>
+      <div class="form-group"><label>¿Número de generación? (ej: 3, o 0 para Fundadora)</label><input type="number" id="me_generacion" min="0" step="1" placeholder="3"></div>
       <!-- 3 grupos independientes de multi-selección (cada uno usa bindToggleGroup/setToggleGroup/getToggleGroupValues por su cuenta):
            Roles = canto/doblaje | Rango = fundadora/lider/staff | Especial = conserje/inactivo -->
       <div class="form-group">
@@ -508,8 +508,8 @@
       <div class="form-group">
         <label>Tipo de participación</label>
         <div class="switch-pill" id="af_participacionSwitch">
-          <button type="button" data-val="opcional">✅ Opcional</button>
-          <button type="button" data-val="obligatoria">⚠️ Obligatoria</button>
+          <button type="button" data-val="opcional">✅ Semanal</button>
+          <button type="button" data-val="obligatoria">⚠️ Oficial</button>
           <button type="button" data-val="purga">☠️ Purga</button>
         </div>
       </div>
@@ -617,9 +617,9 @@ function estadoActividad(fechaFinStr){
   return {clase:"status-green", texto:"🟢 Actividad Activa"};
 }
 function participacionTag(p){
-  if(p==="obligatoria") return `<span class="part-tag part-obligatoria">⚠️ Obligatoria</span>`;
+  if(p==="obligatoria") return `<span class="part-tag part-obligatoria">⚠️ Oficial</span>`;
   if(p==="purga") return `<span class="part-tag part-purga">☠️ Purga</span>`;
-  return `<span class="part-tag part-opcional">✅ Opcional</span>`;
+  return `<span class="part-tag part-opcional">✅ Semanal</span>`;
 }
 function categoriaTag(c){
   if(c==="canto") return `<span class="cat-tag">🎤 Canto</span>`;
@@ -683,12 +683,15 @@ function toDateInput(v){
 function fmtGeneracion(n){
   const num=parseInt(n,10);
   if(isNaN(num)) return "—";
+  if(num===0) return "Generación Fundadora";
   return num+"° Generación";
 }
 const ORDINALES_GENERACION = ["primera","segunda","tercera","cuarta","quinta","sexta","séptima","octava","novena","décima","undécima","duodécima"];
 function palabraGeneracion(n){
   const num=parseInt(n,10);
-  if(isNaN(num)||num<1) return "";
+  if(isNaN(num)) return "";
+  if(num===0) return "fundadora fundacion fundación creadores creadoras inicio inicial origen";
+  if(num<1) return "";
   return ORDINALES_GENERACION[num-1]||"";
 }
 function mesDeCumple(v){
@@ -936,6 +939,7 @@ async function cargarDatos(){
     if(!DB || typeof DB!=="object" || !Array.isArray(DB.actividades) || !Array.isArray(DB.anuario)) throw new Error("Respuesta inesperada del servidor: "+JSON.stringify(DB).slice(0,200));
     nivel = DB.nivel || (staffPin ? "staff" : (memberPin ? "miembro" : "publico"));
     aplicarEnlacesPublicos();
+    aplicarVisibilidadBuzon();
     renderActividades(); renderAnuario(); renderMiembros();
   }
   catch(err){
@@ -954,6 +958,14 @@ function aplicarEnlacesPublicos(){
   if(regalito) btnRegalito.href = regalito;
   // Oculto para visitantes sin clave; visible para Miembro y Staff.
   btnRegalito.classList.toggle("hidden", nivel==="publico");
+}
+
+// Buzón Anónimo y Reportar Error: ocultos solo para el público sin clave. Visibles para
+// Miembro y Staff (misma regla que el botón de Regalito, arriba).
+function aplicarVisibilidadBuzon(){
+  const esPublico = nivel==="publico";
+  document.getElementById("buzonDrawerBtn").classList.toggle("hidden", esPublico);
+  document.getElementById("reporteDrawerBtn").classList.toggle("hidden", esPublico);
 }
 
 /* ---------- actividades ---------- */
@@ -1269,7 +1281,7 @@ function openMemberModal(id){
       <tr><td>🎵 Rango Vocal</td><td>${escHtml(m.rangoVocal||"—")}</td></tr>
       <tr><td>🎂 Cumpleaños</td><td>${fmtCumple(m.cumpleanos)||"—"}</td></tr>
       <tr><td>📅 Miembro desde</td><td>${fmtFecha(m.fechaIngreso)||"—"}</td></tr>
-      ${m.generacionNum?`<tr><td>🌱 Generación</td><td>${fmtGeneracion(m.generacionNum)}</td></tr>`:""}
+      ${(m.generacionNum!==undefined && m.generacionNum!==null && m.generacionNum!=="")?`<tr><td>🌱 Generación</td><td>${fmtGeneracion(m.generacionNum)}</td></tr>`:""}
     </table>
     <div class="platform-row">
       ${m.usuarioSmule?`<a class="platform-btn" target="_blank" href="${escAttr(toSmuleUrl(m.usuarioSmule))}">
@@ -1332,7 +1344,7 @@ function openMemberEditForm(id){
   document.getElementById("me_rango").value=m?m.rangoVocal||"":"";
   document.getElementById("me_cumple").value=m?toDateInputCumple(m.cumpleanos):"";
   document.getElementById("me_ingreso").value=m?toDateInput(m.fechaIngreso):"";
-  document.getElementById("me_generacion").value=m?(m.generacionNum||""):"";
+  document.getElementById("me_generacion").value=m?(m.generacionNum!==undefined&&m.generacionNum!==null?m.generacionNum:""):"";
   const roles=[]; if(m&&esTrue(m.canto)) roles.push("canto"); if(m&&esTrue(m.doblaje)) roles.push("doblaje");
   setToggleGroup("me_rolesToggle", roles);
   const rango=[]; if(m&&esTrue(m.fundadora)) rango.push("fundadora"); if(m&&esTrue(m.lider)) rango.push("lider"); if(m&&esTrue(m.staff)) rango.push("staff");
