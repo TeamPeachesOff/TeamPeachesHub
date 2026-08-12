@@ -1773,7 +1773,10 @@ async function initGlobo(){
   // loop de render, así que basta con activarlo acá para que el rotar/zoom se sienta fluido.
   globo.controls().enableDamping=true;
   globo.controls().dampingFactor=0.12;
-  globo.controls().zoomSpeed=0.7;
+  // 0.35 = la mitad de antes (0.7). zoomSpeed es lineal: con la mitad, hacen falta el doble de
+  // scrolls/pellizcos para llegar al mismo nivel de zoom, sin tocar para nada el tamaño máximo o
+  // mínimo al que se puede llegar — solo qué tan rápido se llega ahí.
+  globo.controls().zoomSpeed=0.35;
   globo.controls().rotateSpeed=0.6;
   // Cap del pixel ratio: en celulares de gama alta (DPR 3-4) forzar a WebGL a renderizar a esa
   // densidad completa en cada frame de arrastre/zoom es lo que más pesa y se siente "trabado" — se
