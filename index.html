@@ -217,6 +217,8 @@
   .mundo-topbar{display:flex;align-items:center;gap:10px;padding:12px 14px;background:rgba(10,14,25,0.85);backdrop-filter:blur(6px);z-index:5;}
   .mundo-back-btn{flex-shrink:0;padding:10px 14px;border-radius:12px;background:var(--card-bg-2);color:var(--text);font-weight:700;font-size:13px;}
   .mundo-topbar input{flex:1;padding:10px 12px;border-radius:12px;border:1px solid rgba(255,255,255,0.12);background:rgba(255,255,255,0.06);color:#fff;font-size:13.5px;}
+  .mundo-zoom-btns{flex-shrink:0;display:flex;gap:6px;}
+  .mundo-zoom-btns button{width:38px;height:38px;border-radius:12px;background:var(--card-bg-2);color:var(--text);font-weight:700;font-size:18px;line-height:1;display:flex;align-items:center;justify-content:center;}
   .mundo-resultados{position:absolute;top:62px;left:14px;right:14px;z-index:6;background:var(--card-bg);border-radius:14px;max-height:50vh;overflow-y:auto;box-shadow:0 8px 24px rgba(0,0,0,0.5);}
   .mundo-resultado-item{display:flex;align-items:center;gap:10px;padding:10px 12px;border-bottom:1px solid rgba(255,255,255,0.06);cursor:pointer;}
   .mundo-resultado-item:last-child{border-bottom:none;}
@@ -230,16 +232,13 @@
      centrarlo en su posición de pantalla) nunca choque con nuestro offset — ese vive en el hijo
      .mundo-avatar-pin de acá abajo, que three.js jamás toca. */
   .mundo-pin-wrap{width:0;height:0;pointer-events:none;}
-  /* El offset (--off-x/--off-y) va ANTES del scale en la lista de transform a propósito: en CSS,
-     cada función de la lista transforma el sistema de coordenadas que le dejó la anterior, así que
-     poner scale() al final hace que el offset quede en píxeles FÍSICOS constantes (no se multiplica
-     por el zoom), mientras la foto en sí sigue creciendo con --zoom-scale como siempre. Antes el
-     offset SÍ se multiplicaba por el zoom (scale antes que el translate del offset) — eso hacía que
-     cuanto más zoom, más lejos del centro quedaban las fotos de grupos grandes, hasta salirse de
-     pantalla por completo. Ver también MAX_FOOTPRINT_PX en repartirEnPantalla (index.html JS). */
-  .mundo-avatar-pin{width:28px;height:28px;border-radius:50%;overflow:hidden;border:2px solid var(--peach-1);box-shadow:0 0 10px rgba(255,143,177,0.7);cursor:pointer;transform: translate(-50%,-50%) scale(var(--zoom-scale,1)) translate(var(--off-x,0px),var(--off-y,0px));transition:transform .12s;touch-action:none;-webkit-user-select:none;user-select:none;pointer-events:auto;}
+  /* El offset (--off-x/--off-y) va DESPUÉS del scale en la lista de transform a propósito: así el
+     offset queda multiplicado por --zoom-scale — se separan al hacer zoom in, se juntan al hacer
+     zoom out. (Antes estaba en el orden opuesto — offset en píxeles físicos constantes, sin
+     relación con el zoom — y quedó exactamente al revés de lo pedido.) */
+  .mundo-avatar-pin{width:28px;height:28px;border-radius:50%;overflow:hidden;border:2px solid var(--peach-1);box-shadow:0 0 10px rgba(255,143,177,0.7);cursor:pointer;transform:translate(-50%,-50%) scale(var(--zoom-scale,1)) translate(var(--off-x,0px),var(--off-y,0px));transition:transform .12s;touch-action:none;-webkit-user-select:none;user-select:none;pointer-events:auto;}
   .mundo-avatar-pin img{width:100%;height:100%;object-fit:cover;display:block;-webkit-user-drag:none;pointer-events:none;}
-  .mundo-avatar-pin.pressing{transform: translate(-50%,-50%) scale(calc(var(--zoom-scale,1) * 1.25)) translate(var(--off-x,0px),var(--off-y,0px));}
+  .mundo-avatar-pin.pressing{transform:translate(-50%,-50%) scale(calc(var(--zoom-scale,1) * 1.25)) translate(var(--off-x,0px),var(--off-y,0px));}
   .mundo-avatar-tip{position:absolute;bottom:-20px;left:50%;transform:translateX(-50%);white-space:nowrap;font-size:10.5px;background:rgba(0,0,0,0.7);color:#fff;padding:2px 6px;border-radius:6px;pointer-events:none;}
   /* Capa de cometas: vive encima del canvas WebGL del globo pero nunca intercepta toques/drag
      (pointer-events:none), así nunca compite con el tap/drag de los pines o la cámara. */
@@ -439,6 +438,10 @@
     <div class="mundo-topbar">
       <button id="closeMundoBtn" class="mundo-back-btn">← Volver</button>
       <input type="text" id="searchMundo" placeholder="🔍 Buscar miembro en el globo...">
+      <div class="mundo-zoom-btns">
+        <button id="mundoZoomInBtn" aria-label="Acercar zoom" title="Acercar">+</button>
+        <button id="mundoZoomOutBtn" aria-label="Alejar zoom" title="Alejar">−</button>
+      </div>
     </div>
     <div id="mundoResultados" class="mundo-resultados hidden"></div>
     <div id="globeContainer"></div>
@@ -1433,6 +1436,17 @@ document.getElementById("closeMundoBtn").onclick=()=>{
   if(separacionPinesTimer){ clearInterval(separacionPinesTimer); separacionPinesTimer=null; }
   mostrarViewMiembros();
 };
+// Zoom manual (botones +/-): multiplica/divide la altitud actual de la cámara en vez de resetear
+// la vista, así el zoom manual respeta hacia dónde estás mirando. 0.3/4 de altitud son los mismos
+// límites razonables usados en otras partes (ver ALTITUD_REF/ESCALA_MIN/ESCALA_MAX en initGlobo).
+function zoomManual(factor){
+  if(!globoInstancia) return;
+  const pov=globoInstancia.pointOfView();
+  const nuevaAltitud=Math.min(4, Math.max(0.3, pov.altitude*factor));
+  globoInstancia.pointOfView({lat:pov.lat, lng:pov.lng, altitude:nuevaAltitud}, 400);
+}
+document.getElementById("mundoZoomInBtn").onclick=()=>zoomManual(0.75);
+document.getElementById("mundoZoomOutBtn").onclick=()=>zoomManual(1/0.75);
 async function abrirMundoPeaches(){
   if(nivel==="publico"){ toast("Necesitas modo Miembro o Staff"); return; }
   document.getElementById("viewMiembros").classList.add("hidden");
@@ -1544,7 +1558,7 @@ function agruparPorProximidad(lista){
 //
 // AVATAR_DIAM_PX tiene que ser el mismo valor que width/height de .mundo-avatar-pin en el CSS —
 // si se cambia el tamaño de la foto ahí, hay que actualizarlo acá también.
-const AVATAR_DIAM_PX=30;
+const AVATAR_DIAM_PX=28;
 // Pedido: la distancia MÍNIMA entre el centro de 2 fotos de un mismo grupo = radio/2 + radio =
 // 1.5×radio = 0.75×diámetro (3/4 del diámetro).
 const PASO_MIN=AVATAR_DIAM_PX*0.75;
