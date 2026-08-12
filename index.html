@@ -1701,20 +1701,20 @@ function texturaEstrellas(){
   const fondo=ctx.createLinearGradient(0,0,0,H);
   fondo.addColorStop(0,"#0c0416"); fondo.addColorStop(1,"#180a24");
   ctx.fillStyle=fondo; ctx.fillRect(0,0,W,H);
-  for(let i=0;i<7500;i++){ // estrellas chicas blancas, la mayoría (x5 que antes y más chicas — más sensación de espacio)
-    const x=Math.random()*W, y=Math.random()*H, r=Math.random()*0.6+0.1;
+  for(let i=0;i<30000;i++){ // estrellas chicas blancas, la mayoría (x4 en cantidad y más chicas — se ven más lejos)
+    const x=Math.random()*W, y=Math.random()*H, r=Math.random()*0.38+0.06;
     ctx.beginPath(); ctx.arc(x,y,r,0,Math.PI*2);
     ctx.fillStyle=`rgba(255,255,255,${(Math.random()*0.7+0.25).toFixed(2)})`;
     ctx.fill();
   }
-  for(let i=0;i<1200;i++){ // estrellitas rosa para que combine con la paleta
-    const x=Math.random()*W, y=Math.random()*H, r=Math.random()*0.8+0.15;
+  for(let i=0;i<4800;i++){ // estrellitas rosa para que combine con la paleta (x4 y más chicas)
+    const x=Math.random()*W, y=Math.random()*H, r=Math.random()*0.5+0.1;
     ctx.beginPath(); ctx.arc(x,y,r,0,Math.PI*2);
     ctx.fillStyle=`rgba(255,143,177,${(Math.random()*0.55+0.3).toFixed(2)})`;
     ctx.fill();
   }
-  for(let i=0;i<160;i++){ // un puñado de estrellas más grandes/brillantes para dar profundidad
-    const x=Math.random()*W, y=Math.random()*H, r=Math.random()*0.9+0.9;
+  for(let i=0;i<640;i++){ // puñado de estrellas más grandes/brillantes para dar profundidad (x4 y algo más chicas)
+    const x=Math.random()*W, y=Math.random()*H, r=Math.random()*0.55+0.55;
     ctx.beginPath(); ctx.arc(x,y,r,0,Math.PI*2);
     ctx.fillStyle=`rgba(255,255,255,${(Math.random()*0.3+0.65).toFixed(2)})`;
     ctx.fill();
