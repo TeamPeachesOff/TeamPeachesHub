@@ -1070,13 +1070,21 @@ function renderActividades(){
   });
   activas=activas.slice().sort((a,b)=>compararFechaCantoFirst(a,b,"fechaFin"));
   if(activas.length===0){ feed.innerHTML=`<div class="empty-state">No hay actividades con este filtro. ${staffPin?'¡Agrega una!':''}</div>`; return; }
-  feed.innerHTML=activas.map(a=>cardHTML(a)).join("");
+  // Antes cardHTML() filtraba TODO DB.entregas por cada actividad (O(actividades x entregas)).
+  // Agrupamos una sola vez acá y le pasamos a cada card ya listo su propio grupo (O(entregas) total).
+  const entregasPorActividad=new Map();
+  DB.entregas.forEach(e=>{
+    const k=String(e.idActividad);
+    if(!entregasPorActividad.has(k)) entregasPorActividad.set(k,[]);
+    entregasPorActividad.get(k).push(e);
+  });
+  feed.innerHTML=activas.map(a=>cardHTML(a, entregasPorActividad.get(String(a.id))||[])).join("");
   attachCardEvents(); bindAvatarFallbacks();
 }
 
-function cardHTML(a){
+function cardHTML(a, entregasDeEsta){
   const estado=estadoActividad(a.fechaFin);
-  const entregasDeEsta=DB.entregas.filter(e=>String(e.idActividad)===String(a.id));
+  entregasDeEsta = entregasDeEsta || DB.entregas.filter(e=>String(e.idActividad)===String(a.id));
   const fechasTxt=`${fmtFecha(a.fechaInicio)} → ${fmtFecha(a.fechaFin)}`;
   return `
   <div class="card" data-id="${a.id}">
@@ -2484,8 +2492,24 @@ function escAttr(str){ return escHtml(str); }
   const claveGuardada = localStorage.getItem("tph_member_clave");
   if (claveGuardada) {
     document.getElementById("memberPinInput").value = claveGuardada;
-    await verificarClaveMiembro(true); // silencioso: sin toasts ni mensajes de error si ya no sirve; ya recarga los datos si sigue siendo válida
-    if (!memberPin) await cargarDatos(); // la clave guardada ya no sirve: cargar igual la versión pública
+    // OPTIMIZACIÓN DE ARRANQUE: antes esto hacía verificarClaveMiembro() (un POST solo para
+    // validar) y DESPUÉS cargarDatos() (un GET para traer los datos) EN SECUENCIA — dos viajes
+    // de red completos, uno detrás del otro, antes de poder mostrar nada. Como el backend YA
+    // valida la clave en cada doGet (por eso manda "nivel": "miembro"/"publico"/"staff"), alcanza
+    // con mandarla directo en la ÚNICA carga de datos: un solo viaje de red hace las dos cosas
+    // a la vez (valida Y trae los datos completos si es válida).
+    memberPin = claveGuardada;
+    await cargarDatos();
+    if (nivel === "miembro") {
+      document.getElementById("memberStatusBadge").style.display = "flex";
+    } else {
+      // La clave guardada ya no sirve: el propio GET que ya se hizo arriba, al no reconocer la
+      // clave, YA vino con "nivel":"publico" y los datos públicos (el backend filtra ahí mismo,
+      // sin PIN válido). O sea que la pantalla ya está mostrando lo correcto — solo falta limpiar
+      // el estado local, sin gastar un segundo viaje de red pidiendo lo mismo otra vez.
+      memberPin = null;
+      localStorage.removeItem("tph_member_clave");
+    }
   } else {
     await cargarDatos();
   }
