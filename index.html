@@ -237,7 +237,7 @@
      offset SÍ se multiplicaba por el zoom (scale antes que el translate del offset) — eso hacía que
      cuanto más zoom, más lejos del centro quedaban las fotos de grupos grandes, hasta salirse de
      pantalla por completo. Ver también MAX_FOOTPRINT_PX en repartirEnPantalla (index.html JS). */
-  .mundo-avatar-pin{width:42px;height:42px;border-radius:50%;overflow:hidden;border:2px solid var(--peach-1);box-shadow:0 0 10px rgba(255,143,177,0.7);cursor:pointer;transform:translate(-50%,-50%) translate(var(--off-x,0px),var(--off-y,0px)) scale(var(--zoom-scale,1));transition:transform .12s;touch-action:none;-webkit-user-select:none;user-select:none;pointer-events:auto;}
+  .mundo-avatar-pin{width:28px;height:28px;border-radius:50%;overflow:hidden;border:2px solid var(--peach-1);box-shadow:0 0 10px rgba(255,143,177,0.7);cursor:pointer;transform:translate(-50%,-50%) translate(var(--off-x,0px),var(--off-y,0px)) scale(var(--zoom-scale,1));transition:transform .12s;touch-action:none;-webkit-user-select:none;user-select:none;pointer-events:auto;}
   .mundo-avatar-pin img{width:100%;height:100%;object-fit:cover;display:block;-webkit-user-drag:none;pointer-events:none;}
   .mundo-avatar-pin.pressing{transform:translate(-50%,-50%) translate(var(--off-x,0px),var(--off-y,0px)) scale(calc(var(--zoom-scale,1) * 1.25));}
   .mundo-avatar-tip{position:absolute;bottom:-20px;left:50%;transform:translateX(-50%);white-space:nowrap;font-size:10.5px;background:rgba(0,0,0,0.7);color:#fff;padding:2px 6px;border-radius:6px;pointer-events:none;}
@@ -1413,7 +1413,7 @@ async function borrarCastigos(idMiembro){ if(!await confirmarAccion("¿Poner fal
 /* ---------- Mundo Peaches (globo 3D, Miembro+Staff) ---------- */
 let globoInstancia = null;
 let globoLibCargada = false;
-let arcoLibTimer = null, cometaLibTimer = null; // timers de fondo, se detienen al cerrar la vista
+let arcoLibTimer = null, cometaLibTimer = null, separacionPinesTimer = null; // timers de fondo, se detienen al cerrar la vista
 // Se carga desde CDN solo la primera vez que alguien abre Mundo Peaches, así el resto de la
 // app (incluida la vista pública) no paga el peso de una librería 3D que casi nadie va a usar.
 function cargarLibreriaGlobo(){
@@ -1430,6 +1430,7 @@ document.getElementById("mundoPeachesBtn").onclick=abrirMundoPeaches;
 document.getElementById("closeMundoBtn").onclick=()=>{
   document.getElementById("viewMundo").classList.add("hidden");
   detenerArcosAleatorios(); detenerCometas(); // no seguir animando/consumiendo batería fuera de la vista
+  if(separacionPinesTimer){ clearInterval(separacionPinesTimer); separacionPinesTimer=null; }
   mostrarViewMiembros();
 };
 async function abrirMundoPeaches(){
@@ -1539,50 +1540,74 @@ function agruparPorProximidad(lista){
 // (ver --off-x/--off-y en crearPinMiembro y el transform de .mundo-avatar-pin). Un offset en
 // píxeles de pantalla es SIEMPRE la misma cantidad de píxeles en pantalla, sin importar el zoom,
 // la altitud de cámara, ni dónde caiga el hub en el globo — cero cálculo de proyección, cero
-// extrapolación, cero forma de que falle. Como pedido: la separación (PASO_PX) es el diámetro del
-// avatar (42px) + margen, es decir la suma de ambos radios, para que dos fotos nunca se toquen.
+// extrapolación, cero forma de que falle.
+//
+// AVATAR_DIAM_PX tiene que ser el mismo valor que width/height de .mundo-avatar-pin en el CSS —
+// si se cambia el tamaño de la foto ahí, hay que actualizarlo acá también.
+const AVATAR_DIAM_PX=28;
+// Pedido: la distancia MÍNIMA entre el centro de 2 fotos de un mismo grupo = radio/2 + radio =
+// 1.5×radio = 0.75×diámetro (3/4 del diámetro).
+const PASO_MIN=AVATAR_DIAM_PX*0.75;
+// Pedido: la distancia MÁXIMA entre 2 personas de una misma zona = 1 diámetro + 10% del diámetro.
+const PASO_MAX=AVATAR_DIAM_PX*1.1;
 function repartirEnPantalla(grupos){
-  const PASO_PX_BASE=56; // separación ideal en pixeles-base entre cada foto (42px de avatar + margen)
-  const PASO_PX_MIN=22;  // piso: por debajo de esto ya no vale la pena achicar más, se acepta algo
-                          // de solape en grupos gigantescos antes que perder gente de vista
   // MAX_FOOTPRINT_PX: ancho/alto MÁXIMO que puede ocupar la cuadrícula de un solo grupo, en
-  // pixeles-base. Sin este tope, un grupo de 50+ personas (ej. un fallback genérico de país que
+  // pixeles. Sin este tope, un grupo de 50+ personas (ej. un fallback genérico de país que
   // comparte cientos de miembros, o varios hubs fusionados) arma una cuadrícula cada vez más
-  // grande sin límite — y como el offset se ve afectado por el zoom (ver CSS de .mundo-avatar-pin,
-  // ahora desacoplado a propósito, ver comentario ahí), esas fotos de los bordes terminaban
-  // literalmente fuera del área visible, sin forma de verlas ni haciendo zoom. Con este tope, la
-  // separación entre fotos se va achicando a medida que el grupo crece (en vez de mantenerse fija),
-  // así el grupo entero SIEMPRE cabe en un área acotada — como mucho se ven un poco más apretadas,
-  // pero nunca desaparecen de pantalla.
+  // grande sin límite, y esas fotos de los bordes podrían terminar fuera del área visible. Con
+  // este tope, la separación de grupos gigantescos se achica por debajo de PASO_MAX (nunca por
+  // debajo de PASO_MIN) para que el grupo entero SIEMPRE quepa en un área acotada.
   const MAX_FOOTPRINT_PX=240;
   const out=[];
   grupos.forEach(grupo=>{
     const hubLat=Number(grupo[0].lat), hubLng=Number(grupo[0].lng);
     if(grupo.length===1){
       const m=grupo[0];
-      out.push(Object.assign({}, m, {_lat:hubLat, _lng:hubLng, _offX:0, _offY:0}));
+      out.push(Object.assign({}, m, {_lat:hubLat, _lng:hubLng, _offUnitX:0, _offUnitY:0, _pasoTarget:PASO_MAX}));
       return;
     }
     const filas=distribuirEnFilas(grupo.length);
     const totalFilas=filas.length, offsetFilaInicial=-(totalFilas-1)/2;
     const maxCols=Math.max(...filas);
     const dimMax=Math.max(totalFilas, maxCols);
-    const paso=Math.max(PASO_PX_MIN, Math.min(PASO_PX_BASE, MAX_FOOTPRINT_PX/dimMax));
+    const pasoTarget=Math.max(PASO_MIN, Math.min(PASO_MAX, MAX_FOOTPRINT_PX/dimMax));
     let idx=0;
     filas.forEach((cantidad,fi)=>{
-      const offY=(offsetFilaInicial+fi)*paso;
+      const unitY=offsetFilaInicial+fi;
       const offColInicial=-(cantidad-1)/2;
       for(let c=0;c<cantidad;c++){
         const m=grupo[idx++];
-        const offX=(offColInicial+c)*paso;
+        const unitX=offColInicial+c;
         // OJO: _lat/_lng son SIEMPRE el hub real (misma ubicación geográfica para todo el grupo).
-        // _offX/_offY es el offset en píxeles FÍSICOS (constantes, ver CSS — ya NO se multiplican
-        // por el zoom) que separa a cada quien dentro de esa misma ubicación.
-        out.push(Object.assign({}, m, {_lat:hubLat, _lng:hubLng, _offX:offX, _offY:offY}));
+        // _offUnitX/_offUnitY son coordenadas de grilla SIN unidad (-1, 0, 1, ...) — el paso en
+        // píxeles real que las convierte a --off-x/--off-y no se fija acá, se anima en vivo (ver
+        // iniciarSeparacionPines), arrancando en PASO_MIN y abriéndose lento hasta _pasoTarget.
+        out.push(Object.assign({}, m, {_lat:hubLat, _lng:hubLng, _offUnitX:unitX, _offUnitY:unitY, _pasoTarget:pasoTarget}));
       }
     });
   });
   return out;
+}
+// Anima la apertura de cada grupo: arranca en PASO_MIN (3/4 del diámetro) y se va alejando lento
+// hasta el _pasoTarget de cada grupo (hasta diámetro+10%, ver repartirEnPantalla). Pedido: la
+// velocidad debe ser MUY lenta — por eso el intervalo corre a 20 pasos/seg (no 60fps como el resto
+// de las animaciones de la página) y cada paso solo avanza un 10% de lo que falta (igual que el
+// dampingFactor de la cámara, mismo patrón que ya se usa en todo el código para movimientos suaves).
+// Con eso, abrir un grupo del todo tarda unos 2-3 segundos, bien perceptible, no instantáneo.
+function iniciarSeparacionPines(datos){
+  if(separacionPinesTimer){ clearInterval(separacionPinesTimer); separacionPinesTimer=null; }
+  const activos=datos.filter(m=>m._pinEl && (m._offUnitX||m._offUnitY)).map(m=>({m, actual:PASO_MIN}));
+  if(!activos.length) return;
+  separacionPinesTimer=setInterval(()=>{
+    let sigue=false;
+    activos.forEach(a=>{
+      const diff=a.m._pasoTarget-a.actual;
+      if(Math.abs(diff)>0.05){ a.actual+=diff*0.1; sigue=true; } else { a.actual=a.m._pasoTarget; }
+      a.m._pinEl.style.setProperty("--off-x", (a.m._offUnitX*a.actual)+"px");
+      a.m._pinEl.style.setProperty("--off-y", (a.m._offUnitY*a.actual)+"px");
+    });
+    if(!sigue){ clearInterval(separacionPinesTimer); separacionPinesTimer=null; }
+  }, 50);
 }
 let _arcoAleatorioActual=[];
 function actualizarCapaArcos(globo){
@@ -1772,11 +1797,15 @@ async function initGlobo(){
   // aplicarlo de golpe — el globo internamente ya llama a controls.update() en cada frame de su
   // loop de render, así que basta con activarlo acá para que el rotar/zoom se sienta fluido.
   globo.controls().enableDamping=true;
-  globo.controls().dampingFactor=0.12;
-  // 0.35 = la mitad de antes (0.7). zoomSpeed es lineal: con la mitad, hacen falta el doble de
-  // scrolls/pellizcos para llegar al mismo nivel de zoom, sin tocar para nada el tamaño máximo o
-  // mínimo al que se puede llegar — solo qué tan rápido se llega ahí.
-  globo.controls().zoomSpeed=0.35;
+  // dampingFactor sube de 0.12 a 0.22: esto es lo que controla qué tan rápido la cámara "alcanza"
+  // el objetivo después de cada scroll/pellizco (no cuánto se mueve — eso es zoomSpeed, abajo). Con
+  // 0.12 tardaba varios frames en reaccionar y se sentía pegado/lento, sobre todo con zoomSpeed ya
+  // bajo. Con 0.22 reacciona bastante más al toque, sin perder el suavizado (0=sin inercia en
+  // absoluto y se siente "a trompicones", 1=instantáneo sin transición).
+  globo.controls().dampingFactor=0.22;
+  // zoomSpeed es lineal: 0.20 (antes 0.35) significa que hacen falta bastantes más scrolls/pellizcos
+  // para llegar al mismo nivel de zoom, sin tocar el tamaño máximo/mínimo al que se puede llegar.
+  globo.controls().zoomSpeed=0.20;
   globo.controls().rotateSpeed=0.6;
   // Cap del pixel ratio: en celulares de gama alta (DPR 3-4) forzar a WebGL a renderizar a esa
   // densidad completa en cada frame de arrastre/zoom es lo que más pesa y se siente "trabado" — se
@@ -1799,6 +1828,9 @@ async function initGlobo(){
   const grupos=agruparPorProximidad(miembrosConUbicacion());
   const datos=repartirEnPantalla(grupos);
   globo.htmlElementsData(datos);
+  // Para acá, htmlElementsData ya corrió crearPinMiembro para cada entrada de "datos" (el digest
+  // de globe.gl crea los objetos en la misma llamada), así que todas tienen ._pinEl seteado.
+  iniciarSeparacionPines(datos);
   const ALTITUD_REF=2.4, ESCALA_MIN=0.6, ESCALA_MAX=2.8;
   let rafPendiente=false;
   // Antes: factor = altitud/ALTITUD_REF — eso significa que al hacer zoom IN (menor altitud) el
@@ -1835,12 +1867,13 @@ function crearPinMiembro(m){
   wrap.className="mundo-pin-wrap";
   const el=document.createElement("div");
   el.className="mundo-avatar-pin";
-  // Offset de desagrupamiento en píxeles físicos (ver repartirEnPantalla) — el CSS ya NO lo
-  // multiplica por el zoom (ver comentario en el CSS del .mundo-avatar-pin).
-  el.style.setProperty("--off-x", (m._offX||0)+"px");
-  el.style.setProperty("--off-y", (m._offY||0)+"px");
+  // Arranca en PASO_MIN (separación mínima pedida) — iniciarSeparacionPines la va abriendo lento
+  // hasta _pasoTarget después de esto, actualizando estas mismas variables en vivo.
+  el.style.setProperty("--off-x", ((m._offUnitX||0)*PASO_MIN)+"px");
+  el.style.setProperty("--off-y", ((m._offUnitY||0)*PASO_MIN)+"px");
   el.innerHTML=`<img src="${escAttr(m.avatarUrl||LOGO_DEFAULT)}" alt="" draggable="false"><div class="mundo-avatar-tip">${escHtml(m.nombre||"")}${m.ciudadResuelta?(" · "+escHtml(m.ciudadResuelta)):""}</div>`;
   wrap.appendChild(el);
+  m._pinEl=el; // referencia para poder animar --off-x/--off-y después (ver iniciarSeparacionPines)
   let holdTimer=null, mantuvo=false;
   // Dos fixes clave para que el tap funcione siempre:
   // 1) pointer-events:auto explícito en el CSS del pin — Globe.gl envuelve los htmlElement en un
