@@ -225,9 +225,21 @@
   .mundo-resultado-item .mr-city{font-size:11.5px;color:var(--text-dim);}
   #globeContainer{flex:1;position:relative;touch-action:none;}
   .mundo-loading{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);color:var(--text-dim);font-size:14px;z-index:4;}
-  .mundo-avatar-pin{width:42px;height:42px;border-radius:50%;overflow:hidden;border:2px solid var(--peach-1);box-shadow:0 0 10px rgba(255,143,177,0.7);cursor:pointer;transform:translate(-50%,-50%) scale(var(--zoom-scale,1)) translate(var(--off-x,0px),var(--off-y,0px));transition:transform .12s;touch-action:none;-webkit-user-select:none;user-select:none;pointer-events:auto;}
+  /* Wrapper que le entregamos a globe.gl (ver crearPinMiembro): sin tamaño ni transform propio a
+     propósito, para que el style.transform inline que three.js le pisa en cada frame (para
+     centrarlo en su posición de pantalla) nunca choque con nuestro offset — ese vive en el hijo
+     .mundo-avatar-pin de acá abajo, que three.js jamás toca. */
+  .mundo-pin-wrap{width:0;height:0;pointer-events:none;}
+  /* El offset (--off-x/--off-y) va ANTES del scale en la lista de transform a propósito: en CSS,
+     cada función de la lista transforma el sistema de coordenadas que le dejó la anterior, así que
+     poner scale() al final hace que el offset quede en píxeles FÍSICOS constantes (no se multiplica
+     por el zoom), mientras la foto en sí sigue creciendo con --zoom-scale como siempre. Antes el
+     offset SÍ se multiplicaba por el zoom (scale antes que el translate del offset) — eso hacía que
+     cuanto más zoom, más lejos del centro quedaban las fotos de grupos grandes, hasta salirse de
+     pantalla por completo. Ver también MAX_FOOTPRINT_PX en repartirEnPantalla (index.html JS). */
+  .mundo-avatar-pin{width:42px;height:42px;border-radius:50%;overflow:hidden;border:2px solid var(--peach-1);box-shadow:0 0 10px rgba(255,143,177,0.7);cursor:pointer;transform:translate(-50%,-50%) translate(var(--off-x,0px),var(--off-y,0px)) scale(var(--zoom-scale,1));transition:transform .12s;touch-action:none;-webkit-user-select:none;user-select:none;pointer-events:auto;}
   .mundo-avatar-pin img{width:100%;height:100%;object-fit:cover;display:block;-webkit-user-drag:none;pointer-events:none;}
-  .mundo-avatar-pin.pressing{transform:translate(-50%,-50%) scale(calc(var(--zoom-scale,1) * 1.25)) translate(var(--off-x,0px),var(--off-y,0px));}
+  .mundo-avatar-pin.pressing{transform:translate(-50%,-50%) translate(var(--off-x,0px),var(--off-y,0px)) scale(calc(var(--zoom-scale,1) * 1.25));}
   .mundo-avatar-tip{position:absolute;bottom:-20px;left:50%;transform:translateX(-50%);white-space:nowrap;font-size:10.5px;background:rgba(0,0,0,0.7);color:#fff;padding:2px 6px;border-radius:6px;pointer-events:none;}
   /* Capa de cometas: vive encima del canvas WebGL del globo pero nunca intercepta toques/drag
      (pointer-events:none), así nunca compite con el tap/drag de los pines o la cámara. */
@@ -1480,7 +1492,15 @@ function agruparPorHub(lista){
 // Fix: dejar de usar el globo/cámara por completo para esto. La cercanía se decide con la
 // distancia geográfica REAL (lat/lng) — cero llamadas a la cámara, cero espera de frames, 100%
 // determinístico e instantáneo, sin importar cuántos miembros haya.
-const UMBRAL_CLUSTER_GRADOS = 1.5;
+//
+// OJO con este número: como la fusión usa union-find, es TRANSITIVA — si A cae cerca de B, y B
+// cerca de C, quedan los tres juntos aunque A y C estén lejos entre sí. Con un umbral grande
+// (1.5, ~166km) eso arma "súper-clusters" de decenas de personas de ciudades bien distintas
+// encadenadas sin querer, y esos grupos gigantes son justo los que no entraban en pantalla (ver
+// MAX_FOOTPRINT_PX más abajo). Con un umbral chico (~33km) solo se fusionan ciudades realmente
+// vecinas — sigue agarrando el caso original (SF/Oakland, códigos de área contiguos) sin arrastrar
+// medio país en cadena.
+const UMBRAL_CLUSTER_GRADOS = 0.3;
 
 function agruparPorProximidad(lista){
   const hubsPorCoordenada = agruparPorHub(lista).map(miembros=>({
@@ -1522,7 +1542,19 @@ function agruparPorProximidad(lista){
 // extrapolación, cero forma de que falle. Como pedido: la separación (PASO_PX) es el diámetro del
 // avatar (42px) + margen, es decir la suma de ambos radios, para que dos fotos nunca se toquen.
 function repartirEnPantalla(grupos){
-  const PASO_PX=56; // separación en pixeles de pantalla entre cada foto (42px de avatar + margen)
+  const PASO_PX_BASE=56; // separación ideal en pixeles-base entre cada foto (42px de avatar + margen)
+  const PASO_PX_MIN=22;  // piso: por debajo de esto ya no vale la pena achicar más, se acepta algo
+                          // de solape en grupos gigantescos antes que perder gente de vista
+  // MAX_FOOTPRINT_PX: ancho/alto MÁXIMO que puede ocupar la cuadrícula de un solo grupo, en
+  // pixeles-base. Sin este tope, un grupo de 50+ personas (ej. un fallback genérico de país que
+  // comparte cientos de miembros, o varios hubs fusionados) arma una cuadrícula cada vez más
+  // grande sin límite — y como el offset se ve afectado por el zoom (ver CSS de .mundo-avatar-pin,
+  // ahora desacoplado a propósito, ver comentario ahí), esas fotos de los bordes terminaban
+  // literalmente fuera del área visible, sin forma de verlas ni haciendo zoom. Con este tope, la
+  // separación entre fotos se va achicando a medida que el grupo crece (en vez de mantenerse fija),
+  // así el grupo entero SIEMPRE cabe en un área acotada — como mucho se ven un poco más apretadas,
+  // pero nunca desaparecen de pantalla.
+  const MAX_FOOTPRINT_PX=240;
   const out=[];
   grupos.forEach(grupo=>{
     const hubLat=Number(grupo[0].lat), hubLng=Number(grupo[0].lng);
@@ -1533,17 +1565,19 @@ function repartirEnPantalla(grupos){
     }
     const filas=distribuirEnFilas(grupo.length);
     const totalFilas=filas.length, offsetFilaInicial=-(totalFilas-1)/2;
+    const maxCols=Math.max(...filas);
+    const dimMax=Math.max(totalFilas, maxCols);
+    const paso=Math.max(PASO_PX_MIN, Math.min(PASO_PX_BASE, MAX_FOOTPRINT_PX/dimMax));
     let idx=0;
     filas.forEach((cantidad,fi)=>{
-      const offY=(offsetFilaInicial+fi)*PASO_PX;
+      const offY=(offsetFilaInicial+fi)*paso;
       const offColInicial=-(cantidad-1)/2;
       for(let c=0;c<cantidad;c++){
         const m=grupo[idx++];
-        const offX=(offColInicial+c)*PASO_PX;
+        const offX=(offColInicial+c)*paso;
         // OJO: _lat/_lng son SIEMPRE el hub real (misma ubicación geográfica para todo el grupo).
-        // _offX/_offY es el offset en píxeles-base (a escala de zoom 1x) que separa a cada quien
-        // dentro de esa misma ubicación — ver el CSS transform del pin, que multiplica esto por
-        // el zoom actual automáticamente.
+        // _offX/_offY es el offset en píxeles FÍSICOS (constantes, ver CSS — ya NO se multiplican
+        // por el zoom) que separa a cada quien dentro de esa misma ubicación.
         out.push(Object.assign({}, m, {_lat:hubLat, _lng:hubLng, _offX:offX, _offY:offY}));
       }
     });
@@ -1785,13 +1819,25 @@ async function initGlobo(){
 // Tap corto = la cámara enfoca y se acerca un poco a ese miembro. Mantener presionado (≈480ms) =
 // abre su tarjeta completa (el mismo modal de perfil que ya existe en Miembros).
 function crearPinMiembro(m){
+  // OJO — este wrapper es el que le entregamos a globe.gl, y ES EL QUE globe.gl (vía el
+  // CSS2DRenderer de three.js, por debajo) reposiciona en cada frame pisando directamente su
+  // style.transform inline (para centrarlo en el pixel de pantalla que le toca según _lat/_lng).
+  // Un estilo inline siempre gana por encima de cualquier regla CSS de clase — así que CUALQUIER
+  // transform que pongamos accá (incluido nuestro offset de desagrupamiento) se pierde en el
+  // siguiente frame. Por eso este wrapper se queda sin transform propio, vacío, invisible
+  // (sin tamaño ni estilo), y el offset real vive en un HIJO adentro, que three.js jamás toca.
+  // Esto es lo que causaba "solo se ve uno" en grupos de 2+ personas: todos compartían el mismo
+  // _lat/_lng, entonces todos terminaban con el offset pisado y apilados en el mismo pixel exacto.
+  const wrap=document.createElement("div");
+  wrap.className="mundo-pin-wrap";
   const el=document.createElement("div");
   el.className="mundo-avatar-pin";
-  // Offset de desagrupamiento en píxeles-base (ver repartirEnPantalla) — el transform en CSS lo
-  // multiplica automáticamente por el zoom actual, así que la separación crece junto con la foto.
+  // Offset de desagrupamiento en píxeles físicos (ver repartirEnPantalla) — el CSS ya NO lo
+  // multiplica por el zoom (ver comentario en el CSS del .mundo-avatar-pin).
   el.style.setProperty("--off-x", (m._offX||0)+"px");
   el.style.setProperty("--off-y", (m._offY||0)+"px");
   el.innerHTML=`<img src="${escAttr(m.avatarUrl||LOGO_DEFAULT)}" alt="" draggable="false"><div class="mundo-avatar-tip">${escHtml(m.nombre||"")}${m.ciudadResuelta?(" · "+escHtml(m.ciudadResuelta)):""}</div>`;
+  wrap.appendChild(el);
   let holdTimer=null, mantuvo=false;
   // Dos fixes clave para que el tap funcione siempre:
   // 1) pointer-events:auto explícito en el CSS del pin — Globe.gl envuelve los htmlElement en un
@@ -1813,7 +1859,7 @@ function crearPinMiembro(m){
   el.addEventListener("pointercancel", (e)=>{ e.stopPropagation(); clearTimeout(holdTimer); el.classList.remove("pressing"); });
   el.addEventListener("pointerleave", (e)=>{ e.stopPropagation(); clearTimeout(holdTimer); el.classList.remove("pressing"); });
   el.addEventListener("click", (e)=>{ e.stopPropagation(); }); // por si el navegador dispara click fantasma tras el pointerup
-  return el;
+  return wrap;
 }
 document.getElementById("searchMundo").addEventListener("input", e=>{
   const f=normalizar(e.target.value.trim());
