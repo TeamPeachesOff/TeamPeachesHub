@@ -237,9 +237,9 @@
      offset SÍ se multiplicaba por el zoom (scale antes que el translate del offset) — eso hacía que
      cuanto más zoom, más lejos del centro quedaban las fotos de grupos grandes, hasta salirse de
      pantalla por completo. Ver también MAX_FOOTPRINT_PX en repartirEnPantalla (index.html JS). */
-  .mundo-avatar-pin{width:28px;height:28px;border-radius:50%;overflow:hidden;border:2px solid var(--peach-1);box-shadow:0 0 10px rgba(255,143,177,0.7);cursor:pointer;transform:translate(-50%,-50%) translate(var(--off-x,0px),var(--off-y,0px)) scale(var(--zoom-scale,1));transition:transform .12s;touch-action:none;-webkit-user-select:none;user-select:none;pointer-events:auto;}
+  .mundo-avatar-pin{width:28px;height:28px;border-radius:50%;overflow:hidden;border:2px solid var(--peach-1);box-shadow:0 0 10px rgba(255,143,177,0.7);cursor:pointer;transform: translate(-50%,-50%) scale(var(--zoom-scale,1)) translate(var(--off-x,0px),var(--off-y,0px));transition:transform .12s;touch-action:none;-webkit-user-select:none;user-select:none;pointer-events:auto;}
   .mundo-avatar-pin img{width:100%;height:100%;object-fit:cover;display:block;-webkit-user-drag:none;pointer-events:none;}
-  .mundo-avatar-pin.pressing{transform:translate(-50%,-50%) translate(var(--off-x,0px),var(--off-y,0px)) scale(calc(var(--zoom-scale,1) * 1.25));}
+  .mundo-avatar-pin.pressing{transform: translate(-50%,-50%) scale(calc(var(--zoom-scale,1) * 1.25)) translate(var(--off-x,0px),var(--off-y,0px));}
   .mundo-avatar-tip{position:absolute;bottom:-20px;left:50%;transform:translateX(-50%);white-space:nowrap;font-size:10.5px;background:rgba(0,0,0,0.7);color:#fff;padding:2px 6px;border-radius:6px;pointer-events:none;}
   /* Capa de cometas: vive encima del canvas WebGL del globo pero nunca intercepta toques/drag
      (pointer-events:none), así nunca compite con el tap/drag de los pines o la cámara. */
@@ -1544,7 +1544,7 @@ function agruparPorProximidad(lista){
 //
 // AVATAR_DIAM_PX tiene que ser el mismo valor que width/height de .mundo-avatar-pin en el CSS —
 // si se cambia el tamaño de la foto ahí, hay que actualizarlo acá también.
-const AVATAR_DIAM_PX=28;
+const AVATAR_DIAM_PX=30;
 // Pedido: la distancia MÍNIMA entre el centro de 2 fotos de un mismo grupo = radio/2 + radio =
 // 1.5×radio = 0.75×diámetro (3/4 del diámetro).
 const PASO_MIN=AVATAR_DIAM_PX*0.75;
