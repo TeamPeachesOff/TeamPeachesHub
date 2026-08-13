@@ -1656,11 +1656,18 @@ function actualizarCapaArcos(globo){
     .arcStroke(0.45)
     .arcDashLength(0.4)
     .arcDashGap(2.2)
+    // OJO — este era el bug real de "sale y se corta a poco del camino": sin arcDashInitialGap,
+    // el segmento animado arranca YA VISIBLE desde el origen (en vez de arrancar oculto antes del
+    // origen) y se retrae/desaparece cerca del punto de partida bastante antes de llegar al
+    // destino, en vez de recorrer todo el trayecto. Con initialGap=1 el segmento arranca oculto
+    // y recién entra en escena por el origen, viaja el camino COMPLETO y llega al destino
+    // justo cuando termina arcDashAnimateTime — es la config oficial de globe.gl para "vuelos".
+    .arcDashInitialGap(1)
     .arcDashAnimateTime(d=>d.duracion)
     .arcAltitudeAutoScale(0.35);
 }
-// Cada 30-60s aparece UN arco animado entre dos miembros al azar (sin importar quién), con un
-// color al azar de la paleta y velocidad al azar — puro adorno, se autodestruye tras su animación.
+// Antes cada 30-60s aparecía UN arco; ahora el intervalo se acorta ~30% (21-42s) para que se vean
+// con más frecuencia sin llegar a sentirse saturado (sigue siendo solo un arco a la vez).
 function iniciarArcosAleatorios(globo, datos){
   detenerArcosAleatorios();
   if(datos.length<2) return;
@@ -1673,11 +1680,13 @@ function iniciarArcosAleatorios(globo, datos){
       const duracion=1400+Math.random()*2200; // velocidad aleatoria
       _arcoAleatorioActual=[{startLat:a._lat,startLng:a._lng,endLat:b._lat,endLng:b._lng,color:paleta[Math.floor(Math.random()*paleta.length)],duracion}];
       actualizarCapaArcos(globo);
-      setTimeout(()=>{ _arcoAleatorioActual=[]; actualizarCapaArcos(globo); }, duracion+300);
+      // +500 (antes +300): un pelín más de aire para que se alcance a ver el arco YA completo,
+      // llegado a destino, antes de que se borre.
+      setTimeout(()=>{ _arcoAleatorioActual=[]; actualizarCapaArcos(globo); }, duracion+500);
     }
-    arcoLibTimer=setTimeout(disparar, 30000+Math.random()*30000); // cada 30-60s, solo 1 a la vez
+    arcoLibTimer=setTimeout(disparar, 21000+Math.random()*21000); // cada 21-42s (antes 30-60s), solo 1 a la vez
   };
-  arcoLibTimer=setTimeout(disparar, 3000+Math.random()*3000);
+  arcoLibTimer=setTimeout(disparar, 2100+Math.random()*2100);
 }
 function detenerArcosAleatorios(){ if(arcoLibTimer){ clearTimeout(arcoLibTimer); arcoLibTimer=null; } _arcoAleatorioActual=[]; }
 // Cometas: puro adorno CSS por encima del globo (no toca WebGL), aparecen de vez en cuando cruzando
@@ -1820,6 +1829,9 @@ async function initGlobo(){
     .showAtmosphere(true)
     .atmosphereColor("#ff8fb1")
     .atmosphereAltitude(0.22)
+    .arcsTransitionDuration(0)  // apaga el fundido in/out por defecto (1000ms) de globe.gl al agregar/quitar
+                                // datos de arcos: sin esto competía con la animación del dash de abajo y
+                                // el arco se veía "aparecer/cortarse" antes de completar su recorrido.
     .htmlElementsData([])       // se llena más abajo, después de calcular el reparto en pantalla
     .htmlLat(d=>d._lat)
     .htmlLng(d=>d._lng)
