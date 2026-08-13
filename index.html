@@ -99,7 +99,13 @@
   @keyframes peachBounce{ 0%,80%,100%{transform:translateY(0);} 40%{transform:translateY(-16px);} }
   .loading-text{color:var(--text-dim);font-size:13px;font-weight:600;}
 
-  header{position:sticky;top:0;z-index:50;background:rgba(26,16,32,0.92);backdrop-filter:blur(8px);border-bottom:1px solid rgba(239,8,112,0.25);}
+  /* PERF: el header es sticky y por lo tanto se repinta en CADA frame de scroll de la página
+     entera. backdrop-filter:blur() ahí es carísimo (obliga al navegador a recomponer el blur del
+     contenido de abajo en cada uno de esos frames) y es la causa típica de scroll trabado en
+     tablets/laptops de gama media-baja, aunque en un celular/PC potente no se note. Como el fondo
+     ya era casi opaco (0.92), subir la opacidad un poco y sacar el blur se ve prácticamente
+     idéntico pero deja de pagar ese costo en cada scroll. */
+  header{position:sticky;top:0;z-index:50;background:rgba(24,14,29,0.97);border-bottom:1px solid rgba(239,8,112,0.25);}
   .header-inner{max-width:640px;margin:0 auto;padding:14px 18px;display:flex;align-items:center;justify-content:space-between;}
   .header-left{display:flex;align-items:center;gap:12px;}
   #hamburgerBtn{background:none;font-size:26px;color:var(--peach-1);padding:4px 8px;border-radius:8px;}
@@ -135,7 +141,7 @@
   #addActBtn{display:block;width:100%;margin-bottom:14px;padding:12px;border-radius:14px;background:linear-gradient(90deg,var(--peach-2),#ffffff);color:#3d1f2a;font-weight:800;font-size:15px;}
 
   .filter-pills{display:flex;gap:8px;margin-bottom:16px;}
-  .pill-toggle{flex:1;padding:9px;border-radius:999px;background:var(--card-bg-2);color:var(--text-dim);font-weight:700;font-size:13px;text-align:center;transition:all .15s;}
+  .pill-toggle{flex:1;padding:9px;border-radius:999px;background:var(--card-bg-2);color:var(--text-dim);font-weight:700;font-size:13px;text-align:center;transition:background .15s,color .15s;}
   .pill-toggle.on{background:linear-gradient(90deg,var(--peach-2),var(--peach-1));color:#fff;}
 
   .switch-pill{display:flex;background:var(--card-bg-2);border-radius:999px;padding:4px;gap:4px;flex-wrap:wrap;}
@@ -684,6 +690,12 @@ function hideLoading(){
 
 /* ---------- utilidades ---------- */
 function toast(msg){ const t=document.getElementById("toast"); t.textContent=msg; t.classList.add("show"); setTimeout(()=>t.classList.remove("show"),2200); }
+// PERF: helper genérico de debounce. Los buscadores (Miembros, Mundo) reconstruyen listas enteras
+// con innerHTML por cada letra tipeada — en un celular/tablet de gama baja, tipear rápido antes
+// disparaba un re-render completo por cada tecla y la escritura se sentía trabada/con lag. Con
+// debounce, solo se re-renderiza cuando la persona hace una pausa breve al escribir (150ms),
+// que es imperceptible para quien tipea pero evita todos los re-renders intermedios.
+function debounce(fn, ms){ let t=null; return (...args)=>{ clearTimeout(t); t=setTimeout(()=>fn(...args), ms); }; }
 function estadoActividad(fechaFinStr){
   if(!fechaFinStr) return {clase:"status-green", texto:"🟢 Actividad Activa"};
   const hoy=new Date(); hoy.setHours(0,0,0,0);
@@ -936,7 +948,11 @@ function enableLongPress(img, filename){
   img.addEventListener("mousedown",start); img.addEventListener("mouseup",cancel); img.addEventListener("mouseleave",cancel);
   img.addEventListener("contextmenu",(e)=>{e.preventDefault();downloadImage(img.src,filename);});
 }
-function avatarImgTag(m){ return `<img class="js-avatar" src="${escAttr(m.avatarUrl||LOGO_DEFAULT)}" alt="">`; }
+// PERF: loading="lazy" + decoding="async" evita que el navegador decodifique/pinte de entrada
+// TODAS las fotos de una lista larga de miembros (bloqueando el hilo principal en un equipo
+// flojo) — solo decodifica las que realmente entran en pantalla, y el resto a medida que
+// aparecen al hacer scroll. No cambia nada visualmente, solo cuándo se paga ese costo.
+function avatarImgTag(m){ return `<img class="js-avatar" src="${escAttr(m.avatarUrl||LOGO_DEFAULT)}" alt="" loading="lazy" decoding="async">`; }
 function bindAvatarFallbacks(){
   document.querySelectorAll("img.js-avatar").forEach(img=>{
     if(img.dataset.fbBound) return; img.dataset.fbBound="1";
@@ -1089,7 +1105,7 @@ function cardHTML(a, entregasDeEsta){
   return `
   <div class="card" data-id="${a.id}">
     <div class="card-top">
-      <div class="card-img-wrap">${a.imagenUrl?`<img class="js-longpress" data-filename="${escAttr((a.titulo||'actividad')+'.jpg')}" src="${escAttr(a.imagenUrl)}" alt="">`:""}</div>
+      <div class="card-img-wrap">${a.imagenUrl?`<img class="js-longpress" data-filename="${escAttr((a.titulo||'actividad')+'.jpg')}" src="${escAttr(a.imagenUrl)}" alt="" loading="lazy" decoding="async">`:""}</div>
       <div class="card-info">
         <div class="card-title">${escHtml(a.titulo||"")}</div>
         <div class="card-dates">${fechasTxt}</div>
@@ -1267,7 +1283,7 @@ function renderAnuario(){
 }
 function anuarioBlockHTML(a){
   return `<div class="anuario-block" data-anuario="${a.id}">
-    ${a.imagenUrl?`<img class="js-longpress" data-filename="${escAttr((a.titulo||'anuario')+'.jpg')}" src="${escAttr(a.imagenUrl)}" alt="">`:`<div style="aspect-ratio:1/1;background:var(--card-bg-2);"></div>`}
+    ${a.imagenUrl?`<img class="js-longpress" data-filename="${escAttr((a.titulo||'anuario')+'.jpg')}" src="${escAttr(a.imagenUrl)}" alt="" loading="lazy" decoding="async">`:`<div style="aspect-ratio:1/1;background:var(--card-bg-2);"></div>`}
     <div class="ab-title">👑 ${escHtml(a.titulo||"")}</div>
   </div>`;
 }
@@ -1919,7 +1935,7 @@ function crearPinMiembro(m){
   el.addEventListener("click", (e)=>{ e.stopPropagation(); }); // por si el navegador dispara click fantasma tras el pointerup
   return wrap;
 }
-document.getElementById("searchMundo").addEventListener("input", e=>{
+document.getElementById("searchMundo").addEventListener("input", debounce(e=>{
   const f=normalizar(e.target.value.trim());
   const cont=document.getElementById("mundoResultados");
   if(!f){ cont.classList.add("hidden"); cont.innerHTML=""; return; }
@@ -1933,7 +1949,7 @@ document.getElementById("searchMundo").addEventListener("input", e=>{
     cont.classList.add("hidden");
     document.getElementById("searchMundo").value=m?m.nombre:"";
   });
-});
+}, 120));
 
 
 /* ---------- toggles multi-select (roles / reina) ---------- */
@@ -2406,7 +2422,7 @@ document.getElementById("staffDrawerBtn").onclick=()=>{
   document.getElementById("viewStaffPin").classList.remove("hidden");
   document.getElementById("pinInput").value=localStorage.getItem("tph_pin")||""; // autocompleta, pero no activa solo
 };
-document.getElementById("searchMiembros").addEventListener("input", e=>renderMiembros(e.target.value));
+document.getElementById("searchMiembros").addEventListener("input", debounce(e=>renderMiembros(e.target.value), 150));
 
 document.getElementById("pinSubmitBtn").onclick=verificarPin;
 document.getElementById("pinInput").addEventListener("keydown", e=>{ if(e.key==="Enter") verificarPin(); });
