@@ -1838,13 +1838,25 @@ async function initGlobo(){
   const contenedor=document.getElementById("globeContainer");
   contenedor.innerHTML="";
   contenedor.style.setProperty("--zoom-scale","1");
+  // Fondo real, 100% fiel al PNG (ver nota junto a .backgroundColor más abajo: se pinta por CSS,
+  // no por WebGL, para que no le pase ningún procesamiento de color de por medio).
+  contenedor.style.backgroundImage="url('https://raw.githubusercontent.com/TeamPeachesOff/TeamPeachesHub/main/Logos/EspacioPeachy.png')";
+  contenedor.style.backgroundSize="cover";
+  contenedor.style.backgroundPosition="center";
+  contenedor.style.backgroundRepeat="no-repeat";
   let overlayCometas=document.getElementById("cometasOverlay");
   if(!overlayCometas){ overlayCometas=document.createElement("div"); overlayCometas.id="cometasOverlay"; }
   contenedor.appendChild(overlayCometas);
   const fondoMundo=await texturaMundo();
   const globo=Globe()(contenedor)
     .backgroundColor("rgba(0,0,0,0)")
-    .backgroundImageUrl("https://raw.githubusercontent.com/TeamPeachesOff/TeamPeachesHub/main/Logos/EspacioPeachy.png")
+    // OJO: antes usábamos .backgroundImageUrl() de globe.gl para esto, pero esa función mete la
+    // imagen como textura de la escena WebGL (scene.background de three.js), y ahí el pipeline de
+    // color del renderer (gestión de espacio de color / tone mapping) puede desaturar o aclarar
+    // los colores respecto al PNG original — eso era el "se ve lavado". Acá la ponemos directo
+    // como CSS background del contenedor, detrás del canvas (que queda transparente por el
+    // backgroundColor de arriba): así el navegador la pinta tal cual, sin pasar por WebGL, 100%
+    // fiel al archivo original.
     .globeImageUrl(fondoMundo)   // el mapa YA viene pintado en la textura de la esfera (ver texturaMundo) — nada de polígonos 3D flotando encima
     .showGlobe(true)
     .showAtmosphere(true)
