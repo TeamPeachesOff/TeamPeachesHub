@@ -882,8 +882,22 @@ async function apiPost(payload, msg){
   showLoading(msg||"Guardando...");
   try{
     payload.pin=staffPin||"";
+    // Antes, si el fetch fallaba (sin internet) o el servidor respondía con algo que no era JSON
+    // (por ejemplo una página de error HTML de Apps Script cuando la operación tarda demasiado y
+    // se corta a los ~6 minutos), esta función lanzaba una excepción sin capturar. Eso significa
+    // que el código que llama a apiPost (ej. el submit de "Guardar actividad" o el botón
+    // "Actualizar fotos") nunca llegaba a la línea de después del await — ni el toast de error, NI
+    // el "btn.disabled=false" — así que el botón quedaba deshabilitado para siempre y parecía que
+    // "no hacía nada" al volver a tocarlo, sin ningún aviso de qué pasó. Ahora SIEMPRE devolvemos
+    // un objeto {ok:false, error:...} en vez de lanzar, para que el que llama pueda reaccionar bien.
     const res=await fetch(APPS_SCRIPT_URL,{method:"POST",headers:{"Content-Type":"text/plain;charset=utf-8"},body:JSON.stringify(payload)});
-    return await res.json();
+    try{
+      return await res.json();
+    }catch(parseErr){
+      return {ok:false, error:"El servidor tardó demasiado o devolvió una respuesta inválida. Intenta de nuevo en un momento."};
+    }
+  }catch(networkErr){
+    return {ok:false, error:"No se pudo conectar con el servidor. Revisa tu conexión e intenta de nuevo."};
   } finally{ hideLoading(); }
 }
 // Se llama SOLO justo después de que el servidor confirmó que el PIN de Staff es correcto.
@@ -1317,9 +1331,16 @@ function openAnuarioDetail(id){
 /* ---------- miembros ---------- */
 document.getElementById("refreshPhotosBtn").onclick=async()=>{
   if(!await confirmarAccion("¿Actualizar automáticamente las fotos de todos los miembros con Smule? Puede tardar un momento.")) return;
-  const r=await apiPost({action:"actualizarTodasLasFotos"},"Actualizando fotos desde Smule...");
-  if(r.ok){ toast(`Fotos actualizadas: ${r.actualizados}/${r.revisados}`); await cargarDatos(); }
-  else toast("Error: "+(r.error||""));
+  try{
+    const r=await apiPost({action:"actualizarTodasLasFotos"},"Actualizando fotos desde Smule...");
+    // Si el backend se quedó sin tiempo a mitad de camino (ver nota "parcial" en Code.gs), r.ok
+    // sigue siendo true pero r.parcial avisa que no llegó a revisar a todo el mundo, para que no
+    // parezca que "terminó bien" cuando en realidad se cortó.
+    if(r.ok){ toast(`Fotos actualizadas: ${r.actualizados}/${r.revisados}${r.parcial?" (se cortó por tiempo, volvé a tocar el botón para seguir)":""}`); await cargarDatos(); }
+    else toast("Error: "+(r.error||""));
+  }catch(err){
+    toast("Error inesperado actualizando fotos: "+(err.message||err));
+  }
 };
 document.getElementById("resetStrikesGlobalBtn").onclick=async()=>{
   if(!await confirmarAccion("¿Poner Faltas y Strikes en 0 de TODO el equipo? (Los Strikes Permanentes de cada quien NO se tocan). Esta acción no se puede deshacer.")) return;
@@ -1823,7 +1844,7 @@ async function initGlobo(){
   const fondoMundo=await texturaMundo();
   const globo=Globe()(contenedor)
     .backgroundColor("rgba(0,0,0,0)")
-    .backgroundImageUrl(texturaEstrellas())
+    .backgroundImageUrl("https://raw.githubusercontent.com/TeamPeachesOff/TeamPeachesHub/main/Logos/EspacioPeachy.png")
     .globeImageUrl(fondoMundo)   // el mapa YA viene pintado en la textura de la esfera (ver texturaMundo) — nada de polígonos 3D flotando encima
     .showGlobe(true)
     .showAtmosphere(true)
@@ -2216,34 +2237,43 @@ document.getElementById("activityForm").addEventListener("submit", async(e)=>{
   const categoria=getSwitchPillValue("af_categoriaSwitch");
   if(!categoria){ toast("Elegí una categoría: Canto o Doblaje ❌"); return; }
   const btn=e.target.querySelector('button[type="submit"]'); btn.disabled=true;
-  const id=document.getElementById("af_id").value;
-  const data={
-    titulo: document.getElementById("af_titulo").value,
-    imagenUrl: document.getElementById("af_imagenUrl").value,
-    descripcion: document.getElementById("af_descripcion").value,
-    streamNombre: document.getElementById("af_streamNombre").value,
-    streamFecha: document.getElementById("af_streamFecha").value,
-    streamHora: document.getElementById("af_streamHora").value,
-    wishlist: document.getElementById("af_wishlist").value,
-    fechaInicio: document.getElementById("af_fechaInicio").value,
-    fechaFin: document.getElementById("af_fechaFin").value,
-    linkForms: document.getElementById("af_linkForms").value,
-    linkUnirse: document.getElementById("af_linkUnirse").value,
-    linkScript: document.getElementById("af_linkScript").value,
-    categoria: categoria,
-    participacion: getSwitchPillValue("af_participacionSwitch")||"opcional",
-    ganadorCanto: document.getElementById("af_ganadorCanto").value,
-    ganadorDoblaje: document.getElementById("af_ganadorDoblaje").value,
-    mencionesHonorificas: document.getElementById("af_menciones").value,
-    botonesPersonalizados: JSON.stringify(leerBotonesPersonalizados()),
-  };
-  const esModoAnuario=document.getElementById("activityForm").dataset.modoAnuario==="1";
-  let r;
-  if(esModoAnuario){ data.id=id; r=await apiPost({action:"editAnuario", data},"Guardando tarjeta del Anuario..."); }
-  else if(id){ data.id=id; r=await apiPost({action:"editActividad", data},"Guardando actividad..."); }
-  else{ data.id="ACT-"+Date.now(); r=await apiPost({action:"addActividad", data},"Guardando actividad..."); }
-  btn.disabled=false;
-  if(r.ok){ toast("Guardado ✅"); closeModal("activityFormModal"); await cargarDatos(); } else toast("Error: "+(r.error||""));
+  // try/finally: pase lo que pase adentro (incluso un error inesperado que no venga de apiPost),
+  // el botón SIEMPRE se vuelve a habilitar. Antes, si algo lanzaba una excepción entre el
+  // "disabled=true" y el "disabled=false", el botón quedaba trabado para siempre y tocarlo de
+  // nuevo no hacía nada — eso es lo que se sentía como "el botón falla".
+  try{
+    const id=document.getElementById("af_id").value;
+    const data={
+      titulo: document.getElementById("af_titulo").value,
+      imagenUrl: document.getElementById("af_imagenUrl").value,
+      descripcion: document.getElementById("af_descripcion").value,
+      streamNombre: document.getElementById("af_streamNombre").value,
+      streamFecha: document.getElementById("af_streamFecha").value,
+      streamHora: document.getElementById("af_streamHora").value,
+      wishlist: document.getElementById("af_wishlist").value,
+      fechaInicio: document.getElementById("af_fechaInicio").value,
+      fechaFin: document.getElementById("af_fechaFin").value,
+      linkForms: document.getElementById("af_linkForms").value,
+      linkUnirse: document.getElementById("af_linkUnirse").value,
+      linkScript: document.getElementById("af_linkScript").value,
+      categoria: categoria,
+      participacion: getSwitchPillValue("af_participacionSwitch")||"opcional",
+      ganadorCanto: document.getElementById("af_ganadorCanto").value,
+      ganadorDoblaje: document.getElementById("af_ganadorDoblaje").value,
+      mencionesHonorificas: document.getElementById("af_menciones").value,
+      botonesPersonalizados: JSON.stringify(leerBotonesPersonalizados()),
+    };
+    const esModoAnuario=document.getElementById("activityForm").dataset.modoAnuario==="1";
+    let r;
+    if(esModoAnuario){ data.id=id; r=await apiPost({action:"editAnuario", data},"Guardando tarjeta del Anuario..."); }
+    else if(id){ data.id=id; r=await apiPost({action:"editActividad", data},"Guardando actividad..."); }
+    else{ data.id="ACT-"+Date.now(); r=await apiPost({action:"addActividad", data},"Guardando actividad..."); }
+    if(r.ok){ toast("Guardado ✅"); closeModal("activityFormModal"); await cargarDatos(); } else toast("Error: "+(r.error||""));
+  }catch(err){
+    toast("Error inesperado al guardar: "+(err.message||err));
+  }finally{
+    btn.disabled=false;
+  }
 });
 
 /* ---------- form entrega ---------- */
