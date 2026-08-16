@@ -87,7 +87,25 @@
   html::-webkit-scrollbar{display:none;width:0;height:0;}
   body{margin:0;font-family:'Segoe UI',Arial,sans-serif;background:linear-gradient(160deg,var(--bg),#241228 60%,#170b1c);color:var(--text);min-height:100vh;}
   a{color:inherit;text-decoration:none;}
-  button{font-family:inherit;cursor:pointer;border:none;}
+  /* "El botón solo funciona si lo toco en una parte específica" — la causa típica de esto en móvil
+     es que, sin desactivar la selección de texto, un tap sobre el texto/ícono de un elemento
+     clickeable puede ser interpretado por el navegador como el INICIO de una selección de texto
+     (aparece la lupa/el menú "Copiar" de iOS, o el resaltado azul de Android) en vez de como un
+     tap normal — y ese primer tap se "pierde" sin disparar el click. Pasa sobre todo en zonas con
+     texto (el label del botón), por eso "en unas partes sí y en otras no": el ícono/emoji no tiene
+     texto seleccionable así que ahí sí respondía siempre.
+     -webkit-touch-callout:none también apaga el menú contextual de iOS (mantener presionado ->
+     "Copiar"/"Buscar"), que es otra forma en la que un tap se puede "robar" antes de llegar al click.
+     touch-action:manipulation apaga el delay de ~300ms que algunos navegadores móviles usan para
+     esperar un posible doble-tap (zoom), hace que el primer tap responda de inmediato siempre. */
+  button{font-family:inherit;cursor:pointer;border:none;-webkit-user-select:none;user-select:none;-webkit-touch-callout:none;-webkit-tap-highlight-color:transparent;touch-action:manipulation;}
+  /* Estos elementos NO son <button> pero funcionan como uno (tienen un .onclick puesto por JS), así
+     que necesitan exactamente el mismo tratamiento anti-selección que la regla de arriba, o si no
+     quedan con el mismo problema. */
+  .anuario-block, #mundoPeachesBtn, .mundo-resultado-item, .member-avatar-item, .member-row,
+  #staffStatusBadge, #memberStatusBadge, .js-check-entrega, .badges-row .badge{
+    -webkit-user-select:none;user-select:none;-webkit-touch-callout:none;-webkit-tap-highlight-color:transparent;touch-action:manipulation;
+  }
   img{max-width:100%;display:block;}
 
   #loadingOverlay{position:fixed;inset:0;background:rgba(15,8,20,0.72);backdrop-filter:blur(3px);z-index:500;display:none;align-items:center;justify-content:center;flex-direction:column;gap:14px;}
@@ -384,19 +402,19 @@
 <div id="drawer">
   <div class="drawer-title">Team Peaches</div>
   <div class="social-row">
-    <a class="social-link" target="_blank" href="https://rigodemianrobledo.my.canva.site/peaches/#menuprincipal">
+    <a class="social-link" target="_blank" onclick="trackUI('redSocial_web')" href="https://rigodemianrobledo.my.canva.site/peaches/#menuprincipal">
       <img src="https://raw.githubusercontent.com/TeamPeachesOff/TeamPeachesHub/main/Logos/PeachesLogo.jpeg" onerror="this.onerror=null;this.src='https://i.imgur.com/wusLyff.jpeg';" alt="Peaches"><span>Peaches</span>
     </a>
-    <a class="social-link" target="_blank" href="https://youtube.com/@teampeachesoff">
+    <a class="social-link" target="_blank" onclick="trackUI('redSocial_youtube')" href="https://youtube.com/@teampeachesoff">
       <img src="https://raw.githubusercontent.com/TeamPeachesOff/TeamPeachesHub/main/Logos/YoutubeLogo.png" onerror="this.onerror=null;this.src='https://pngimg.com/uploads/youtube/youtube_PNG102352.png';" alt="YouTube"><span>YouTube</span>
     </a>
-    <a class="social-link" target="_blank" href="https://www.instagram.com/team_peaches_off/">
+    <a class="social-link" target="_blank" onclick="trackUI('redSocial_instagram')" href="https://www.instagram.com/team_peaches_off/">
       <img src="https://raw.githubusercontent.com/TeamPeachesOff/TeamPeachesHub/main/Logos/InstagramLogo.png" onerror="this.onerror=null;this.src='https://pngimg.com/uploads/instagram/instagram_PNG10.png';" alt="Instagram"><span>Instagram</span>
     </a>
-    <a class="social-link" target="_blank" href="https://www.tiktok.com/@team_peaches_off">
+    <a class="social-link" target="_blank" onclick="trackUI('redSocial_tiktok')" href="https://www.tiktok.com/@team_peaches_off">
       <img src="https://raw.githubusercontent.com/TeamPeachesOff/TeamPeachesHub/main/Logos/TikTokLogo.png" onerror="this.onerror=null;this.src='https://static.vecteezy.com/system/resources/previews/016/716/450/original/tiktok-icon-free-png.png';" alt="TikTok"><span>TikTok</span>
     </a>
-    <a class="social-link" target="_blank" href="https://www.smule.com/groups/1934104?utm_source=web&utm_campaign=share&utm_medium=copylink">
+    <a class="social-link" target="_blank" onclick="trackUI('redSocial_smuleGrupo')" href="https://www.smule.com/groups/1934104?utm_source=web&utm_campaign=share&utm_medium=copylink">
       <img src="https://raw.githubusercontent.com/TeamPeachesOff/TeamPeachesHub/main/Logos/SmuleLogo.png" onerror="this.onerror=null;this.src='https://blog.smule.com/wp-content/uploads/smule-icon.png';" alt="Smule"><span>Smule</span>
     </a>
   </div>
@@ -916,6 +934,15 @@ async function cargarEnlacesStaff(){
   enlacesStaff = (r && r.ok) ? r.enlaces : null;
   if(!enlacesStaff) toast("No se pudieron cargar los enlaces de Staff");
 }
+// Analítica de interacciones de UI (v16): fire-and-forget a propósito — NO usa apiPost (que muestra
+// el overlay de "Guardando..." y espera respuesta) porque esto nunca debe frenar ni demorar la
+// acción real de la persona (abrir un link, tocar un botón). Si falla (sin internet, lo que sea),
+// se ignora en silencio: es solo un contador anónimo, nunca debe romper nada de la UI real.
+function trackUI(clave){
+  try{
+    fetch(APPS_SCRIPT_URL,{method:"POST",headers:{"Content-Type":"text/plain;charset=utf-8"},body:JSON.stringify({action:"trackUI", clave})}).catch(()=>{});
+  }catch(e){ /* nunca debe romper el click que la disparó */ }
+}
 function abrirEnlacePrivado(clave){
   if(!enlacesStaff || !enlacesStaff[clave]){ toast("Enlace no disponible todavía, intenta de nuevo"); return; }
   window.open(enlacesStaff[clave], "_blank", "noopener");
@@ -965,41 +992,78 @@ const ANALITICA_LABELS = {
   validarPin:"🔒 Intentos de PIN Staff (válidos)", validarClaveMiembro:"🍑 Intentos de clave Miembro (válidos)",
   addActividad:"➕ Actividad creada", editActividad:"✏️ Actividad editada", deleteActividad:"🗑️ Actividad borrada",
   addEntrega:"📥 Entrega registrada", deleteEntregas:"🗑️ Entregas borradas", importarEntregas:"📋 Entregas importadas",
+  irAEntregar:"🎙️ Botón \"Entregar\" usado", irAUnirse:"🤝 Botón \"Unirse\" usado", irAScript:"📄 Botón \"Script\" usado", botonPersonalizado:"🔘 Botón personalizado usado",
   addMiembro:"➕ Miembro agregado", editMiembro:"✏️ Miembro editado", deleteMiembro:"🗑️ Miembro borrado",
   addFalta:"⚠️ Falta registrada", addStrike:"⚡ Strike registrado", addStrikePermanente:"☠️ Strike Permanente registrado",
   resetCastigos:"♻️ Castigos reiniciados (individual)", resetStrikesGlobal:"♻️ Strikes reiniciados (global)",
-  limpiarNombresBD:"🧹 Limpieza de nombres BD", addToAnuario:"👑 Agregado al Anuario", editAnuario:"✏️ Anuario editado", deleteAnuario:"🗑️ Anuario borrado",
+  limpiarNombresBD:"🧹 Limpieza de nombres BD",
+  abrirTarjetaMiembro:"🪪 Tarjeta de Miembro abierta", irASmule:"🎤 Botón Smule usado", irABandlab:"🎧 Botón BandLab usado",
+  copiarDiscord:"💬 Discord copiado", irAWhatsapp:"📱 Botón WhatsApp usado", buscarMiembros:"🔎 Búsqueda de Miembros usada",
+  addToAnuario:"👑 Agregado al Anuario", editAnuario:"✏️ Anuario editado", deleteAnuario:"🗑️ Anuario borrado", verAnuario:"📖 Anuario abierto",
+  abrirGlobo:"🌍 Mundo Peaches abierto", interaccionMapa:"🗺️ Interacción con el mapa", buscarMundo:"🔎 Búsqueda en Mundo Peaches usada", actualizarMapaMundo:"🌍 Mapa de Mundo Peaches actualizado",
+  redSocial_web:"🍑 Red social: Peaches (web)", redSocial_youtube:"▶️ Red social: YouTube", redSocial_instagram:"📸 Red social: Instagram",
+  redSocial_tiktok:"🎵 Red social: TikTok", redSocial_smuleGrupo:"🎤 Red social: Grupo de Smule",
   uploadImage:"🖼️ Imagen subida", uploadScript:"📄 Script subido", uploadAdjunto:"📎 Adjunto subido",
-  fetchSmulePhoto:"📸 Foto de Smule obtenida", actualizarTodasLasFotos:"🔄 Fotos actualizadas (lote)", actualizarMapaMundo:"🌍 Mapa de Mundo Peaches actualizado",
+  fetchSmulePhoto:"📸 Foto de Smule obtenida", actualizarTodasLasFotos:"🔄 Fotos actualizadas (lote)",
   testRecordatorio:"🔔 Prueba de Recordatorio", testCumpleanos:"🎂 Prueba de Cumpleaños", testSeguridad:"🔒 Prueba de Seguridad",
   addQueja:"📮 Buzón: queja/recomendación enviada", addReporte:"🐞 Reporte de error enviado",
   obtenerEnlacesStaff:"🔗 Enlaces de Staff consultados", guardarEnlacesStaff:"⚙️ Enlaces de Staff guardados"
+};
+// Agrupa cada acción bajo una categoría, solo para que la tabla de analítica se lea más rápido.
+// Si aparece una acción sin categoría asignada acá, cae sola en "Otros" (nunca se pierde un dato).
+const ANALITICA_CATEGORIAS_ORDEN = ["Accesos a la app","Tarjetas de Miembro","Mundo Peaches (globo)","Búsquedas","Actividades y entregas","Anuario","Redes sociales","Gestión de Miembros (Staff)","Multimedia","Buzón y reportes","Pruebas del sistema","Enlaces de Staff","Otros"];
+const ANALITICA_CATEGORIA_DE = {
+  cargarPagina_publico:"Accesos a la app", cargarPagina_miembro:"Accesos a la app", cargarPagina_staff:"Accesos a la app",
+  validarPin:"Accesos a la app", validarClaveMiembro:"Accesos a la app",
+  abrirTarjetaMiembro:"Tarjetas de Miembro", irASmule:"Tarjetas de Miembro", irABandlab:"Tarjetas de Miembro", copiarDiscord:"Tarjetas de Miembro", irAWhatsapp:"Tarjetas de Miembro",
+  abrirGlobo:"Mundo Peaches (globo)", interaccionMapa:"Mundo Peaches (globo)", actualizarMapaMundo:"Mundo Peaches (globo)",
+  buscarMiembros:"Búsquedas", buscarMundo:"Búsquedas",
+  addActividad:"Actividades y entregas", editActividad:"Actividades y entregas", deleteActividad:"Actividades y entregas",
+  addEntrega:"Actividades y entregas", deleteEntregas:"Actividades y entregas", importarEntregas:"Actividades y entregas",
+  irAEntregar:"Actividades y entregas", irAUnirse:"Actividades y entregas", irAScript:"Actividades y entregas", botonPersonalizado:"Actividades y entregas",
+  addToAnuario:"Anuario", editAnuario:"Anuario", deleteAnuario:"Anuario", verAnuario:"Anuario",
+  redSocial_web:"Redes sociales", redSocial_youtube:"Redes sociales", redSocial_instagram:"Redes sociales", redSocial_tiktok:"Redes sociales", redSocial_smuleGrupo:"Redes sociales",
+  addMiembro:"Gestión de Miembros (Staff)", editMiembro:"Gestión de Miembros (Staff)", deleteMiembro:"Gestión de Miembros (Staff)",
+  addFalta:"Gestión de Miembros (Staff)", addStrike:"Gestión de Miembros (Staff)", addStrikePermanente:"Gestión de Miembros (Staff)",
+  resetCastigos:"Gestión de Miembros (Staff)", resetStrikesGlobal:"Gestión de Miembros (Staff)", limpiarNombresBD:"Gestión de Miembros (Staff)",
+  uploadImage:"Multimedia", uploadScript:"Multimedia", uploadAdjunto:"Multimedia", fetchSmulePhoto:"Multimedia", actualizarTodasLasFotos:"Multimedia",
+  addQueja:"Buzón y reportes", addReporte:"Buzón y reportes",
+  testRecordatorio:"Pruebas del sistema", testCumpleanos:"Pruebas del sistema", testSeguridad:"Pruebas del sistema",
+  obtenerEnlacesStaff:"Enlaces de Staff", guardarEnlacesStaff:"Enlaces de Staff"
 };
 async function abrirAnalitica(){
   const r = await apiPost({action:"obtenerAnalitica"}, "Cargando analítica...");
   if(!r.ok){ toast("Error: "+(r.error||"")); return; }
   const filas = r.datos||[];
+  // Agrupa las filas por categoría (ver ANALITICA_CATEGORIA_DE), respetando el orden fijo de
+  // ANALITICA_CATEGORIAS_ORDEN, y dentro de cada categoría las deja ordenadas de más a menos
+  // usada (así llegan desde el backend). Cualquier acción sin categoría cae en "Otros".
+  const porCategoria = {};
+  filas.forEach(f=>{
+    const cat = ANALITICA_CATEGORIA_DE[f.accion] || "Otros";
+    (porCategoria[cat] = porCategoria[cat] || []).push(f);
+  });
+  const categoriasConDatos = ANALITICA_CATEGORIAS_ORDEN.filter(c=>porCategoria[c] && porCategoria[c].length);
   document.getElementById("memberModalContent").innerHTML = `
     <h3>📊 Analítica de uso</h3>
     <p style="font-size:12.5px;color:var(--text-dim);margin:-6px 0 14px;">100% anónima: solo cuenta CUÁNTAS veces se usó cada función, nunca quién la usó.</p>
     ${filas.length ? `
       <div style="max-height:55vh;overflow-y:auto;border-radius:12px;background:var(--card-bg);">
-        <table style="width:100%;border-collapse:collapse;font-size:13px;">
-          <thead><tr style="position:sticky;top:0;background:var(--card-bg-2);">
-            <th style="text-align:left;padding:9px 10px;">Función</th>
-            <th style="text-align:right;padding:9px 10px;">Usos</th>
-            <th style="text-align:right;padding:9px 10px;white-space:nowrap;">Último uso</th>
-          </tr></thead>
-          <tbody>
-            ${filas.map(f=>`<tr style="border-top:1px solid rgba(255,255,255,0.06);">
-              <td style="padding:8px 10px;">${escHtml(ANALITICA_LABELS[f.accion]||f.accion)}</td>
-              <td style="padding:8px 10px;text-align:right;font-weight:700;color:var(--peach-1);">${f.total}</td>
-              <td style="padding:8px 10px;text-align:right;color:var(--text-dim);white-space:nowrap;">${escHtml(f.ultimoUso||"")}</td>
-            </tr>`).join("")}
-          </tbody>
-        </table>
+        ${categoriasConDatos.map(cat=>`
+          <div style="position:sticky;top:0;background:var(--card-bg-2);padding:8px 10px;font-weight:700;font-size:12.5px;color:var(--peach-1);">${escHtml(cat)}</div>
+          <table style="width:100%;border-collapse:collapse;font-size:13px;margin-bottom:6px;">
+            <tbody>
+              ${porCategoria[cat].map(f=>`<tr style="border-top:1px solid rgba(255,255,255,0.06);">
+                <td style="padding:8px 10px;">${escHtml(ANALITICA_LABELS[f.accion]||f.accion)}</td>
+                <td style="padding:8px 10px;text-align:right;font-weight:700;color:var(--peach-1);white-space:nowrap;">${f.total}</td>
+                <td style="padding:8px 10px;text-align:right;color:var(--text-dim);white-space:nowrap;">${escHtml(f.ultimoUso||"")}</td>
+              </tr>`).join("")}
+            </tbody>
+          </table>`).join("")}
       </div>` : `<p style="text-align:center;color:var(--text-dim);">Todavía no hay datos registrados.</p>`}
-    <button class="btn-small btn-admin" id="analiticaVolverBtn" style="width:100%;margin-top:14px;">⬅️ Volver</button>`;
+    <div style="position:sticky;bottom:-20px;margin:14px -20px -20px;padding:10px 20px 20px;background:var(--card-bg);">
+      <button class="btn-small btn-admin" id="analiticaVolverBtn" style="width:100%;">⬅️ Volver</button>
+    </div>`;
   openModal("memberModal");
   document.getElementById("analiticaVolverBtn").onclick = abrirStaffHub;
 }
@@ -1188,10 +1252,10 @@ function cardHTML(a, entregasDeEsta){
           ${participacionTag(a.participacion)}
         </div>
         ${(a.linkForms||a.linkUnirse||a.linkScript||botonesPersonalizadosDe(a).length)?`<div class="card-actions">
-          ${a.linkForms?`<a class="btn-small btn-primary" target="_blank" href="${escAttr(a.linkForms)}">🎙️ Entregar</a>`:""}
-          ${a.linkUnirse?`<a class="btn-small btn-family" target="_blank" href="${escAttr(a.linkUnirse)}">🤝 Unirse</a>`:""}
-          ${a.linkScript?`<a class="btn-small btn-family" target="_blank" href="${escAttr(a.linkScript)}">📄 Script</a>`:""}
-          ${botonesPersonalizadosDe(a).map(b=>`<a class="btn-small btn-family" target="_blank" href="${escAttr(b.url)}">${escHtml(b.texto)}</a>`).join("")}
+          ${a.linkForms?`<a class="btn-small btn-primary" target="_blank" onclick="trackUI('irAEntregar')" href="${escAttr(a.linkForms)}">🎙️ Entregar</a>`:""}
+          ${a.linkUnirse?`<a class="btn-small btn-family" target="_blank" onclick="trackUI('irAUnirse')" href="${escAttr(a.linkUnirse)}">🤝 Unirse</a>`:""}
+          ${a.linkScript?`<a class="btn-small btn-family" target="_blank" onclick="trackUI('irAScript')" href="${escAttr(a.linkScript)}">📄 Script</a>`:""}
+          ${botonesPersonalizadosDe(a).map(b=>`<a class="btn-small btn-family" target="_blank" onclick="trackUI('botonPersonalizado')" href="${escAttr(b.url)}">${escHtml(b.texto)}</a>`).join("")}
         </div>`:""}
         ${staffPin?`<div class="card-actions">
           <button class="btn-small btn-bell" data-bell="${a.id}">🔔</button>
@@ -1457,6 +1521,7 @@ function renderMiembros(filtro=""){
 function openMemberModal(id){
   const m=DB.miembros.find(x=>String(x.id)===String(id));
   if(!m) return;
+  trackUI("abrirTarjetaMiembro");
   const strikes=Number(m.strikes)||0, faltas=Number(m.faltas)||0, strikesPermanentes=Number(m.strikesPermanentes)||0;
   document.getElementById("memberModalContent").innerHTML=`
     <div class="member-modal-header">
@@ -1483,13 +1548,13 @@ function openMemberModal(id){
       ${(m.generacionNum!==undefined && m.generacionNum!==null && m.generacionNum!=="")?`<tr><td>🌱 Generación</td><td>${fmtGeneracion(m.generacionNum)}</td></tr>`:""}
     </table>
     <div class="platform-row">
-      ${m.usuarioSmule?`<a class="platform-btn" target="_blank" href="${escAttr(toSmuleUrl(m.usuarioSmule))}">
+      ${m.usuarioSmule?`<a class="platform-btn" target="_blank" onclick="trackUI('irASmule')" href="${escAttr(toSmuleUrl(m.usuarioSmule))}">
         <img src="https://raw.githubusercontent.com/TeamPeachesOff/TeamPeachesHub/main/Logos/SmuleLogo.png" onerror="this.onerror=null;this.src='https://blog.smule.com/wp-content/uploads/smule-icon.png';"><span>Smule</span></a>`:""}
-      ${m.usuarioBandlab?`<a class="platform-btn" target="_blank" href="${escAttr(toBandlabUrl(m.usuarioBandlab))}">
+      ${m.usuarioBandlab?`<a class="platform-btn" target="_blank" onclick="trackUI('irABandlab')" href="${escAttr(toBandlabUrl(m.usuarioBandlab))}">
         <img src="https://raw.githubusercontent.com/TeamPeachesOff/TeamPeachesHub/main/Logos/BandLabLogo.png" onerror="this.onerror=null;this.src='https://onbukei.com/wp-content/uploads/2021/10/bandlab-music-making-studio.png';"><span>BandLab</span></a>`:""}
       ${m.usuarioDiscord?`<button class="platform-btn" data-copy-discord="${escAttr(m.usuarioDiscord)}">
         <img src="https://raw.githubusercontent.com/TeamPeachesOff/TeamPeachesHub/main/Logos/DiscordLogo.webp" onerror="this.onerror=null;this.src='https://freelogopng.com/images/all_img/1691730767discord-logo-transparent.png';"><span>Copiar Discord</span></button>`:""}
-      ${m.telefono?`<a class="platform-btn" target="_blank" href="https://wa.me/${escAttr(limpiarTelefono(m.telefono))}">
+      ${m.telefono?`<a class="platform-btn" target="_blank" onclick="trackUI('irAWhatsapp')" href="https://wa.me/${escAttr(limpiarTelefono(m.telefono))}">
         <img src="https://raw.githubusercontent.com/TeamPeachesOff/TeamPeachesHub/main/Logos/WhatsAppLogo.png" onerror="this.onerror=null;this.src='https://upload.wikimedia.org/wikipedia/commons/5/5e/WhatsApp_icon.png';"><span>WhatsApp</span></a>`:""}
     </div>
     <div class="castigos-box">
@@ -1501,7 +1566,7 @@ function openMemberModal(id){
       <button class="btn-reset-castigos" data-reset="${m.id}">🔄 Borrar Castigos</button>`:""}
     </div>`;
   openModal("memberModal"); bindAvatarFallbacks();
-  const copyBtn=document.querySelector("[data-copy-discord]"); if(copyBtn) copyBtn.onclick=()=>{navigator.clipboard.writeText(copyBtn.dataset.copyDiscord); toast("Discord copiado ✅");};
+  const copyBtn=document.querySelector("[data-copy-discord]"); if(copyBtn) copyBtn.onclick=()=>{navigator.clipboard.writeText(copyBtn.dataset.copyDiscord); toast("Discord copiado ✅"); trackUI("copiarDiscord");};
   const faltaBtn=document.querySelector("[data-falta]"); if(faltaBtn) faltaBtn.onclick=()=>registrarFalta(m.id);
   const strikeBtn=document.querySelector("[data-strike]"); if(strikeBtn) strikeBtn.onclick=()=>registrarStrike(m.id);
   const strikePermBtn=document.querySelector("[data-strike-permanente]"); if(strikePermBtn) strikePermBtn.onclick=()=>registrarStrikePermanente(m.id);
@@ -1533,7 +1598,7 @@ function cargarLibreriaGlobo(){
     document.head.appendChild(s);
   });
 }
-document.getElementById("mundoPeachesBtn").onclick=abrirMundoPeaches;
+document.getElementById("mundoPeachesBtn").onclick=()=>{ trackUI("abrirGlobo"); abrirMundoPeaches(); };
 document.getElementById("closeMundoBtn").onclick=()=>{
   document.getElementById("viewMundo").classList.add("hidden");
   detenerArcosAleatorios(); detenerCometas(); // no seguir animando/consumiendo batería fuera de la vista
@@ -1549,8 +1614,8 @@ function zoomManual(factor){
   const nuevaAltitud=Math.min(4, Math.max(0.3, pov.altitude*factor));
   globoInstancia.pointOfView({lat:pov.lat, lng:pov.lng, altitude:nuevaAltitud}, 400);
 }
-document.getElementById("mundoZoomInBtn").onclick=()=>zoomManual(0.75);
-document.getElementById("mundoZoomOutBtn").onclick=()=>zoomManual(1/0.75);
+document.getElementById("mundoZoomInBtn").onclick=()=>{ trackUI("interaccionMapa"); zoomManual(0.75); };
+document.getElementById("mundoZoomOutBtn").onclick=()=>{ trackUI("interaccionMapa"); zoomManual(1/0.75); };
 async function abrirMundoPeaches(){
   if(nivel==="publico"){ toast("Necesitas modo Miembro o Staff"); return; }
   document.getElementById("viewMiembros").classList.add("hidden");
@@ -2032,14 +2097,24 @@ function crearPinMiembro(m){
   el.addEventListener("pointerup", (e)=>{
     e.stopPropagation();
     clearTimeout(holdTimer); el.classList.remove("pressing");
-    if(!mantuvo && globoInstancia) globoInstancia.pointOfView({lat:m._lat, lng:m._lng, altitude:0.55}, 1200);
+    if(!mantuvo && globoInstancia){ trackUI("interaccionMapa"); globoInstancia.pointOfView({lat:m._lat, lng:m._lng, altitude:0.55}, 1200); }
   });
   el.addEventListener("pointercancel", (e)=>{ e.stopPropagation(); clearTimeout(holdTimer); el.classList.remove("pressing"); });
   el.addEventListener("pointerleave", (e)=>{ e.stopPropagation(); clearTimeout(holdTimer); el.classList.remove("pressing"); });
   el.addEventListener("click", (e)=>{ e.stopPropagation(); }); // por si el navegador dispara click fantasma tras el pointerup
   return wrap;
 }
+// Analítica de búsqueda (v16): cuenta USOS de la herramienta de búsqueda, no cada tecla — solo
+// dispara trackUI() en la transición de "vacío" a "algo escrito" (y se resetea al volver a vaciar
+// el campo), así una sola búsqueda de varias letras cuenta como 1 uso, no como N usos.
+const _searchTrackState = {};
+function trackSearchUso(clave, valor){
+  const vacio = !String(valor||"").trim();
+  if(vacio){ _searchTrackState[clave]=false; return; }
+  if(!_searchTrackState[clave]){ _searchTrackState[clave]=true; trackUI(clave); }
+}
 document.getElementById("searchMundo").addEventListener("input", debounce(e=>{
+  trackSearchUso("buscarMundo", e.target.value);
   const f=normalizar(e.target.value.trim());
   const cont=document.getElementById("mundoResultados");
   if(!f){ cont.classList.add("hidden"); cont.innerHTML=""; return; }
@@ -2448,7 +2523,7 @@ document.getElementById("reporteDrawerBtn").onclick=()=>{ closeDrawer(); openRep
 /* ---------- navegación ---------- */
 const URL_ANUARIO_PUBLICO_DEFAULT="https://youtu.be/dQw4w9WgXcQ"; // solo se usa si el backend todavía no mandó el valor configurado
 document.querySelectorAll(".tab-btn").forEach(btn=>btn.onclick=()=>{
-  if(btn.dataset.tab==="anuario"){ window.open((DB.enlacesPublicos&&DB.enlacesPublicos.CFG_ANUARIO_PUBLICO_LINK)||URL_ANUARIO_PUBLICO_DEFAULT,"_blank","noopener"); return; }
+  if(btn.dataset.tab==="anuario"){ trackUI("verAnuario"); window.open((DB.enlacesPublicos&&DB.enlacesPublicos.CFG_ANUARIO_PUBLICO_LINK)||URL_ANUARIO_PUBLICO_DEFAULT,"_blank","noopener"); return; }
   switchTab(btn.dataset.tab);
 });
 function switchTab(tab){
@@ -2558,7 +2633,7 @@ document.getElementById("staffDrawerBtn").onclick=()=>{
   document.getElementById("viewStaffPin").classList.remove("hidden");
   document.getElementById("pinInput").value=localStorage.getItem("tph_pin")||""; // autocompleta, pero no activa solo
 };
-document.getElementById("searchMiembros").addEventListener("input", debounce(e=>renderMiembros(e.target.value), 150));
+document.getElementById("searchMiembros").addEventListener("input", debounce(e=>{ trackSearchUso("buscarMiembros", e.target.value); renderMiembros(e.target.value); }, 150));
 
 document.getElementById("pinSubmitBtn").onclick=verificarPin;
 document.getElementById("pinInput").addEventListener("keydown", e=>{ if(e.key==="Enter") verificarPin(); });
