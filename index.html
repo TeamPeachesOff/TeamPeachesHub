@@ -99,6 +99,12 @@
      touch-action:manipulation apaga el delay de ~300ms que algunos navegadores móviles usan para
      esperar un posible doble-tap (zoom), hace que el primer tap responda de inmediato siempre. */
   button{font-family:inherit;cursor:pointer;border:none;-webkit-user-select:none;user-select:none;-webkit-touch-callout:none;-webkit-tap-highlight-color:transparent;touch-action:manipulation;}
+  /* v17: el mismo problema de "el botón solo responde si lo toco en una parte específica" también
+     pasaba en los enlaces con pinta de botón (<a class="btn-small">, .platform-btn, .social-link,
+     etc.) — la regla de arriba solo cubría <button>, nunca <a>. Como en esta app CADA <a> del HTML
+     se usa como botón de acción (nunca como texto de párrafo para seleccionar), se le aplica el
+     mismo tratamiento a todos los <a> sin excepción. */
+  a{-webkit-user-select:none;user-select:none;-webkit-touch-callout:none;-webkit-tap-highlight-color:transparent;touch-action:manipulation;}
   /* Estos elementos NO son <button> pero funcionan como uno (tienen un .onclick puesto por JS), así
      que necesitan exactamente el mismo tratamiento anti-selección que la regla de arriba, o si no
      quedan con el mismo problema. */
@@ -989,7 +995,8 @@ function abrirModalEnlaces(){
 // rompe nada, solo se ve menos bonita).
 const ANALITICA_LABELS = {
   cargarPagina_publico:"🌐 Carga de página (público)", cargarPagina_miembro:"🍑 Carga de página (Miembro)", cargarPagina_staff:"🛠️ Carga de página (Staff)",
-  validarPin:"🔒 Intentos de PIN Staff (válidos)", validarClaveMiembro:"🍑 Intentos de clave Miembro (válidos)",
+  validarPin_valido:"🔓 Ingreso a Staff (PIN correcto)", validarPin_invalido:"🚫 Intento de PIN Staff incorrecto",
+  validarClaveMiembro_valido:"🔓 Ingreso a Miembros (clave correcta)", validarClaveMiembro_invalido:"🚫 Intento de clave Miembro incorrecta",
   addActividad:"➕ Actividad creada", editActividad:"✏️ Actividad editada", deleteActividad:"🗑️ Actividad borrada",
   addEntrega:"📥 Entrega registrada", deleteEntregas:"🗑️ Entregas borradas", importarEntregas:"📋 Entregas importadas",
   irAEntregar:"🎙️ Botón \"Entregar\" usado", irAUnirse:"🤝 Botón \"Unirse\" usado", irAScript:"📄 Botón \"Script\" usado", botonPersonalizado:"🔘 Botón personalizado usado",
@@ -1011,10 +1018,10 @@ const ANALITICA_LABELS = {
 };
 // Agrupa cada acción bajo una categoría, solo para que la tabla de analítica se lea más rápido.
 // Si aparece una acción sin categoría asignada acá, cae sola en "Otros" (nunca se pierde un dato).
-const ANALITICA_CATEGORIAS_ORDEN = ["Accesos a la app","Tarjetas de Miembro","Mundo Peaches (globo)","Búsquedas","Actividades y entregas","Anuario","Redes sociales","Gestión de Miembros (Staff)","Multimedia","Buzón y reportes","Pruebas del sistema","Enlaces de Staff","Otros"];
+const ANALITICA_CATEGORIAS_ORDEN = ["Accesos a la app","Seguridad","Tarjetas de Miembro","Mundo Peaches (globo)","Búsquedas","Actividades y entregas","Anuario","Redes sociales","Gestión de Miembros (Staff)","Multimedia","Buzón y reportes","Pruebas del sistema","Enlaces de Staff","Otros"];
 const ANALITICA_CATEGORIA_DE = {
   cargarPagina_publico:"Accesos a la app", cargarPagina_miembro:"Accesos a la app", cargarPagina_staff:"Accesos a la app",
-  validarPin:"Accesos a la app", validarClaveMiembro:"Accesos a la app",
+  validarPin_valido:"Accesos a la app", validarPin_invalido:"Seguridad", validarClaveMiembro_valido:"Accesos a la app", validarClaveMiembro_invalido:"Seguridad",
   abrirTarjetaMiembro:"Tarjetas de Miembro", irASmule:"Tarjetas de Miembro", irABandlab:"Tarjetas de Miembro", copiarDiscord:"Tarjetas de Miembro", irAWhatsapp:"Tarjetas de Miembro",
   abrirGlobo:"Mundo Peaches (globo)", interaccionMapa:"Mundo Peaches (globo)", actualizarMapaMundo:"Mundo Peaches (globo)",
   buscarMiembros:"Búsquedas", buscarMundo:"Búsquedas",
