@@ -957,6 +957,52 @@ function abrirModalEnlaces(){
     } else toast("Error: "+(r.error||""));
   };
 }
+// Etiquetas legibles para las acciones técnicas del backend, solo para que la tabla de analítica
+// se entienda de un vistazo. Si aparece una acción sin traducir acá, se muestra tal cual (nunca
+// rompe nada, solo se ve menos bonita).
+const ANALITICA_LABELS = {
+  cargarPagina_publico:"🌐 Carga de página (público)", cargarPagina_miembro:"🍑 Carga de página (Miembro)", cargarPagina_staff:"🛠️ Carga de página (Staff)",
+  validarPin:"🔒 Intentos de PIN Staff (válidos)", validarClaveMiembro:"🍑 Intentos de clave Miembro (válidos)",
+  addActividad:"➕ Actividad creada", editActividad:"✏️ Actividad editada", deleteActividad:"🗑️ Actividad borrada",
+  addEntrega:"📥 Entrega registrada", deleteEntregas:"🗑️ Entregas borradas", importarEntregas:"📋 Entregas importadas",
+  addMiembro:"➕ Miembro agregado", editMiembro:"✏️ Miembro editado", deleteMiembro:"🗑️ Miembro borrado",
+  addFalta:"⚠️ Falta registrada", addStrike:"⚡ Strike registrado", addStrikePermanente:"☠️ Strike Permanente registrado",
+  resetCastigos:"♻️ Castigos reiniciados (individual)", resetStrikesGlobal:"♻️ Strikes reiniciados (global)",
+  limpiarNombresBD:"🧹 Limpieza de nombres BD", addToAnuario:"👑 Agregado al Anuario", editAnuario:"✏️ Anuario editado", deleteAnuario:"🗑️ Anuario borrado",
+  uploadImage:"🖼️ Imagen subida", uploadScript:"📄 Script subido", uploadAdjunto:"📎 Adjunto subido",
+  fetchSmulePhoto:"📸 Foto de Smule obtenida", actualizarTodasLasFotos:"🔄 Fotos actualizadas (lote)", actualizarMapaMundo:"🌍 Mapa de Mundo Peaches actualizado",
+  testRecordatorio:"🔔 Prueba de Recordatorio", testCumpleanos:"🎂 Prueba de Cumpleaños", testSeguridad:"🔒 Prueba de Seguridad",
+  addQueja:"📮 Buzón: queja/recomendación enviada", addReporte:"🐞 Reporte de error enviado",
+  obtenerEnlacesStaff:"🔗 Enlaces de Staff consultados", guardarEnlacesStaff:"⚙️ Enlaces de Staff guardados"
+};
+async function abrirAnalitica(){
+  const r = await apiPost({action:"obtenerAnalitica"}, "Cargando analítica...");
+  if(!r.ok){ toast("Error: "+(r.error||"")); return; }
+  const filas = r.datos||[];
+  document.getElementById("memberModalContent").innerHTML = `
+    <h3>📊 Analítica de uso</h3>
+    <p style="font-size:12.5px;color:var(--text-dim);margin:-6px 0 14px;">100% anónima: solo cuenta CUÁNTAS veces se usó cada función, nunca quién la usó.</p>
+    ${filas.length ? `
+      <div style="max-height:55vh;overflow-y:auto;border-radius:12px;background:var(--card-bg);">
+        <table style="width:100%;border-collapse:collapse;font-size:13px;">
+          <thead><tr style="position:sticky;top:0;background:var(--card-bg-2);">
+            <th style="text-align:left;padding:9px 10px;">Función</th>
+            <th style="text-align:right;padding:9px 10px;">Usos</th>
+            <th style="text-align:right;padding:9px 10px;white-space:nowrap;">Último uso</th>
+          </tr></thead>
+          <tbody>
+            ${filas.map(f=>`<tr style="border-top:1px solid rgba(255,255,255,0.06);">
+              <td style="padding:8px 10px;">${escHtml(ANALITICA_LABELS[f.accion]||f.accion)}</td>
+              <td style="padding:8px 10px;text-align:right;font-weight:700;color:var(--peach-1);">${f.total}</td>
+              <td style="padding:8px 10px;text-align:right;color:var(--text-dim);white-space:nowrap;">${escHtml(f.ultimoUso||"")}</td>
+            </tr>`).join("")}
+          </tbody>
+        </table>
+      </div>` : `<p style="text-align:center;color:var(--text-dim);">Todavía no hay datos registrados.</p>`}
+    <button class="btn-small btn-admin" id="analiticaVolverBtn" style="width:100%;margin-top:14px;">⬅️ Volver</button>`;
+  openModal("memberModal");
+  document.getElementById("analiticaVolverBtn").onclick = abrirStaffHub;
+}
 async function downloadImage(url, filename){
   try{
     const res=await fetch(url,{mode:"cors"}); const blob=await res.blob();
@@ -2460,6 +2506,7 @@ function abrirStaffHub(){
       <button class="drawer-nav-btn" id="hubCronograma" style="text-align:left;">🗓️ Cronograma de actividades</button>
       <button class="drawer-nav-btn" id="hubEditarInfo" style="text-align:left;">🖋️ Editar página de info</button>
       <button class="drawer-nav-btn" id="hubEditarAnuario" style="text-align:left;">✏️ Editar anuario</button>
+      <button class="drawer-nav-btn" id="hubAnalitica" style="text-align:left;">📊 Ver Analítica de uso</button>
       <button class="btn-small btn-family" id="hubLimpiar">🧹 Limpiar nombres BD (quitar @)</button>
     </div>
     <button class="btn-small btn-admin" id="hubEnlaces" style="width:100%;">⚙️ Editar Enlaces</button>`;
@@ -2479,6 +2526,7 @@ function abrirStaffHub(){
   document.getElementById("hubEditarAnuario").onclick=()=>abrirEnlacePrivado("CFG_EDITAR_ANUARIO_LINK");
   document.getElementById("hubEditarInfo").onclick=()=>abrirEnlacePrivado("CFG_EDITAR_INFO_LINK");
   document.getElementById("hubEnlaces").onclick=abrirModalEnlaces;
+  document.getElementById("hubAnalitica").onclick=abrirAnalitica;
 }
 async function probarHub(action,nombre,idActividad){ const r=await apiPost({action:action,idActividad:idActividad},"Enviando prueba..."); toast(r.ok?nombre+" enviado ✅":"Error: "+(r.error||"")); }
 document.getElementById("miembrosDrawerBtn").onclick=()=>{
