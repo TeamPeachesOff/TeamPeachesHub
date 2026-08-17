@@ -315,8 +315,7 @@
   .badge-inactivo{background:rgba(160,160,170,0.18);color:#a0a0aa;}
 
   .center-screen{max-width:340px;margin:60px auto;text-align:center;padding:0 16px;}
-  #pinInput, #memberPinInput{width:100%;text-align:center;font-size:24px;letter-spacing:8px;padding:14px;border-radius:12px;border:1px solid rgba(255,255,255,0.15);background:var(--card-bg-2);color:var(--text);margin:16px 0;}
-  #pinMsg{font-size:13px;color:var(--red);min-height:18px;}
+  #googleLoginMsg{font-size:13px;color:var(--red);min-height:18px;}
   #staffStatusBadge{display:none;position:fixed;bottom:14px;right:14px;background:linear-gradient(90deg,#6a3d8f,#a45fc7);color:#fff;padding:8px 14px;border-radius:999px;font-size:12.5px;font-weight:700;z-index:60;box-shadow:0 4px 14px rgba(0,0,0,0.4);cursor:pointer;}
   /* Discreto a propósito: modo Miembro es solo lectura, no necesita tanta prominencia como Staff.
      Es solo el emoji, sin texto, para que pase desapercibido. */
@@ -392,6 +391,7 @@
   .toast.show{opacity:1;}
   .empty-state{text-align:center;color:var(--text-dim);padding:40px 10px;font-size:14px;}
 </style>
+<script src="https://accounts.google.com/gsi/client" async defer></script>
 </head>
 <body>
 
@@ -487,23 +487,13 @@
     <div id="mundoLoading" class="mundo-loading hidden">🌍 Cargando el globo...</div>
   </section>
 
-  <section id="viewStaffPin" class="hidden">
+  <section id="viewGoogleLogin" class="hidden">
     <div class="center-screen">
       <div style="font-size:40px;">🍑🔒</div>
-      <h3>Introduce el PIN de Staff</h3>
-      <input autocomplete="off" type="password" id="pinInput" maxlength="6" inputmode="numeric">
-      <div id="pinMsg"></div>
-      <button class="btn-primary" style="width:100%;padding:12px;border-radius:12px;font-weight:800;" id="pinSubmitBtn">Desbloquear</button>
-    </div>
-  </section>
-
-  <section id="viewMemberPin" class="hidden">
-    <div class="center-screen">
-      <div style="font-size:40px;">🍑🔒</div>
-      <h3>Introduce la clave de Miembro</h3>
-      <input autocomplete="off" type="password" id="memberPinInput">
-      <div id="memberPinMsg"></div>
-      <button class="btn-primary" style="width:100%;padding:12px;border-radius:12px;font-weight:800;" id="memberPinSubmitBtn">Desbloquear</button>
+      <h3>Iniciá sesión con tu cuenta de Google</h3>
+      <p style="opacity:.75;font-size:14px;max-width:320px;margin:8px auto 20px;">Tu cuenta tiene que estar autorizada por un admin del team. Si no tenés acceso todavía, pedíselo.</p>
+      <div id="googleSignInBtn" style="display:flex;justify-content:center;margin:0 auto;"></div>
+      <div id="googleLoginMsg" style="margin-top:14px;"></div>
     </div>
   </section>
     </div>
@@ -684,7 +674,7 @@ let DB = { actividades: [], entregas: [], miembros: [] };
 // ---------- Ocultar de verdad para lectores accesibles (Ticket: fuga en Modo Lectura de Edge) ----------
 // El "Modo Lectura" de Edge (y lectores de pantalla similares) extraen el texto de TODO el DOM sin
 // respetar el CSS (display:none via la clase .hidden), así que mostraban el contenido de las
-// pantallas ocultas (PIN de Staff, formulario de Miembro, etc.) aunque nunca se vieran en pantalla.
+// pantallas ocultas (login de Google, formulario de Miembro, etc.) aunque nunca se vieran en pantalla.
 // El atributo NATIVO `hidden` de HTML sí es respetado por esas herramientas, así que lo mantenemos
 // sincronizado automáticamente con la clase .hidden en cualquier elemento del sitio, sin tener que
 // tocar cada uno de los toggles de "hidden" que ya existen en el código.
@@ -693,16 +683,21 @@ document.querySelectorAll(".hidden").forEach(syncNativeHidden);
 new MutationObserver(muts=>{
   muts.forEach(m=>syncNativeHidden(m.target));
 }).observe(document.body, {attributes:true, attributeFilter:["class"], subtree:true});
-// El PIN se guarda en localStorage solo para autocompletar el campo la próxima vez,
-// pero el modo Staff NO se auto-activa al recargar: siempre se abre en modo normal
-// y hay que apretar el botón Staff + confirmar el PIN cada vez, a propósito.
-let staffPin = null;
-// Modo Miembro: misma idea que staffPin (autocompleta pero no se auto-activa al recargar).
-let memberPin = null;
+// v20: reemplaza al PIN. sessionToken es lo único que viaja al backend en cada request — lo
+// emite el servidor después de un login de Google válido (ver loginGoogle en Code.gs) y se
+// guarda en localStorage para no tener que iniciar sesión de nuevo en cada visita.
+// staffPin/memberPin se conservan como banderas booleanas derivadas del rol de la sesión
+// (nunca contienen un secreto), porque el resto del código ya las usa por todos lados para
+// decidir qué botones/acciones mostrar — cambiar cada uno de esos usos sería innecesario.
+let sessionToken = null;
+let staffPin = null;   // truthy si la sesión activa es rol "staff"
+let memberPin = null;  // truthy si la sesión activa es rol "miembro"
+let googleClientIdFront = null; // lo manda el backend en cada doGet, para no hardcodearlo acá también
+let googleSignInInicializado = false;
 // Enlaces privados (Sheets, GitHub, Cronograma, Editar Anuario, Editar Info): SOLO viven en esta
-// variable en memoria, y SOLO se rellenan después de validar el PIN de Staff contra el servidor
+// variable en memoria, y SOLO se rellenan después de validar la sesión de Staff contra el servidor
 // (ver obtenerEnlacesStaff en Code.gs). Nunca se escriben en el HTML ni en localStorage, así que
-// aunque alguien abra F12 sin PIN, no hay ningún href ni string con esas URLs para encontrar.
+// aunque alguien abra F12 sin sesión, no hay ningún href ni string con esas URLs para encontrar.
 let enlacesStaff = null;
 let nivel = "publico"; // "staff" | "miembro" | "publico" -- lo manda el backend en cada carga
 let filtroCanto = true, filtroDoblaje = true;
@@ -902,62 +897,18 @@ function winnersGroupHTML(emoji,label,text,tipo,tituloActividad){
   </div>`;
 }
 
-// ============ SEGURIDAD (v17/v19): IP + ubicación aproximada ============
-// Se pide UNA sola vez (se cachea en memoria) y se manda junto con cualquier intento de PIN/clave
-// (correcto o no) para que, si alguien intenta forzar la entrada, el backend pueda loguear desde
-// dónde vino y avisar por Discord con esos datos. Apps Script no expone la IP del request
-// directamente en doGet/doPost, así que se resuelve acá, del lado del navegador.
-//
-// v19: antes usaba solo ipapi.co, y en la práctica venía "desconocida" muy seguido — la causa más
-// común es que extensiones de privacidad/adblock (uBlock, Brave Shields, etc.) tratan a los
-// servicios de "IP lookup" como trackers y bloquean la llamada sin avisar (el fetch ni siquiera
-// llega a intentarlo). Ahora se prueban 3 proveedores distintos en cadena: si el primero falla
-// (bloqueado, caído, rate-limited), se intenta el siguiente. Aun así puede quedar vacío si la
-// persona bloquea los tres — eso NUNCA bloquea el login real, solo se pierde ese dato puntual.
-async function _intentarProveedorIP(url, parseFn, timeoutMs){
-  const ctrl = new AbortController();
-  const t = setTimeout(()=>ctrl.abort(), timeoutMs||3500);
-  try{
-    const res = await fetch(url, {signal: ctrl.signal});
-    const d = await res.json();
-    clearTimeout(t);
-    return parseFn(d);
-  }catch(e){
-    clearTimeout(t);
-    return null;
-  }
-}
-let _ipInfoCache = null;
-async function obtenerIPUbicacion(){
-  if (_ipInfoCache) return _ipInfoCache;
-  // 1) ipapi.co: IP + ciudad/región/país en una sola llamada.
-  let r = await _intentarProveedorIP("https://ipapi.co/json/", d => (d && d.ip) ? { ip: d.ip, ubicacion: [d.city, d.region, d.country_name].filter(Boolean).join(", ") } : null);
-  // 2) ipwho.is: mismo formato de datos, proveedor distinto (por si el primero está bloqueado).
-  if (!r) r = await _intentarProveedorIP("https://ipwho.is/", d => (d && d.success !== false && d.ip) ? { ip: d.ip, ubicacion: [d.city, d.region, d.country].filter(Boolean).join(", ") } : null);
-  // 3) ipify: solo devuelve la IP (sin ubicación), pero es el servicio más liviano y menos
-  // propenso a terminar en listas de bloqueo, así que sirve de último recurso para al menos
-  // rescatar la IP aunque no haya ubicación.
-  if (!r) r = await _intentarProveedorIP("https://api.ipify.org?format=json", d => (d && d.ip) ? { ip: d.ip, ubicacion: "" } : null);
-  _ipInfoCache = r || { ip: "", ubicacion: "" };
-  return _ipInfoCache;
-}
-obtenerIPUbicacion(); // se dispara en segundo plano al cargar, así ya está lista cuando haga falta
+// v20: se elimina el módulo de IP/ubicación aproximada que mandaba el propio navegador (ipapi.co
+// / ipwho.is / ipify). Era un dato que cualquiera podía falsificar mandando otro valor en el
+// payload — nunca fue una verificación real. Ahora, cuando el backend rechaza un login, ya tiene
+// algo mejor: el email real de la cuenta de Google, verificado por Google mismo (ver
+// verificarTokenGoogle_ en Code.gs), imposible de falsificar sin acceso real a esa cuenta.
 
 async function apiGet(){
   showLoading("Cargando datos...");
-  // Si hay modo staff o modo miembro activo en esta sesión, se manda la clave correspondiente
-  // para que el servidor devuelva los datos completos; si no, el servidor ya filtra solo lo
-  // mostrable al público. Staff tiene prioridad si por algún motivo ambos estuvieran seteados.
-  const clave = staffPin || memberPin || "";
+  // v20: se manda el token de sesión (emitido por loginGoogle) en vez de un PIN en texto plano.
+  // Si no hay sesión activa, el servidor ya filtra solo lo mostrable al público.
   try{
-    let url=APPS_SCRIPT_URL+(clave?("?clave="+encodeURIComponent(clave)):"");
-    if (clave) {
-      // Solo hace falta mandar IP/ubicación cuando hay una clave que el backend tiene que validar
-      // (si no hay clave, es una carga pública normal, no un intento de acceso).
-      const info = await obtenerIPUbicacion();
-      if (info.ip) url += "&ip="+encodeURIComponent(info.ip);
-      if (info.ubicacion) url += "&ubicacion="+encodeURIComponent(info.ubicacion);
-    }
+    let url=APPS_SCRIPT_URL+(sessionToken?("?token="+encodeURIComponent(sessionToken)):"");
     const res=await fetch(url); return await res.json();
   }
   finally{ hideLoading(); }
@@ -965,10 +916,7 @@ async function apiGet(){
 async function apiPost(payload, msg){
   showLoading(msg||"Guardando...");
   try{
-    payload.pin=staffPin||"";
-    const _info = await obtenerIPUbicacion();
-    payload.ip = _info.ip;
-    payload.ubicacion = _info.ubicacion;
+    payload.token=sessionToken||"";
     // Antes, si el fetch fallaba (sin internet) o el servidor respondía con algo que no era JSON
     // (por ejemplo una página de error HTML de Apps Script cuando la operación tarda demasiado y
     // se corta a los ~6 minutos), esta función lanzaba una excepción sin capturar. Eso significa
@@ -987,7 +935,7 @@ async function apiPost(payload, msg){
     return {ok:false, error:"No se pudo conectar con el servidor. Revisa tu conexión e intenta de nuevo."};
   } finally{ hideLoading(); }
 }
-// Se llama SOLO justo después de que el servidor confirmó que el PIN de Staff es correcto.
+// Se llama SOLO justo después de que el servidor confirmó una sesión de Staff válida.
 // Si esto falla, enlacesStaff queda null y los botones simplemente avisan "no se pudo cargar".
 async function cargarEnlacesStaff(){
   const r = await apiPost({action:"obtenerEnlacesStaff"});
@@ -1049,8 +997,7 @@ function abrirModalEnlaces(){
 // rompe nada, solo se ve menos bonita).
 const ANALITICA_LABELS = {
   cargarPagina_publico:"🌐 Carga de página (público)", cargarPagina_miembro:"🍑 Carga de página (Miembro)", cargarPagina_staff:"🛠️ Carga de página (Staff)",
-  validarPin_valido:"🔓 Ingreso a Staff (PIN correcto)", validarPin_invalido:"🚫 Intento de PIN Staff incorrecto",
-  validarClaveMiembro_valido:"🔓 Ingreso a Miembros (clave correcta)", validarClaveMiembro_invalido:"🚫 Intento de clave Miembro incorrecta",
+  loginGoogle_staff:"🔓 Login con Google (Staff)", loginGoogle_miembro:"🔓 Login con Google (Miembro)",
   addActividad:"➕ Actividad creada", editActividad:"✏️ Actividad editada", deleteActividad:"🗑️ Actividad borrada",
   addEntrega:"📥 Entrega registrada", deleteEntregas:"🗑️ Entregas borradas", importarEntregas:"📋 Entregas importadas",
   irAEntregar:"🎙️ Botón \"Entregar\" usado", irAUnirse:"🤝 Botón \"Unirse\" usado", irAScript:"📄 Botón \"Script\" usado", botonPersonalizado:"🔘 Botón personalizado usado",
@@ -1075,7 +1022,7 @@ const ANALITICA_LABELS = {
 const ANALITICA_CATEGORIAS_ORDEN = ["Accesos a la app","Seguridad","Tarjetas de Miembro","Mundo Peaches (globo)","Búsquedas","Actividades y entregas","Anuario","Redes sociales","Gestión de Miembros (Staff)","Multimedia","Buzón y reportes","Pruebas del sistema","Enlaces de Staff","Otros"];
 const ANALITICA_CATEGORIA_DE = {
   cargarPagina_publico:"Accesos a la app", cargarPagina_miembro:"Accesos a la app", cargarPagina_staff:"Accesos a la app",
-  validarPin_valido:"Accesos a la app", validarPin_invalido:"Seguridad", validarClaveMiembro_valido:"Accesos a la app", validarClaveMiembro_invalido:"Seguridad",
+  loginGoogle_staff:"Accesos a la app", loginGoogle_miembro:"Accesos a la app",
   abrirTarjetaMiembro:"Tarjetas de Miembro", irASmule:"Tarjetas de Miembro", irABandlab:"Tarjetas de Miembro", copiarDiscord:"Tarjetas de Miembro", irAWhatsapp:"Tarjetas de Miembro",
   abrirGlobo:"Mundo Peaches (globo)", interaccionMapa:"Mundo Peaches (globo)", actualizarMapaMundo:"Mundo Peaches (globo)",
   buscarMiembros:"Búsquedas", buscarMundo:"Búsquedas",
@@ -1151,18 +1098,14 @@ async function abrirIntentosFallidos(){
             <tr style="position:sticky;top:0;background:var(--card-bg-2);">
               <th style="padding:8px 10px;text-align:left;">Cuándo</th>
               <th style="padding:8px 10px;text-align:left;">Tipo</th>
-              <th style="padding:8px 10px;text-align:left;">Valor probado</th>
-              <th style="padding:8px 10px;text-align:left;">IP</th>
-              <th style="padding:8px 10px;text-align:left;">Ubicación</th>
+              <th style="padding:8px 10px;text-align:left;">Detalle (email real verificado por Google, cuando aplica)</th>
             </tr>
           </thead>
           <tbody>
             ${filas.map(f=>`<tr style="border-top:1px solid rgba(255,255,255,0.06);">
               <td style="padding:7px 10px;white-space:nowrap;color:var(--text-dim);">${escHtml(f.timestamp||"")}</td>
-              <td style="padding:7px 10px;white-space:nowrap;">${f.tipo==="staff"?"🛠️ Staff":"🍑 Miembros"}</td>
-              <td style="padding:7px 10px;"><code>${escHtml(f.valorIntentado||"—")}</code></td>
-              <td style="padding:7px 10px;white-space:nowrap;">${escHtml(f.ip||"desconocida")}</td>
-              <td style="padding:7px 10px;white-space:nowrap;">${escHtml(f.ubicacion||"desconocida")}</td>
+              <td style="padding:7px 10px;white-space:nowrap;">🔐 Login Google</td>
+              <td style="padding:7px 10px;"><code>${escHtml(f.detalle||"—")}</code></td>
             </tr>`).join("")}
           </tbody>
         </table>
@@ -1273,7 +1216,20 @@ async function cargarDatos(){
   try{
     DB=await apiGet();
     if(!DB || typeof DB!=="object" || !Array.isArray(DB.actividades) || !Array.isArray(DB.anuario)) throw new Error("Respuesta inesperada del servidor: "+JSON.stringify(DB).slice(0,200));
-    nivel = DB.nivel || (staffPin ? "staff" : (memberPin ? "miembro" : "publico"));
+    // v20: "nivel" ahora sale SIEMPRE de lo que el servidor resolvió a partir del token de sesión
+    // (ver validarSesion_ en Code.gs) — nunca de lo que el cliente cree tener. Si el token venció
+    // o es inválido, el servidor ya contestó nivel:"publico" y acá se limpia el estado local.
+    nivel = DB.nivel || "publico";
+    staffPin = (nivel==="staff") ? sessionToken : null;
+    memberPin = (nivel==="miembro") ? sessionToken : null;
+    if (nivel==="publico" && sessionToken) {
+      // La sesión guardada ya no sirve (venció o fue revocada desde "AccesoAutorizado"): se limpia
+      // para no seguir mandando un token muerto en cada request.
+      sessionToken = null;
+      localStorage.removeItem("tph_session_token");
+      localStorage.removeItem("tph_session_rol");
+    }
+    if (DB.googleClientId && !googleSignInInicializado) inicializarGoogleSignIn(DB.googleClientId);
     aplicarEnlacesPublicos();
     aplicarVisibilidadBuzon();
     aplicarVisibilidadMundo();
@@ -1286,7 +1242,7 @@ async function cargarDatos(){
 }
 
 // Los enlaces públicos (Regalito, Anuario público) llegan en CADA carga de datos (enlacesPublicos,
-// visible sin PIN a propósito) y se aplican acá, así el panel "Actualizar Enlaces" realmente
+// visible sin sesión a propósito) y se aplican acá, así el panel "Actualizar Enlaces" realmente
 // cambia el comportamiento de la página sin tener que editar el HTML.
 function aplicarEnlacesPublicos(){
   const ep = DB.enlacesPublicos || {};
@@ -2546,7 +2502,7 @@ document.getElementById("entregaForm").addEventListener("submit", async(e)=>{
   if(r.ok){ toast("Entrega registrada ✅"); closeModal("entregaFormModal"); await cargarDatos(); } else toast("Error: "+(r.error||""));
 });
 
-/* ---------- Fase 4: Buzón de Quejas / Recomendaciones (público, sin PIN) ---------- */
+/* ---------- Fase 4: Buzón de Quejas / Recomendaciones (público, sin sesión) ---------- */
 function openBuzonForm(){
   document.getElementById("memberModalContent").innerHTML=`
     <h3>📮 Buzón de Quejas y Recomendaciones</h3>
@@ -2591,7 +2547,7 @@ async function enviarQueja(){
   if(r.ok){ toast("¡Enviado, gracias! 🍑"); closeModal("memberModal"); } else toast("Error: "+(r.error||""));
 }
 
-/* ---------- Fase 4: Reportar Error (público, sin PIN) ---------- */
+/* ---------- Fase 4: Reportar Error (público, sin sesión) ---------- */
 function openReporteForm(){
   document.getElementById("memberModalContent").innerHTML=`
     <h3>🐞 Reportar un Error</h3>
@@ -2638,8 +2594,7 @@ function switchTab(tab){
   document.getElementById("viewAnuario").classList.toggle("hidden",tab!=="anuario");
   document.getElementById("viewMiembros").classList.add("hidden");
   document.getElementById("viewMundo").classList.add("hidden");
-  document.getElementById("viewStaffPin").classList.add("hidden");
-  document.getElementById("viewMemberPin").classList.add("hidden");
+  document.getElementById("viewGoogleLogin").classList.add("hidden");
 }
 document.getElementById("hamburgerBtn").onclick=()=>{ document.getElementById("drawer").classList.add("open"); document.getElementById("drawerOverlay").style.display="block"; };
 document.getElementById("drawerOverlay").onclick=closeDrawer;
@@ -2715,17 +2670,12 @@ async function probarHub(action,nombre,idActividad){ const r=await apiPost({acti
 document.getElementById("miembrosDrawerBtn").onclick=()=>{
   closeDrawer();
   if(staffPin||memberPin){ mostrarViewMiembros(); return; }
-  // Sin acceso todavía: no tiene sentido mostrar la jerarquía de Miembros vacía,
-  // así que primero se pide la clave (la misma del Modo Miembro).
-  document.querySelectorAll(".tab-btn").forEach(b=>b.classList.remove("active"));
-  document.getElementById("viewActividades").classList.add("hidden"); document.getElementById("viewAnuario").classList.add("hidden"); document.getElementById("viewStaffPin").classList.add("hidden"); document.getElementById("viewMiembros").classList.add("hidden"); document.getElementById("viewMundo").classList.add("hidden");
-  document.getElementById("viewMemberPin").classList.remove("hidden");
-  document.getElementById("memberPinInput").value=localStorage.getItem("tph_member_clave")||""; // autocompleta, pero no activa solo
-  despuesDeClaveMiembro="miembros";
+  // Sin acceso todavía: se pide login de Google en vez de la vieja clave de Miembro.
+  mostrarViewGoogleLogin();
 };
 function mostrarViewMiembros(){
   document.querySelectorAll(".tab-btn").forEach(b=>b.classList.remove("active"));
-  document.getElementById("viewActividades").classList.add("hidden"); document.getElementById("viewAnuario").classList.add("hidden"); document.getElementById("viewStaffPin").classList.add("hidden"); document.getElementById("viewMemberPin").classList.add("hidden"); document.getElementById("viewMundo").classList.add("hidden");
+  document.getElementById("viewActividades").classList.add("hidden"); document.getElementById("viewAnuario").classList.add("hidden"); document.getElementById("viewGoogleLogin").classList.add("hidden"); document.getElementById("viewMundo").classList.add("hidden");
   document.getElementById("viewMiembros").classList.remove("hidden");
   document.getElementById("memberToolsRow1").classList.toggle("hidden", !staffPin);
   document.getElementById("memberToolsRow2").classList.toggle("hidden", !staffPin);
@@ -2736,120 +2686,101 @@ function mostrarViewMiembros(){
 document.getElementById("staffDrawerBtn").onclick=()=>{
   closeDrawer();
   if(staffPin){ abrirStaffHub(); return; }
-  document.querySelectorAll(".tab-btn").forEach(b=>b.classList.remove("active"));
-  document.getElementById("viewActividades").classList.add("hidden"); document.getElementById("viewAnuario").classList.add("hidden"); document.getElementById("viewMiembros").classList.add("hidden"); document.getElementById("viewMemberPin").classList.add("hidden"); document.getElementById("viewMundo").classList.add("hidden");
-  document.getElementById("viewStaffPin").classList.remove("hidden");
-  document.getElementById("pinInput").value=localStorage.getItem("tph_pin")||""; // autocompleta, pero no activa solo
+  mostrarViewGoogleLogin();
 };
+function mostrarViewGoogleLogin(){
+  document.querySelectorAll(".tab-btn").forEach(b=>b.classList.remove("active"));
+  document.getElementById("viewActividades").classList.add("hidden"); document.getElementById("viewAnuario").classList.add("hidden"); document.getElementById("viewMiembros").classList.add("hidden"); document.getElementById("viewMundo").classList.add("hidden");
+  document.getElementById("viewGoogleLogin").classList.remove("hidden");
+  document.getElementById("googleLoginMsg").textContent="";
+  renderizarBotonGoogle();
+}
 document.getElementById("searchMiembros").addEventListener("input", debounce(e=>{ trackSearchUso("buscarMiembros", e.target.value); renderMiembros(e.target.value); }, 150));
 
-document.getElementById("pinSubmitBtn").onclick=verificarPin;
-document.getElementById("pinInput").addEventListener("keydown", e=>{ if(e.key==="Enter") verificarPin(); });
-// Bloqueo silencioso local: a los 20 intentos fallidos EN ESTA CARGA de la página, deja de mandar
-// el PIN al servidor y siempre dice "PIN incorrecto", sin avisar que está bloqueado.
-// Se resetea solo al recargar la página (no se guarda en localStorage a propósito).
-let pinIntentosFallidos=0;
-async function verificarPin(){
-  const val=document.getElementById("pinInput").value.trim();
-  if(!val){ document.getElementById("pinMsg").textContent="Escribe un PIN."; return; }
-  if(pinIntentosFallidos>=20){ document.getElementById("pinMsg").textContent="PIN incorrecto ❌"; return; }
-  staffPin=val;
-  const r=await apiPost({action:"validarPin"},"Verificando PIN...");
-  if(r.ok){
-    localStorage.setItem("tph_pin",val);
-    document.getElementById("pinMsg").textContent="";
-    toast("Modo Staff activado 🛠️");
-    document.getElementById("staffStatusBadge").style.display="block";
-    document.getElementById("addActBtn").classList.remove("hidden");
+/* ---------- login con Google (v20, reemplaza el sistema de PIN) ---------- */
+// Se inicializa apenas el primer doGet trae el Client ID (ver cargarDatos), así nunca hace falta
+// hardcodearlo acá — vive en un solo lugar (Code.gs) y viaja desde ahí.
+function inicializarGoogleSignIn(clientId){
+  if (!window.google || !google.accounts || !google.accounts.id) {
+    // El script de Google todavía no cargó (red lenta, bloqueador, etc.): reintentamos en breve
+    // en vez de romper el resto de la app, que no depende de esto para funcionar como pública.
+    setTimeout(()=>inicializarGoogleSignIn(clientId), 800);
+    return;
+  }
+  googleClientIdFront = clientId;
+  google.accounts.id.initialize({ client_id: clientId, callback: manejarRespuestaGoogle, auto_select: false });
+  googleSignInInicializado = true;
+  renderizarBotonGoogle();
+}
+function renderizarBotonGoogle(){
+  const cont = document.getElementById("googleSignInBtn");
+  if (!cont || !googleSignInInicializado || cont.childElementCount) return;
+  google.accounts.id.renderButton(cont, { theme:"filled_black", size:"large", shape:"pill", text:"signin_with", locale:"es" });
+}
+async function manejarRespuestaGoogle(response){
+  document.getElementById("googleLoginMsg").textContent = "Verificando...";
+  const r = await apiPost({action:"loginGoogle", credential: response.credential}, "Iniciando sesión...");
+  if (r.ok) {
+    sessionToken = r.token;
+    localStorage.setItem("tph_session_token", r.token);
+    localStorage.setItem("tph_session_rol", r.rol);
+    document.getElementById("googleLoginMsg").textContent = "";
+    toast(r.rol==="staff" ? "Modo Staff activado 🛠️" : "Modo Miembro activado 🍑");
+    if (r.rol==="staff") document.getElementById("staffStatusBadge").style.display="block";
+    else document.getElementById("memberStatusBadge").style.display="flex";
+    if (r.rol==="staff") document.getElementById("addActBtn").classList.remove("hidden");
     switchTab("actividades");
-    await cargarDatos(); // vuelve a pedir los datos, ahora con el PIN, para traer todo completo
-    await cargarEnlacesStaff(); // recién ahora, con el PIN ya validado en servidor, se piden los enlaces privados
-  } else { staffPin=null; pinIntentosFallidos++; document.getElementById("pinMsg").textContent=(r.error||"PIN incorrecto")+" ❌"; }
+    await cargarDatos(); // vuelve a pedir los datos, ahora con el token, para traer todo completo
+    if (r.rol==="staff") await cargarEnlacesStaff(); // recién ahora, con la sesión ya validada, se piden los enlaces privados
+  } else {
+    document.getElementById("googleLoginMsg").textContent = r.error || "No se pudo iniciar sesión.";
+  }
+}
+async function cerrarSesionActual(mensaje){
+  const tokenViejo = sessionToken;
+  sessionToken = null; staffPin = null; memberPin = null;
+  localStorage.removeItem("tph_session_token"); localStorage.removeItem("tph_session_rol");
+  enlacesStaff = null; // se borran de memoria: sin sesión activa, no deben quedar accesibles ni un momento más
+  document.getElementById("staffStatusBadge").style.display="none";
+  document.getElementById("memberStatusBadge").style.display="none";
+  document.getElementById("addActBtn").classList.add("hidden");
+  document.getElementById("memberToolsRow1").classList.add("hidden");
+  document.getElementById("memberToolsRow2").classList.add("hidden");
+  document.getElementById("memberToolsRow3").classList.add("hidden");
+  if (window.google && google.accounts && google.accounts.id) google.accounts.id.disableAutoSelect();
+  if (tokenViejo) apiPost({action:"logout", token:tokenViejo}).catch(()=>{}); // fire-and-forget: invalida la sesión en el servidor
+  toast(mensaje);
+  cargarDatos(); // vuelve a pedir los datos sin sesión, así el servidor manda la versión pública
 }
 document.getElementById("staffStatusBadge").onclick=async()=>{
-  if(await confirmarAccion("¿Deseas salir del modo staff?")){
-    staffPin=null; localStorage.removeItem("tph_pin");
-    enlacesStaff=null; // se borran de memoria: sin PIN activo, no deben quedar accesibles ni un momento más
-    document.getElementById("staffStatusBadge").style.display="none";
-    document.getElementById("addActBtn").classList.add("hidden");
-    document.getElementById("memberToolsRow1").classList.add("hidden");
-    document.getElementById("memberToolsRow2").classList.add("hidden");
-    document.getElementById("memberToolsRow3").classList.add("hidden");
-    toast("Saliste del modo staff");
-    cargarDatos(); // vuelve a pedir los datos sin PIN, así el servidor manda la versión pública
-  }
+  if(await confirmarAccion("¿Deseas salir del modo staff?")) cerrarSesionActual("Saliste del modo staff");
 };
-
-/* ---------- modo miembro (Fase 3): lectura completa, sin edición ---------- */
-document.getElementById("memberPinSubmitBtn").onclick=verificarClaveMiembro;
-document.getElementById("memberPinInput").addEventListener("keydown", e=>{ if(e.key==="Enter") verificarClaveMiembro(); });
-// Mismo candado silencioso que el PIN de Staff: a los 20 intentos fallidos EN ESTA CARGA de la
-// página, deja de mandar la clave al servidor y siempre dice "Clave incorrecta", hasta recargar.
-let memberIntentosFallidos=0;
-// Si la clave se pidió porque apretaron "Miembros" sin acceso todavía, al validar hay que
-// llevarlos directo a esa vista en vez de a Actividades.
-let despuesDeClaveMiembro=null;
-async function verificarClaveMiembro(silencioso){
-  const val=document.getElementById("memberPinInput").value.trim();
-  if(!val){ if(!silencioso) document.getElementById("memberPinMsg").textContent="Escribe la clave."; return; }
-  if(memberIntentosFallidos>=20){ document.getElementById("memberPinMsg").textContent="Clave incorrecta ❌"; return; }
-  const r=await apiPost({action:"validarClaveMiembro", clave:val},"Verificando clave...");
-  if(r.ok){
-    memberPin=val;
-    localStorage.setItem("tph_member_clave",val);
-    document.getElementById("memberPinMsg").textContent="";
-    document.getElementById("memberStatusBadge").style.display="flex";
-    if(!silencioso) toast("Modo Miembro activado 🍑");
-    // Siempre a Actividades primero (aunque hayan llegado acá tocando "Miembros"): así el flujo
-    // tiene sentido — primero desbloqueás, y de ahí, si querés, entrás a ver Miembros.
-    despuesDeClaveMiembro=null;
-    switchTab("actividades");
-    await cargarDatos(); // vuelve a pedir los datos, ahora con la clave, para traer todo completo
-  } else {
-    memberIntentosFallidos++;
-    localStorage.removeItem("tph_member_clave");
-    if(!silencioso) document.getElementById("memberPinMsg").textContent=(r.error||"Clave incorrecta")+" ❌";
-  }
-}
 document.getElementById("memberStatusBadge").onclick=async()=>{
-  if(await confirmarAccion("¿Deseas salir del modo miembro?")){
-    memberPin=null; localStorage.removeItem("tph_member_clave");
-    document.getElementById("memberStatusBadge").style.display="none";
-    toast("Saliste del modo miembro");
-    cargarDatos(); // vuelve a pedir los datos sin clave, así el servidor manda la versión pública
-  }
+  if(await confirmarAccion("¿Deseas salir del modo miembro?")) cerrarSesionActual("Saliste del modo miembro");
 };
 
 function escHtml(str){ return String(str).replace(/[&<>"']/g, s=>({"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;","'":"&#39;"}[s])); }
 function escAttr(str){ return escHtml(str); }
 
-// A diferencia de Staff (que a propósito NUNCA se auto-activa), el modo Miembro es de solo
-// lectura y de bajo riesgo, así que si ya lo validaste antes, no hace falta pedirlo de nuevo
-// cada vez que recargás la página.
-(async function restaurarModoMiembro(){
-  const claveGuardada = localStorage.getItem("tph_member_clave");
-  if (claveGuardada) {
-    document.getElementById("memberPinInput").value = claveGuardada;
-    // OPTIMIZACIÓN DE ARRANQUE: antes esto hacía verificarClaveMiembro() (un POST solo para
-    // validar) y DESPUÉS cargarDatos() (un GET para traer los datos) EN SECUENCIA — dos viajes
-    // de red completos, uno detrás del otro, antes de poder mostrar nada. Como el backend YA
-    // valida la clave en cada doGet (por eso manda "nivel": "miembro"/"publico"/"staff"), alcanza
-    // con mandarla directo en la ÚNICA carga de datos: un solo viaje de red hace las dos cosas
-    // a la vez (valida Y trae los datos completos si es válida).
-    memberPin = claveGuardada;
-    await cargarDatos();
-    if (nivel === "miembro") {
-      document.getElementById("memberStatusBadge").style.display = "flex";
-    } else {
-      // La clave guardada ya no sirve: el propio GET que ya se hizo arriba, al no reconocer la
-      // clave, YA vino con "nivel":"publico" y los datos públicos (el backend filtra ahí mismo,
-      // sin PIN válido). O sea que la pantalla ya está mostrando lo correcto — solo falta limpiar
-      // el estado local, sin gastar un segundo viaje de red pidiendo lo mismo otra vez.
-      memberPin = null;
-      localStorage.removeItem("tph_member_clave");
-    }
-  } else {
-    await cargarDatos();
+// A diferencia del viejo modo Staff (que a propósito nunca se auto-activaba), restaurar una
+// sesión de Google ya validada es de bajo riesgo: si el token guardado venció o fue revocado
+// desde "AccesoAutorizado", el propio doGet ya contesta nivel:"publico" y cargarDatos() limpia
+// el estado local sola (ver ahí). No hace falta un segundo viaje de red para confirmar nada.
+(async function restaurarSesion(){
+  const tokenGuardado = localStorage.getItem("tph_session_token");
+  const rolGuardado = localStorage.getItem("tph_session_rol");
+  if (tokenGuardado) {
+    sessionToken = tokenGuardado;
+    if (rolGuardado==="staff") staffPin = tokenGuardado;
+    if (rolGuardado==="miembro") memberPin = tokenGuardado;
+  }
+  await cargarDatos();
+  if (nivel === "staff") {
+    document.getElementById("staffStatusBadge").style.display = "block";
+    document.getElementById("addActBtn").classList.remove("hidden");
+    await cargarEnlacesStaff();
+  } else if (nivel === "miembro") {
+    document.getElementById("memberStatusBadge").style.display = "flex";
   }
 })();
 </script>
