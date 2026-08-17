@@ -496,6 +496,22 @@
       <div id="googleLoginMsg" style="margin-top:14px;"></div>
     </div>
   </section>
+
+  <!-- v21: acceso de Miembro, vuelve a ser una clave compartida (no exige cuenta de Google),
+       porque ese nivel no entrega ningún dato sensible. Vista separada de viewGoogleLogin, que
+       sigue siendo exclusiva de Staff. -->
+  <section id="viewMemberPin" class="hidden">
+    <div class="center-screen">
+      <div style="font-size:40px;">🍑🔑</div>
+      <h3>Acceso de Miembro</h3>
+      <p style="opacity:.75;font-size:14px;max-width:320px;margin:8px auto 20px;">Escribí la clave de Miembro del team.</p>
+      <form id="memberPinForm" style="display:flex;flex-direction:column;gap:10px;max-width:260px;margin:0 auto;">
+        <input autocomplete="off" type="password" id="memberPinInput" placeholder="Clave de Miembro" style="text-align:center;">
+        <button type="submit" class="btn-small btn-family" style="width:100%;">Entrar</button>
+      </form>
+      <div id="memberPinMsg" style="margin-top:14px;color:var(--red);min-height:18px;"></div>
+    </div>
+  </section>
     </div>
   </section>
 </main>
@@ -683,15 +699,18 @@ document.querySelectorAll(".hidden").forEach(syncNativeHidden);
 new MutationObserver(muts=>{
   muts.forEach(m=>syncNativeHidden(m.target));
 }).observe(document.body, {attributes:true, attributeFilter:["class"], subtree:true});
-// v20: reemplaza al PIN. sessionToken es lo único que viaja al backend en cada request — lo
-// emite el servidor después de un login de Google válido (ver loginGoogle en Code.gs) y se
-// guarda en localStorage para no tener que iniciar sesión de nuevo en cada visita.
-// staffPin/memberPin se conservan como banderas booleanas derivadas del rol de la sesión
-// (nunca contienen un secreto), porque el resto del código ya las usa por todos lados para
-// decidir qué botones/acciones mostrar — cambiar cada uno de esos usos sería innecesario.
+// v20/v21: dos mecanismos de acceso distintos, cada uno con su propia variable.
+// sessionToken (Staff): token de SESIÓN emitido por el servidor tras un login de Google válido
+// (ver loginGoogle en Code.gs) — nunca un secreto que el cliente haya inventado. Se guarda en
+// localStorage para no tener que iniciar sesión de nuevo en cada visita.
+// memberPin (Miembro, revertido en v21): vuelve a ser la CLAVE real compartida (no un booleano
+// derivado de una sesión), porque ese nivel no entrega datos sensibles y no justifica el costo de
+// exigir cuenta de Google. Se manda en cada apiGet() como ?clave=, igual que el sistema pre-v20.
+// staffPin se conserva como bandera booleana derivada de sessionToken/rol (el resto del código ya
+// la usa por todos lados para decidir qué botones mostrar).
 let sessionToken = null;
-let staffPin = null;   // truthy si la sesión activa es rol "staff"
-let memberPin = null;  // truthy si la sesión activa es rol "miembro"
+let staffPin = null;   // truthy si la sesión activa (Google) es rol "staff"
+let memberPin = null;  // la clave de Miembro real si ya se validó, si no null
 let googleClientIdFront = null; // lo manda el backend en cada doGet, para no hardcodearlo acá también
 let googleSignInInicializado = false;
 // Enlaces privados (Sheets, GitHub, Cronograma, Editar Anuario, Editar Info): SOLO viven en esta
@@ -905,10 +924,14 @@ function winnersGroupHTML(emoji,label,text,tipo,tituloActividad){
 
 async function apiGet(){
   showLoading("Cargando datos...");
-  // v20: se manda el token de sesión (emitido por loginGoogle) en vez de un PIN en texto plano.
-  // Si no hay sesión activa, el servidor ya filtra solo lo mostrable al público.
+  // v21: se manda el token de sesión de Staff (si hay) Y la clave de Miembro (si hay) — el
+  // servidor decide con cuál de los dos, si alguno, corresponde nivel de acceso (ver doGet en
+  // Code.gs). Si no hay ninguno de los dos, el servidor ya filtra solo lo mostrable al público.
   try{
-    let url=APPS_SCRIPT_URL+(sessionToken?("?token="+encodeURIComponent(sessionToken)):"");
+    const params=[];
+    if(sessionToken) params.push("token="+encodeURIComponent(sessionToken));
+    if(memberPin) params.push("clave="+encodeURIComponent(memberPin));
+    let url=APPS_SCRIPT_URL+(params.length?("?"+params.join("&")):"");
     const res=await fetch(url); return await res.json();
   }
   finally{ hideLoading(); }
@@ -1216,18 +1239,24 @@ async function cargarDatos(){
   try{
     DB=await apiGet();
     if(!DB || typeof DB!=="object" || !Array.isArray(DB.actividades) || !Array.isArray(DB.anuario)) throw new Error("Respuesta inesperada del servidor: "+JSON.stringify(DB).slice(0,200));
-    // v20: "nivel" ahora sale SIEMPRE de lo que el servidor resolvió a partir del token de sesión
-    // (ver validarSesion_ en Code.gs) — nunca de lo que el cliente cree tener. Si el token venció
-    // o es inválido, el servidor ya contestó nivel:"publico" y acá se limpia el estado local.
+    // "nivel" sale SIEMPRE de lo que el servidor resolvió — nunca de lo que el cliente cree
+    // tener. Staff: a partir del token de sesión (ver validarSesion_ en Code.gs). Miembro: a
+    // partir de la clave que se mandó en la misma request (ver doGet, v21). Si ninguno de los dos
+    // resultó válido, el servidor ya contestó nivel:"publico" y acá se limpia el estado local que
+    // haya quedado guardado.
     nivel = DB.nivel || "publico";
     staffPin = (nivel==="staff") ? sessionToken : null;
-    memberPin = (nivel==="miembro") ? sessionToken : null;
     if (nivel==="publico" && sessionToken) {
       // La sesión guardada ya no sirve (venció o fue revocada desde "AccesoAutorizado"): se limpia
       // para no seguir mandando un token muerto en cada request.
       sessionToken = null;
       localStorage.removeItem("tph_session_token");
       localStorage.removeItem("tph_session_rol");
+    }
+    if (nivel!=="miembro" && memberPin) {
+      // La clave guardada ya no sirve (la cambió un admin): se limpia para no seguir mandándola.
+      memberPin = null;
+      localStorage.removeItem("tph_member_clave");
     }
     if (DB.googleClientId && !googleSignInInicializado) inicializarGoogleSignIn(DB.googleClientId);
     aplicarEnlacesPublicos();
@@ -2595,6 +2624,7 @@ function switchTab(tab){
   document.getElementById("viewMiembros").classList.add("hidden");
   document.getElementById("viewMundo").classList.add("hidden");
   document.getElementById("viewGoogleLogin").classList.add("hidden");
+  document.getElementById("viewMemberPin").classList.add("hidden");
 }
 document.getElementById("hamburgerBtn").onclick=()=>{ document.getElementById("drawer").classList.add("open"); document.getElementById("drawerOverlay").style.display="block"; };
 document.getElementById("drawerOverlay").onclick=closeDrawer;
@@ -2670,12 +2700,39 @@ async function probarHub(action,nombre,idActividad){ const r=await apiPost({acti
 document.getElementById("miembrosDrawerBtn").onclick=()=>{
   closeDrawer();
   if(staffPin||memberPin){ mostrarViewMiembros(); return; }
-  // Sin acceso todavía: se pide login de Google en vez de la vieja clave de Miembro.
-  mostrarViewGoogleLogin();
+  // v21: Miembro pide su propia clave compartida, ya NO Google (eso quedó exclusivo de Staff,
+  // ver staffDrawerBtn más abajo).
+  mostrarViewMemberPin();
 };
+function mostrarViewMemberPin(){
+  document.querySelectorAll(".tab-btn").forEach(b=>b.classList.remove("active"));
+  document.getElementById("viewActividades").classList.add("hidden"); document.getElementById("viewAnuario").classList.add("hidden"); document.getElementById("viewMiembros").classList.add("hidden"); document.getElementById("viewMundo").classList.add("hidden"); document.getElementById("viewGoogleLogin").classList.add("hidden");
+  document.getElementById("viewMemberPin").classList.remove("hidden");
+  document.getElementById("memberPinMsg").textContent="";
+  document.getElementById("memberPinInput").value="";
+  setTimeout(()=>document.getElementById("memberPinInput").focus(),50);
+}
+document.getElementById("memberPinForm").addEventListener("submit", async (ev)=>{
+  ev.preventDefault();
+  const clave=document.getElementById("memberPinInput").value;
+  if(!clave){ return; }
+  document.getElementById("memberPinMsg").textContent="Verificando...";
+  const r=await apiPost({action:"validarClaveMiembro", clave:clave}, "Verificando...");
+  if(r.ok){
+    memberPin=clave;
+    localStorage.setItem("tph_member_clave", clave);
+    document.getElementById("memberPinMsg").textContent="";
+    toast("Modo Miembro activado 🍑");
+    document.getElementById("memberStatusBadge").style.display="flex";
+    switchTab("actividades");
+    await cargarDatos(); // vuelve a pedir los datos, ahora con la clave, para traer todo completo
+  } else {
+    document.getElementById("memberPinMsg").textContent=r.error||"Clave incorrecta.";
+  }
+});
 function mostrarViewMiembros(){
   document.querySelectorAll(".tab-btn").forEach(b=>b.classList.remove("active"));
-  document.getElementById("viewActividades").classList.add("hidden"); document.getElementById("viewAnuario").classList.add("hidden"); document.getElementById("viewGoogleLogin").classList.add("hidden"); document.getElementById("viewMundo").classList.add("hidden");
+  document.getElementById("viewActividades").classList.add("hidden"); document.getElementById("viewAnuario").classList.add("hidden"); document.getElementById("viewGoogleLogin").classList.add("hidden"); document.getElementById("viewMundo").classList.add("hidden"); document.getElementById("viewMemberPin").classList.add("hidden");
   document.getElementById("viewMiembros").classList.remove("hidden");
   document.getElementById("memberToolsRow1").classList.toggle("hidden", !staffPin);
   document.getElementById("memberToolsRow2").classList.toggle("hidden", !staffPin);
@@ -2690,7 +2747,7 @@ document.getElementById("staffDrawerBtn").onclick=()=>{
 };
 function mostrarViewGoogleLogin(){
   document.querySelectorAll(".tab-btn").forEach(b=>b.classList.remove("active"));
-  document.getElementById("viewActividades").classList.add("hidden"); document.getElementById("viewAnuario").classList.add("hidden"); document.getElementById("viewMiembros").classList.add("hidden"); document.getElementById("viewMundo").classList.add("hidden");
+  document.getElementById("viewActividades").classList.add("hidden"); document.getElementById("viewAnuario").classList.add("hidden"); document.getElementById("viewMiembros").classList.add("hidden"); document.getElementById("viewMundo").classList.add("hidden"); document.getElementById("viewMemberPin").classList.add("hidden");
   document.getElementById("viewGoogleLogin").classList.remove("hidden");
   document.getElementById("googleLoginMsg").textContent="";
   renderizarBotonGoogle();
@@ -2718,20 +2775,21 @@ function renderizarBotonGoogle(){
   google.accounts.id.renderButton(cont, { theme:"filled_black", size:"large", shape:"pill", text:"signin_with", locale:"es" });
 }
 async function manejarRespuestaGoogle(response){
+  // v21: el login de Google ya SOLO puede devolver rol "staff" (ver obtenerRolPorEmail_ en
+  // Code.gs) — el acceso de Miembro pasa por la clave compartida (mostrarViewMemberPin), no por acá.
   document.getElementById("googleLoginMsg").textContent = "Verificando...";
   const r = await apiPost({action:"loginGoogle", credential: response.credential}, "Iniciando sesión...");
   if (r.ok) {
     sessionToken = r.token;
     localStorage.setItem("tph_session_token", r.token);
-    localStorage.setItem("tph_session_rol", r.rol);
+    localStorage.setItem("tph_session_rol", "staff");
     document.getElementById("googleLoginMsg").textContent = "";
-    toast(r.rol==="staff" ? "Modo Staff activado 🛠️" : "Modo Miembro activado 🍑");
-    if (r.rol==="staff") document.getElementById("staffStatusBadge").style.display="block";
-    else document.getElementById("memberStatusBadge").style.display="flex";
-    if (r.rol==="staff") document.getElementById("addActBtn").classList.remove("hidden");
+    toast("Modo Staff activado 🛠️");
+    document.getElementById("staffStatusBadge").style.display="block";
+    document.getElementById("addActBtn").classList.remove("hidden");
     switchTab("actividades");
     await cargarDatos(); // vuelve a pedir los datos, ahora con el token, para traer todo completo
-    if (r.rol==="staff") await cargarEnlacesStaff(); // recién ahora, con la sesión ya validada, se piden los enlaces privados
+    await cargarEnlacesStaff(); // recién ahora, con la sesión ya validada, se piden los enlaces privados
   } else {
     document.getElementById("googleLoginMsg").textContent = r.error || "No se pudo iniciar sesión.";
   }
@@ -2740,6 +2798,7 @@ async function cerrarSesionActual(mensaje){
   const tokenViejo = sessionToken;
   sessionToken = null; staffPin = null; memberPin = null;
   localStorage.removeItem("tph_session_token"); localStorage.removeItem("tph_session_rol");
+  localStorage.removeItem("tph_member_clave");
   enlacesStaff = null; // se borran de memoria: sin sesión activa, no deben quedar accesibles ni un momento más
   document.getElementById("staffStatusBadge").style.display="none";
   document.getElementById("memberStatusBadge").style.display="none";
@@ -2769,11 +2828,12 @@ function escAttr(str){ return escHtml(str); }
 (async function restaurarSesion(){
   const tokenGuardado = localStorage.getItem("tph_session_token");
   const rolGuardado = localStorage.getItem("tph_session_rol");
-  if (tokenGuardado) {
+  if (tokenGuardado && rolGuardado==="staff") {
     sessionToken = tokenGuardado;
-    if (rolGuardado==="staff") staffPin = tokenGuardado;
-    if (rolGuardado==="miembro") memberPin = tokenGuardado;
+    staffPin = tokenGuardado;
   }
+  const claveGuardada = localStorage.getItem("tph_member_clave");
+  if (claveGuardada) memberPin = claveGuardada;
   await cargarDatos();
   if (nivel === "staff") {
     document.getElementById("staffStatusBadge").style.display = "block";
