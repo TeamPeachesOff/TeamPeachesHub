@@ -315,6 +315,8 @@
   .badge-inactivo{background:rgba(160,160,170,0.18);color:#a0a0aa;}
 
   .center-screen{max-width:340px;margin:60px auto;text-align:center;padding:0 16px;}
+  #memberPinInput{width:100%;text-align:center;font-size:24px;letter-spacing:8px;padding:14px;border-radius:12px;border:1px solid rgba(255,255,255,0.15);background:var(--card-bg-2);color:var(--text);margin:16px 0;}
+  #memberPinMsg{font-size:13px;color:var(--red);min-height:18px;}
   #googleLoginMsg{font-size:13px;color:var(--red);min-height:18px;}
   #staffStatusBadge{display:none;position:fixed;bottom:14px;right:14px;background:linear-gradient(90deg,#6a3d8f,#a45fc7);color:#fff;padding:8px 14px;border-radius:999px;font-size:12.5px;font-weight:700;z-index:60;box-shadow:0 4px 14px rgba(0,0,0,0.4);cursor:pointer;}
   /* Discreto a propósito: modo Miembro es solo lectura, no necesita tanta prominencia como Staff.
@@ -499,17 +501,17 @@
 
   <!-- v21: acceso de Miembro, vuelve a ser una clave compartida (no exige cuenta de Google),
        porque ese nivel no entrega ningún dato sensible. Vista separada de viewGoogleLogin, que
-       sigue siendo exclusiva de Staff. -->
+       sigue siendo exclusiva de Staff. Mismo look que tenía la vieja pantalla de PIN. -->
   <section id="viewMemberPin" class="hidden">
     <div class="center-screen">
-      <div style="font-size:40px;">🍑🔑</div>
-      <h3>Acceso de Miembro</h3>
-      <p style="opacity:.75;font-size:14px;max-width:320px;margin:8px auto 20px;">Escribí la clave de Miembro del team.</p>
-      <form id="memberPinForm" style="display:flex;flex-direction:column;gap:10px;max-width:260px;margin:0 auto;">
-        <input autocomplete="off" type="password" id="memberPinInput" placeholder="Clave de Miembro" style="text-align:center;">
-        <button type="submit" class="btn-small btn-family" style="width:100%;">Entrar</button>
+      <div style="font-size:40px;">🍑🔒</div>
+      <h3>Introduce la clave de Miembro</h3>
+      <form id="memberPinForm">
+        <input autocomplete="off" type="password" id="memberPinInput">
+        <div id="memberPinMsg"></div>
+        <button type="submit" class="btn-primary" style="width:100%;padding:12px;border-radius:12px;font-weight:800;">Desbloquear</button>
       </form>
-      <div id="memberPinMsg" style="margin-top:14px;color:var(--red);min-height:18px;"></div>
+    </div>
     </div>
   </section>
     </div>
