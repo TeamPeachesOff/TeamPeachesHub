@@ -902,19 +902,53 @@ function winnersGroupHTML(emoji,label,text,tipo,tituloActividad){
   </div>`;
 }
 
+// ============ SEGURIDAD (v17): IP + ubicación aproximada ============
+// Se pide UNA sola vez (se cachea en memoria) y se manda junto con cualquier intento de PIN/clave
+// (correcto o no) para que, si alguien intenta forzar la entrada, el backend pueda loguear desde
+// dónde vino y avisar por Discord con esos datos. Apps Script no expone la IP del request
+// directamente en doGet/doPost, así que se resuelve acá, del lado del navegador, con un servicio
+// público gratuito. Si falla (sin internet, servicio caído, etc.) simplemente viaja vacío — nunca
+// bloquea ni rompe el login real.
+let _ipInfoCache = null;
+async function obtenerIPUbicacion(){
+  if (_ipInfoCache) return _ipInfoCache;
+  try{
+    const res = await fetch("https://ipapi.co/json/");
+    const d = await res.json();
+    _ipInfoCache = { ip: d.ip || "", ubicacion: [d.city, d.region, d.country_name].filter(Boolean).join(", ") };
+  }catch(e){
+    _ipInfoCache = { ip: "", ubicacion: "" };
+  }
+  return _ipInfoCache;
+}
+obtenerIPUbicacion(); // se dispara en segundo plano al cargar, así ya está lista cuando haga falta
+
 async function apiGet(){
   showLoading("Cargando datos...");
   // Si hay modo staff o modo miembro activo en esta sesión, se manda la clave correspondiente
   // para que el servidor devuelva los datos completos; si no, el servidor ya filtra solo lo
   // mostrable al público. Staff tiene prioridad si por algún motivo ambos estuvieran seteados.
   const clave = staffPin || memberPin || "";
-  try{ const url=APPS_SCRIPT_URL+(clave?("?clave="+encodeURIComponent(clave)):""); const res=await fetch(url); return await res.json(); }
+  try{
+    let url=APPS_SCRIPT_URL+(clave?("?clave="+encodeURIComponent(clave)):"");
+    if (clave) {
+      // Solo hace falta mandar IP/ubicación cuando hay una clave que el backend tiene que validar
+      // (si no hay clave, es una carga pública normal, no un intento de acceso).
+      const info = await obtenerIPUbicacion();
+      if (info.ip) url += "&ip="+encodeURIComponent(info.ip);
+      if (info.ubicacion) url += "&ubicacion="+encodeURIComponent(info.ubicacion);
+    }
+    const res=await fetch(url); return await res.json();
+  }
   finally{ hideLoading(); }
 }
 async function apiPost(payload, msg){
   showLoading(msg||"Guardando...");
   try{
     payload.pin=staffPin||"";
+    const _info = await obtenerIPUbicacion();
+    payload.ip = _info.ip;
+    payload.ubicacion = _info.ubicacion;
     // Antes, si el fetch fallaba (sin internet) o el servidor respondía con algo que no era JSON
     // (por ejemplo una página de error HTML de Apps Script cuando la operación tarda demasiado y
     // se corta a los ~6 minutos), esta función lanzaba una excepción sin capturar. Eso significa
@@ -1064,7 +1098,11 @@ async function abrirAnalitica(){
                 <td style="padding:8px 10px;">${escHtml(ANALITICA_LABELS[f.accion]||f.accion)}</td>
                 <td style="padding:8px 10px;text-align:right;font-weight:700;color:var(--peach-1);white-space:nowrap;">${f.total}</td>
                 <td style="padding:8px 10px;text-align:right;color:var(--text-dim);white-space:nowrap;">${escHtml(f.ultimoUso||"")}</td>
-              </tr>`).join("")}
+              </tr>${(f.ultimaIP||f.ultimaUbicacion||f.ultimoValorIntentado)?`<tr style="border-top:none;">
+                <td colspan="3" style="padding:0 10px 8px;font-size:11px;color:var(--text-dim);">
+                  Último intento — valor: <code>${escHtml(f.ultimoValorIntentado||"—")}</code> · IP: ${escHtml(f.ultimaIP||"desconocida")} · ubicación aprox: ${escHtml(f.ultimaUbicacion||"desconocida")}
+                </td>
+              </tr>`:""}`).join("")}
             </tbody>
           </table>`).join("")}
       </div>` : `<p style="text-align:center;color:var(--text-dim);">Todavía no hay datos registrados.</p>`}
@@ -2663,7 +2701,7 @@ async function verificarPin(){
     switchTab("actividades");
     await cargarDatos(); // vuelve a pedir los datos, ahora con el PIN, para traer todo completo
     await cargarEnlacesStaff(); // recién ahora, con el PIN ya validado en servidor, se piden los enlaces privados
-  } else { staffPin=null; pinIntentosFallidos++; document.getElementById("pinMsg").textContent="PIN incorrecto ❌"; }
+  } else { staffPin=null; pinIntentosFallidos++; document.getElementById("pinMsg").textContent=(r.error||"PIN incorrecto")+" ❌"; }
 }
 document.getElementById("staffStatusBadge").onclick=async()=>{
   if(await confirmarAccion("¿Deseas salir del modo staff?")){
@@ -2707,7 +2745,7 @@ async function verificarClaveMiembro(silencioso){
   } else {
     memberIntentosFallidos++;
     localStorage.removeItem("tph_member_clave");
-    if(!silencioso) document.getElementById("memberPinMsg").textContent="Clave incorrecta ❌";
+    if(!silencioso) document.getElementById("memberPinMsg").textContent=(r.error||"Clave incorrecta")+" ❌";
   }
 }
 document.getElementById("memberStatusBadge").onclick=async()=>{
