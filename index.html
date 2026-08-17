@@ -902,23 +902,43 @@ function winnersGroupHTML(emoji,label,text,tipo,tituloActividad){
   </div>`;
 }
 
-// ============ SEGURIDAD (v17): IP + ubicación aproximada ============
+// ============ SEGURIDAD (v17/v19): IP + ubicación aproximada ============
 // Se pide UNA sola vez (se cachea en memoria) y se manda junto con cualquier intento de PIN/clave
 // (correcto o no) para que, si alguien intenta forzar la entrada, el backend pueda loguear desde
 // dónde vino y avisar por Discord con esos datos. Apps Script no expone la IP del request
-// directamente en doGet/doPost, así que se resuelve acá, del lado del navegador, con un servicio
-// público gratuito. Si falla (sin internet, servicio caído, etc.) simplemente viaja vacío — nunca
-// bloquea ni rompe el login real.
+// directamente en doGet/doPost, así que se resuelve acá, del lado del navegador.
+//
+// v19: antes usaba solo ipapi.co, y en la práctica venía "desconocida" muy seguido — la causa más
+// común es que extensiones de privacidad/adblock (uBlock, Brave Shields, etc.) tratan a los
+// servicios de "IP lookup" como trackers y bloquean la llamada sin avisar (el fetch ni siquiera
+// llega a intentarlo). Ahora se prueban 3 proveedores distintos en cadena: si el primero falla
+// (bloqueado, caído, rate-limited), se intenta el siguiente. Aun así puede quedar vacío si la
+// persona bloquea los tres — eso NUNCA bloquea el login real, solo se pierde ese dato puntual.
+async function _intentarProveedorIP(url, parseFn, timeoutMs){
+  const ctrl = new AbortController();
+  const t = setTimeout(()=>ctrl.abort(), timeoutMs||3500);
+  try{
+    const res = await fetch(url, {signal: ctrl.signal});
+    const d = await res.json();
+    clearTimeout(t);
+    return parseFn(d);
+  }catch(e){
+    clearTimeout(t);
+    return null;
+  }
+}
 let _ipInfoCache = null;
 async function obtenerIPUbicacion(){
   if (_ipInfoCache) return _ipInfoCache;
-  try{
-    const res = await fetch("https://ipapi.co/json/");
-    const d = await res.json();
-    _ipInfoCache = { ip: d.ip || "", ubicacion: [d.city, d.region, d.country_name].filter(Boolean).join(", ") };
-  }catch(e){
-    _ipInfoCache = { ip: "", ubicacion: "" };
-  }
+  // 1) ipapi.co: IP + ciudad/región/país en una sola llamada.
+  let r = await _intentarProveedorIP("https://ipapi.co/json/", d => (d && d.ip) ? { ip: d.ip, ubicacion: [d.city, d.region, d.country_name].filter(Boolean).join(", ") } : null);
+  // 2) ipwho.is: mismo formato de datos, proveedor distinto (por si el primero está bloqueado).
+  if (!r) r = await _intentarProveedorIP("https://ipwho.is/", d => (d && d.success !== false && d.ip) ? { ip: d.ip, ubicacion: [d.city, d.region, d.country].filter(Boolean).join(", ") } : null);
+  // 3) ipify: solo devuelve la IP (sin ubicación), pero es el servicio más liviano y menos
+  // propenso a terminar en listas de bloqueo, así que sirve de último recurso para al menos
+  // rescatar la IP aunque no haya ubicación.
+  if (!r) r = await _intentarProveedorIP("https://api.ipify.org?format=json", d => (d && d.ip) ? { ip: d.ip, ubicacion: "" } : null);
+  _ipInfoCache = r || { ip: "", ubicacion: "" };
   return _ipInfoCache;
 }
 obtenerIPUbicacion(); // se dispara en segundo plano al cargar, así ya está lista cuando haga falta
@@ -1111,6 +1131,47 @@ async function abrirAnalitica(){
     </div>`;
   openModal("memberModal");
   document.getElementById("analiticaVolverBtn").onclick = abrirStaffHub;
+}
+// Historial COMPLETO de intentos fallidos (v18): a diferencia de abrirAnalitica (que solo muestra
+// el último intento por tipo), esto trae una fila por cada intento, más reciente primero, para
+// poder ver el patrón real de un ataque: ráfagas, valores repetidos, PINs secuenciales, etc.
+async function abrirIntentosFallidos(){
+  const r = await apiPost({action:"obtenerIntentosFallidos", limite:200}, "Cargando intentos...");
+  if(!r.ok){ toast("Error: "+(r.error||"")); return; }
+  const filas = r.datos||[];
+  document.getElementById("memberModalContent").innerHTML = `
+    <h3>🕵️ Intentos Fallidos</h3>
+    <p style="font-size:12.5px;color:var(--text-dim);margin:-6px 0 14px;">
+      ${r.total||0} intento(s) registrados en total. Mostrando los últimos ${filas.length}, más reciente primero.
+    </p>
+    ${filas.length ? `
+      <div style="max-height:60vh;overflow-y:auto;border-radius:12px;background:var(--card-bg);">
+        <table style="width:100%;border-collapse:collapse;font-size:12.5px;">
+          <thead>
+            <tr style="position:sticky;top:0;background:var(--card-bg-2);">
+              <th style="padding:8px 10px;text-align:left;">Cuándo</th>
+              <th style="padding:8px 10px;text-align:left;">Tipo</th>
+              <th style="padding:8px 10px;text-align:left;">Valor probado</th>
+              <th style="padding:8px 10px;text-align:left;">IP</th>
+              <th style="padding:8px 10px;text-align:left;">Ubicación</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${filas.map(f=>`<tr style="border-top:1px solid rgba(255,255,255,0.06);">
+              <td style="padding:7px 10px;white-space:nowrap;color:var(--text-dim);">${escHtml(f.timestamp||"")}</td>
+              <td style="padding:7px 10px;white-space:nowrap;">${f.tipo==="staff"?"🛠️ Staff":"🍑 Miembros"}</td>
+              <td style="padding:7px 10px;"><code>${escHtml(f.valorIntentado||"—")}</code></td>
+              <td style="padding:7px 10px;white-space:nowrap;">${escHtml(f.ip||"desconocida")}</td>
+              <td style="padding:7px 10px;white-space:nowrap;">${escHtml(f.ubicacion||"desconocida")}</td>
+            </tr>`).join("")}
+          </tbody>
+        </table>
+      </div>` : `<p style="text-align:center;color:var(--text-dim);">Todavía no hay intentos fallidos registrados 🎉</p>`}
+    <div style="position:sticky;bottom:-20px;margin:14px -20px -20px;padding:10px 20px 20px;background:var(--card-bg);">
+      <button class="btn-small btn-admin" id="intentosVolverBtn" style="width:100%;">⬅️ Volver</button>
+    </div>`;
+  openModal("memberModal");
+  document.getElementById("intentosVolverBtn").onclick = abrirStaffHub;
 }
 async function downloadImage(url, filename){
   try{
@@ -2627,6 +2688,7 @@ function abrirStaffHub(){
       <button class="drawer-nav-btn" id="hubEditarInfo" style="text-align:left;">🖋️ Editar página de info</button>
       <button class="drawer-nav-btn" id="hubEditarAnuario" style="text-align:left;">✏️ Editar anuario</button>
       <button class="drawer-nav-btn" id="hubAnalitica" style="text-align:left;">📊 Ver Analítica de uso</button>
+      <button class="drawer-nav-btn" id="hubIntentosFallidos" style="text-align:left;">🕵️ Ver Intentos Fallidos</button>
       <button class="btn-small btn-family" id="hubLimpiar">🧹 Limpiar nombres BD (quitar @)</button>
     </div>
     <button class="btn-small btn-admin" id="hubEnlaces" style="width:100%;">⚙️ Editar Enlaces</button>`;
@@ -2647,6 +2709,7 @@ function abrirStaffHub(){
   document.getElementById("hubEditarInfo").onclick=()=>abrirEnlacePrivado("CFG_EDITAR_INFO_LINK");
   document.getElementById("hubEnlaces").onclick=abrirModalEnlaces;
   document.getElementById("hubAnalitica").onclick=abrirAnalitica;
+  document.getElementById("hubIntentosFallidos").onclick=abrirIntentosFallidos;
 }
 async function probarHub(action,nombre,idActividad){ const r=await apiPost({action:action,idActividad:idActividad},"Enviando prueba..."); toast(r.ok?nombre+" enviado ✅":"Error: "+(r.error||"")); }
 document.getElementById("miembrosDrawerBtn").onclick=()=>{
