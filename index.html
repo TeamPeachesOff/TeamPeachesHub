@@ -221,6 +221,7 @@
   .desc-text{white-space:pre-wrap;}
   .accordion-body.open{display:block;}
   .wishlist-block{margin-top:8px;padding:8px 10px;background:var(--card-bg-2);border-radius:10px;white-space:pre-wrap;}
+  .hashtag-block{margin-top:8px;padding:8px 10px;background:var(--card-bg-2);border-radius:10px;color:var(--peach-2);font-weight:700;word-break:break-word;}
   .stream-block{background:linear-gradient(135deg,rgba(239,8,112,0.18),rgba(255,143,177,0.08));border:1px solid rgba(239,8,112,0.35);border-radius:14px;padding:12px;margin-bottom:12px;}
   .stream-title{font-weight:800;color:var(--text);font-size:14px;margin-bottom:4px;}
   .stream-time{font-size:12.5px;color:var(--text-dim);margin-bottom:10px;}
@@ -610,7 +611,11 @@
         <input autocomplete="off" type="file" id="af_imagenFile" accept=".jpg,.jpeg,.png,image/jpeg,image/png">
         <div class="upload-status" id="af_uploadStatus"></div>
       </div>
-      <div class="form-group"><label>Descripción</label><textarea autocomplete="off" id="af_descripcion"></textarea></div>
+      <div class="form-group" style="position:relative;">
+        <label>Descripción</label>
+        <textarea autocomplete="off" id="af_descripcion" style="padding-bottom:34px;"></textarea>
+        <button type="button" class="btn-small btn-family" id="af_copyHashtagsBtn" style="position:absolute;right:8px;bottom:8px;padding:4px 10px;font-size:12px;width:auto;">📋 Copiar hashtags</button>
+      </div>
       <div class="form-group" style="background:var(--card-bg-2);padding:10px;border-radius:12px;">
         <label style="color:var(--peach-2);">📺 Stream (opcional, déjalo vacío si no aplica)</label>
         <input autocomplete="off" type="text" id="af_streamNombre" placeholder="Nombre del stream" style="margin-bottom:8px;">
@@ -653,6 +658,14 @@
         <div class="form-group"><label>🥇 Mejor Canto (una entrada por línea, se van acumulando)</label><textarea autocomplete="off" id="af_ganadorCanto"></textarea></div>
         <div class="form-group"><label>🎙️ Mejor Doblaje</label><textarea autocomplete="off" id="af_ganadorDoblaje"></textarea></div>
         <div class="form-group"><label>✨ Menciones Honoríficas</label><textarea autocomplete="off" id="af_menciones"></textarea></div>
+      </div>
+      <div class="form-group" id="af_discordGroup">
+        <label>📣 Anuncio a Discord</label>
+        <div class="switch-pill" id="af_discordSwitch">
+          <button type="button" data-val="0">🔕 No enviar</button>
+          <button type="button" data-val="1">📢 Enviar anuncio</button>
+        </div>
+        <div class="upload-status" id="af_discordStatus" style="margin-top:6px;"></div>
       </div>
       <div class="modal-actions"><button type="submit" class="btn-primary">Guardar</button></div>
     </form>
@@ -1525,6 +1538,8 @@ function attachCardEvents(){
         const a=DB.actividades.find(x=>String(x.id)===String(id));
         let html=streamBlockHTML(a);
         html+=`<div class="desc-text">${escHtml(a.descripcion||"Sin descripción.")}</div>`;
+        const hashtagsDetalle=extraerHashtags(a.descripcion);
+        if(hashtagsDetalle.length) html+=`<div class="hashtag-block">【🍑 Hashtags:】 ${hashtagsDetalle.map(escHtml).join(" ")}</div>`;
         if(a.wishlist) html+=`<div class="wishlist-block"><strong>🎵 Wishlist:</strong><br>${escHtml(a.wishlist)}</div>`;
         body.innerHTML=html; body.dataset.filled="1";
         const icsBtn=body.querySelector("[data-ics]");
@@ -2516,6 +2531,36 @@ function getSwitchPillValue(containerId){ const sel=document.querySelector(`#${c
 bindSwitchPill("af_categoriaSwitch");
 bindSwitchPill("af_participacionSwitch");
 
+// El switch de Discord no usa bindSwitchPill genérico: a diferencia de categoría/participación,
+// acá SÍ hace falta interceptar el click cuando se prende "Enviar anuncio" y la actividad ya se
+// había anunciado antes (dataset.yaAnunciado, seteado en openActivityForm) — se pide confirmación
+// extra para evitar reanuncios por accidente, pero sin bloquearlo: si la persona confirma, se deja
+// prender igual.
+(function bindDiscordSwitch(){
+  const box=document.getElementById("af_discordSwitch");
+  box.querySelectorAll("button").forEach(btn=>{
+    btn.onclick=async()=>{
+      if(btn.dataset.val==="1" && document.getElementById("activityForm").dataset.yaAnunciado==="1"){
+        const ok=await confirmarAccion("⚠️ ¿SEGURO QUE LO QUIERES ANUNCIAR EN DISCORD? ESTO YA SE ANUNCIÓ ANTES. SOLO CONTINÚA SI SABES LO QUE HACES, RANA 🐸");
+        if(!ok) return;
+      }
+      box.querySelectorAll("button").forEach(b=>b.classList.remove("sel"));
+      btn.classList.add("sel");
+    };
+  });
+})();
+
+document.getElementById("af_copyHashtagsBtn").onclick=async()=>{
+  const tags=extraerHashtags(document.getElementById("af_descripcion").value);
+  if(!tags.length){ toast("No hay hashtags en la descripción ❌"); return; }
+  try{
+    await navigator.clipboard.writeText(tags.join(" "));
+    toast("Hashtags copiados ✅ ("+tags.length+")");
+  }catch(err){
+    toast("No se pudo copiar (permiso del navegador) ❌");
+  }
+};
+
 /* ---------- textarea auto-ajustable (Ticket 1) ---------- */
 // Crece con el contenido en vez de mostrar scrollbar interna. Se aplica a TODOS los
 // textareas del sitio (no solo los de Actividades), y se re-dispara cada vez que se
@@ -2561,6 +2606,15 @@ function openActivityForm(id, esAnuarioItem){
   document.getElementById("af_ganadorCanto").value=a?a.ganadorCanto||"":"";
   document.getElementById("af_ganadorDoblaje").value=a?a.ganadorDoblaje||"":"";
   document.getElementById("af_menciones").value=a?a.mencionesHonorificas||"":"";
+  // Anuncio a Discord: el switch SIEMPRE arranca apagado (nueva actividad o edición), para
+  // evitar reenvíos accidentales. Si esta actividad ya se anunció antes, se guarda ese dato en
+  // el dataset del form (lo usa bindDiscordSwitch para decidir si hace falta advertir) y se
+  // muestra un aviso informativo debajo del switch.
+  const yaAnunciado=!!(a && a.anuncioDiscordEnviado);
+  document.getElementById("activityForm").dataset.yaAnunciado=yaAnunciado?"1":"0";
+  setSwitchPill("af_discordSwitch","0");
+  document.getElementById("af_discordStatus").textContent=yaAnunciado?"ℹ️ Esta actividad ya se anunció antes en Discord.":"";
+  document.getElementById("af_discordGroup").classList.toggle("hidden", esAnuarioActual);
   openModal("activityFormModal");
   // Los valores se asignaron por JS, no por tipeo, así que el 'input' event no se dispara solo:
   // hay que forzar el ajuste de altura acá para que abra ya con el tamaño correcto.
@@ -2625,11 +2679,18 @@ document.getElementById("activityForm").addEventListener("submit", async(e)=>{
       botonesPersonalizados: JSON.stringify(leerBotonesPersonalizados()),
     };
     const esModoAnuario=document.getElementById("activityForm").dataset.modoAnuario==="1";
+    if(!esModoAnuario) data.enviarDiscordAnuncio=getSwitchPillValue("af_discordSwitch")==="1";
     let r;
     if(esModoAnuario){ data.id=id; r=await apiPost({action:"editAnuario", data},"Guardando tarjeta del Anuario..."); }
     else if(id){ data.id=id; r=await apiPost({action:"editActividad", data},"Guardando actividad..."); }
     else{ data.id="ACT-"+Date.now(); r=await apiPost({action:"addActividad", data},"Guardando actividad..."); }
-    if(r.ok){ toast("Guardado ✅"); closeModal("activityFormModal"); await cargarDatos(); } else toast("Error: "+(r.error||""));
+    if(r.ok){
+      // discordEnviado solo viene en la respuesta cuando de verdad se pidió el anuncio (switch
+      // encendido); si no se pidió, este campo no existe y el toast se queda solo en "Guardado ✅".
+      let msg="Guardado ✅";
+      if(typeof r.discordEnviado!=="undefined") msg+= r.discordEnviado ? " · Anunciado en Discord 📣" : (" · Discord: "+(r.discordError||"no se pudo enviar"));
+      toast(msg); closeModal("activityFormModal"); await cargarDatos();
+    } else toast("Error: "+(r.error||""));
   }catch(err){
     toast("Error inesperado al guardar: "+(err.message||err));
   }finally{
@@ -2943,6 +3004,18 @@ document.getElementById("memberStatusBadge").onclick=async()=>{
   if(await confirmarAccion("¿Deseas salir del modo miembro?")) cerrarSesionActual("Saliste del modo miembro");
 };
 
+// Saca los hashtags (#loQueSea) que ya estén escritos dentro de la Descripción. No hay columna
+// nueva en la hoja: se leen directo del texto con una expresión regular, tanto para mostrarlos
+// en el detalle de la actividad como para el botón "Copiar hashtags" del formulario. \p{L}
+// (con la bandera "u") permite tildes/ñ dentro del hashtag, no solo a-z. Se deduplican
+// preservando el orden y sin importar mayúsculas/minúsculas (#Reto y #reto cuentan como el mismo).
+function extraerHashtags(texto){
+  if(!texto) return [];
+  const encontrados=String(texto).match(/#[\p{L}0-9_]+/gu)||[];
+  const vistos=new Set(); const resultado=[];
+  encontrados.forEach(tag=>{ const clave=tag.toLowerCase(); if(!vistos.has(clave)){ vistos.add(clave); resultado.push(tag); } });
+  return resultado;
+}
 function escHtml(str){ return String(str).replace(/[&<>"']/g, s=>({"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;","'":"&#39;"}[s])); }
 function escAttr(str){ return escHtml(str); }
 
