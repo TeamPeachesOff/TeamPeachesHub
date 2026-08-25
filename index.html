@@ -357,7 +357,14 @@
   .form-group label{display:block;font-size:12.5px;color:var(--text-dim);margin-bottom:5px;font-weight:600;}
   .form-group input, .form-group textarea, .form-group select{width:100%;padding:10px;border-radius:10px;border:1px solid rgba(255,255,255,0.12);background:var(--card-bg-2);color:var(--text);font-family:inherit;font-size:13.5px;}
   .form-group textarea{min-height:120px;resize:none;overflow:hidden;}
-  .modal-actions{display:flex;gap:10px;margin-top:16px;}
+  /* Se pega al fondo del modal (sticky) durante el scroll, en vez de quedarse en el flujo normal
+     del formulario. Antes, en formularios largos (como el de actividad, que creció con toda la
+     sección de Discord), el botón Guardar podía terminar justo en el borde de corte del
+     overflow-y:auto del modal, mostrando solo una franja clicable ("hitbox pedacito") o quedando
+     tapado por el borde redondeado inferior. Con sticky queda siempre 100% visible y clicable,
+     sin importar qué tan largo sea el formulario. Los márgenes negativos lo estiran hasta los
+     bordes del modal-box (que tiene padding:20px) para que no le queden huecos a los lados/abajo.*/
+  .modal-actions{display:flex;gap:10px;margin:16px -20px -20px;padding:12px 20px 20px;position:sticky;bottom:-20px;background:var(--card-bg);border-radius:0 0 18px 18px;box-shadow:0 -8px 14px -6px rgba(0,0,0,0.35);}
   .modal-actions button{flex:1;padding:12px;border-radius:12px;font-weight:800;}
   .upload-status{font-size:12px;color:var(--text-dim);margin-top:4px;}
   .js-check-entrega{appearance:none;-webkit-appearance:none;width:20px;height:20px;border-radius:6px;border:2px solid var(--peach-1);background:var(--card-bg-2);cursor:pointer;position:relative;}
@@ -599,9 +606,13 @@
         </div>
       </div>
       <!-- OJO: no agregar/quitar cierres de div sueltos acá, ya rompió el botón Guardar una vez.
-           Cada .form-group de arriba se abre y se cierra solo, este bloque de abajo va afuera de todos ellos. -->
-      <div class="modal-actions"><button type="submit" class="btn-primary">Guardar</button></div>
-      <button type="button" class="btn-small btn-danger" style="width:100%;margin-top:10px;" id="me_deleteBtn">🗑️ Borrar miembro</button>
+           Cada .form-group de arriba se abre y se cierra solo, este bloque de abajo va afuera de todos ellos.
+           me_deleteBtn va DENTRO de .modal-actions (no después) para que con el sticky footer nuevo
+           quede junto a Guardar en vez de escondérsele detrás al hacer scroll. -->
+      <div class="modal-actions">
+        <button type="submit" class="btn-primary">Guardar</button>
+        <button type="button" class="btn-small btn-danger" id="me_deleteBtn">🗑️ Borrar</button>
+      </div>
     </form>
   </div>
 </div>
@@ -1545,9 +1556,9 @@ function attachCardEvents(){
         const a=DB.actividades.find(x=>String(x.id)===String(id));
         let html=streamBlockHTML(a);
         html+=`<div class="desc-text">${resaltarIndicacion(escHtml(a.descripcion||"Sin descripción."))}</div>`;
-        const hashtagsDetalle=extraerHashtags(a.descripcion);
-        // Pedido explícito: los hashtags ya NO van en cuadro ni en rosa, solo texto normal debajo.
-        if(hashtagsDetalle.length) html+=`<div class="hashtag-plain">${hashtagsDetalle.map(escHtml).join(" ")}</div>`;
+        // El botón de copiar (a nivel de tarjeta) sigue usando extraerHashtags() igual que antes —
+        // lo que se quitó de acá es solo el listado repetido debajo de la descripción, porque
+        // muchas descripciones ya incluyen sus propios hashtags escritos a mano y se veían dos veces.
         if(a.wishlist) html+=`<div class="wishlist-block"><strong>🎵 Wishlist:</strong><br>${escHtml(a.wishlist)}</div>`;
         body.innerHTML=html; body.dataset.filled="1";
         const icsBtn=body.querySelector("[data-ics]");
