@@ -717,10 +717,20 @@
 <script>
 // Si el navegador restaura esta página desde su caché de "atrás/adelante" (bfcache), el DOM puede
 // quedar congelado a mitad de una actualización (ej. justo cuando un innerHTML se estaba
-// reescribiendo) y se ve "crudo"/sin estilo. Para evitarlo, si detectamos que la página viene de
-// bfcache (event.persisted), forzamos una recarga limpia desde cero.
+// reescribiendo) y se ve "crudo"/sin estilo.
+// FIX: esto pasa MUY seguido en celular (alcanza con cambiar de app un momento y volver), y antes
+// se "arreglaba" con un location.reload() completo — eso disparaba la pantalla de carga de peaches
+// tapando todo cada vez, justo lo que la caché de datos (ver CACHE_DATOS_KEY) se agregó para evitar.
+// En vez de una recarga completa, simplemente volvemos a pintar todo desde los datos que ya
+// tenemos en memoria (arregla cualquier DOM a medio pintar) y de paso refrescamos en segundo plano
+// con cargarDatos() — silencioso porque ya hay algo en pantalla, así nunca tapa la vista.
 window.addEventListener("pageshow", function(e){
-  if (e.persisted) location.reload();
+  if (e.persisted) {
+    if (DB && Array.isArray(DB.actividades) && DB.actividades.length > 0) {
+      renderActividades(); renderAnuario(); renderMiembros();
+    }
+    cargarDatos();
+  }
 });
 const APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwcnPM10DeRLE6ReNX_AqeViRfKkHjpflT-QCw05oW_L8n5ohrDhfR_iPuzTqYNrG8H4A/exec";
 const LOGO_DEFAULT = "https://raw.githubusercontent.com/TeamPeachesOff/TeamPeachesHub/main/Logos/PeachesLogo.jpeg";
@@ -1367,7 +1377,9 @@ async function cargarDatos(){
   const yaHabiaAlgoEnPantalla = !!cachePrevio || (DB && Array.isArray(DB.actividades) && (DB.actividades.length > 0 || DB.anuario.length > 0));
   if(cachePrevio){
     // Paso 1 (instantáneo, sin esperar red): pinta lo último guardado ya mismo.
-    aplicarDatosCargados_(cachePrevio);
+    // esCache=true: esto es solo una vista previa con datos posiblemente viejos, nunca debe
+    // decidir por sí sola borrar sessionToken/memberPin (ver aplicarDatosCargados_ para el porqué).
+    aplicarDatosCargados_(cachePrevio, true);
   }
   try{
     // silencioso=true en cuanto ya había algo pintado en pantalla (de cache, o porque esta
@@ -1393,36 +1405,50 @@ async function cargarDatos(){
   }
 }
 
-function aplicarDatosCargados_(datos){
+function aplicarDatosCargados_(datos, esCache){
   DB = datos;
   // "nivel" sale SIEMPRE de lo que el servidor resolvió — nunca de lo que el cliente cree
   // tener. Staff: a partir del token de sesión (ver validarSesion_ en Code.gs). Miembro: a
   // partir de la clave que se mandó en la misma request (ver doGet, v21). Si ninguno de los dos
   // resultó válido, el servidor ya contestó nivel:"publico" y acá se limpia el estado local que
   // haya quedado guardado.
+  //
+  // FIX (bug de Miembros): esta función se llama dos veces por cada cargarDatos() — primero con
+  // los datos VIEJOS de localStorage (esCache=true, solo para pintar algo instantáneo en pantalla)
+  // y después con la respuesta FRESCA del servidor (esCache=false/undefined, la única que de
+  // verdad vale como autoridad). Antes, la pasada con datos viejos también podía borrar
+  // sessionToken/memberPin si esa caché vieja tenía nivel "publico" (ej: se guardó ANTES de
+  // activar el modo Miembro) — y como esto pasa ANTES de armar la petición fresca (ver
+  // cargarDatos/apiGet, que arman ?clave= leyendo la variable memberPin en ese momento), la
+  // clave recién borrada nunca llegaba a mandarse, el servidor confirmaba "publico", y la app
+  // quedaba trabada ahí para siempre (y el PIN guardado se perdía). Por eso: mientras esCache
+  // sea true, "nivel" y las variables se usan solo para PINTAR, nunca para borrar credenciales
+  // guardadas — esa decisión se deja exclusivamente para cuando llega la respuesta real.
   nivel = DB.nivel || "publico";
   staffPin = (nivel==="staff") ? sessionToken : null;
-  if (nivel==="publico" && sessionToken) {
-    // La sesión guardada ya no sirve (venció o fue revocada desde "AccesoAutorizado"): se limpia
-    // para no seguir mandando un token muerto en cada request. También se borra el cache local:
-    // no tiene sentido dejar datos de staff/miembro (teléfonos, links privados) guardados en el
-    // navegador de alguien cuya sesión ya no es válida.
-    sessionToken = null;
-    localStorage.removeItem("tph_session_token");
-    localStorage.removeItem("tph_session_rol");
-    borrarCacheDatos();
-  }
-  if (nivel!=="miembro" && memberPin) {
-    if (DB.claveMiembroProblema === "bloqueado") {
-      // Bloqueo temporal por fuerza bruta (8 intentos fallidos de CUALQUIERA en el equipo, no
-      // necesariamente vos) — la clave guardada sigue siendo válida, así que NO se borra. Se
-      // avisa para que no cunda el pánico, y apenas pase el bloqueo (máx. 15 min) vuelve a
-      // funcionar solo, sin tener que volver a escribir el PIN.
-      toast("⏳ PIN de Miembro bloqueado temporalmente (demasiados intentos). Tu clave guardada sigue siendo válida, se reactiva sola en unos minutos.");
-    } else {
-      // La clave guardada ya no sirve de verdad (por ejemplo, un admin la cambió): acá sí se borra.
-      memberPin = null;
-      localStorage.removeItem("tph_member_clave");
+  if (!esCache) {
+    if (nivel==="publico" && sessionToken) {
+      // La sesión guardada ya no sirve (venció o fue revocada desde "AccesoAutorizado"): se limpia
+      // para no seguir mandando un token muerto en cada request. También se borra el cache local:
+      // no tiene sentido dejar datos de staff/miembro (teléfonos, links privados) guardados en el
+      // navegador de alguien cuya sesión ya no es válida.
+      sessionToken = null;
+      localStorage.removeItem("tph_session_token");
+      localStorage.removeItem("tph_session_rol");
+      borrarCacheDatos();
+    }
+    if (nivel!=="miembro" && memberPin) {
+      if (DB.claveMiembroProblema === "bloqueado") {
+        // Bloqueo temporal por fuerza bruta (8 intentos fallidos de CUALQUIERA en el equipo, no
+        // necesariamente vos) — la clave guardada sigue siendo válida, así que NO se borra. Se
+        // avisa para que no cunda el pánico, y apenas pase el bloqueo (máx. 15 min) vuelve a
+        // funcionar solo, sin tener que volver a escribir el PIN.
+        toast("⏳ PIN de Miembro bloqueado temporalmente (demasiados intentos). Tu clave guardada sigue siendo válida, se reactiva sola en unos minutos.");
+      } else {
+        // La clave guardada ya no sirve de verdad (por ejemplo, un admin la cambió): acá sí se borra.
+        memberPin = null;
+        localStorage.removeItem("tph_member_clave");
+      }
     }
   }
   if (DB.googleClientId && !googleSignInInicializado) inicializarGoogleSignIn(DB.googleClientId);
