@@ -215,13 +215,20 @@
   .btn-bell{background:rgba(255,215,0,0.18);color:var(--gold);}
   button:disabled{opacity:0.5;cursor:not-allowed;}
 
-  .accordion{border-top:1px solid rgba(255,255,255,0.07);}
-  .accordion-toggle{width:100%;text-align:left;padding:12px 14px;background:none;color:var(--peach-2);font-weight:700;font-size:13.5px;display:flex;justify-content:space-between;align-items:center;}
+  .accordion{border-top:1px solid rgba(255,255,255,0.07);position:relative;}
+  .accordion-toggle{width:100%;text-align:left;padding:12px 44px 12px 14px;background:none;color:var(--peach-2);font-weight:700;font-size:13.5px;display:flex;justify-content:space-between;align-items:center;}
   .accordion-body{padding:0 14px 14px;font-size:13.5px;color:var(--text-dim);line-height:1.5;display:none;}
   .desc-text{white-space:pre-wrap;}
   .accordion-body.open{display:block;}
   .wishlist-block{margin-top:8px;padding:8px 10px;background:var(--card-bg-2);border-radius:10px;white-space:pre-wrap;}
-  .hashtag-block{margin-top:8px;padding:8px 10px;background:var(--card-bg-2);border-radius:10px;color:var(--peach-2);font-weight:700;word-break:break-word;}
+  /* Los hashtags ya NO van en cuadro ni en rosa (pedido explícito) — texto normal, discreto. */
+  .hashtag-plain{margin-top:8px;color:var(--text-dim);word-break:break-word;}
+  /* El cuadro de "Indicación:" reusa el mismo look que antes tenía el de hashtags — es solo para
+     resaltar visualmente, NO mueve ni duplica el texto de la descripción. */
+  .indicacion-block{display:inline-block;margin:2px 0;padding:6px 10px;background:var(--card-bg-2);border-radius:10px;word-break:break-word;}
+  /* Botón de copiar hashtags anclado a la tarjeta (no al form de admin), al mismo nivel que el
+     toggle de "Más Info" para no interrumpir el texto — visible para cualquiera, no solo admins. */
+  .card-copy-hashtags{position:absolute;right:8px;top:6px;padding:4px 10px;font-size:12px;width:auto;z-index:2;}
   .stream-block{background:linear-gradient(135deg,rgba(239,8,112,0.18),rgba(255,143,177,0.08));border:1px solid rgba(239,8,112,0.35);border-radius:14px;padding:12px;margin-bottom:12px;}
   .stream-title{font-weight:800;color:var(--text);font-size:14px;margin-bottom:4px;}
   .stream-time{font-size:12.5px;color:var(--text-dim);margin-bottom:10px;}
@@ -611,10 +618,9 @@
         <input autocomplete="off" type="file" id="af_imagenFile" accept=".jpg,.jpeg,.png,image/jpeg,image/png">
         <div class="upload-status" id="af_uploadStatus"></div>
       </div>
-      <div class="form-group" style="position:relative;">
+      <div class="form-group">
         <label>Descripción</label>
-        <textarea autocomplete="off" id="af_descripcion" style="padding-bottom:34px;"></textarea>
-        <button type="button" class="btn-small btn-family" id="af_copyHashtagsBtn" style="position:absolute;right:8px;bottom:8px;padding:4px 10px;font-size:12px;width:auto;">📋 Copiar hashtags</button>
+        <textarea autocomplete="off" id="af_descripcion"></textarea>
       </div>
       <div class="form-group" style="background:var(--card-bg-2);padding:10px;border-radius:12px;">
         <label style="color:var(--peach-2);">📺 Stream (opcional, déjalo vacío si no aplica)</label>
@@ -1495,6 +1501,7 @@ function cardHTML(a, entregasDeEsta){
     ${(a.descripcion||a.wishlist||a.streamNombre)?`
     <div class="accordion">
       <button class="accordion-toggle" data-toggle="info-${a.id}">▼ Más Info & Wishlist</button>
+      ${extraerHashtags(a.descripcion).length?`<button type="button" class="btn-small btn-family card-copy-hashtags" data-copy-hashtags="${a.id}" title="Copiar hashtags">📋</button>`:""}
       <div class="accordion-body" id="info-${a.id}"></div>
     </div>`:""}
     <div class="accordion">
@@ -1537,9 +1544,10 @@ function attachCardEvents(){
         const id=body.id.replace("info-","");
         const a=DB.actividades.find(x=>String(x.id)===String(id));
         let html=streamBlockHTML(a);
-        html+=`<div class="desc-text">${escHtml(a.descripcion||"Sin descripción.")}</div>`;
+        html+=`<div class="desc-text">${resaltarIndicacion(escHtml(a.descripcion||"Sin descripción."))}</div>`;
         const hashtagsDetalle=extraerHashtags(a.descripcion);
-        if(hashtagsDetalle.length) html+=`<div class="hashtag-block">【🍑 Hashtags:】 ${hashtagsDetalle.map(escHtml).join(" ")}</div>`;
+        // Pedido explícito: los hashtags ya NO van en cuadro ni en rosa, solo texto normal debajo.
+        if(hashtagsDetalle.length) html+=`<div class="hashtag-plain">${hashtagsDetalle.map(escHtml).join(" ")}</div>`;
         if(a.wishlist) html+=`<div class="wishlist-block"><strong>🎵 Wishlist:</strong><br>${escHtml(a.wishlist)}</div>`;
         body.innerHTML=html; body.dataset.filled="1";
         const icsBtn=body.querySelector("[data-ics]");
@@ -1550,6 +1558,7 @@ function attachCardEvents(){
   document.querySelectorAll("[data-edit]").forEach(btn=>btn.onclick=()=>openActivityForm(btn.dataset.edit, false));
   document.querySelectorAll("[data-delete]").forEach(btn=>btn.onclick=()=>borrarActividad(btn.dataset.delete));
   document.querySelectorAll("[data-bell]").forEach(btn=>btn.onclick=()=>probarRecordatorio(btn.dataset.bell));
+  document.querySelectorAll("[data-copy-hashtags]").forEach(btn=>btn.onclick=()=>copiarHashtagsDeActividad(btn.dataset.copyHashtags));
   document.querySelectorAll("[data-add-entrega]").forEach(btn=>btn.onclick=()=>openEntregaForm(btn.dataset.addEntrega));
   document.querySelectorAll("[data-import-entregas]").forEach(btn=>btn.onclick=()=>importarEntregas(btn.dataset.importEntregas));
   document.querySelectorAll("[data-anuario-entrega]").forEach(btn=>btn.onclick=()=>abrirModalAnuario(btn.dataset.anuarioEntrega,btn.dataset.titulo,btn.dataset.nombre,btn.dataset.detalle,btn.dataset.link));
@@ -2439,11 +2448,18 @@ document.getElementById("memberEditForm").addEventListener("submit", async(e)=>{
     inactivo: especial.includes("inactivo")?"TRUE":"FALSE"
   };
   if(!id){ data.faltas=0; data.strikes=0; data.strikesPermanentes=0; } // solo al crear; al editar NO se tocan (bug corregido)
-  let r;
-  if(id){ data.id=id; r=await apiPost({action:"editMiembro", data},"Guardando miembro..."); }
-  else{ data.id="MIEM-"+Date.now(); r=await apiPost({action:"addMiembro", data},"Añadiendo miembro..."); }
-  btn.disabled=false;
-  if(r.ok){ toast("Miembro guardado ✅"); closeModal("memberEditModal"); await cargarDatos(); } else toast("Error: "+(r.error||""));
+  // try/finally: si apiPost lanza (red caída, timeout), el botón igual se reactiva y se avisa con
+  // un toast, en vez de quedar bloqueado para siempre sin ningún feedback (bug reportado).
+  try{
+    let r;
+    if(id){ data.id=id; r=await apiPost({action:"editMiembro", data},"Guardando miembro..."); }
+    else{ data.id="MIEM-"+Date.now(); r=await apiPost({action:"addMiembro", data},"Añadiendo miembro..."); }
+    if(r.ok){ toast("Miembro guardado ✅"); closeModal("memberEditModal"); await cargarDatos(); } else toast("Error: "+(r.error||""));
+  }catch(err){
+    toast("Error inesperado al guardar: "+(err.message||err));
+  }finally{
+    btn.disabled=false;
+  }
 });
 document.getElementById("me_deleteBtn").onclick=async()=>{
   const id=document.getElementById("me_id").value;
@@ -2550,8 +2566,12 @@ bindSwitchPill("af_participacionSwitch");
   });
 })();
 
-document.getElementById("af_copyHashtagsBtn").onclick=async()=>{
-  const tags=extraerHashtags(document.getElementById("af_descripcion").value);
+// El botón de copiar hashtags ahora vive anclado a la tarjeta (visible para cualquiera, no solo
+// admins) — se bindea dinámicamente en attachCardEvents() porque hay uno por tarjeta, no uno solo
+// fijo como cuando vivía dentro del form.
+async function copiarHashtagsDeActividad(idActividad){
+  const a=DB.actividades.find(x=>String(x.id)===String(idActividad));
+  const tags=extraerHashtags(a?a.descripcion:"");
   if(!tags.length){ toast("No hay hashtags en la descripción ❌"); return; }
   try{
     await navigator.clipboard.writeText(tags.join(" "));
@@ -2559,7 +2579,7 @@ document.getElementById("af_copyHashtagsBtn").onclick=async()=>{
   }catch(err){
     toast("No se pudo copiar (permiso del navegador) ❌");
   }
-};
+}
 
 /* ---------- textarea auto-ajustable (Ticket 1) ---------- */
 // Crece con el contenido en vez de mostrar scrollbar interna. Se aplica a TODOS los
@@ -2712,8 +2732,16 @@ document.getElementById("entregaForm").addEventListener("submit", async(e)=>{
   const data={ id:"ENT-"+Date.now(), idActividad:idActividad, tituloActividad:actividad?(actividad.titulo||""):"",
     nombreUsuario:document.getElementById("en_nombre").value, detalleEntrega:document.getElementById("en_detalle").value,
     linkGrabacion:document.getElementById("en_link").value };
-  const r=await apiPost({action:"addEntrega", data},"Registrando entrega..."); btn.disabled=false;
-  if(r.ok){ toast("Entrega registrada ✅"); closeModal("entregaFormModal"); await cargarDatos(); } else toast("Error: "+(r.error||""));
+  // try/finally: si apiPost lanza (red caída, timeout), el botón igual se reactiva y se avisa con
+  // un toast, en vez de quedar bloqueado para siempre sin ningún feedback (bug reportado).
+  try{
+    const r=await apiPost({action:"addEntrega", data},"Registrando entrega...");
+    if(r.ok){ toast("Entrega registrada ✅"); closeModal("entregaFormModal"); await cargarDatos(); } else toast("Error: "+(r.error||""));
+  }catch(err){
+    toast("Error inesperado al guardar: "+(err.message||err));
+  }finally{
+    btn.disabled=false;
+  }
 });
 
 /* ---------- Fase 4: Buzón de Quejas / Recomendaciones (público, sin sesión) ---------- */
@@ -3018,6 +3046,19 @@ function extraerHashtags(texto){
 }
 function escHtml(str){ return String(str).replace(/[&<>"']/g, s=>({"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;","'":"&#39;"}[s])); }
 function escAttr(str){ return escHtml(str); }
+
+// Busca "Indicacion:" / "Indicación:" (con o sin tilde, cualquier mayuscula/minuscula) dentro de
+// la descripcion YA escapada (post escHtml, por eso no hace falta volver a escapar aca) y envuelve
+// SOLO esa porcion (la palabra + los dos puntos + el resto de esa misma linea) en un cuadrito para
+// resaltarla. No mueve el texto de donde esta ni lo duplica -- solo lo envuelve in-place. La
+// palabra "Indicacion" va en negrita, tal como se pidio.
+function resaltarIndicacion(descripcionEscapada){
+  const regex=/(Indicaci[oó]n)(\s*:)([^\n]*)/i;
+  const m=descripcionEscapada.match(regex);
+  if(!m) return descripcionEscapada;
+  const cuadro=`<span class="indicacion-block"><strong>${m[1]}</strong>${m[2]}${m[3]}</span>`;
+  return descripcionEscapada.slice(0,m.index)+cuadro+descripcionEscapada.slice(m.index+m[0].length);
+}
 
 // A diferencia del viejo modo Staff (que a propósito nunca se auto-activaba), restaurar una
 // sesión de Google ya validada es de bajo riesgo: si el token guardado venció o fue revocado
