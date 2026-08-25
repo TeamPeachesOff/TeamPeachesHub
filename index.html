@@ -1413,9 +1413,17 @@ function aplicarDatosCargados_(datos){
     borrarCacheDatos();
   }
   if (nivel!=="miembro" && memberPin) {
-    // La clave guardada ya no sirve (la cambió un admin): se limpia para no seguir mandándola.
-    memberPin = null;
-    localStorage.removeItem("tph_member_clave");
+    if (DB.claveMiembroProblema === "bloqueado") {
+      // Bloqueo temporal por fuerza bruta (8 intentos fallidos de CUALQUIERA en el equipo, no
+      // necesariamente vos) — la clave guardada sigue siendo válida, así que NO se borra. Se
+      // avisa para que no cunda el pánico, y apenas pase el bloqueo (máx. 15 min) vuelve a
+      // funcionar solo, sin tener que volver a escribir el PIN.
+      toast("⏳ PIN de Miembro bloqueado temporalmente (demasiados intentos). Tu clave guardada sigue siendo válida, se reactiva sola en unos minutos.");
+    } else {
+      // La clave guardada ya no sirve de verdad (por ejemplo, un admin la cambió): acá sí se borra.
+      memberPin = null;
+      localStorage.removeItem("tph_member_clave");
+    }
   }
   if (DB.googleClientId && !googleSignInInicializado) inicializarGoogleSignIn(DB.googleClientId);
   aplicarEnlacesPublicos();
