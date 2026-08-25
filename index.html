@@ -924,6 +924,31 @@ function winnersGroupHTML(emoji,label,text,tipo,tituloActividad){
 // algo mejor: el email real de la cuenta de Google, verificado por Google mismo (ver
 // verificarTokenGoogle_ en Code.gs), imposible de falsificar sin acceso real a esa cuenta.
 
+// PERF/ESTABILIDAD: fetch con timeout (para que un cold-start lento de Apps Script no se quede
+// colgado para siempre) + 1 reintento automático si el primer intento falla o tarda demasiado.
+// Con ~30 personas y uso esporádico, la causa más común de una carga lenta/fallida es que Apps
+// Script "estaba dormido" y la primera llamada del rato lo despierta — un segundo intento casi
+// siempre alcanza para resolverlo solo, sin que la persona tenga que hacer nada.
+async function fetchConReintento_(url, options, intentos, timeoutMs){
+  intentos = intentos || 2;
+  timeoutMs = timeoutMs || 12000;
+  let ultimoError;
+  for(let i=0;i<intentos;i++){
+    const controller = new AbortController();
+    const timer = setTimeout(()=>controller.abort(), timeoutMs);
+    try{
+      const res = await fetch(url, Object.assign({}, options, {signal: controller.signal}));
+      clearTimeout(timer);
+      return res;
+    }catch(err){
+      clearTimeout(timer);
+      ultimoError = err;
+      if(i < intentos-1) await new Promise(r=>setTimeout(r, 800)); // pequeña pausa antes de reintentar
+    }
+  }
+  throw ultimoError;
+}
+
 async function apiGet(){
   showLoading("Cargando datos...");
   // v21: se manda el token de sesión de Staff (si hay) Y la clave de Miembro (si hay) — el
@@ -934,7 +959,17 @@ async function apiGet(){
     if(sessionToken) params.push("token="+encodeURIComponent(sessionToken));
     if(memberPin) params.push("clave="+encodeURIComponent(memberPin));
     let url=APPS_SCRIPT_URL+(params.length?("?"+params.join("&")):"");
-    const res=await fetch(url); return await res.json();
+    const res = await fetchConReintento_(url);
+    try{
+      return await res.json();
+    }catch(parseErr){
+      // Típicamente pasa cuando Apps Script devolvió su página de error en HTML en vez de JSON
+      // (ej. un error interno no capturado). Se distingue de un error de red para que el mensaje
+      // tenga sentido.
+      return {ok:false, error:"El servidor respondió con algo inesperado (no JSON). Puede ser un hipo momentáneo de Google — vuelve a intentar en unos segundos."};
+    }
+  }catch(networkErr){
+    return {ok:false, error: networkErr && networkErr.name==="AbortError" ? "El servidor tardó demasiado en responder." : "No se pudo conectar con el servidor. Revisa tu conexión e intenta de nuevo."};
   }
   finally{ hideLoading(); }
 }
@@ -950,14 +985,22 @@ async function apiPost(payload, msg){
     // el "btn.disabled=false" — así que el botón quedaba deshabilitado para siempre y parecía que
     // "no hacía nada" al volver a tocarlo, sin ningún aviso de qué pasó. Ahora SIEMPRE devolvemos
     // un objeto {ok:false, error:...} en vez de lanzar, para que el que llama pueda reaccionar bien.
-    const res=await fetch(APPS_SCRIPT_URL,{method:"POST",headers:{"Content-Type":"text/plain;charset=utf-8"},body:JSON.stringify(payload)});
+    // Nota: a diferencia de apiGet, acá NO se reintenta solo — reintentar automáticamente un
+    // POST (que guarda/borra algo) podría duplicar la acción si el primer intento en realidad
+    // sí llegó a completarse en el servidor y solo se perdió la respuesta. Sí se pone un timeout
+    // largo (20s) para no colgarse para siempre si Apps Script está lento despertando.
+    const controller = new AbortController();
+    const timer = setTimeout(()=>controller.abort(), 20000);
+    let res;
+    try{ res = await fetch(APPS_SCRIPT_URL,{method:"POST",headers:{"Content-Type":"text/plain;charset=utf-8"},body:JSON.stringify(payload),signal:controller.signal}); }
+    finally{ clearTimeout(timer); }
     try{
       return await res.json();
     }catch(parseErr){
       return {ok:false, error:"El servidor tardó demasiado o devolvió una respuesta inválida. Intenta de nuevo en un momento."};
     }
   }catch(networkErr){
-    return {ok:false, error:"No se pudo conectar con el servidor. Revisa tu conexión e intenta de nuevo."};
+    return {ok:false, error: networkErr && networkErr.name==="AbortError" ? "El servidor tardó demasiado en responder. Revisa si tu cambio se guardó antes de repetirlo." : "No se pudo conectar con el servidor. Revisa tu conexión e intenta de nuevo."};
   } finally{ hideLoading(); }
 }
 // Se llama SOLO justo después de que el servidor confirmó una sesión de Staff válida.
@@ -1237,39 +1280,85 @@ function descargarICS(nombre,isoStart,isoEnd,descripcion){
 }
 
 /* ---------- carga ---------- */
-async function cargarDatos(){
+// ============ CACHE LOCAL DE DATOS (carga instantánea) ============
+// Grupo chico (~30 personas) que casi no cambia de un día a otro: no tiene sentido que CADA
+// carga de la página espere a Sheets/Apps Script desde cero. Guardamos la última respuesta buena
+// en localStorage y la mostramos de inmediato al abrir la página, mientras se pide la versión
+// fresca por detrás — si hay algo nuevo, la pantalla se actualiza sola en cuanto llega.
+// Si la carga fresca falla (Apps Script dormido, hipo momentáneo, etc.), la persona se queda
+// viendo la última versión guardada en vez de una pantalla de error, con solo un aviso discreto.
+const CACHE_DATOS_KEY = "tph_data_cache";
+function leerCacheDatos(){
   try{
-    DB=await apiGet();
-    if(!DB || typeof DB!=="object" || !Array.isArray(DB.actividades) || !Array.isArray(DB.anuario)) throw new Error("Respuesta inesperada del servidor: "+JSON.stringify(DB).slice(0,200));
-    // "nivel" sale SIEMPRE de lo que el servidor resolvió — nunca de lo que el cliente cree
-    // tener. Staff: a partir del token de sesión (ver validarSesion_ en Code.gs). Miembro: a
-    // partir de la clave que se mandó en la misma request (ver doGet, v21). Si ninguno de los dos
-    // resultó válido, el servidor ya contestó nivel:"publico" y acá se limpia el estado local que
-    // haya quedado guardado.
-    nivel = DB.nivel || "publico";
-    staffPin = (nivel==="staff") ? sessionToken : null;
-    if (nivel==="publico" && sessionToken) {
-      // La sesión guardada ya no sirve (venció o fue revocada desde "AccesoAutorizado"): se limpia
-      // para no seguir mandando un token muerto en cada request.
-      sessionToken = null;
-      localStorage.removeItem("tph_session_token");
-      localStorage.removeItem("tph_session_rol");
+    const raw = localStorage.getItem(CACHE_DATOS_KEY);
+    if(!raw) return null;
+    const parsed = JSON.parse(raw);
+    if(!parsed || typeof parsed!=="object" || !Array.isArray(parsed.actividades) || !Array.isArray(parsed.anuario)) return null;
+    return parsed;
+  }catch(e){ return null; }
+}
+function guardarCacheDatos(datos){
+  try{ localStorage.setItem(CACHE_DATOS_KEY, JSON.stringify(datos)); }
+  catch(e){ /* localStorage lleno/deshabilitado: no rompe nada, solo no queda cache para la próxima */ }
+}
+function borrarCacheDatos(){
+  try{ localStorage.removeItem(CACHE_DATOS_KEY); }catch(e){}
+}
+
+async function cargarDatos(){
+  const cachePrevio = leerCacheDatos();
+  if(cachePrevio){
+    // Paso 1 (instantáneo, sin esperar red): pinta lo último guardado ya mismo.
+    aplicarDatosCargados_(cachePrevio);
+  }
+  try{
+    const nuevo = await apiGet();
+    if(!nuevo || typeof nuevo!=="object" || nuevo.ok===false || !Array.isArray(nuevo.actividades) || !Array.isArray(nuevo.anuario)){
+      throw new Error((nuevo && nuevo.error) ? nuevo.error : "Respuesta inesperada del servidor: "+JSON.stringify(nuevo).slice(0,200));
     }
-    if (nivel!=="miembro" && memberPin) {
-      // La clave guardada ya no sirve (la cambió un admin): se limpia para no seguir mandándola.
-      memberPin = null;
-      localStorage.removeItem("tph_member_clave");
-    }
-    if (DB.googleClientId && !googleSignInInicializado) inicializarGoogleSignIn(DB.googleClientId);
-    aplicarEnlacesPublicos();
-    aplicarVisibilidadBuzon();
-    aplicarVisibilidadMundo();
-    renderActividades(); renderAnuario(); renderMiembros();
+    guardarCacheDatos(nuevo);
+    aplicarDatosCargados_(nuevo);
   }
   catch(err){
     console.error("Error cargando datos:", err);
-    document.getElementById("actividadesFeed").innerHTML=`<div class="empty-state">No se pudo conectar con la base de datos.<br><span style="font-size:11px;opacity:0.6;">${escHtml(err.message||String(err))}</span></div>`;
+    if(cachePrevio){
+      // Ya se está viendo la versión guardada (Paso 1) — solo se avisa, sin tapar la pantalla.
+      toast("No se pudo actualizar ahora, viendo la última versión guardada ⚠️");
+    }else{
+      document.getElementById("actividadesFeed").innerHTML=`<div class="empty-state">No se pudo conectar con la base de datos.<br><span style="font-size:11px;opacity:0.6;">${escHtml(err.message||String(err))}</span></div>`;
+    }
   }
+}
+
+function aplicarDatosCargados_(datos){
+  DB = datos;
+  // "nivel" sale SIEMPRE de lo que el servidor resolvió — nunca de lo que el cliente cree
+  // tener. Staff: a partir del token de sesión (ver validarSesion_ en Code.gs). Miembro: a
+  // partir de la clave que se mandó en la misma request (ver doGet, v21). Si ninguno de los dos
+  // resultó válido, el servidor ya contestó nivel:"publico" y acá se limpia el estado local que
+  // haya quedado guardado.
+  nivel = DB.nivel || "publico";
+  staffPin = (nivel==="staff") ? sessionToken : null;
+  if (nivel==="publico" && sessionToken) {
+    // La sesión guardada ya no sirve (venció o fue revocada desde "AccesoAutorizado"): se limpia
+    // para no seguir mandando un token muerto en cada request. También se borra el cache local:
+    // no tiene sentido dejar datos de staff/miembro (teléfonos, links privados) guardados en el
+    // navegador de alguien cuya sesión ya no es válida.
+    sessionToken = null;
+    localStorage.removeItem("tph_session_token");
+    localStorage.removeItem("tph_session_rol");
+    borrarCacheDatos();
+  }
+  if (nivel!=="miembro" && memberPin) {
+    // La clave guardada ya no sirve (la cambió un admin): se limpia para no seguir mandándola.
+    memberPin = null;
+    localStorage.removeItem("tph_member_clave");
+  }
+  if (DB.googleClientId && !googleSignInInicializado) inicializarGoogleSignIn(DB.googleClientId);
+  aplicarEnlacesPublicos();
+  aplicarVisibilidadBuzon();
+  aplicarVisibilidadMundo();
+  renderActividades(); renderAnuario(); renderMiembros();
 }
 
 // Los enlaces públicos (Regalito, Anuario público) llegan en CADA carga de datos (enlacesPublicos,
@@ -2801,6 +2890,7 @@ async function cerrarSesionActual(mensaje){
   sessionToken = null; staffPin = null; memberPin = null;
   localStorage.removeItem("tph_session_token"); localStorage.removeItem("tph_session_rol");
   localStorage.removeItem("tph_member_clave");
+  borrarCacheDatos(); // logout explícito: no dejar teléfonos/links privados cacheados en el navegador
   enlacesStaff = null; // se borran de memoria: sin sesión activa, no deben quedar accesibles ni un momento más
   document.getElementById("staffStatusBadge").style.display="none";
   document.getElementById("memberStatusBadge").style.display="none";
