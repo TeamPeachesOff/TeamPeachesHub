@@ -1054,13 +1054,17 @@ function winnersGroupHTML(emoji,label,text,tipo,tituloActividad){
 // verificarTokenGoogle_ en Code.gs), imposible de falsificar sin acceso real a esa cuenta.
 
 // PERF/ESTABILIDAD: fetch con timeout (para que un cold-start lento de Apps Script no se quede
-// colgado para siempre) + 1 reintento automático si el primer intento falla o tarda demasiado.
+// colgado para siempre) + 2 reintentos automáticos si el primer intento falla o tarda demasiado.
 // Con ~30 personas y uso esporádico, la causa más común de una carga lenta/fallida es que Apps
-// Script "estaba dormido" y la primera llamada del rato lo despierta — un segundo intento casi
-// siempre alcanza para resolverlo solo, sin que la persona tenga que hacer nada.
+// Script "estaba dormido" y la primera llamada del rato lo despierta.
+// FIX: 12s / 2 intentos no alcanzaba para un cold-start real de Apps Script (se vio en consola
+// un caso concreto donde el primer fetch se abortó a los 12s con el servidor todavía respondiendo,
+// y eso hacía fallar cargarDatos() aunque la clave de Miembro guardada seguía perfecta -- la
+// persona interpretaba ese fallo de red como "se borró la contraseña" cuando en realidad nunca se
+// tocó). Se sube a 25s por intento y a 3 intentos, para darle margen real a un arranque en frío.
 async function fetchConReintento_(url, options, intentos, timeoutMs){
-  intentos = intentos || 2;
-  timeoutMs = timeoutMs || 12000;
+  intentos = intentos || 3;
+  timeoutMs = timeoutMs || 25000;
   let ultimoError;
   for(let i=0;i<intentos;i++){
     const controller = new AbortController();
