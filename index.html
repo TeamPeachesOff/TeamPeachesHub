@@ -773,6 +773,73 @@ let googleSignInInicializado = false;
 let enlacesStaff = null;
 let nivel = "publico"; // "staff" | "miembro" | "publico" -- lo manda el backend en cada carga
 let filtroCanto = true, filtroDoblaje = true;
+
+// ============ RESPALDO EN COOKIE PARA LA CLAVE DE MIEMBRO (fix persistencia) ============
+// Reporte: a algunas personas se les borraba "Pricha" del navegador sola entre sesiones aunque
+// nunca la borraron a mano, pese a que toda la lógica de guardado/borrado en localStorage ya es
+// correcta (ver setMemberClave_/limpiarMemberClave_ y restaurarSesion). La sospecha es que algo
+// AJENO a esta app (config de "borrar datos al cerrar el navegador", un limpiador tipo CCleaner,
+// un antivirus agresivo) está vaciando el localStorage del sitio entre visitas. Como defensa
+// adicional -- nunca como reemplazo de localStorage, que sigue siendo la fuente principal -- se
+// guarda la misma clave también en una cookie propia de larga duración (2 años). Si algo borra
+// SOLO el localStorage (p.ej. un botón "clear site data" que no toca cookies, o una extensión que
+// llama localStorage.clear() específicamente), la cookie permite recuperarla sin pedirla de nuevo.
+// Nunca se manda al servidor sola: el flujo de autenticación real sigue siendo 100% el de siempre
+// (memberPin viaja como ?clave= en cada apiGet, tal como ya hacía).
+function setCookieLarga_(nombre, valor, dias){
+  try{
+    const fecha = new Date();
+    fecha.setTime(fecha.getTime() + dias*24*60*60*1000);
+    document.cookie = nombre+"="+encodeURIComponent(valor)+"; expires="+fecha.toUTCString()+"; path=/; SameSite=Lax";
+  }catch(e){ console.warn("[TPH][clave] no se pudo escribir la cookie de respaldo:", e); }
+}
+function leerCookie_(nombre){
+  try{
+    const partes = document.cookie.split("; ");
+    for(const parte of partes){
+      const idx = parte.indexOf("=");
+      if(idx===-1) continue;
+      if(decodeURIComponent(parte.slice(0,idx))===nombre) return decodeURIComponent(parte.slice(idx+1));
+    }
+  }catch(e){ /* cookies deshabilitadas: seguimos solo con localStorage */ }
+  return null;
+}
+function borrarCookie_(nombre){
+  try{ document.cookie = nombre+"=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/; SameSite=Lax"; }catch(e){}
+}
+// Guarda la clave en AMBOS lugares (localStorage + cookie) y deja rastro en consola de que se
+// guardó, para poder confirmar en F12 → Consola que sí quedó grabada tras validarla.
+function setMemberClave_(clave){
+  memberPin = clave;
+  let localOk = true;
+  try{ localStorage.setItem("tph_member_clave", clave); }
+  catch(e){ localOk = false; console.error("[TPH][clave] localStorage.setItem FALLÓ al guardar la clave de Miembro:", e); }
+  setCookieLarga_("tph_member_clave_bak", clave, 730);
+  console.info("[TPH][clave] Clave de Miembro guardada. localStorage:", localOk?"OK":"FALLÓ", "| cookie: OK");
+  if(!localOk) toast("⚠️ Este navegador no permite guardar la clave (localStorage bloqueado). Puede que tengas que volver a escribirla la próxima vez.");
+}
+// Borra la clave de AMBOS lugares. "motivo" queda en consola para poder diagnosticar exactamente
+// por qué se borró la próxima vez que pase (logout manual vs. el servidor confirmando que ya no sirve).
+function limpiarMemberClave_(motivo){
+  memberPin = null;
+  try{ localStorage.removeItem("tph_member_clave"); }catch(e){}
+  borrarCookie_("tph_member_clave_bak");
+  console.warn("[TPH][clave] Clave de Miembro BORRADA. Motivo:", motivo);
+}
+// Se llama una sola vez al cargar la página. Prioriza localStorage (fuente principal); si está
+// vacío pero la cookie de respaldo tiene algo, la usa y de paso re-escribe localStorage con ese
+// valor -- así un localStorage recién vaciado por algo externo se "autorepara" solo, sin que la
+// persona tenga que volver a escribir la clave.
+function restaurarMemberClave_(){
+  let clave = null;
+  try{ clave = localStorage.getItem("tph_member_clave"); }catch(e){}
+  if(clave){ memberPin = clave; console.info("[TPH][clave] Restaurada desde localStorage."); return; }
+  const claveCookie = leerCookie_("tph_member_clave_bak");
+  if(claveCookie){
+    console.warn("[TPH][clave] localStorage estaba vacío pero la cookie de respaldo tenía la clave guardada -- restaurando desde ahí y re-sincronizando localStorage.");
+    setMemberClave_(claveCookie);
+  }
+}
 let modoEliminarEntregas = {};
 let anuarioCtx = null;
 let loadingCount = 0;
@@ -1446,8 +1513,7 @@ function aplicarDatosCargados_(datos, esCache){
         toast("⏳ PIN de Miembro bloqueado temporalmente (demasiados intentos). Tu clave guardada sigue siendo válida, se reactiva sola en unos minutos.");
       } else {
         // La clave guardada ya no sirve de verdad (por ejemplo, un admin la cambió): acá sí se borra.
-        memberPin = null;
-        localStorage.removeItem("tph_member_clave");
+        limpiarMemberClave_("el servidor confirmó nivel!=='miembro' y claveMiembroProblema='incorrecta' (clave cambiada o inválida)");
       }
     }
   }
@@ -2977,8 +3043,7 @@ document.getElementById("memberPinForm").addEventListener("submit", async (ev)=>
   document.getElementById("memberPinMsg").textContent="Verificando...";
   const r=await apiPost({action:"validarClaveMiembro", clave:clave}, "Verificando...");
   if(r.ok){
-    memberPin=clave;
-    localStorage.setItem("tph_member_clave", clave);
+    setMemberClave_(clave);
     document.getElementById("memberPinMsg").textContent="";
     toast("Modo Miembro activado 🍑");
     document.getElementById("memberStatusBadge").style.display="flex";
@@ -3054,9 +3119,9 @@ async function manejarRespuestaGoogle(response){
 }
 async function cerrarSesionActual(mensaje){
   const tokenViejo = sessionToken;
-  sessionToken = null; staffPin = null; memberPin = null;
+  sessionToken = null; staffPin = null;
   localStorage.removeItem("tph_session_token"); localStorage.removeItem("tph_session_rol");
-  localStorage.removeItem("tph_member_clave");
+  limpiarMemberClave_("logout manual (cerrarSesionActual)");
   borrarCacheDatos(); // logout explícito: no dejar teléfonos/links privados cacheados en el navegador
   enlacesStaff = null; // se borran de memoria: sin sesión activa, no deben quedar accesibles ni un momento más
   document.getElementById("staffStatusBadge").style.display="none";
@@ -3116,8 +3181,7 @@ function resaltarIndicacion(descripcionEscapada){
     sessionToken = tokenGuardado;
     staffPin = tokenGuardado;
   }
-  const claveGuardada = localStorage.getItem("tph_member_clave");
-  if (claveGuardada) memberPin = claveGuardada;
+  restaurarMemberClave_();
   await cargarDatos();
   if (nivel === "staff") {
     document.getElementById("staffStatusBadge").style.display = "block";
