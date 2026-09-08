@@ -1168,9 +1168,16 @@ async function cargarEnlacesStaff(){
 // el overlay de "Guardando..." y espera respuesta) porque esto nunca debe frenar ni demorar la
 // acción real de la persona (abrir un link, tocar un botón). Si falla (sin internet, lo que sea),
 // se ignora en silencio: es solo un contador anónimo, nunca debe romper nada de la UI real.
+// FIX: antes este fetch no mandaba el token de sesión (a diferencia de apiPost, que siempre lo
+// manda). Sin el token, el backend no tenía forma de saber si quien clickeó era Staff o no, así
+// que TODOS los clics de UI (abrir tarjeta, tocar una red social, etc.) cayeron siempre en la
+// analítica anónima general, incluso cuando los hacía Staff administrando la app -- inflando esos
+// números y haciendo imposible saber qué usa de verdad el resto del equipo. Ahora se manda el
+// token igual que en apiPost, así el backend (ver esStaff en doPost, Code.gs) manda estos clics
+// a AnalyticsStaff cuando corresponde y JAMÁS a la analítica anónima si es Staff.
 function trackUI(clave){
   try{
-    fetch(APPS_SCRIPT_URL,{method:"POST",headers:{"Content-Type":"text/plain;charset=utf-8"},body:JSON.stringify({action:"trackUI", clave})}).catch(()=>{});
+    fetch(APPS_SCRIPT_URL,{method:"POST",headers:{"Content-Type":"text/plain;charset=utf-8"},body:JSON.stringify({action:"trackUI", clave, token:sessionToken||""})}).catch(()=>{});
   }catch(e){ /* nunca debe romper el click que la disparó */ }
 }
 function abrirEnlacePrivado(clave){
