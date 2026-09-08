@@ -1203,6 +1203,7 @@ function abrirModalEnlaces(){
 // rompe nada, solo se ve menos bonita).
 const ANALITICA_LABELS = {
   cargarPagina_publico:"🌐 Carga de página (público)", cargarPagina_miembro:"🍑 Carga de página (Miembro)", cargarPagina_staff:"🛠️ Carga de página (Staff)",
+  cargarPagina:"🛠️ Carga de página", loginGoogle:"🔓 Login con Google",
   loginGoogle_staff:"🔓 Login con Google (Staff)", loginGoogle_miembro:"🔓 Login con Google (Miembro)",
   addActividad:"➕ Actividad creada", editActividad:"✏️ Actividad editada", deleteActividad:"🗑️ Actividad borrada",
   addEntrega:"📥 Entrega registrada", deleteEntregas:"🗑️ Entregas borradas", importarEntregas:"📋 Entregas importadas",
@@ -1260,7 +1261,7 @@ async function abrirAnalitica(){
   const categoriasConDatos = ANALITICA_CATEGORIAS_ORDEN.filter(c=>porCategoria[c] && porCategoria[c].length);
   document.getElementById("memberModalContent").innerHTML = `
     <h3>📊 Analítica de uso</h3>
-    <p style="font-size:12.5px;color:var(--text-dim);margin:-6px 0 14px;">100% anónima: solo cuenta CUÁNTAS veces se usó cada función, nunca quién la usó.</p>
+    <p style="font-size:12.5px;color:var(--text-dim);margin:-6px 0 14px;">100% anónima: solo cuenta CUÁNTAS veces se usó cada función, nunca quién la usó. No incluye acciones hechas con sesión de Staff (ver "👤 Analítica de Staff" aparte).</p>
     ${filas.length ? `
       <div style="max-height:55vh;overflow-y:auto;border-radius:12px;background:var(--card-bg);">
         ${categoriasConDatos.map(cat=>`
@@ -1284,6 +1285,55 @@ async function abrirAnalitica(){
     </div>`;
   openModal("memberModal");
   document.getElementById("analiticaVolverBtn").onclick = abrirStaffHub;
+}
+// Analítica de Staff (NUEVO): a diferencia de abrirAnalitica() (100% anónima, nunca dice quién),
+// esto es justo lo contrario a propósito — un log completo de qué hizo CADA persona de Staff,
+// con su email real (verificado por Google) y el momento exacto. Vive separado para que el uso
+// diario de Staff administrando la app no se mezcle ni infle las estadísticas anónimas pensadas
+// para medir al resto del equipo (miembros/público).
+async function abrirAnaliticaStaff(){
+  const r = await apiPost({action:"obtenerAnaliticaStaff", limite:300}, "Cargando actividad de Staff...");
+  if(!r.ok){ toast("Error: "+(r.error||"")); return; }
+  const filas = r.datos||[];
+  const renderFilasStaff = (lista)=> lista.length ? `
+    <div style="max-height:52vh;overflow-y:auto;border-radius:12px;background:var(--card-bg);">
+      <table style="width:100%;border-collapse:collapse;font-size:12.5px;">
+        <thead>
+          <tr style="position:sticky;top:0;background:var(--card-bg-2);">
+            <th style="padding:8px 10px;text-align:left;">Cuándo</th>
+            <th style="padding:8px 10px;text-align:left;">Quién</th>
+            <th style="padding:8px 10px;text-align:left;">Qué hizo</th>
+          </tr>
+        </thead>
+        <tbody>
+          ${lista.map(f=>`<tr style="border-top:1px solid rgba(255,255,255,0.06);">
+            <td style="padding:7px 10px;white-space:nowrap;color:var(--text-dim);">${escHtml(f.timestamp||"")}</td>
+            <td style="padding:7px 10px;white-space:nowrap;">${escHtml(f.email||"—")}</td>
+            <td style="padding:7px 10px;">${escHtml(ANALITICA_LABELS[f.accion]||f.accion)}</td>
+          </tr>`).join("")}
+        </tbody>
+      </table>
+    </div>` : `<p style="text-align:center;color:var(--text-dim);">No hay registros para ese filtro.</p>`;
+  document.getElementById("memberModalContent").innerHTML = `
+    <h3>👤 Analítica de Staff</h3>
+    <p style="font-size:12.5px;color:var(--text-dim);margin:-6px 0 10px;">
+      NO es anónima: se ve exactamente quién (email real de Google) hizo cada acción de Staff — carga de página, login, y cualquier acción de administración. ${r.total||0} registro(s) en total, mostrando los últimos ${filas.length}.
+    </p>
+    <input autocomplete="off" type="text" id="analiticaStaffFiltro" placeholder="Filtrar por email..." style="width:100%;margin-bottom:10px;padding:8px 10px;border-radius:8px;">
+    <div id="analiticaStaffTabla">${filas.length ? renderFilasStaff(filas) : `<p style="text-align:center;color:var(--text-dim);">Todavía no hay actividad de Staff registrada.</p>`}</div>
+    <div style="position:sticky;bottom:-20px;margin:14px -20px -20px;padding:10px 20px 20px;background:var(--card-bg);">
+      <button class="btn-small btn-admin" id="analiticaStaffVolverBtn" style="width:100%;">⬅️ Volver</button>
+    </div>`;
+  openModal("memberModal");
+  document.getElementById("analiticaStaffVolverBtn").onclick = abrirStaffHub;
+  const inputFiltro = document.getElementById("analiticaStaffFiltro");
+  if(inputFiltro){
+    inputFiltro.addEventListener("input", (e)=>{
+      const q = e.target.value.trim().toLowerCase();
+      const filtradas = q ? filas.filter(f=>String(f.email||"").toLowerCase().includes(q)) : filas;
+      document.getElementById("analiticaStaffTabla").innerHTML = filtradas.length ? renderFilasStaff(filtradas) : `<p style="text-align:center;color:var(--text-dim);">No hay registros para ese filtro.</p>`;
+    });
+  }
 }
 // Historial COMPLETO de intentos fallidos (v18): a diferencia de abrirAnalitica (que solo muestra
 // el último intento por tipo), esto trae una fila por cada intento, más reciente primero, para
@@ -3001,6 +3051,7 @@ function abrirStaffHub(){
       <button class="drawer-nav-btn" id="hubEditarInfo" style="text-align:left;">🖋️ Editar página de info</button>
       <button class="drawer-nav-btn" id="hubEditarAnuario" style="text-align:left;">✏️ Editar anuario</button>
       <button class="drawer-nav-btn" id="hubAnalitica" style="text-align:left;">📊 Ver Analítica de uso</button>
+      <button class="drawer-nav-btn" id="hubAnaliticaStaff" style="text-align:left;">👤 Analítica de Staff</button>
       <button class="drawer-nav-btn" id="hubIntentosFallidos" style="text-align:left;">🕵️ Ver Intentos Fallidos</button>
       <button class="btn-small btn-family" id="hubLimpiar">🧹 Limpiar nombres BD (quitar @)</button>
     </div>
@@ -3022,6 +3073,7 @@ function abrirStaffHub(){
   document.getElementById("hubEditarInfo").onclick=()=>abrirEnlacePrivado("CFG_EDITAR_INFO_LINK");
   document.getElementById("hubEnlaces").onclick=abrirModalEnlaces;
   document.getElementById("hubAnalitica").onclick=abrirAnalitica;
+  document.getElementById("hubAnaliticaStaff").onclick=abrirAnaliticaStaff;
   document.getElementById("hubIntentosFallidos").onclick=abrirIntentosFallidos;
 }
 async function probarHub(action,nombre,idActividad){ const r=await apiPost({action:action,idActividad:idActividad},"Enviando prueba..."); toast(r.ok?nombre+" enviado ✅":"Error: "+(r.error||"")); }
