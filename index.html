@@ -548,6 +548,22 @@
 <div id="memberStatusBadge" title="Modo Miembro (solo lectura)">🍑</div>
 <div class="toast" id="toast"></div>
 
+<!-- NUEVO: aviso flotante que aparece solo cuando nadie inició sesión (nivel "publico"), para la
+     gente que no leyó los anuncios y no sabe que existe el Modo Miembro. Si tocan "Sí", la clave
+     compartida se manda sola (ver PIN_MIEMBROS_AUTO / activarModoMiembro más abajo) -- nunca los
+     manda a escribirla a mano, porque ese nivel no entrega ningún dato sensible. -->
+<div class="modal-overlay" id="avisoMiembroModal" style="z-index:410;">
+  <div class="modal-box" style="max-width:300px;text-align:center;">
+    <div style="font-size:34px;margin-bottom:4px;">🍑</div>
+    <div style="font-size:17px;font-weight:800;margin-bottom:6px;">¡Hola!</div>
+    <div style="font-size:14px;color:var(--text-dim);margin-bottom:18px;">¿Deseas entrar al modo miembro?</div>
+    <div style="display:flex;gap:10px;">
+      <button class="btn-small" id="avisoMiembroNoBtn" style="flex:1;padding:10px;background:rgba(255,255,255,0.1);color:var(--text);border-radius:12px;font-weight:700;">Continuar como visitante</button>
+      <button class="btn-small btn-primary" id="avisoMiembroSiBtn" style="flex:1;padding:10px;border-radius:12px;font-weight:700;">Sí</button>
+    </div>
+  </div>
+</div>
+
 <div class="modal-overlay" id="confirmDialog" style="z-index:400;">
   <div class="modal-box" style="max-width:340px;text-align:center;">
     <div id="confirmDialogMsg" style="font-size:15px;font-weight:600;margin-bottom:20px;line-height:1.5;"></div>
@@ -3092,23 +3108,55 @@ function mostrarViewMemberPin(){
   document.getElementById("memberPinInput").value="";
   setTimeout(()=>document.getElementById("memberPinInput").focus(),50);
 }
+// Valida la clave de Miembro contra el servidor y, si es correcta, hace TODO lo que hace falta
+// para dejar a la persona ya adentro (guardar la clave para la próxima visita, avisar, mostrar
+// el gorro de Miembro, volver a la pestaña de actividades y refrescar los datos completos).
+// Factorizado para reusarse tanto desde el formulario manual (memberPinForm) como desde el botón
+// "Sí" del aviso automático (ver avisoMiembroSiBtn más abajo) -- misma lógica, dos entradas.
+async function activarModoMiembro(clave, msgCarga){
+  const r = await apiPost({action:"validarClaveMiembro", clave:clave}, msgCarga||"Verificando...");
+  if(r.ok){
+    setMemberClave_(clave);
+    toast("Modo Miembro activado 🍑");
+    document.getElementById("memberStatusBadge").style.display="flex";
+    switchTab("actividades");
+    await cargarDatos(); // vuelve a pedir los datos, ahora con la clave, para traer todo completo
+  }
+  return r;
+}
 document.getElementById("memberPinForm").addEventListener("submit", async (ev)=>{
   ev.preventDefault();
   const clave=document.getElementById("memberPinInput").value;
   if(!clave){ return; }
   document.getElementById("memberPinMsg").textContent="Verificando...";
-  const r=await apiPost({action:"validarClaveMiembro", clave:clave}, "Verificando...");
-  if(r.ok){
-    setMemberClave_(clave);
-    document.getElementById("memberPinMsg").textContent="";
-    toast("Modo Miembro activado 🍑");
-    document.getElementById("memberStatusBadge").style.display="flex";
-    switchTab("actividades");
-    await cargarDatos(); // vuelve a pedir los datos, ahora con la clave, para traer todo completo
-  } else {
-    document.getElementById("memberPinMsg").textContent=r.error||"Clave incorrecta.";
-  }
+  const r = await activarModoMiembro(clave, "Verificando...");
+  document.getElementById("memberPinMsg").textContent = r.ok ? "" : (r.error||"Clave incorrecta.");
 });
+// ============ AVISO AUTOMÁTICO DE MODO MIEMBRO (nuevo) ============
+// Se dispara SOLO cuando la carga inicial confirma nivel==="publico" (ver restaurarSesion, al
+// final del archivo) -- nadie con sesión de Staff ni clave de Miembro activa. Está pensado para
+// toda la gente que nunca leyó el anuncio y ni se entera de que existe el Modo Miembro.
+// A propósito, tocar "Sí" NO manda a la persona a escribir la clave a mano: la clave compartida
+// se manda sola en el momento (ver PIN_MIEMBROS_AUTO) y queda adentro con un solo toque. Esto es
+// seguro de hacer porque el nivel Miembro no entrega ningún dato sensible (ver notas en
+// Code.gs) -- lo único que protege el PIN ahí es que alguien lo escriba a propósito, no que sea
+// difícil de conseguir.
+// OJO: si el día de mañana cambia la clave compartida en PIN_MIEMBROS (Code.gs), hay que
+// actualizar también esta constante, si no el botón "Sí" dejará de funcionar solo (aunque el
+// formulario manual con la clave nueva seguirá funcionando igual).
+const PIN_MIEMBROS_AUTO = "Pricha";
+document.getElementById("avisoMiembroNoBtn").onclick = ()=> closeModal("avisoMiembroModal");
+document.getElementById("avisoMiembroSiBtn").onclick = async ()=>{
+  closeModal("avisoMiembroModal");
+  const r = await activarModoMiembro(PIN_MIEMBROS_AUTO, "Activando Modo Miembro...");
+  if(!r.ok){
+    // Muy poco probable (solo si la clave compartida cambió y esta constante quedó vieja):
+    // en vez de dejar a la persona sin nada, se la manda a la pantalla manual para que pueda
+    // escribir la clave correcta ella misma.
+    toast("No se pudo activar solo, escribí la clave manualmente");
+    mostrarViewMemberPin();
+  }
+};
 function mostrarViewMiembros(){
   document.querySelectorAll(".tab-btn").forEach(b=>b.classList.remove("active"));
   document.getElementById("viewActividades").classList.add("hidden"); document.getElementById("viewAnuario").classList.add("hidden"); document.getElementById("viewGoogleLogin").classList.add("hidden"); document.getElementById("viewMundo").classList.add("hidden"); document.getElementById("viewMemberPin").classList.add("hidden");
@@ -3245,6 +3293,10 @@ function resaltarIndicacion(descripcionEscapada){
     await cargarEnlacesStaff();
   } else if (nivel === "miembro") {
     document.getElementById("memberStatusBadge").style.display = "flex";
+  } else {
+    // nivel==="publico": nadie tiene sesión de Staff ni clave de Miembro activa -- probablemente
+    // porque nunca se enteraron de que existe el Modo Miembro. Aviso pequeño, ver más arriba.
+    openModal("avisoMiembroModal");
   }
 })();
 </script>
