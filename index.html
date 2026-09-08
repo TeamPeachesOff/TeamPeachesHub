@@ -1516,7 +1516,19 @@ function borrarCacheDatos(){
   try{ localStorage.removeItem(CACHE_DATOS_KEY); }catch(e){}
 }
 
+// FIX (condición de carrera): si dos cargarDatos() quedan "en vuelo" al mismo tiempo (ej: acabás
+// de validar la clave de Miembro / loguearte con Google, y una llamada más VIEJA -- disparada
+// ANTES de eso, sin sesión todavía -- tarda más en responder), esa respuesta vieja podía llegar
+// DESPUÉS y pisar el estado recién logueado, disparando "clave inválida" y BORRANDO la clave que
+// se acababa de guardar bien (visto en consola: "guardada" seguido casi al instante de
+// "BORRADA... clave cambiada o inválida", sin que la clave realmente estuviera mal).
+// cargaDatosSeq_ es un contador que sube en cada llamada nueva; cada llamada recuerda SU número
+// al arrancar y, si para cuando su respuesta llega ya hay una llamada más nueva en curso, se
+// descarta por completo (nunca pinta nada ni toca sessionToken/memberPin) -- así SIEMPRE gana la
+// petición más reciente, nunca la que simplemente tardó más en volver.
+let cargaDatosSeq_ = 0;
 async function cargarDatos(){
+  const miSeq_ = ++cargaDatosSeq_;
   const cachePrevio = leerCacheDatos();
   const yaHabiaAlgoEnPantalla = !!cachePrevio || (DB && Array.isArray(DB.actividades) && (DB.actividades.length > 0 || DB.anuario.length > 0));
   if(cachePrevio){
@@ -1531,6 +1543,7 @@ async function cargarDatos(){
     // del header se anima, pero la persona sigue viendo e interactuando con todo — nunca vuelve
     // a aparecer la pantalla de carga completa en ese caso.
     const nuevo = await apiGet(yaHabiaAlgoEnPantalla);
+    if(miSeq_ !== cargaDatosSeq_) return; // ya hay una llamada más nueva en curso: esta respuesta quedó vieja, se ignora entera
     if(!nuevo || typeof nuevo!=="object" || nuevo.ok===false || !Array.isArray(nuevo.actividades) || !Array.isArray(nuevo.anuario)){
       throw new Error((nuevo && nuevo.error) ? nuevo.error : "Respuesta inesperada del servidor: "+JSON.stringify(nuevo).slice(0,200));
     }
@@ -1538,6 +1551,7 @@ async function cargarDatos(){
     aplicarDatosCargados_(nuevo);
   }
   catch(err){
+    if(miSeq_ !== cargaDatosSeq_) return; // idem: un error de una llamada vieja tampoco debe pisar nada
     console.error("Error cargando datos:", err);
     if(yaHabiaAlgoEnPantalla){
       // Ya se está viendo algo (cache o lo que ya estaba pintado) — solo se avisa, sin tapar
