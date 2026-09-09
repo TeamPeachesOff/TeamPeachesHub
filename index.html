@@ -548,10 +548,15 @@
 <div id="memberStatusBadge" title="Modo Miembro (solo lectura)">🍑</div>
 <div class="toast" id="toast"></div>
 
-<!-- NUEVO: aviso flotante que aparece solo cuando nadie inició sesión (nivel "publico"), para la
-     gente que no leyó los anuncios y no sabe que existe el Modo Miembro. Si tocan "Sí", la clave
-     compartida se manda sola (ver PIN_MIEMBROS_AUTO / activarModoMiembro más abajo) -- nunca los
-     manda a escribirla a mano, porque ese nivel no entrega ningún dato sensible. -->
+<!-- NUEVO (corregido): aviso flotante que aparece solo cuando nadie inició sesión (nivel
+     "publico"), para la gente que no leyó los anuncios y no sabe que existe el Modo Miembro. Si
+     tocan "Sí", NUNCA se activa el rol solo: se les manda a escribir la clave a mano en
+     viewMemberPin (ver avisoMiembroSiBtn más abajo). La versión anterior mandaba la clave
+     compartida sola desde una constante hardcodeada en este mismo archivo -- eso dejaba la clave
+     real de Miembro visible en texto plano para cualquiera que abriera "Ver código fuente", sin
+     tener que adivinarla ni que nadie se la compartiera. El candado real sigue viviendo en el
+     servidor (validarClaveMiembro / PIN_MIEMBROS en Code.gs): sin clave correcta escrita a mano,
+     no hay rol, sin importar qué variables se toquen desde la consola del navegador. -->
 <div class="modal-overlay" id="avisoMiembroModal" style="z-index:410;">
   <div class="modal-box" style="max-width:300px;text-align:center;">
     <div style="font-size:34px;margin-bottom:4px;">🍑</div>
@@ -791,7 +796,7 @@ let nivel = "publico"; // "staff" | "miembro" | "publico" -- lo manda el backend
 let filtroCanto = true, filtroDoblaje = true;
 
 // ============ RESPALDO EN COOKIE PARA LA CLAVE DE MIEMBRO (fix persistencia) ============
-// Reporte: a algunas personas se les borraba "Pricha" del navegador sola entre sesiones aunque
+// Reporte: a algunas personas se les borraba la clave de Miembro del navegador sola entre sesiones aunque
 // nunca la borraron a mano, pese a que toda la lógica de guardado/borrado en localStorage ya es
 // correcta (ver setMemberClave_/limpiarMemberClave_ y restaurarSesion). La sospecha es que algo
 // AJENO a esta app (config de "borrar datos al cerrar el navegador", un limpiador tipo CCleaner,
@@ -3153,30 +3158,29 @@ document.getElementById("memberPinForm").addEventListener("submit", async (ev)=>
   const r = await activarModoMiembro(clave, "Verificando...");
   document.getElementById("memberPinMsg").textContent = r.ok ? "" : (r.error||"Clave incorrecta.");
 });
-// ============ AVISO AUTOMÁTICO DE MODO MIEMBRO (nuevo) ============
+// ============ AVISO AUTOMÁTICO DE MODO MIEMBRO (corregido — FIX DE SEGURIDAD) ============
 // Se dispara SOLO cuando la carga inicial confirma nivel==="publico" (ver restaurarSesion, al
-// final del archivo) -- nadie con sesión de Staff ni clave de Miembro activa. Está pensado para
-// toda la gente que nunca leyó el anuncio y ni se entera de que existe el Modo Miembro.
-// A propósito, tocar "Sí" NO manda a la persona a escribir la clave a mano: la clave compartida
-// se manda sola en el momento (ver PIN_MIEMBROS_AUTO) y queda adentro con un solo toque. Esto es
-// seguro de hacer porque el nivel Miembro no entrega ningún dato sensible (ver notas en
-// Code.gs) -- lo único que protege el PIN ahí es que alguien lo escriba a propósito, no que sea
-// difícil de conseguir.
-// OJO: si el día de mañana cambia la clave compartida en PIN_MIEMBROS (Code.gs), hay que
-// actualizar también esta constante, si no el botón "Sí" dejará de funcionar solo (aunque el
-// formulario manual con la clave nueva seguirá funcionando igual).
-const PIN_MIEMBROS_AUTO = "Pricha";
+// final del archivo) -- nadie con sesión de Staff ni clave de Miembro activa (guardada y válida)
+// en este navegador. Está pensado para toda la gente que nunca leyó el anuncio y ni se entera de
+// que existe el Modo Miembro.
+//
+// ANTES: tocar "Sí" activaba el rol de Miembro solo, sin pedir la clave, porque el valor real de
+// PIN_MIEMBROS vivía hardcodeado en una constante de este mismo archivo (PIN_MIEMBROS_AUTO). Eso
+// era un error de seguridad grave: cualquiera con "Ver código fuente" (o las devtools) tenía la
+// clave real en texto plano, sin necesidad de que nadie se la compartiera ni de adivinarla --
+// convertía el PIN en decorativo. AHORA: "Sí" NUNCA activa ningún rol por sí solo. Solo lleva a
+// la persona a la pantalla donde debe escribir la clave a mano (mostrarViewMemberPin), igual que
+// si hubiera entrado por el botón de Miembros del drawer. El único camino para entrar SIN
+// escribir la clave sigue siendo el ya existente y legítimo: tener una clave YA GUARDADA y
+// VALIDADA de una sesión anterior (localStorage/cookie, ver restaurarClaveMiembro_/
+// restaurarSesion) -- y en ese caso nivel ya sería "miembro" desde la carga inicial, por lo que
+// este aviso ni siquiera llegaría a mostrarse (ver el guard en restaurarSesion, al final del
+// archivo). Ningún camino de este aviso otorga rol sin que la clave correcta haya sido escrita
+// por la persona (ahora o en una sesión anterior) y validada por el servidor.
 document.getElementById("avisoMiembroNoBtn").onclick = ()=> closeModal("avisoMiembroModal");
-document.getElementById("avisoMiembroSiBtn").onclick = async ()=>{
+document.getElementById("avisoMiembroSiBtn").onclick = ()=>{
   closeModal("avisoMiembroModal");
-  const r = await activarModoMiembro(PIN_MIEMBROS_AUTO, "Activando Modo Miembro...");
-  if(!r.ok){
-    // Muy poco probable (solo si la clave compartida cambió y esta constante quedó vieja):
-    // en vez de dejar a la persona sin nada, se la manda a la pantalla manual para que pueda
-    // escribir la clave correcta ella misma.
-    toast("No se pudo activar solo, escribí la clave manualmente");
-    mostrarViewMemberPin();
-  }
+  mostrarViewMemberPin();
 };
 function mostrarViewMiembros(){
   document.querySelectorAll(".tab-btn").forEach(b=>b.classList.remove("active"));
