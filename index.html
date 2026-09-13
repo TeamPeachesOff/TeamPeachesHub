@@ -299,7 +299,11 @@
   /* v23: botón "Chambeadores" a la izquierda de la barra de búsqueda de Miembros -- mismo
      tamaño/comportamiento que #mundoPeachesBtn (a la derecha) para que ambos se vean parejos,
      pero con su propia identidad dorada (trofeo) en vez de reusar el rosa de la familia. */
-  #chambeadoresTrofeoBtn{width:44px;height:44px;flex-shrink:0;border-radius:50%;background:radial-gradient(circle at 30% 30%,#ffe37a,#ffb300 70%);border:1px solid rgba(255,215,0,0.65);font-size:21px;display:flex;align-items:center;justify-content:center;box-shadow:0 0 8px rgba(255,193,7,0.6);transition:transform .15s;}
+  /* FIX: el fondo dorado original (mismo tono que el emoji 🏆) hacía que el botón se "fundiera"
+     con el ícono y no se distinguiera del resto -- ahora el círculo es oscuro con un anillo dorado
+     grueso y brillo hacia afuera, así el trofeo amarillo contrasta contra el fondo en vez de
+     perderse en un dorado sobre dorado. */
+  #chambeadoresTrofeoBtn{width:44px;height:44px;flex-shrink:0;border-radius:50%;background:radial-gradient(circle at 30% 30%,#3a2c12,#1a1020 75%);border:2.5px solid #ffd700;font-size:21px;display:flex;align-items:center;justify-content:center;box-shadow:0 0 12px rgba(255,193,7,0.85),0 0 2px rgba(255,215,0,0.9);transition:transform .15s;}
   #chambeadoresTrofeoBtn:active{transform:scale(0.9);}
   #mundoPeachesBtn{width:44px;height:44px;flex-shrink:0;object-fit:contain;cursor:pointer;filter:drop-shadow(0 0 7px rgba(255,143,177,0.75));transition:transform .15s;}
   #mundoPeachesBtn:active{transform:scale(0.9);}
@@ -2198,7 +2202,8 @@ function entregasDelMiembroHTML_(idMiembro){
 /* ---------- Parecido de texto (para detectar automáticamente quién entregó) ----------
    Coeficiente de Dice sobre bigramas: tolera errores de tipeo, mayúsculas/acentos, y nombres
    escritos distinto a como aparecen en el perfil (ej. "cami uwu 888" vs "CamiUwU888"). Se compara
-   contra usuarioSmule (lo más común en las entregas) y contra nombre. Umbral por defecto: 80%. */
+   contra usuarioSmule (lo más común en las entregas) y contra nombre. Umbral por defecto: 75% (bajado de 80% -- el 80% era muy estricto para gamertags
+   cortos con algún tipito de tipeo). */
 function normalizarTexto_(s){ return String(s||"").normalize("NFD").replace(/[\u0300-\u036f]/g,"").toLowerCase().replace(/[^a-z0-9]/g,"").trim(); }
 function bigramas_(s){ if(s.length<2) return [s]; const out=[]; for(let i=0;i<s.length-1;i++) out.push(s.substring(i,i+2)); return out; }
 function similitud_(a,b){
@@ -2217,7 +2222,7 @@ function separarNombresTexto_(texto){
     .map(s=>s.trim()).filter(Boolean);
 }
 function mejorMiembroParaTexto_(texto, umbral){
-  umbral = umbral===undefined?0.8:umbral;
+  umbral = umbral===undefined?0.75:umbral;
   let mejor=null, mejorScore=0;
   (DB.miembros||[]).forEach(m=>{
     [m.usuarioSmule, m.nombre].forEach(campo=>{
@@ -2232,9 +2237,26 @@ function mejorMiembroParaTexto_(texto, umbral){
 // de ids de Miembro detectados, sin duplicados. Lo que no llega al umbral se deja afuera a
 // propósito — así entregas de gente que ya no está en el team simplemente quedan sin asignar,
 // en vez de forzar una coincidencia mala.
+// FIX: separarNombresTexto_ solo parte por coma/"y"/"e"/&/guion — un dúo pegado con un simple
+// espacio (ej. "just_an_NPC Adiee_1", "EROZAKY TozkalnTheHell") viajaba como UN SOLO bloque
+// gigante que jamás llegaba al 80% de parecido contra ningún miembro individual, y la entrega
+// quedaba "Sin asignar" completa aunque cada nombre por separado sí existiera en el team. Ahora,
+// si un trozo no matchea completo Y tiene espacios adentro, se reintenta partiéndolo también por
+// espacios sueltos como plan B (nunca como primer intento, para no romper nombres reales con
+// espacio como "Don Cazador" cuando SÍ matchean completos contra el campo "nombre").
 function detectarMiembrosEnTexto_(texto, umbral){
+  umbral = umbral===undefined?0.75:umbral;
   const ids=new Set();
-  separarNombresTexto_(texto).forEach(tok=>{ const m=mejorMiembroParaTexto_(tok, umbral); if(m) ids.add(String(m.id)); });
+  separarNombresTexto_(texto).forEach(tok=>{
+    const m=mejorMiembroParaTexto_(tok, umbral);
+    if(m){ ids.add(String(m.id)); return; }
+    if(/\s/.test(tok)){
+      tok.split(/\s+/).filter(Boolean).forEach(sub=>{
+        const m2=mejorMiembroParaTexto_(sub, umbral);
+        if(m2) ids.add(String(m2.id));
+      });
+    }
+  });
   return [...ids];
 }
 
@@ -2313,36 +2335,48 @@ async function ponerFaltaALosQueFaltan_(idActividad){
 }
 
 /* ---------- Selector de miembros "tipo luz" (multi, sin límite) para asignar una entrega ---------- */
+// FIX: antes, la selección solo vivía en el DOM (clase "sel" en cada chip). Como renderChipGrid_
+// reconstruye el grid ENTERO cada vez que cambia el texto de búsqueda (mostrando solo los que
+// matchean el filtro), un miembro ya seleccionado que quedaba fuera del nuevo filtro se borraba
+// del DOM junto con su estado "sel" -- y esa selección se perdía para siempre, aunque después se
+// volviera a borrar la búsqueda. Eso era justo el patrón de "a veces sí se guarda, a veces no":
+// pasaba al asignar VARIOS miembros a la vez, buscando a cada uno por su nombre entre selección y
+// selección. Ahora asignarSeleccionados_ es un Set aparte que sobrevive a cualquier cambio de
+// filtro; el buscador solo decide qué chips se PINTAN, nunca qué está seleccionado de verdad.
 let asignarEntregaActual_ = null;
+let asignarSeleccionados_ = new Set();
 function abrirAsignarMiembros(idEntrega){
   const entrega = DB.entregas.find(x=>String(x.id)===String(idEntrega));
   if(!entrega) return;
   asignarEntregaActual_ = idEntrega;
+  asignarSeleccionados_ = new Set(idsDeEntrega_(entrega));
   document.getElementById("asignarEntregaInfo").innerHTML = `<strong>${escHtml(entrega.tituloActividad||"")}</strong><br>"${escHtml(entrega.nombreUsuario||"")}" — ${escHtml(entrega.detalleEntrega||"")}`;
   document.getElementById("asignarBuscar").value="";
-  renderChipGrid_(idsDeEntrega_(entrega));
+  renderChipGrid_("");
   openModal("asignarMiembrosModal");
 }
-function renderChipGrid_(seleccionados, filtro){
+function renderChipGrid_(filtro){
   const f = normalizarTexto_(filtro||"");
   const grid=document.getElementById("asignarChipGrid");
   const lista = (DB.miembros||[]).filter(m=>m.nombre)
     .filter(m=> !f || normalizarTexto_(m.nombre).includes(f) || normalizarTexto_(m.usuarioSmule).includes(f))
     .slice().sort((a,b)=>(a.nombre||"").localeCompare(b.nombre||""));
-  grid.innerHTML = lista.length ? lista.map(m=>`<button type="button" class="member-chip ${seleccionados.includes(String(m.id))?"sel":""}" data-chip="${m.id}">
+  grid.innerHTML = lista.length ? lista.map(m=>`<button type="button" class="member-chip ${asignarSeleccionados_.has(String(m.id))?"sel":""}" data-chip="${m.id}">
     <img src="${escAttr(m.avatarUrl||LOGO_DEFAULT)}" onerror="this.onerror=null;this.src='${LOGO_DEFAULT}';">${escHtml(m.nombre||"")}
   </button>`).join("") : `<div style="color:var(--text-dim);font-size:13px;">Sin resultados.</div>`;
-  grid.querySelectorAll("[data-chip]").forEach(chip=>chip.onclick=()=>chip.classList.toggle("sel"));
+  grid.querySelectorAll("[data-chip]").forEach(chip=>chip.onclick=()=>{
+    const id=String(chip.dataset.chip);
+    if(asignarSeleccionados_.has(id)){ asignarSeleccionados_.delete(id); } else { asignarSeleccionados_.add(id); }
+    chip.classList.toggle("sel");
+  });
 }
 document.getElementById("asignarBuscar").addEventListener("input", debounce(function(){
-  const seleccionadosActuales = [...document.querySelectorAll("#asignarChipGrid .member-chip.sel")].map(b=>b.dataset.chip);
-  renderChipGrid_(seleccionadosActuales, this.value);
+  renderChipGrid_(this.value);
 }, 150));
-document.getElementById("asignarLimpiarBtn").onclick=async()=>{ if(asignarEntregaActual_) await guardarAsignacionEntrega_(asignarEntregaActual_, []); };
+document.getElementById("asignarLimpiarBtn").onclick=async()=>{ if(asignarEntregaActual_){ asignarSeleccionados_=new Set(); await guardarAsignacionEntrega_(asignarEntregaActual_, []); } };
 document.getElementById("asignarGuardarBtn").onclick=async()=>{
   if(!asignarEntregaActual_) return;
-  const ids=[...document.querySelectorAll("#asignarChipGrid .member-chip.sel")].map(b=>b.dataset.chip);
-  await guardarAsignacionEntrega_(asignarEntregaActual_, ids);
+  await guardarAsignacionEntrega_(asignarEntregaActual_, [...asignarSeleccionados_]);
 };
 async function guardarAsignacionEntrega_(idEntrega, ids){
   const r=await apiPost({action:"asignarEntregas", asignaciones:[{id:idEntrega, idMiembro: ids.join(",")}]}, "Guardando asignación...");
@@ -2354,10 +2388,10 @@ async function guardarAsignacionEntrega_(idEntrega, ids){
 document.getElementById("autoAsignarBtn").onclick = async ()=>{
   const sinAsignar = DB.entregas.filter(e=>!idsDeEntrega_(e).length);
   if(!sinAsignar.length){ toast("No hay entregas sin asignar 🎉"); return; }
-  if(!await confirmarAccion(`Se va a comparar el nombre escrito de ${sinAsignar.length} entrega(s) sin dueño contra los miembros del team (80% de parecido). Las que no se detecten quedan intactas para asignarlas a mano. ¿Continuar?`)) return;
+  if(!await confirmarAccion(`Se va a comparar el nombre escrito de ${sinAsignar.length} entrega(s) sin dueño contra los miembros del team (75% de parecido). Las que no se detecten quedan intactas para asignarlas a mano. ¿Continuar?`)) return;
   const asignaciones=[]; let detectadas=0, sinDetectar=0;
   sinAsignar.forEach(e=>{
-    const ids=detectarMiembrosEnTexto_(e.nombreUsuario, 0.8);
+    const ids=detectarMiembrosEnTexto_(e.nombreUsuario, 0.75);
     if(ids.length){ asignaciones.push({id:e.id, idMiembro:ids.join(",")}); detectadas++; } else sinDetectar++;
   });
   if(!asignaciones.length){ toast("No se pudo detectar a nadie automáticamente 😕 Asignalas a mano con \"👤 Asignar\"."); return; }
