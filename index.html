@@ -241,6 +241,43 @@
   .anuario-mini-btn{background:rgba(255,215,0,0.18);color:var(--gold);padding:5px 8px;border-radius:8px;font-size:11px;font-weight:700;white-space:nowrap;}
   .entregas-toolbar{display:flex;gap:8px;margin-top:10px;flex-wrap:wrap;}
 
+  /* ===== v22: Pasar Lista (asignar entregas a miembros) + Chambeadores del año ===== */
+  .modal-box-wide{max-width:640px;}
+  .pasar-lista-toolbar{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px;}
+  .pl-act-card{background:var(--card-bg-2);border-radius:14px;margin-bottom:12px;overflow:hidden;border:1px solid rgba(255,255,255,0.07);}
+  .pl-act-head{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:12px 14px;cursor:pointer;}
+  .pl-act-titulo{font-weight:800;font-size:14px;}
+  .pl-act-sub{font-size:11.5px;color:var(--text-dim);}
+  /* Switch personalizado (no checkbox nativo) para expandir cada actividad en Pasar Lista */
+  .pl-switch{position:relative;width:46px;height:26px;border-radius:999px;background:rgba(255,255,255,0.15);flex-shrink:0;}
+  .pl-switch::after{content:"";position:absolute;top:3px;left:3px;width:20px;height:20px;border-radius:50%;background:#fff;transition:transform .18s ease;}
+  .pl-switch.on{background:linear-gradient(90deg,var(--peach-2),var(--peach-1));}
+  .pl-switch.on::after{transform:translateX(20px);}
+  .pl-act-body{display:none;padding:0 14px 14px;}
+  .pl-act-body.open{display:block;}
+  .pl-entrega-row{display:flex;align-items:center;gap:10px;padding:9px 0;border-top:1px solid rgba(255,255,255,0.06);}
+  .pl-entrega-info{flex:1;min-width:0;}
+  .pl-entrega-nombre{font-weight:700;font-size:13px;word-break:break-word;}
+  .pl-entrega-detalle{font-size:11.5px;color:var(--text-dim);word-break:break-word;}
+  .pl-entrega-asignados{font-size:11.5px;color:var(--peach-1);margin-top:2px;word-break:break-word;}
+  .pl-entrega-btns{display:flex;flex-direction:column;gap:6px;flex-shrink:0;}
+  .pl-entrega-btns button{white-space:nowrap;}
+
+  /* Selector de miembros "tipo luz" (varios a la vez, sin límite) reusando el mismo look que .sel */
+  .chip-search{width:100%;padding:10px 12px;border-radius:12px;border:1px solid rgba(255,255,255,0.1);background:var(--card-bg-2);color:var(--text);font-size:13.5px;margin-bottom:10px;}
+  .chip-grid{display:flex;flex-wrap:wrap;gap:8px;max-height:44vh;overflow-y:auto;padding:2px;}
+  .member-chip{display:flex;align-items:center;gap:6px;padding:6px 10px 6px 6px;border-radius:999px;background:var(--card-bg-2);color:var(--text-dim);font-weight:700;font-size:12.5px;border:1px solid rgba(255,255,255,0.08);}
+  .member-chip img{width:24px;height:24px;border-radius:50%;object-fit:cover;}
+  .member-chip.sel{background:linear-gradient(90deg,var(--peach-2),var(--peach-1));color:#fff;box-shadow:0 0 10px rgba(255,143,177,0.55);border-color:transparent;}
+
+  .chambeadores-cat-label{font-weight:800;color:var(--peach-2);margin:14px 0 8px;font-size:14px;}
+  .chambeadores-top{display:flex;flex-direction:column;gap:8px;margin-bottom:6px;}
+  .chambeador-row{display:flex;align-items:center;gap:10px;padding:8px 10px;border-radius:12px;background:var(--card-bg-2);}
+  .chambeador-puesto{font-weight:900;font-size:15px;width:22px;text-align:center;color:var(--gold);}
+  .chambeador-row img{width:36px;height:36px;border-radius:50%;object-fit:cover;}
+  .chambeador-nombre{flex:1;font-weight:700;font-size:13.5px;}
+  .chambeador-total{font-weight:800;font-size:13.5px;color:var(--peach-1);}
+
   /* ===== ANUARIO: años / meses / bloques ===== */
   .anuario-year-group{position:relative;}
   .anuario-year-label{position:sticky;top:62px;z-index:15;text-align:center;font-size:30px;font-weight:900;color:var(--gold);
@@ -493,6 +530,10 @@
       <button class="btn-small btn-update" id="refreshPhotosBtn" style="flex:1;">🔄 Actualizar pfp</button>
       <button class="btn-small btn-update" id="refreshMapBtn" style="flex:1;">🗺️ Actualizar Mapa</button>
     </div>
+    <div class="hidden" id="memberToolsRow4" style="display:flex;gap:10px;margin-bottom:14px;">
+      <button class="btn-small btn-family" id="pasarListaBtn" style="flex:1;">🗒️ Pasar Lista</button>
+      <button class="btn-small btn-cumple" id="chambeadoresBtn" style="flex:1;">🏆 Chambeadores</button>
+    </div>
     <div class="section-label">👑 Reinas Peachy</div>
     <div class="avatar-row" id="reinasCarousel"></div>
     <div class="section-label">💎 Staff</div>
@@ -720,6 +761,51 @@
       <div class="form-group"><label>Enlace</label><input autocomplete="off" type="text" id="en_link"></div>
       <div class="modal-actions"><button type="submit" class="btn-primary">Guardar</button></div>
     </form>
+  </div>
+</div>
+
+<!-- v22: Pasar Lista — para cada actividad (switch para expandir), lista de entregas con
+     botones "Abrir entrega" y "Asignar" (persona real dueña de esa entrega), más un botón para
+     correr la asignación automática (por parecido de texto) sobre las que sigan sin asignar. -->
+<div class="modal-overlay" id="pasarListaModal">
+  <div class="modal-box modal-box-wide"><button class="modal-close" data-close="pasarListaModal">✕</button>
+    <h3>🗒️ Pasar Lista</h3>
+    <div class="pasar-lista-toolbar">
+      <button type="button" class="btn-small btn-update" id="autoAsignarBtn" style="flex:1;">⚡ Asignar automáticamente</button>
+    </div>
+    <div id="pasarListaMsg" style="font-size:12px;color:var(--text-dim);margin-bottom:10px;"></div>
+    <div id="pasarListaBody"></div>
+  </div>
+</div>
+
+<!-- v22: selector de miembros "tipo luz" — click para resaltar, sin límite de cuántos (solo,
+     dúo, trío, grupal, lo que sea). Sirve tanto para asignar una entrega puntual como para el
+     modo automático (que solo lo usa para mostrar el resultado antes de guardar). -->
+<div class="modal-overlay" id="asignarMiembrosModal">
+  <div class="modal-box modal-box-wide"><button class="modal-close" data-close="asignarMiembrosModal">✕</button>
+    <h3>Asignar entrega</h3>
+    <div id="asignarEntregaInfo" style="font-size:13px;color:var(--text-dim);margin-bottom:10px;"></div>
+    <input autocomplete="off" type="text" class="chip-search" id="asignarBuscar" placeholder="🔍 Buscar miembro...">
+    <div class="chip-grid" id="asignarChipGrid"></div>
+    <div class="modal-actions" style="display:flex;gap:8px;margin-top:14px;">
+      <button type="button" class="btn-small" id="asignarLimpiarBtn" style="background:var(--card-bg-2);color:var(--text);flex:1;">Dejar sin asignar</button>
+      <button type="button" class="btn-small btn-primary" id="asignarGuardarBtn" style="flex:1;">Guardar</button>
+    </div>
+  </div>
+</div>
+
+<!-- v22: 🏆 Chambeadores del año/temporada — top por categoría, contado desde la última vez que
+     se reinició la temporada (botón manual, ver reiniciarTemporadaChambeadores en Code.gs). No
+     borra nada del historial, solo mueve la fecha de corte hacia adelante. -->
+<div class="modal-overlay" id="chambeadoresModal">
+  <div class="modal-box"><button class="modal-close" data-close="chambeadoresModal">✕</button>
+    <h3>🏆 Chambeadores de la temporada</h3>
+    <div id="chambeadoresPeriodo" style="font-size:12px;color:var(--text-dim);margin-bottom:12px;"></div>
+    <div class="chambeadores-cat-label">🎤 Canto</div>
+    <div class="chambeadores-top" id="chambeadoresCanto"></div>
+    <div class="chambeadores-cat-label">🎙️ Doblaje</div>
+    <div class="chambeadores-top" id="chambeadoresDoblaje"></div>
+    <button type="button" class="btn-small btn-seguridad" id="reiniciarTemporadaBtn" style="width:100%;margin-top:6px;">🔄 Reiniciar temporada</button>
   </div>
 </div>
 
@@ -2010,7 +2096,8 @@ function openMemberModal(id){
       <div class="ct-row"><span>📉 Faltas</span><strong>${faltas}</strong></div>
       ${staffPin?`<div class="admin-strike-btns"><button class="btn-falta" data-falta="${m.id}">+ Falta</button><button class="btn-strike" data-strike="${m.id}">+ Strike</button><button class="btn-strike-permanente" data-strike-permanente="${m.id}">+ Strike Permanente</button></div>
       <button class="btn-reset-castigos" data-reset="${m.id}">🔄 Borrar Castigos</button>`:""}
-    </div>`;
+    </div>
+    ${entregasDelMiembroHTML_(m.id)}`;
   openModal("memberModal"); bindAvatarFallbacks();
   const copyBtn=document.querySelector("[data-copy-discord]"); if(copyBtn) copyBtn.onclick=()=>{navigator.clipboard.writeText(copyBtn.dataset.copyDiscord); toast("Discord copiado ✅"); trackUI("copiarDiscord");};
   const faltaBtn=document.querySelector("[data-falta]"); if(faltaBtn) faltaBtn.onclick=()=>registrarFalta(m.id);
@@ -2027,6 +2114,230 @@ async function registrarStrikePermanente(idMiembro){
   if(r.ok){toast("Strike Permanente registrado ☠️"); await cargarDatos(); openMemberModal(idMiembro);} else toast("Error: "+(r.error||""));
 }
 async function borrarCastigos(idMiembro){ if(!await confirmarAccion("¿Poner faltas y strikes en 0? (Esto también borra los Strikes Permanentes de este miembro)")) return; const r=await apiPost({action:"resetCastigos", idMiembro}); if(r.ok){toast("Reiniciado ✅"); await cargarDatos(); openMemberModal(idMiembro);} else toast("Error: "+(r.error||"")); }
+
+/* ==================== v22: Entregas ligadas a un miembro real ====================
+   Entregas.idMiembro es un texto con 0, 1 o varios ids de Miembros separados por coma (soporta
+   solo/dúo/trío/grupal sin límite). Requiere que la hoja "Entregas" tenga las columnas nuevas
+   idMiembro, categoria y fecha (ver aviso en Code.gs) — si no existen, esto simplemente no
+   encuentra nada que mostrar/asignar, sin romper el resto de la app. */
+function idsDeEntrega_(e){ return String((e&&e.idMiembro)||"").split(",").map(s=>s.trim()).filter(Boolean); }
+
+// Sección "🎶 Entregas" del perfil de un miembro: separadas por categoría, con link para escuchar
+// sin tener que ir a buscarlas entre todas las entregas de todas las actividades.
+function entregasDelMiembroHTML_(idMiembro){
+  if(!Array.isArray(DB.entregas) || !DB.entregas.length) return "";
+  const mias = DB.entregas.filter(e=>idsDeEntrega_(e).includes(String(idMiembro)));
+  if(!mias.length) return "";
+  const porCategoria = {canto:[], doblaje:[], otras:[]};
+  mias.forEach(e=>{ const cat=(e.categoria==="canto"||e.categoria==="doblaje")?e.categoria:"otras"; porCategoria[cat].push(e); });
+  const bloque=(titulo,emoji,lista)=> !lista.length ? "" : `
+    <div class="ct-title" style="margin-top:14px;">${emoji} ${titulo} (${lista.length})</div>
+    <div style="display:flex;flex-direction:column;gap:6px;">
+      ${lista.map(e=>`<div class="pl-entrega-row" style="border-top:none;padding:4px 0;">
+        <div class="pl-entrega-info">
+          <div class="pl-entrega-nombre">${escHtml(e.tituloActividad||"")}</div>
+          <div class="pl-entrega-detalle">${escHtml(e.detalleEntrega||"")}</div>
+        </div>
+        ${e.linkGrabacion?`<a class="btn-small btn-family" target="_blank" href="${escAttr(e.linkGrabacion)}">🔗 Escuchar</a>`:""}
+      </div>`).join("")}
+    </div>`;
+  return `<div class="castigos-box">
+    <div class="ct-title">🎶 Entregas</div>
+    ${bloque("Canto","🎤",porCategoria.canto)}
+    ${bloque("Doblaje","🎙️",porCategoria.doblaje)}
+    ${bloque("Otras","📁",porCategoria.otras)}
+  </div>`;
+}
+
+/* ---------- Parecido de texto (para detectar automáticamente quién entregó) ----------
+   Coeficiente de Dice sobre bigramas: tolera errores de tipeo, mayúsculas/acentos, y nombres
+   escritos distinto a como aparecen en el perfil (ej. "cami uwu 888" vs "CamiUwU888"). Se compara
+   contra usuarioSmule (lo más común en las entregas) y contra nombre. Umbral por defecto: 80%. */
+function normalizarTexto_(s){ return String(s||"").normalize("NFD").replace(/[\u0300-\u036f]/g,"").toLowerCase().replace(/[^a-z0-9]/g,"").trim(); }
+function bigramas_(s){ if(s.length<2) return [s]; const out=[]; for(let i=0;i<s.length-1;i++) out.push(s.substring(i,i+2)); return out; }
+function similitud_(a,b){
+  const ta=normalizarTexto_(a), tb=normalizarTexto_(b);
+  if(!ta||!tb) return 0;
+  if(ta===tb) return 1;
+  const ba=bigramas_(ta), bb=bigramas_(tb).slice();
+  let interseccion=0;
+  ba.forEach(bg=>{ const idx=bb.indexOf(bg); if(idx!==-1){ interseccion++; bb.splice(idx,1); } });
+  return (2*interseccion)/(ba.length+bb.length);
+}
+// Separa "Cami, Cazador y Wagner" / "Cami-Wagner-Fell" / '"Wagner FellFaby"' en tokens candidatos.
+function separarNombresTexto_(texto){
+  return String(texto||"").replace(/["""]/g,"")
+    .split(/\s*(?:,|\/|;|\n|\s+y\s+|\s+e\s+|&|\s+-\s+|-)\s*/i)
+    .map(s=>s.trim()).filter(Boolean);
+}
+function mejorMiembroParaTexto_(texto, umbral){
+  umbral = umbral===undefined?0.8:umbral;
+  let mejor=null, mejorScore=0;
+  (DB.miembros||[]).forEach(m=>{
+    [m.usuarioSmule, m.nombre].forEach(campo=>{
+      if(!campo) return;
+      const score=similitud_(texto, campo);
+      if(score>mejorScore){ mejorScore=score; mejor=m; }
+    });
+  });
+  return (mejor && mejorScore>=umbral) ? mejor : null;
+}
+// Para el texto COMPLETO de una entrega (puede traer varios nombres pegados), devuelve la lista
+// de ids de Miembro detectados, sin duplicados. Lo que no llega al umbral se deja afuera a
+// propósito — así entregas de gente que ya no está en el team simplemente quedan sin asignar,
+// en vez de forzar una coincidencia mala.
+function detectarMiembrosEnTexto_(texto, umbral){
+  const ids=new Set();
+  separarNombresTexto_(texto).forEach(tok=>{ const m=mejorMiembroParaTexto_(tok, umbral); if(m) ids.add(String(m.id)); });
+  return [...ids];
+}
+
+/* ---------- 🗒️ Pasar Lista ---------- */
+let pasarListaAbiertas_ = new Set(); // ids de actividad expandidas, para no perder el estado al re-renderizar
+function abrirPasarLista(){ renderPasarLista(); document.getElementById("pasarListaMsg").textContent=""; openModal("pasarListaModal"); }
+document.getElementById("pasarListaBtn").onclick=abrirPasarLista;
+
+function renderPasarLista(){
+  const entregasPorActividad=new Map();
+  DB.entregas.forEach(e=>{ const k=String(e.idActividad); if(!entregasPorActividad.has(k)) entregasPorActividad.set(k,[]); entregasPorActividad.get(k).push(e); });
+  const actividadesConEntregas = DB.actividades.filter(a=>(entregasPorActividad.get(String(a.id))||[]).length)
+    .slice().sort((a,b)=>compararFechaCantoFirst(a,b,"fechaFin"));
+  const cont=document.getElementById("pasarListaBody");
+  if(!actividadesConEntregas.length){ cont.innerHTML=`<div class="empty-state">Todavía no hay entregas registradas.</div>`; return; }
+  cont.innerHTML = actividadesConEntregas.map(a=>{
+    const entregas = entregasPorActividad.get(String(a.id))||[];
+    const sinAsignar = entregas.filter(e=>!idsDeEntrega_(e).length).length;
+    const abierta = pasarListaAbiertas_.has(String(a.id));
+    return `<div class="pl-act-card">
+      <div class="pl-act-head" data-pl-toggle="${a.id}">
+        <div>
+          <div class="pl-act-titulo">${escHtml(a.titulo||"")}</div>
+          <div class="pl-act-sub">${entregas.length} entrega(s) · ${sinAsignar} sin asignar</div>
+        </div>
+        <div class="pl-switch ${abierta?"on":""}"></div>
+      </div>
+      <div class="pl-act-body ${abierta?"open":""}">
+        ${entregas.map(e=>{
+          const ids=idsDeEntrega_(e);
+          const nombresAsignados = ids.map(id=>{ const m=DB.miembros.find(x=>String(x.id)===id); return m?m.nombre:null; }).filter(Boolean);
+          return `<div class="pl-entrega-row">
+            <div class="pl-entrega-info">
+              <div class="pl-entrega-nombre">${escHtml(e.nombreUsuario||"")}</div>
+              <div class="pl-entrega-detalle">${escHtml(e.detalleEntrega||"")}</div>
+              <div class="pl-entrega-asignados">${nombresAsignados.length?("✅ "+nombresAsignados.map(escHtml).join(", ")):"⚠️ Sin asignar"}</div>
+            </div>
+            <div class="pl-entrega-btns">
+              ${e.linkGrabacion?`<button type="button" class="btn-small btn-family" data-pl-abrir="${escAttr(e.linkGrabacion)}">🔗 Abrir</button>`:""}
+              <button type="button" class="btn-small btn-admin" data-pl-asignar="${e.id}">👤 Asignar</button>
+            </div>
+          </div>`;
+        }).join("")}
+      </div>
+    </div>`;
+  }).join("");
+  cont.querySelectorAll("[data-pl-toggle]").forEach(head=>{
+    head.onclick=()=>{ const id=head.dataset.plToggle; if(pasarListaAbiertas_.has(id)) pasarListaAbiertas_.delete(id); else pasarListaAbiertas_.add(id); renderPasarLista(); };
+  });
+  cont.querySelectorAll("[data-pl-abrir]").forEach(btn=>btn.onclick=e=>{ e.stopPropagation(); window.open(btn.dataset.plAbrir,"_blank","noopener"); });
+  cont.querySelectorAll("[data-pl-asignar]").forEach(btn=>btn.onclick=e=>{ e.stopPropagation(); abrirAsignarMiembros(btn.dataset.plAsignar); });
+}
+
+/* ---------- Selector de miembros "tipo luz" (multi, sin límite) para asignar una entrega ---------- */
+let asignarEntregaActual_ = null;
+function abrirAsignarMiembros(idEntrega){
+  const entrega = DB.entregas.find(x=>String(x.id)===String(idEntrega));
+  if(!entrega) return;
+  asignarEntregaActual_ = idEntrega;
+  document.getElementById("asignarEntregaInfo").innerHTML = `<strong>${escHtml(entrega.tituloActividad||"")}</strong><br>"${escHtml(entrega.nombreUsuario||"")}" — ${escHtml(entrega.detalleEntrega||"")}`;
+  document.getElementById("asignarBuscar").value="";
+  renderChipGrid_(idsDeEntrega_(entrega));
+  openModal("asignarMiembrosModal");
+}
+function renderChipGrid_(seleccionados, filtro){
+  const f = normalizarTexto_(filtro||"");
+  const grid=document.getElementById("asignarChipGrid");
+  const lista = (DB.miembros||[]).filter(m=>m.nombre)
+    .filter(m=> !f || normalizarTexto_(m.nombre).includes(f) || normalizarTexto_(m.usuarioSmule).includes(f))
+    .slice().sort((a,b)=>(a.nombre||"").localeCompare(b.nombre||""));
+  grid.innerHTML = lista.length ? lista.map(m=>`<button type="button" class="member-chip ${seleccionados.includes(String(m.id))?"sel":""}" data-chip="${m.id}">
+    <img src="${escAttr(m.avatarUrl||LOGO_DEFAULT)}" onerror="this.onerror=null;this.src='${LOGO_DEFAULT}';">${escHtml(m.nombre||"")}
+  </button>`).join("") : `<div style="color:var(--text-dim);font-size:13px;">Sin resultados.</div>`;
+  grid.querySelectorAll("[data-chip]").forEach(chip=>chip.onclick=()=>chip.classList.toggle("sel"));
+}
+document.getElementById("asignarBuscar").addEventListener("input", debounce(function(){
+  const seleccionadosActuales = [...document.querySelectorAll("#asignarChipGrid .member-chip.sel")].map(b=>b.dataset.chip);
+  renderChipGrid_(seleccionadosActuales, this.value);
+}, 150));
+document.getElementById("asignarLimpiarBtn").onclick=async()=>{ if(asignarEntregaActual_) await guardarAsignacionEntrega_(asignarEntregaActual_, []); };
+document.getElementById("asignarGuardarBtn").onclick=async()=>{
+  if(!asignarEntregaActual_) return;
+  const ids=[...document.querySelectorAll("#asignarChipGrid .member-chip.sel")].map(b=>b.dataset.chip);
+  await guardarAsignacionEntrega_(asignarEntregaActual_, ids);
+};
+async function guardarAsignacionEntrega_(idEntrega, ids){
+  const r=await apiPost({action:"asignarEntregas", asignaciones:[{id:idEntrega, idMiembro: ids.join(",")}]}, "Guardando asignación...");
+  if(r.ok){ toast(ids.length?"Asignado ✅":"Marcada como sin asignar"); closeModal("asignarMiembrosModal"); await cargarDatos(); renderPasarLista(); }
+  else toast("Error: "+(r.error||""));
+}
+
+/* ---------- ⚡ Asignar automáticamente (todas las entregas sin dueño de una sola vez) ---------- */
+document.getElementById("autoAsignarBtn").onclick = async ()=>{
+  const sinAsignar = DB.entregas.filter(e=>!idsDeEntrega_(e).length);
+  if(!sinAsignar.length){ toast("No hay entregas sin asignar 🎉"); return; }
+  if(!await confirmarAccion(`Se va a comparar el nombre escrito de ${sinAsignar.length} entrega(s) sin dueño contra los miembros del team (80% de parecido). Las que no se detecten quedan intactas para asignarlas a mano. ¿Continuar?`)) return;
+  const asignaciones=[]; let detectadas=0, sinDetectar=0;
+  sinAsignar.forEach(e=>{
+    const ids=detectarMiembrosEnTexto_(e.nombreUsuario, 0.8);
+    if(ids.length){ asignaciones.push({id:e.id, idMiembro:ids.join(",")}); detectadas++; } else sinDetectar++;
+  });
+  if(!asignaciones.length){ toast("No se pudo detectar a nadie automáticamente 😕 Asignalas a mano con \"👤 Asignar\"."); return; }
+  const r=await apiPost({action:"asignarEntregas", asignaciones}, "Asignando automáticamente...");
+  if(r.ok){
+    toast(`✅ ${detectadas} asignada(s) automáticamente, ${sinDetectar} quedaron sin detectar.`);
+    document.getElementById("pasarListaMsg").textContent = `Última corrida: ${detectadas} asignadas, ${sinDetectar} sin detectar (revisalas a mano con "👤 Asignar").`;
+    await cargarDatos(); renderPasarLista();
+  } else toast("Error: "+(r.error||""));
+};
+
+/* ---------- 🏆 Chambeadores del año (temporada manual, no borra historial) ---------- */
+function abrirChambeadores(){ renderChambeadores(); openModal("chambeadoresModal"); }
+document.getElementById("chambeadoresBtn").onclick=abrirChambeadores;
+function renderChambeadores(){
+  const inicioTxt = DB.temporadaChambeadoresInicio;
+  const inicio = inicioTxt ? new Date(inicioTxt) : null;
+  document.getElementById("chambeadoresPeriodo").textContent = inicio
+    ? `Contando entregas desde el ${fmtFecha(inicio)} (última vez que se reinició la temporada).`
+    : `Contando todo el historial (la temporada todavía no se ha reiniciado nunca).`;
+  const conteos = {canto:{}, doblaje:{}};
+  DB.entregas.forEach(e=>{
+    if(inicio){ const f=new Date(e.fecha); if(isNaN(f)||f<inicio) return; }
+    const cat = (e.categoria==="canto"||e.categoria==="doblaje") ? e.categoria : null;
+    if(!cat) return;
+    idsDeEntrega_(e).forEach(id=>{ conteos[cat][id]=(conteos[cat][id]||0)+1; });
+  });
+  const pintarTop=(contId, conteo)=>{
+    const filas = Object.keys(conteo).map(id=>({id,total:conteo[id]})).sort((a,b)=>b.total-a.total).slice(0,10);
+    const el=document.getElementById(contId);
+    if(!filas.length){ el.innerHTML=`<div style="color:var(--text-dim);font-size:13px;">Todavía no hay entregas asignadas en esta categoría.</div>`; return; }
+    el.innerHTML = filas.map((f,i)=>{
+      const m=DB.miembros.find(x=>String(x.id)===f.id);
+      const medalla = i===0?"🥇":i===1?"🥈":i===2?"🥉":String(i+1);
+      return `<div class="chambeador-row">
+        <div class="chambeador-puesto">${medalla}</div>
+        <img src="${escAttr(m?(m.avatarUrl||LOGO_DEFAULT):LOGO_DEFAULT)}" onerror="this.onerror=null;this.src='${LOGO_DEFAULT}';">
+        <div class="chambeador-nombre">${escHtml(m?m.nombre:"(miembro ya no existe)")}</div>
+        <div class="chambeador-total">${f.total}</div>
+      </div>`;
+    }).join("");
+  };
+  pintarTop("chambeadoresCanto", conteos.canto);
+  pintarTop("chambeadoresDoblaje", conteos.doblaje);
+}
+document.getElementById("reiniciarTemporadaBtn").onclick=async()=>{
+  if(!await confirmarAccion("¿Reiniciar la temporada de Chambeadores? El top vuelve a 0 y cuenta desde ahora en adelante. El historial completo de entregas NO se borra, solo cambia desde cuándo se cuenta.")) return;
+  const r=await apiPost({action:"reiniciarTemporadaChambeadores"}, "Reiniciando temporada...");
+  if(r.ok){ toast("Temporada reiniciada 🏆"); await cargarDatos(); renderChambeadores(); } else toast("Error: "+(r.error||""));
+};
 
 /* ---------- Mundo Peaches (globo 3D, Miembro+Staff) ---------- */
 let globoInstancia = null;
@@ -2937,6 +3248,7 @@ document.getElementById("entregaForm").addEventListener("submit", async(e)=>{
   const idActividad=document.getElementById("en_idActividad").value;
   const actividad=DB.actividades.find(a=>String(a.id)===String(idActividad));
   const data={ id:"ENT-"+Date.now(), idActividad:idActividad, tituloActividad:actividad?(actividad.titulo||""):"",
+    categoria:actividad?(actividad.categoria||""):"",
     nombreUsuario:document.getElementById("en_nombre").value, detalleEntrega:document.getElementById("en_detalle").value,
     linkGrabacion:document.getElementById("en_link").value };
   // try/finally: si apiPost lanza (red caída, timeout), el botón igual se reactiva y se avisa con
@@ -3189,6 +3501,7 @@ function mostrarViewMiembros(){
   document.getElementById("memberToolsRow1").classList.toggle("hidden", !staffPin);
   document.getElementById("memberToolsRow2").classList.toggle("hidden", !staffPin);
   document.getElementById("memberToolsRow3").classList.toggle("hidden", !staffPin);
+  document.getElementById("memberToolsRow4").classList.toggle("hidden", !staffPin);
   aplicarVisibilidadMundo();
   renderMiembros();
 }
@@ -3259,6 +3572,7 @@ async function cerrarSesionActual(mensaje){
   document.getElementById("memberToolsRow1").classList.add("hidden");
   document.getElementById("memberToolsRow2").classList.add("hidden");
   document.getElementById("memberToolsRow3").classList.add("hidden");
+  document.getElementById("memberToolsRow4").classList.add("hidden");
   if (window.google && google.accounts && google.accounts.id) google.accounts.id.disableAutoSelect();
   if (tokenViejo) apiPost({action:"logout", token:tokenViejo}).catch(()=>{}); // fire-and-forget: invalida la sesión en el servidor
   toast(mensaje);
