@@ -781,7 +781,7 @@
      se puede desmarcar a quien ya justificó (permiso, enfermedad, etc.) antes de confirmar. Así
      "Poner falta a los que faltan" nunca vuelve a sumar una falta de una sola pasada sin poder
      revisar primero a quién le toca de verdad. -->
-<div class="modal-overlay" id="faltantesModal">
+<div class="modal-overlay" id="faltantesModal" style="z-index:270;">
   <div class="modal-box modal-box-wide"><button class="modal-close" data-close="faltantesModal">✕</button>
     <h3>❌ Poner falta a los que faltan</h3>
     <div id="faltantesInfo" style="font-size:13px;color:var(--text-dim);margin-bottom:10px;"></div>
@@ -2354,8 +2354,19 @@ function ponerFaltaALosQueFaltan_(idActividad){
   const entregas = DB.entregas.filter(e=>String(e.idActividad)===String(idActividad));
   const asignadosIds = new Set();
   entregas.forEach(e=>idsDeEntrega_(e).forEach(id=>asignadosIds.add(String(id))));
-  const faltantes = (DB.miembros||[]).filter(m=>m.nombre && !asignadosIds.has(String(m.id)))
-    .slice().sort((a,b)=>(a.nombre||"").localeCompare(b.nombre||""));
+  // FIX: antes se comparaba contra TODOS los miembros del team, sin importar la categoría de la
+  // actividad -- una actividad de "canto" terminaba poniéndole falta también a quienes solo hacen
+  // doblaje (y nunca iban a entregar eso), y viceversa. Ahora, si la actividad tiene categoría
+  // "canto" o "doblaje", solo entran a la lista los miembros marcados con esa categoría en true;
+  // si la actividad no tiene categoría definida, se mantiene el comportamiento anterior (todo el
+  // team) para no romper actividades viejas sin ese dato.
+  const categoriaActividad = a.categoria === "canto" || a.categoria === "doblaje" ? a.categoria : null;
+  const faltantes = (DB.miembros||[]).filter(m=>{
+    if(!m.nombre || asignadosIds.has(String(m.id))) return false;
+    if(categoriaActividad==="canto") return esTrue(m.canto);
+    if(categoriaActividad==="doblaje") return esTrue(m.doblaje);
+    return true;
+  }).slice().sort((a,b)=>(a.nombre||"").localeCompare(b.nombre||""));
   if(!faltantes.length){ toast("Nadie falta: todos los miembros ya tienen una entrega asignada 🎉"); return; }
   faltantesActividadActual_ = { idActividad, titulo: a.titulo||"" };
   faltantesSeleccionados_ = new Set(faltantes.map(m=>String(m.id))); // premarcados por defecto
@@ -2368,7 +2379,13 @@ function renderFaltantesLista_(faltantes){
   const cont=document.getElementById("faltantesLista");
   cont.innerHTML = faltantes.map(m=>`<label class="member-row" style="cursor:pointer;">
     ${avatarImgTag(m)}
-    <div class="m-info" style="flex:1;"><div class="m-name">${escHtml(m.nombre||"")}</div></div>
+    <div class="m-info" style="flex:1;">
+      <div class="m-name">${escHtml(m.nombre||"")}</div>
+      <div class="badges-row">
+        ${esTrue(m.canto)?`<span class="badge badge-canto">🎤 Canto</span>`:""}
+        ${esTrue(m.doblaje)?`<span class="badge badge-doblaje">🎙️ Doblaje</span>`:""}
+      </div>
+    </div>
     <input type="checkbox" data-faltante="${m.id}" ${faltantesSeleccionados_.has(String(m.id))?"checked":""} style="width:20px;height:20px;flex-shrink:0;accent-color:var(--peach-2);">
   </label>`).join("");
   cont.querySelectorAll("[data-faltante]").forEach(chk=>chk.onchange=()=>{
