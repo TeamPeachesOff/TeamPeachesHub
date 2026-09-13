@@ -528,7 +528,7 @@
   <section id="viewMiembros" class="hidden">
     <div class="search-row">
       <button type="button" id="chambeadoresTrofeoBtn" class="hidden chambeadores-trofeo-btn" title="Chambeadores de la temporada 🏆">🏆</button>
-      <input autocomplete="off" type="text" id="searchMiembros" placeholder="🔍 Buscar por nombre, rol, rango vocal, generación o mes de cumpleaños...">
+      <input autocomplete="off" type="text" id="searchMiembros" placeholder="🔍 Buscar por nombre, rol, rango vocal, generación, cumpleaños o &quot;2 strikes&quot;...">
       <img id="mundoPeachesBtn" class="hidden" alt="Mundo Peaches" title="Mundo Peaches 🌍"
         src="https://raw.githubusercontent.com/TeamPeachesOff/TeamPeachesHub/main/Logos/MundoPeaches.png"
         onerror="this.onerror=null;this.style.display='none';">
@@ -774,6 +774,22 @@
       <div class="form-group"><label>Enlace</label><input autocomplete="off" type="text" id="en_link"></div>
       <div class="modal-actions"><button type="submit" class="btn-primary">Guardar</button></div>
     </form>
+  </div>
+</div>
+
+<!-- NUEVO: checklist antes de poner falta -- todos los que no entregaron salen premarcados, pero
+     se puede desmarcar a quien ya justificó (permiso, enfermedad, etc.) antes de confirmar. Así
+     "Poner falta a los que faltan" nunca vuelve a sumar una falta de una sola pasada sin poder
+     revisar primero a quién le toca de verdad. -->
+<div class="modal-overlay" id="faltantesModal">
+  <div class="modal-box modal-box-wide"><button class="modal-close" data-close="faltantesModal">✕</button>
+    <h3>❌ Poner falta a los que faltan</h3>
+    <div id="faltantesInfo" style="font-size:13px;color:var(--text-dim);margin-bottom:10px;"></div>
+    <div id="faltantesLista" style="display:flex;flex-direction:column;gap:6px;max-height:50vh;overflow-y:auto;"></div>
+    <div class="modal-actions" style="display:flex;gap:8px;margin-top:14px;">
+      <button type="button" class="btn-small" id="faltantesTodosBtn" style="background:var(--card-bg-2);color:var(--text);flex:1;">Desmarcar todos</button>
+      <button type="button" class="btn-small btn-danger" id="faltantesConfirmarBtn" style="flex:1;">Confirmar faltas</button>
+    </div>
   </div>
 </div>
 
@@ -2041,15 +2057,24 @@ document.getElementById("refreshMapBtn").onclick=async()=>{
   else toast("Error: "+(r.error||""));
 };
 
+// NUEVO: si el texto de búsqueda es del tipo "1 strike", "2 strikes", "3 strike" (con o sin
+// tilde/plural, no distingue mayúsculas), se deja de buscar por texto libre y se filtra por
+// CANTIDAD EXACTA de strikes (columna "strikes" -- NO cuenta faltas ni strikesPermanentes, tal
+// como se pidió: "solo strike no faltas"). Cualquier otra cosa escrita sigue funcionando como
+// buscador de texto normal (nombre, rol, rango vocal, generación, mes de cumpleaños).
 function renderMiembros(filtro=""){
-  const f=normalizar(filtro.trim());
+  const textoFiltro = filtro.trim();
+  const matchStrikes = textoFiltro.match(/^(\d+)\s*strikes?$/i);
+  const f=normalizar(textoFiltro);
   const conNombre=m=>m.nombre && String(m.nombre).trim()!=="";
-  const filtrar=m=>conNombre(m) && (!f || normalizar([
-    m.nombre, m.rangoVocal,
-    esTrue(m.staff)?"staff":"", esTrue(m.canto)?"canto":"", esTrue(m.doblaje)?"doblaje":"",
-    m.generacionNum||"", palabraGeneracion(m.generacionNum),
-    mesDeCumple(m.cumpleanos)
-  ].join(" ")).includes(f));
+  const filtrar = matchStrikes
+    ? (m=>conNombre(m) && (Number(m.strikes)||0)===Number(matchStrikes[1]))
+    : (m=>conNombre(m) && (!f || normalizar([
+        m.nombre, m.rangoVocal,
+        esTrue(m.staff)?"staff":"", esTrue(m.canto)?"canto":"", esTrue(m.doblaje)?"doblaje":"",
+        m.generacionNum||"", palabraGeneracion(m.generacionNum),
+        mesDeCumple(m.cumpleanos)
+      ].join(" ")).includes(f)));
 
   const reinas=DB.miembros.filter(m=>(esTrue(m.fundadora)||esTrue(m.lider)) && filtrar(m));
   document.getElementById("reinasCarousel").innerHTML=reinas.length?reinas.map(m=>`<div class="member-avatar-item reina" data-member="${m.id}">${avatarImgTag(m)}<div class="m-name">${escHtml(m.nombre||"")}</div></div>`).join(""):`<div style="color:var(--text-dim);font-size:13px;">Sin resultados.</div>`;
@@ -2314,25 +2339,63 @@ function renderPasarLista(){
   cont.querySelectorAll("[data-pl-falta]").forEach(btn=>btn.onclick=e=>{ e.stopPropagation(); ponerFaltaALosQueFaltan_(btn.dataset.plFalta); });
 }
 
-// v23: botón manual "Poner falta a los que faltan" -- compara TODOS los miembros contra quienes
-// ya salen asignados en alguna entrega de esta actividad (idsDeEntrega_ de cada entrega); a cada
-// miembro que no aparezca en ninguna se le suma UNA sola falta (nunca más de una por persona,
-// sin importar cuántas veces se apriete sobre la misma corrida). No toca a quienes ya tengan
-// aunque sea una entrega asignada. 100% manual: nunca se dispara solo.
-async function ponerFaltaALosQueFaltan_(idActividad){
+// v24: antes esto le sumaba una falta a TODOS los que no aparecían asignados de una sola pasada,
+// con solo un confirm() genérico -- si alguien había justificado la falta (permiso, enfermedad,
+// etc.) no había forma de sacarlo de la lista antes de aplicar, y quedaba con una falta injusta
+// hasta que alguien se acordara de resetearla a mano. Ahora se abre un checklist con TODOS los
+// que faltan, todos premarcados (para no cambiar el flujo rápido de siempre: revisar y confirmar),
+// pero cada uno se puede desmarcar antes de aplicar. Solo se les pone falta a los que queden
+// marcados al momento de tocar "Confirmar faltas".
+let faltantesActividadActual_ = null;
+let faltantesSeleccionados_ = new Set();
+function ponerFaltaALosQueFaltan_(idActividad){
   const a = DB.actividades.find(x=>String(x.id)===String(idActividad));
   if(!a) return;
   const entregas = DB.entregas.filter(e=>String(e.idActividad)===String(idActividad));
   const asignadosIds = new Set();
   entregas.forEach(e=>idsDeEntrega_(e).forEach(id=>asignadosIds.add(String(id))));
-  const faltantes = (DB.miembros||[]).filter(m=>m.nombre && !asignadosIds.has(String(m.id)));
+  const faltantes = (DB.miembros||[]).filter(m=>m.nombre && !asignadosIds.has(String(m.id)))
+    .slice().sort((a,b)=>(a.nombre||"").localeCompare(b.nombre||""));
   if(!faltantes.length){ toast("Nadie falta: todos los miembros ya tienen una entrega asignada 🎉"); return; }
-  const nombresPreview = faltantes.slice(0,8).map(m=>m.nombre).join(", ") + (faltantes.length>8?`, y ${faltantes.length-8} más`:"");
-  if(!await confirmarAccion(`Se le va a sumar UNA falta a ${faltantes.length} miembro(s) sin entrega asignada en "${a.titulo||""}" (${nombresPreview}). ¿Continuar?`)) return;
-  const r = await apiPost({action:"addFaltasMultiples", ids: faltantes.map(m=>m.id)}, "Registrando faltas...");
-  if(r.ok){ toast(`⚠️ Falta registrada a ${faltantes.length} miembro(s)`); await cargarDatos(); renderPasarLista(); }
-  else toast("Error: "+(r.error||""));
+  faltantesActividadActual_ = { idActividad, titulo: a.titulo||"" };
+  faltantesSeleccionados_ = new Set(faltantes.map(m=>String(m.id))); // premarcados por defecto
+  document.getElementById("faltantesInfo").textContent = `${faltantes.length} miembro(s) sin entrega en "${a.titulo||""}". Desmarcá a quien ya justificó antes de confirmar.`;
+  renderFaltantesLista_(faltantes);
+  document.getElementById("faltantesTodosBtn").textContent = "Desmarcar todos";
+  openModal("faltantesModal");
 }
+function renderFaltantesLista_(faltantes){
+  const cont=document.getElementById("faltantesLista");
+  cont.innerHTML = faltantes.map(m=>`<label class="member-row" style="cursor:pointer;">
+    ${avatarImgTag(m)}
+    <div class="m-info" style="flex:1;"><div class="m-name">${escHtml(m.nombre||"")}</div></div>
+    <input type="checkbox" data-faltante="${m.id}" ${faltantesSeleccionados_.has(String(m.id))?"checked":""} style="width:20px;height:20px;flex-shrink:0;accent-color:var(--peach-2);">
+  </label>`).join("");
+  cont.querySelectorAll("[data-faltante]").forEach(chk=>chk.onchange=()=>{
+    const id=String(chk.dataset.faltante);
+    if(chk.checked) faltantesSeleccionados_.add(id); else faltantesSeleccionados_.delete(id);
+  });
+  bindAvatarFallbacks();
+}
+document.getElementById("faltantesTodosBtn").onclick=()=>{
+  const checks=[...document.querySelectorAll("#faltantesLista [data-faltante]")];
+  const marcarTodos = checks.some(chk=>!chk.checked); // si alguno está sin marcar, la próxima pasada marca todos; si ya estaban todos marcados, desmarca todos
+  checks.forEach(chk=>{
+    chk.checked = marcarTodos;
+    const id=String(chk.dataset.faltante);
+    if(marcarTodos) faltantesSeleccionados_.add(id); else faltantesSeleccionados_.delete(id);
+  });
+  document.getElementById("faltantesTodosBtn").textContent = marcarTodos ? "Desmarcar todos" : "Marcar todos";
+};
+document.getElementById("faltantesConfirmarBtn").onclick=async()=>{
+  if(!faltantesActividadActual_) return;
+  const ids=[...faltantesSeleccionados_];
+  if(!ids.length){ toast("No dejaste a nadie marcado."); return; }
+  if(!await confirmarAccion(`Se le va a sumar UNA falta a ${ids.length} miembro(s) en "${faltantesActividadActual_.titulo}". ¿Continuar?`)) return;
+  const r = await apiPost({action:"addFaltasMultiples", ids}, "Registrando faltas...");
+  if(r.ok){ toast(`⚠️ Falta registrada a ${r.afectados!==undefined?r.afectados:ids.length} miembro(s)`); closeModal("faltantesModal"); await cargarDatos(); renderPasarLista(); }
+  else toast("Error: "+(r.error||""));
+};
 
 /* ---------- Selector de miembros "tipo luz" (multi, sin límite) para asignar una entrega ---------- */
 // FIX: antes, la selección solo vivía en el DOM (clase "sel" en cada chip). Como renderChipGrid_
