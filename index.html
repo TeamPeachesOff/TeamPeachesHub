@@ -248,13 +248,16 @@
   .pl-act-head{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:12px 14px;cursor:pointer;}
   .pl-act-titulo{font-weight:800;font-size:14px;}
   .pl-act-sub{font-size:11.5px;color:var(--text-dim);}
-  /* Switch personalizado (no checkbox nativo) para expandir cada actividad en Pasar Lista */
-  .pl-switch{position:relative;width:46px;height:26px;border-radius:999px;background:rgba(255,255,255,0.15);flex-shrink:0;}
-  .pl-switch::after{content:"";position:absolute;top:3px;left:3px;width:20px;height:20px;border-radius:50%;background:#fff;transition:transform .18s ease;}
-  .pl-switch.on{background:linear-gradient(90deg,var(--peach-2),var(--peach-1));}
-  .pl-switch.on::after{transform:translateX(20px);}
+  /* v23: se cambió el switch tipo interruptor por una flecha de "desplegable" (más claro que
+     esto expande/colapsa una lista, no que prende/apaga algo). Apunta hacia abajo cerrada y
+     rota 180° (apunta hacia arriba) cuando la actividad está abierta. */
+  .pl-chevron{flex-shrink:0;width:22px;height:22px;display:flex;align-items:center;justify-content:center;font-size:16px;color:var(--text-dim);transition:transform .18s ease;}
+  .pl-chevron.on{transform:rotate(180deg);color:var(--peach-1);}
   .pl-act-body{display:none;padding:0 14px 14px;}
   .pl-act-body.open{display:block;}
+  /* v23: botón manual para marcar falta a todos los que no salgan en la lista de entregas de
+     la actividad -- va arriba del todo, antes de listar las entregas una por una. */
+  .pl-falta-toolbar{margin:0 0 10px;padding-top:10px;border-top:1px solid rgba(255,255,255,0.06);}
   .pl-entrega-row{display:flex;align-items:center;gap:10px;padding:9px 0;border-top:1px solid rgba(255,255,255,0.06);}
   .pl-entrega-info{flex:1;min-width:0;}
   .pl-entrega-nombre{font-weight:700;font-size:13px;word-break:break-word;}
@@ -293,6 +296,11 @@
   #searchMiembros{width:100%;padding:12px 14px;border-radius:12px;border:1px solid rgba(255,255,255,0.1);background:var(--card-bg-2);color:var(--text);font-size:14px;display:block;}
   .search-row{display:flex;align-items:center;gap:10px;margin-bottom:14px;}
   .search-row #searchMiembros{flex:1;margin-bottom:0;}
+  /* v23: botón "Chambeadores" a la izquierda de la barra de búsqueda de Miembros -- mismo
+     tamaño/comportamiento que #mundoPeachesBtn (a la derecha) para que ambos se vean parejos,
+     pero con su propia identidad dorada (trofeo) en vez de reusar el rosa de la familia. */
+  #chambeadoresTrofeoBtn{width:44px;height:44px;flex-shrink:0;border-radius:50%;background:radial-gradient(circle at 30% 30%,#ffe37a,#ffb300 70%);border:1px solid rgba(255,215,0,0.65);font-size:21px;display:flex;align-items:center;justify-content:center;box-shadow:0 0 8px rgba(255,193,7,0.6);transition:transform .15s;}
+  #chambeadoresTrofeoBtn:active{transform:scale(0.9);}
   #mundoPeachesBtn{width:44px;height:44px;flex-shrink:0;object-fit:contain;cursor:pointer;filter:drop-shadow(0 0 7px rgba(255,143,177,0.75));transition:transform .15s;}
   #mundoPeachesBtn:active{transform:scale(0.9);}
   .section-label{font-weight:800;color:var(--peach-2);margin:16px 0 10px;font-size:14px;text-align:center;}
@@ -515,6 +523,7 @@
 
   <section id="viewMiembros" class="hidden">
     <div class="search-row">
+      <button type="button" id="chambeadoresTrofeoBtn" class="hidden chambeadores-trofeo-btn" title="Chambeadores de la temporada 🏆">🏆</button>
       <input autocomplete="off" type="text" id="searchMiembros" placeholder="🔍 Buscar por nombre, rol, rango vocal, generación o mes de cumpleaños...">
       <img id="mundoPeachesBtn" class="hidden" alt="Mundo Peaches" title="Mundo Peaches 🌍"
         src="https://raw.githubusercontent.com/TeamPeachesOff/TeamPeachesHub/main/Logos/MundoPeaches.png"
@@ -801,11 +810,14 @@
   <div class="modal-box"><button class="modal-close" data-close="chambeadoresModal">✕</button>
     <h3>🏆 Chambeadores de la temporada</h3>
     <div id="chambeadoresPeriodo" style="font-size:12px;color:var(--text-dim);margin-bottom:12px;"></div>
-    <div class="chambeadores-cat-label">🎤 Canto</div>
-    <div class="chambeadores-top" id="chambeadoresCanto"></div>
-    <div class="chambeadores-cat-label">🎙️ Doblaje</div>
-    <div class="chambeadores-top" id="chambeadoresDoblaje"></div>
-    <button type="button" class="btn-small btn-seguridad" id="reiniciarTemporadaBtn" style="width:100%;margin-top:6px;">🔄 Reiniciar temporada</button>
+    <!-- v23: antes se mostraban Canto y Doblaje apilados a la vez; ahora es un switch excluyente
+         (uno u otro, nunca ambos) para que el top se lea de un vistazo. -->
+    <div class="switch-pill" id="chambeadoresCategoriaSwitch" style="margin-bottom:14px;">
+      <button type="button" data-val="canto">🎤 Canto</button>
+      <button type="button" data-val="doblaje">🎙️ Doblaje</button>
+    </div>
+    <div class="chambeadores-top" id="chambeadoresTop"></div>
+    <button type="button" class="btn-small btn-seguridad hidden" id="reiniciarTemporadaBtn" style="width:100%;margin-top:14px;">🔄 Reiniciar temporada</button>
   </div>
 </div>
 
@@ -980,7 +992,13 @@ function toast(msg){ const t=document.getElementById("toast"); t.textContent=msg
 // disparaba un re-render completo por cada tecla y la escritura se sentía trabada/con lag. Con
 // debounce, solo se re-renderiza cuando la persona hace una pausa breve al escribir (150ms),
 // que es imperceptible para quien tipea pero evita todos los re-renders intermedios.
-function debounce(fn, ms){ let t=null; return (...args)=>{ clearTimeout(t); t=setTimeout(()=>fn(...args), ms); }; }
+// v23: bug encontrado -- esta función era un arrow function, así que cuando se usaba con
+// callbacks tipo function(){...this...} (como el buscador de "Asignar entrega" en Pasar Lista,
+// que lee this.value), el "this" que le llegaba a esos callbacks NO era el <input> sobre el que
+// se escribió sino undefined/global. El filtro entonces se armaba con un valor vacío y por eso
+// "no servía": mostraba siempre la lista completa sin importar lo que se tipeara. Al volverla una
+// function normal (no arrow) y reenviar el "this" del evento con .apply(), el buscador ya filtra bien.
+function debounce(fn, ms){ let t=null; return function(...args){ clearTimeout(t); const ctx=this; t=setTimeout(()=>fn.apply(ctx,args), ms); }; }
 function estadoActividad(fechaFinStr){
   if(!fechaFinStr) return {clase:"status-green", texto:"🟢 Actividad Activa"};
   const hoy=new Date(); hoy.setHours(0,0,0,0);
@@ -1323,7 +1341,7 @@ const ANALITICA_LABELS = {
   addEntrega:"📥 Entrega registrada", deleteEntregas:"🗑️ Entregas borradas", importarEntregas:"📋 Entregas importadas",
   irAEntregar:"🎙️ Botón \"Entregar\" usado", irAUnirse:"🤝 Botón \"Unirse\" usado", irAScript:"📄 Botón \"Script\" usado", botonPersonalizado:"🔘 Botón personalizado usado",
   addMiembro:"➕ Miembro agregado", editMiembro:"✏️ Miembro editado", deleteMiembro:"🗑️ Miembro borrado",
-  addFalta:"⚠️ Falta registrada", addStrike:"⚡ Strike registrado", addStrikePermanente:"☠️ Strike Permanente registrado",
+  addFalta:"⚠️ Falta registrada", addFaltasMultiples:"⚠️ Faltas registradas (lote, Pasar Lista)", addStrike:"⚡ Strike registrado", addStrikePermanente:"☠️ Strike Permanente registrado",
   resetCastigos:"♻️ Castigos reiniciados (individual)", resetStrikesGlobal:"♻️ Strikes reiniciados (global)",
   limpiarNombresBD:"🧹 Limpieza de nombres BD",
   abrirTarjetaMiembro:"🪪 Tarjeta de Miembro abierta", irASmule:"🎤 Botón Smule usado", irABandlab:"🎧 Botón BandLab usado",
@@ -1353,7 +1371,7 @@ const ANALITICA_CATEGORIA_DE = {
   addToAnuario:"Anuario", editAnuario:"Anuario", deleteAnuario:"Anuario", verAnuario:"Anuario",
   redSocial_web:"Redes sociales", redSocial_youtube:"Redes sociales", redSocial_instagram:"Redes sociales", redSocial_tiktok:"Redes sociales", redSocial_smuleGrupo:"Redes sociales",
   addMiembro:"Gestión de Miembros (Staff)", editMiembro:"Gestión de Miembros (Staff)", deleteMiembro:"Gestión de Miembros (Staff)",
-  addFalta:"Gestión de Miembros (Staff)", addStrike:"Gestión de Miembros (Staff)", addStrikePermanente:"Gestión de Miembros (Staff)",
+  addFalta:"Gestión de Miembros (Staff)", addFaltasMultiples:"Gestión de Miembros (Staff)", addStrike:"Gestión de Miembros (Staff)", addStrikePermanente:"Gestión de Miembros (Staff)",
   resetCastigos:"Gestión de Miembros (Staff)", resetStrikesGlobal:"Gestión de Miembros (Staff)", limpiarNombresBD:"Gestión de Miembros (Staff)",
   uploadImage:"Multimedia", uploadScript:"Multimedia", uploadAdjunto:"Multimedia", fetchSmulePhoto:"Multimedia", actualizarTodasLasFotos:"Multimedia",
   addQueja:"Buzón y reportes", addReporte:"Buzón y reportes",
@@ -1726,10 +1744,14 @@ function aplicarVisibilidadBuzon(){
   document.getElementById("reporteDrawerBtn").classList.toggle("hidden", esPublico);
 }
 
-// Mundo Peaches (globo 3D): solo Miembro + Staff, igual que la pestaña Miembros completa
-// (usa exactamente los mismos datos que ya viajan con nivel completo, teléfono incluido).
+// Mundo Peaches (globo 3D) y el botón de Chambeadores 🏆 junto a la barra de búsqueda: ambos
+// solo para Miembro + Staff (mismos datos completos que ya viajan con nivel completo). Para
+// nivel "publico" DB.miembros llega vacío desde el backend, así que el top de Chambeadores no
+// tendría a quién mostrar -- por eso se oculta igual que el globo.
 function aplicarVisibilidadMundo(){
-  document.getElementById("mundoPeachesBtn").classList.toggle("hidden", nivel==="publico");
+  const esPublico = nivel==="publico";
+  document.getElementById("mundoPeachesBtn").classList.toggle("hidden", esPublico);
+  document.getElementById("chambeadoresTrofeoBtn").classList.toggle("hidden", esPublico);
 }
 
 /* ---------- actividades ---------- */
@@ -2105,6 +2127,15 @@ function openMemberModal(id){
   const strikePermBtn=document.querySelector("[data-strike-permanente]"); if(strikePermBtn) strikePermBtn.onclick=()=>registrarStrikePermanente(m.id);
   const resetBtn=document.querySelector("[data-reset]"); if(resetBtn) resetBtn.onclick=()=>borrarCastigos(m.id);
   const editBtn=document.querySelector("[data-edit-member]"); if(editBtn) editBtn.onclick=()=>{ closeModal("memberModal"); openMemberEditForm(m.id); };
+  // v23: filtro Canto/Doblaje de la sección de Entregas de esta tarjeta -- cada pill es
+  // independiente (no exclusivo), así que pueden quedar ambas prendidas, solo una, o ninguna.
+  document.querySelectorAll("#meEntregasFiltro [data-me-filtro]").forEach(btn=>{
+    btn.onclick=()=>{
+      btn.classList.toggle("on");
+      const bloque=document.querySelector(`[data-entregas-bloque="${btn.dataset.meFiltro}"]`);
+      if(bloque) bloque.classList.toggle("hidden", !btn.classList.contains("on"));
+    };
+  });
 }
 async function registrarFalta(idMiembro){ const r=await apiPost({action:"addFalta", idMiembro}); if(r.ok){toast("Falta registrada"); await cargarDatos(); openMemberModal(idMiembro);} else toast("Error: "+(r.error||"")); }
 async function registrarStrike(idMiembro){ const r=await apiPost({action:"addStrike", idMiembro}); if(r.ok){toast("Strike registrado"); await cargarDatos(); openMemberModal(idMiembro);} else toast("Error: "+(r.error||"")); }
@@ -2122,14 +2153,24 @@ async function borrarCastigos(idMiembro){ if(!await confirmarAccion("¿Poner fal
    encuentra nada que mostrar/asignar, sin romper el resto de la app. */
 function idsDeEntrega_(e){ return String((e&&e.idMiembro)||"").split(",").map(s=>s.trim()).filter(Boolean); }
 
-// Sección "🎶 Entregas" del perfil de un miembro: separadas por categoría, con link para escuchar
-// sin tener que ir a buscarlas entre todas las entregas de todas las actividades.
+// Sección "🎶 Entregas" del perfil de un miembro: separadas por categoría, más reciente primero,
+// con link para escuchar sin tener que ir a buscarlas entre todas las entregas de todas las
+// actividades. Trae un filtro Canto/Doblaje (pills independientes, ver binding en openMemberModal)
+// para no tener que scrollear entre categorías si solo interesa una.
 function entregasDelMiembroHTML_(idMiembro){
   if(!Array.isArray(DB.entregas) || !DB.entregas.length) return "";
   const mias = DB.entregas.filter(e=>idsDeEntrega_(e).includes(String(idMiembro)));
   if(!mias.length) return "";
   const porCategoria = {canto:[], doblaje:[], otras:[]};
-  mias.forEach(e=>{ const cat=(e.categoria==="canto"||e.categoria==="doblaje")?e.categoria:"otras"; porCategoria[cat].push(e); });
+  mias.forEach(e=>{ const cat=categoriaDeEntrega_(e)||"otras"; porCategoria[cat].push(e); });
+  // Más reciente arriba, más vieja abajo. Fechas inválidas/faltantes se mandan al final en vez de
+  // romper el orden del resto.
+  const porFechaDesc=(a,b)=>{
+    const fa=new Date(a.fecha), fb=new Date(b.fecha);
+    const ta=isNaN(fa)?-Infinity:fa.getTime(), tb=isNaN(fb)?-Infinity:fb.getTime();
+    return tb-ta;
+  };
+  Object.keys(porCategoria).forEach(k=>porCategoria[k].sort(porFechaDesc));
   const bloque=(titulo,emoji,lista)=> !lista.length ? "" : `
     <div class="ct-title" style="margin-top:14px;">${emoji} ${titulo} (${lista.length})</div>
     <div style="display:flex;flex-direction:column;gap:6px;">
@@ -2141,10 +2182,15 @@ function entregasDelMiembroHTML_(idMiembro){
         ${e.linkGrabacion?`<a class="btn-small btn-family" target="_blank" href="${escAttr(e.linkGrabacion)}">🔗 Escuchar</a>`:""}
       </div>`).join("")}
     </div>`;
+  const hayFiltro = porCategoria.canto.length || porCategoria.doblaje.length;
   return `<div class="castigos-box">
     <div class="ct-title">🎶 Entregas</div>
-    ${bloque("Canto","🎤",porCategoria.canto)}
-    ${bloque("Doblaje","🎙️",porCategoria.doblaje)}
+    ${hayFiltro?`<div class="filter-pills" id="meEntregasFiltro" style="margin:10px 0 0;">
+      <button type="button" class="pill-toggle on" data-me-filtro="canto">🎤 Canto</button>
+      <button type="button" class="pill-toggle on" data-me-filtro="doblaje">🎙️ Doblaje</button>
+    </div>`:""}
+    <div data-entregas-bloque="canto">${bloque("Canto","🎤",porCategoria.canto)}</div>
+    <div data-entregas-bloque="doblaje">${bloque("Doblaje","🎙️",porCategoria.doblaje)}</div>
     ${bloque("Otras","📁",porCategoria.otras)}
   </div>`;
 }
@@ -2214,9 +2260,12 @@ function renderPasarLista(){
           <div class="pl-act-titulo">${escHtml(a.titulo||"")}</div>
           <div class="pl-act-sub">${entregas.length} entrega(s) · ${sinAsignar} sin asignar</div>
         </div>
-        <div class="pl-switch ${abierta?"on":""}"></div>
+        <div class="pl-chevron ${abierta?"on":""}">▾</div>
       </div>
       <div class="pl-act-body ${abierta?"open":""}">
+        <div class="pl-falta-toolbar">
+          <button type="button" class="btn-small btn-danger" style="width:100%;" data-pl-falta="${a.id}">❌ Poner falta a los que faltan</button>
+        </div>
         ${entregas.map(e=>{
           const ids=idsDeEntrega_(e);
           const nombresAsignados = ids.map(id=>{ const m=DB.miembros.find(x=>String(x.id)===id); return m?m.nombre:null; }).filter(Boolean);
@@ -2240,6 +2289,27 @@ function renderPasarLista(){
   });
   cont.querySelectorAll("[data-pl-abrir]").forEach(btn=>btn.onclick=e=>{ e.stopPropagation(); window.open(btn.dataset.plAbrir,"_blank","noopener"); });
   cont.querySelectorAll("[data-pl-asignar]").forEach(btn=>btn.onclick=e=>{ e.stopPropagation(); abrirAsignarMiembros(btn.dataset.plAsignar); });
+  cont.querySelectorAll("[data-pl-falta]").forEach(btn=>btn.onclick=e=>{ e.stopPropagation(); ponerFaltaALosQueFaltan_(btn.dataset.plFalta); });
+}
+
+// v23: botón manual "Poner falta a los que faltan" -- compara TODOS los miembros contra quienes
+// ya salen asignados en alguna entrega de esta actividad (idsDeEntrega_ de cada entrega); a cada
+// miembro que no aparezca en ninguna se le suma UNA sola falta (nunca más de una por persona,
+// sin importar cuántas veces se apriete sobre la misma corrida). No toca a quienes ya tengan
+// aunque sea una entrega asignada. 100% manual: nunca se dispara solo.
+async function ponerFaltaALosQueFaltan_(idActividad){
+  const a = DB.actividades.find(x=>String(x.id)===String(idActividad));
+  if(!a) return;
+  const entregas = DB.entregas.filter(e=>String(e.idActividad)===String(idActividad));
+  const asignadosIds = new Set();
+  entregas.forEach(e=>idsDeEntrega_(e).forEach(id=>asignadosIds.add(String(id))));
+  const faltantes = (DB.miembros||[]).filter(m=>m.nombre && !asignadosIds.has(String(m.id)));
+  if(!faltantes.length){ toast("Nadie falta: todos los miembros ya tienen una entrega asignada 🎉"); return; }
+  const nombresPreview = faltantes.slice(0,8).map(m=>m.nombre).join(", ") + (faltantes.length>8?`, y ${faltantes.length-8} más`:"");
+  if(!await confirmarAccion(`Se le va a sumar UNA falta a ${faltantes.length} miembro(s) sin entrega asignada en "${a.titulo||""}" (${nombresPreview}). ¿Continuar?`)) return;
+  const r = await apiPost({action:"addFaltasMultiples", ids: faltantes.map(m=>m.id)}, "Registrando faltas...");
+  if(r.ok){ toast(`⚠️ Falta registrada a ${faltantes.length} miembro(s)`); await cargarDatos(); renderPasarLista(); }
+  else toast("Error: "+(r.error||""));
 }
 
 /* ---------- Selector de miembros "tipo luz" (multi, sin límite) para asignar una entrega ---------- */
@@ -2300,38 +2370,52 @@ document.getElementById("autoAsignarBtn").onclick = async ()=>{
 };
 
 /* ---------- 🏆 Chambeadores del año (temporada manual, no borra historial) ---------- */
-function abrirChambeadores(){ renderChambeadores(); openModal("chambeadoresModal"); }
+// v23: idsDeEntrega_ ya existe más abajo (mismo archivo) -- categoriaDeEntrega_ es su hermana
+// para la categoría: las entregas viejas (de antes de que existiera la columna "categoria" en la
+// hoja Entregas) llegan sin ese dato, así que además de leerlo directo del registro, se cae de
+// vuelta a la categoría de la Actividad a la que pertenece esa entrega (idActividad) como
+// respaldo. Esto es lo que hacía que casi todo terminara en "Otras" -- ver entregasDelMiembroHTML_.
+function categoriaDeEntrega_(e){
+  if(e.categoria==="canto"||e.categoria==="doblaje") return e.categoria;
+  const act = DB.actividades && DB.actividades.find(a=>String(a.id)===String(e.idActividad));
+  return (act && (act.categoria==="canto"||act.categoria==="doblaje")) ? act.categoria : null;
+}
+function abrirChambeadores(){
+  if(!getSwitchPillValue("chambeadoresCategoriaSwitch")) setSwitchPill("chambeadoresCategoriaSwitch","canto");
+  document.getElementById("reiniciarTemporadaBtn").classList.toggle("hidden", nivel!=="staff");
+  renderChambeadores();
+  openModal("chambeadoresModal");
+}
 document.getElementById("chambeadoresBtn").onclick=abrirChambeadores;
+document.getElementById("chambeadoresTrofeoBtn").onclick=abrirChambeadores;
+bindSwitchPill("chambeadoresCategoriaSwitch");
+document.querySelectorAll("#chambeadoresCategoriaSwitch button").forEach(btn=>btn.addEventListener("click", renderChambeadores));
 function renderChambeadores(){
   const inicioTxt = DB.temporadaChambeadoresInicio;
   const inicio = inicioTxt ? new Date(inicioTxt) : null;
   document.getElementById("chambeadoresPeriodo").textContent = inicio
     ? `Contando entregas desde el ${fmtFecha(inicio)} (última vez que se reinició la temporada).`
     : `Contando todo el historial (la temporada todavía no se ha reiniciado nunca).`;
-  const conteos = {canto:{}, doblaje:{}};
+  const catSel = getSwitchPillValue("chambeadoresCategoriaSwitch") || "canto";
+  const conteo = {};
   DB.entregas.forEach(e=>{
     if(inicio){ const f=new Date(e.fecha); if(isNaN(f)||f<inicio) return; }
-    const cat = (e.categoria==="canto"||e.categoria==="doblaje") ? e.categoria : null;
-    if(!cat) return;
-    idsDeEntrega_(e).forEach(id=>{ conteos[cat][id]=(conteos[cat][id]||0)+1; });
+    if(categoriaDeEntrega_(e)!==catSel) return;
+    idsDeEntrega_(e).forEach(id=>{ conteo[id]=(conteo[id]||0)+1; });
   });
-  const pintarTop=(contId, conteo)=>{
-    const filas = Object.keys(conteo).map(id=>({id,total:conteo[id]})).sort((a,b)=>b.total-a.total).slice(0,10);
-    const el=document.getElementById(contId);
-    if(!filas.length){ el.innerHTML=`<div style="color:var(--text-dim);font-size:13px;">Todavía no hay entregas asignadas en esta categoría.</div>`; return; }
-    el.innerHTML = filas.map((f,i)=>{
-      const m=DB.miembros.find(x=>String(x.id)===f.id);
-      const medalla = i===0?"🥇":i===1?"🥈":i===2?"🥉":String(i+1);
-      return `<div class="chambeador-row">
-        <div class="chambeador-puesto">${medalla}</div>
-        <img src="${escAttr(m?(m.avatarUrl||LOGO_DEFAULT):LOGO_DEFAULT)}" onerror="this.onerror=null;this.src='${LOGO_DEFAULT}';">
-        <div class="chambeador-nombre">${escHtml(m?m.nombre:"(miembro ya no existe)")}</div>
-        <div class="chambeador-total">${f.total}</div>
-      </div>`;
-    }).join("");
-  };
-  pintarTop("chambeadoresCanto", conteos.canto);
-  pintarTop("chambeadoresDoblaje", conteos.doblaje);
+  const filas = Object.keys(conteo).map(id=>({id,total:conteo[id]})).sort((a,b)=>b.total-a.total).slice(0,10);
+  const el=document.getElementById("chambeadoresTop");
+  if(!filas.length){ el.innerHTML=`<div style="color:var(--text-dim);font-size:13px;">Todavía no hay entregas asignadas en esta categoría.</div>`; return; }
+  el.innerHTML = filas.map((f,i)=>{
+    const m=DB.miembros.find(x=>String(x.id)===f.id);
+    const medalla = i===0?"🥇":i===1?"🥈":i===2?"🥉":String(i+1);
+    return `<div class="chambeador-row">
+      <div class="chambeador-puesto">${medalla}</div>
+      <img src="${escAttr(m?(m.avatarUrl||LOGO_DEFAULT):LOGO_DEFAULT)}" onerror="this.onerror=null;this.src='${LOGO_DEFAULT}';">
+      <div class="chambeador-nombre">${escHtml(m?m.nombre:"(miembro ya no existe)")}</div>
+      <div class="chambeador-total">${f.total}</div>
+    </div>`;
+  }).join("");
 }
 document.getElementById("reiniciarTemporadaBtn").onclick=async()=>{
   if(!await confirmarAccion("¿Reiniciar la temporada de Chambeadores? El top vuelve a 0 y cuenta desde ahora en adelante. El historial completo de entregas NO se borra, solo cambia desde cuándo se cuenta.")) return;
