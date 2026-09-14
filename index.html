@@ -80,12 +80,20 @@
     ::-webkit-scrollbar-thumb{background:rgba(255,255,255,0.15);border-radius:99px;}
     ::-webkit-scrollbar-thumb:hover{background:rgba(255,255,255,0.35);}
   }
-  html{overflow-y:auto;
-    /* Mismo estilo que el scrollbar de #drawer (ese ya estaba bien): thin + color estándar
-       para navegadores que lo soportan (Firefox y de respaldo en Edge con zoom alto), y el
-       pill de ::-webkit-scrollbar de arriba se encarga del resto (Chrome/Safari/Edge normal). */
-    scrollbar-width:thin;scrollbar-color:rgba(255,255,255,0.2) transparent;}
-  body{margin:0;font-family:'Segoe UI',Arial,sans-serif;background:linear-gradient(160deg,var(--bg),#241228 60%,#170b1c);color:var(--text);min-height:100vh;}
+  /* El scroll del documento se hace en <body>, no en <html>. Motivo: estilar el thumb/pill del
+     scroll de la página con ::-webkit-scrollbar puesto en <html> (la raíz/viewport) es justo lo
+     que fallaba antes ("no engancha de forma confiable en Edge" — quedaba el feo scrollbar blanco
+     nativo pese al CSS de arriba). Poniendo el overflow real en <body> (un elemento normal, no la
+     raíz) ese mismo CSS SÍ se aplica siempre, en todos los navegadores — es el mismo truco que ya
+     hacía ver bien al scroll de #drawer. Los elementos position:fixed (drawer, modales, toasts,
+     botón de subir) no se ven afectados por este cambio: siguen fijos al viewport igual que antes. */
+  html{height:100%;overflow:hidden;}
+  body{margin:0;font-family:'Segoe UI',Arial,sans-serif;background:linear-gradient(160deg,var(--bg),#241228 60%,#170b1c);color:var(--text);height:100%;overflow-y:auto;-webkit-overflow-scrolling:touch;
+    scrollbar-width:thin;scrollbar-color:rgba(255,255,255,0.28) transparent;}
+  body::-webkit-scrollbar{width:6px;}
+  body::-webkit-scrollbar-track{background:transparent;}
+  body::-webkit-scrollbar-thumb{background:rgba(255,255,255,0.28);border-radius:99px;}
+  body::-webkit-scrollbar-thumb:hover{background:rgba(255,255,255,0.45);}
   a{color:inherit;text-decoration:none;}
   /* "El botón solo funciona si lo toco en una parte específica" — la causa típica de esto en móvil
      es que, sin desactivar la selección de texto, un tap sobre el texto/ícono de un elemento
@@ -2054,28 +2062,30 @@ function anioDeFecha(f){
    Aparece al bajar unos scrolls en Actividades. En vez de ir directo a la punta, sube de a un
    tramo por toque: primero al separador de año (▼ 2024, ▼ 2025...) más cercano arriba de donde
    estás, y si volvés a tocarlo desde ahí, al separador de ANTES (año más reciente), hasta llegar
-   arriba del todo (año actual). Así en un feed largo no perdés de referencia en qué año estabas. */
+   arriba del todo (año actual). Así en un feed largo no perdés de referencia en qué año estabas.
+   NOTA: el que scrollea de verdad es <body> (no window/html — ver comentario en el CSS de body),
+   así que acá se lee/mueve body.scrollTop en vez de window.scrollY/scrollTo. */
 const BACK_TO_TOP_SCROLL_THRESHOLD = 600; // px bajados desde arriba para que el botón aparezca
 let backToTopScrollTicking = false;
 function actualizarVisibilidadBackToTop(){
   const btn=document.getElementById("backToTopBtn");
   const enActividades=!document.getElementById("viewActividades").classList.contains("hidden");
-  btn.classList.toggle("hidden", !enActividades || window.scrollY < BACK_TO_TOP_SCROLL_THRESHOLD);
+  btn.classList.toggle("hidden", !enActividades || document.body.scrollTop < BACK_TO_TOP_SCROLL_THRESHOLD);
 }
-window.addEventListener("scroll", ()=>{
+document.body.addEventListener("scroll", ()=>{
   if(backToTopScrollTicking) return;
   backToTopScrollTicking=true;
   requestAnimationFrame(()=>{ actualizarVisibilidadBackToTop(); backToTopScrollTicking=false; });
 }, {passive:true});
 document.getElementById("backToTopBtn").onclick=()=>{
-  const paradas=[0, ...[...document.querySelectorAll(".year-divider")].map(el=>el.getBoundingClientRect().top+window.scrollY)];
-  const actual=window.scrollY;
+  const paradas=[0, ...[...document.querySelectorAll(".year-divider")].map(el=>el.getBoundingClientRect().top+document.body.scrollTop)];
+  const actual=document.body.scrollTop;
   // La parada de destino es la más cercana que quede ARRIBA de donde estás ahora (con un margen
   // de 16px para que, si ya estás parado justo en un separador, el toque te mande a la parada de
   // antes en vez de no moverse).
   const candidatas=paradas.filter(y=>y < actual-16);
   const destino=candidatas.length ? Math.max(...candidatas) : 0;
-  window.scrollTo({top:destino, behavior:"smooth"});
+  document.body.scrollTo({top:destino, behavior:"smooth"});
 };
 
 
