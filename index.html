@@ -153,13 +153,19 @@
   #hamburgerBtn{background:none;font-size:26px;color:var(--peach-1);padding:4px 8px;border-radius:8px;}
   #hamburgerBtn:hover{background:rgba(239,8,112,0.15);}
   /* ---------- Barra de búsqueda de actividades ---------- */
-  .search-bar{display:flex;align-items:center;gap:8px;background:var(--card-bg);border:1px solid rgba(239,8,112,0.25);border-radius:999px;padding:8px 14px;margin-bottom:12px;}
+  .search-bar{display:flex;align-items:center;gap:8px;background:var(--card-bg);border:1px solid rgba(239,8,112,0.25);border-radius:999px;height:40px;box-sizing:border-box;padding:0 14px;margin-bottom:10px;}
   .search-bar-icon{font-size:14px;opacity:0.7;flex-shrink:0;}
   .search-bar input{flex:1;background:none;border:none;color:var(--text);font-size:14px;min-width:0;}
   .search-bar input:focus{outline:none;}
   .search-bar input::placeholder{color:var(--text-dim);}
   .search-bar #searchClearBtn{background:none;color:var(--text-dim);font-size:14px;padding:2px 4px;flex-shrink:0;}
-  .search-results-info{font-size:12.5px;color:var(--text-dim);margin:-6px 0 10px 4px;}
+  .search-results-info{font-size:12.5px;color:var(--text-dim);margin:-2px 0 10px 4px;}
+  /* Fila de categorías del buscador (Actividad/Descripción/Entrega/Fecha): SIEMPRE los 4 en una
+     sola línea (sin flex-wrap), mismo ancho entre ellos (flex:1) y misma altura que .search-bar
+     de arriba (height:40px en ambas). Cada uno se prende/apaga solo, de forma independiente. */
+  .search-field-filters{display:flex;flex-wrap:nowrap;gap:6px;height:40px;margin-bottom:10px;}
+  .search-field-btn{flex:1 1 0;min-width:0;height:100%;box-sizing:border-box;border-radius:999px;background:var(--card-bg);border:1px solid rgba(239,8,112,0.15);color:var(--text-dim);font-size:12px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;padding:0 4px;transition:background .15s ease,color .15s ease;}
+  .search-field-btn.on{background:linear-gradient(90deg,var(--peach-2),var(--peach-1));color:#fff;border-color:transparent;}
   .logo{font-weight:800;font-size:19px;letter-spacing:0.5px;background:linear-gradient(90deg,var(--peach-2),#ffffff);-webkit-background-clip:text;background-clip:text;color:transparent;}
   .tabs{display:flex;gap:6px;background:var(--card-bg);padding:4px;border-radius:999px;}
   .tab-btn{padding:8px 16px;border-radius:999px;background:none;color:var(--text-dim);font-weight:600;font-size:14px;}
@@ -661,6 +667,15 @@
       <span class="search-bar-icon">🔍</span>
       <input type="text" id="searchInput" placeholder="Buscar por título, descripción, mes o año (ej: mayo 2026)..." autocomplete="off">
       <button type="button" id="searchClearBtn" class="hidden" aria-label="Limpiar búsqueda">✕</button>
+    </div>
+    <!-- Solo aparece mientras hay texto en el buscador. Cada botón prende/apaga su categoría en
+         "searchFields" (ver JS) de forma independiente -- los 4 siempre en una sola línea, mismo
+         tamaño entre ellos y misma altura que la barra de arriba (ver .search-field-filters). -->
+    <div class="search-field-filters hidden" id="searchFieldFilters">
+      <button type="button" class="search-field-btn on" data-field="titulo">Actividad</button>
+      <button type="button" class="search-field-btn on" data-field="descripcion">Descripción</button>
+      <button type="button" class="search-field-btn on" data-field="entrega">Entrega</button>
+      <button type="button" class="search-field-btn on" data-field="fecha">Fecha</button>
     </div>
     <div id="searchResultsInfo" class="search-results-info hidden"></div>
     <div id="actividadesFeed"></div>
@@ -2059,15 +2074,29 @@ document.getElementById("filterDoblaje").onclick=()=>{ filtroDoblaje=!filtroDobl
 // La barra queda siempre visible debajo de los filtros Canto/Doblaje, no hace falta abrirla/cerrarla.
 let searchDebounceTimer_=null;
 document.getElementById("searchInput").addEventListener("input", (e)=>{
-  document.getElementById("searchClearBtn").classList.toggle("hidden", !e.target.value);
+  const hayTexto = !!e.target.value;
+  document.getElementById("searchClearBtn").classList.toggle("hidden", !hayTexto);
+  document.getElementById("searchFieldFilters").classList.toggle("hidden", !hayTexto);
   clearTimeout(searchDebounceTimer_);
   searchDebounceTimer_=setTimeout(()=>{ searchQuery=e.target.value; renderActividades(); }, 200);
 });
 document.getElementById("searchClearBtn").onclick=()=>{
   const input=document.getElementById("searchInput");
   input.value=""; searchQuery=""; document.getElementById("searchClearBtn").classList.add("hidden");
+  document.getElementById("searchFieldFilters").classList.add("hidden");
   renderActividades(); input.focus();
 };
+// Cada botón (Actividad/Descripción/Entrega/Fecha) prende/apaga SU categoría sola en searchFields,
+// sin afectar a las demás -- ver actividadCoincideBusqueda_ más abajo, que solo junta el
+// vocabulario de las categorías que sigan prendidas.
+document.querySelectorAll(".search-field-btn").forEach(btn=>{
+  btn.onclick=()=>{
+    const campo=btn.dataset.field;
+    searchFields[campo]=!searchFields[campo];
+    btn.classList.toggle("on", searchFields[campo]);
+    renderActividades();
+  };
+});
 function syncFilterPills(){
   document.getElementById("filterCanto").classList.toggle("on",filtroCanto);
   document.getElementById("filterDoblaje").classList.toggle("on",filtroDoblaje);
@@ -2118,28 +2147,31 @@ function extraerYMDFront_(valor) {
   if (m) return { anio: +m[3], mes: +m[2], dia: +m[1] };
   return null;
 }
-// Todas las "palabras" contra las que se compara la búsqueda: las de título/descripción, más
-// varias formas de cada fecha (día, mes en número, mes abreviado, mes completo, año) para que
-// buscar "mayo", "05", "may" o "2026" encuentre lo mismo.
-function palabrasBuscablesDeActividad_(a) {
-  const palabras = new Set();
-  (String(a.titulo || "") + " " + String(a.descripcion || ""))
-    .toLowerCase()
-    .split(/[^a-záéíóúñü0-9]+/i)
-    .forEach(p => { if (p) palabras.add(p); });
+// Categorías de campos que se pueden prender/apagar individualmente con los botones de filtro
+// (ver #searchFieldFilters en el HTML). Todos arrancan activos: por defecto se busca en todo.
+let searchFields = { titulo: true, descripcion: true, entrega: true, fecha: true };
+// Palabras "buscables" de una actividad, YA separadas por categoría, para poder prender/apagar
+// cada una con los botones Actividad/Descripción/Entrega/Fecha. "entregasDeActividad" es la
+// lista de filas de la hoja Entregas ligadas a esta actividad (nombreUsuario/detalleEntrega).
+function palabrasPorCategoria_(a, entregasDeActividad) {
+  const partirEnPalabras = txt => String(txt || "").toLowerCase().split(/[^a-záéíóúñü0-9]+/i).filter(Boolean);
+  const categorias = {
+    titulo: partirEnPalabras(a.titulo),
+    descripcion: partirEnPalabras(a.descripcion),
+    entrega: [],
+    fecha: []
+  };
+  (entregasDeActividad || []).forEach(e => {
+    categorias.entrega.push(...partirEnPalabras(e.nombreUsuario));
+    categorias.entrega.push(...partirEnPalabras(e.detalleEntrega));
+  });
   [a.fechaInicio, a.fechaFin].forEach(valor => {
     const ymd = extraerYMDFront_(valor);
     if (!ymd) return;
-    palabras.add(String(ymd.dia));
-    palabras.add(String(ymd.anio));
-    palabras.add(String(ymd.mes));
-    palabras.add(String(ymd.mes).padStart(2, "0"));
-    if (ymd.mes >= 1 && ymd.mes <= 12) {
-      palabras.add(MESES[ymd.mes - 1]);
-      palabras.add(MESES_LARGOS[ymd.mes - 1]);
-    }
+    categorias.fecha.push(String(ymd.dia), String(ymd.anio), String(ymd.mes), String(ymd.mes).padStart(2, "0"));
+    if (ymd.mes >= 1 && ymd.mes <= 12) categorias.fecha.push(MESES[ymd.mes - 1], MESES_LARGOS[ymd.mes - 1]);
   });
-  return [...palabras];
+  return categorias;
 }
 // Compara un token de búsqueda contra la lista de palabras de una actividad: coincide si hay
 // match exacto, si el token es el inicio/parte de alguna palabra (para búsquedas cortas tipo
@@ -2154,10 +2186,15 @@ function tokenCoincideConPalabras_(token, palabras) {
   }
   return false;
 }
-function actividadCoincideBusqueda_(actividad, query) {
+function actividadCoincideBusqueda_(actividad, entregasDeActividad, query) {
   const tokens = query.toLowerCase().trim().split(/\s+/).filter(Boolean);
   if (tokens.length === 0) return true;
-  const palabras = palabrasBuscablesDeActividad_(actividad);
+  const porCategoria = palabrasPorCategoria_(actividad, entregasDeActividad);
+  // Solo se junta el "vocabulario" de las categorías que estén PRENDIDAS en searchFields --
+  // así, si apagás "Descripción", un token que solo aparece ahí deja de contar como match.
+  const palabras = Object.keys(searchFields)
+    .filter(cat => searchFields[cat])
+    .flatMap(cat => porCategoria[cat]);
   // Todos los tokens tienen que encontrar algo (así "mayo 2026" no trae cualquier cosa de mayo
   // de cualquier año, ni cualquier actividad de 2026 sin importar el mes).
   return tokens.every(t => tokenCoincideConPalabras_(t, palabras));
@@ -2171,8 +2208,16 @@ function renderActividades(){
     if(a.categoria==="doblaje") return filtroDoblaje;
     return true;
   });
+  // Se arma antes del filtro de búsqueda porque la categoría "Entrega" necesita, por actividad,
+  // sus propias filas de Entregas (nombreUsuario/detalleEntrega) para poder buscar ahí también.
+  const entregasPorActividad=new Map();
+  DB.entregas.forEach(e=>{
+    const k=String(e.idActividad);
+    if(!entregasPorActividad.has(k)) entregasPorActividad.set(k,[]);
+    entregasPorActividad.get(k).push(e);
+  });
   const buscando = searchQuery.trim().length > 0;
-  if(buscando) activas = activas.filter(a=>actividadCoincideBusqueda_(a, searchQuery));
+  if(buscando) activas = activas.filter(a=>actividadCoincideBusqueda_(a, entregasPorActividad.get(String(a.id)), searchQuery));
   activas=activas.slice().sort((a,b)=>compararFechaCantoFirst(a,b,"fechaFin"));
   const infoBusqueda = document.getElementById("searchResultsInfo");
   if(infoBusqueda){
@@ -2183,14 +2228,6 @@ function renderActividades(){
     feed.innerHTML=`<div class="empty-state">${buscando ? "No se encontró ninguna actividad con esa búsqueda." : `No hay actividades con este filtro. ${staffPin?'¡Agrega una!':''}`}</div>`;
     return;
   }
-  // Antes cardHTML() filtraba TODO DB.entregas por cada actividad (O(actividades x entregas)).
-  // Agrupamos una sola vez acá y le pasamos a cada card ya listo su propio grupo (O(entregas) total).
-  const entregasPorActividad=new Map();
-  DB.entregas.forEach(e=>{
-    const k=String(e.idActividad);
-    if(!entregasPorActividad.has(k)) entregasPorActividad.set(k,[]);
-    entregasPorActividad.get(k).push(e);
-  });
   // Buscando: se muestran TODOS los resultados en una sola lista plana, de cualquier año (para
   // eso es el buscador, para no tener que ir abriendo año por año). Sin búsqueda activa, se
   // mantiene el comportamiento de siempre (año actual de una, años viejos como separador tocable).
