@@ -410,7 +410,15 @@
   /* --- Modal de Minecraft (Peachesland) --- todo escopado a #minecraftModal para no afectar
      ningún otro modal ni reusar accidentalmente nombres de clase de otra sección. */
   #minecraftModal .mc-carousel{position:relative;width:100%;aspect-ratio:16/9;background:#000;border-radius:14px;overflow:hidden;margin-bottom:6px;}
-  #minecraftModal .mc-carousel img, #minecraftModal .mc-carousel video{width:100%;height:100%;object-fit:cover;display:block;}
+  /* Cada foto/video vive en su propio "slide" absoluto dentro del carrusel. El de arriba
+     (mc-pos-current) ocupa el centro; al avanzar, el nuevo entra desde la derecha (mc-pos-enter →
+     mc-pos-current) mientras el anterior se desliza afuera por la izquierda (mc-pos-exit), y
+     recién quedando fuera de la vista se saca del DOM. Es el mismo mecanismo para foto y video. */
+  #minecraftModal .mc-slide{position:absolute;inset:0;transition:transform .45s cubic-bezier(.4,0,.2,1);}
+  #minecraftModal .mc-slide img, #minecraftModal .mc-slide video{width:100%;height:100%;object-fit:cover;display:block;}
+  #minecraftModal .mc-slide.mc-pos-enter{transform:translateX(100%);}
+  #minecraftModal .mc-slide.mc-pos-current{transform:translateX(0%);}
+  #minecraftModal .mc-slide.mc-pos-exit{transform:translateX(-100%);}
   #minecraftModal .mc-carousel-placeholder{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;color:var(--text-dim);font-size:12.5px;text-align:center;padding:20px;line-height:1.5;}
   #minecraftModal .mc-progress-container{width:100%;height:4px;background:rgba(255,255,255,0.12);border-radius:2px;overflow:hidden;margin-bottom:18px;}
   #minecraftModal .mc-progress-bar{height:100%;width:0%;background:linear-gradient(90deg,var(--green),#8fe39a);}
@@ -496,6 +504,18 @@
   .toast{position:fixed;bottom:70px;left:50%;transform:translateX(-50%);background:#222;color:#fff;padding:10px 18px;border-radius:999px;font-size:13px;z-index:300;opacity:0;transition:opacity .25s;text-align:center;max-width:85vw;}
   .toast.show{opacity:1;}
   .empty-state{text-align:center;color:var(--text-dim);padding:40px 10px;font-size:14px;}
+  /* Separador de año entre actividades: es un <button> (no solo decorativo) que expande/colapsa
+     las actividades de ese año bajo demanda — ver attachYearToggleEvents(). El año en curso nunca
+     lleva rótulo (queda implícito arriba de todo, como ya era). */
+  .year-divider{display:flex;align-items:center;gap:10px;width:100%;background:none;margin:26px 2px 16px;padding:0;color:inherit;}
+  .year-divider::before,.year-divider::after{content:"";flex:1;height:1px;background:linear-gradient(90deg,transparent,rgba(239,8,112,0.35));}
+  .year-divider::after{background:linear-gradient(90deg,rgba(239,8,112,0.35),transparent);}
+  .year-divider-pill{flex-shrink:0;display:flex;align-items:center;gap:7px;font-size:12px;font-weight:800;letter-spacing:.06em;color:var(--text-dim);background:var(--card-bg-2);padding:4px 14px;border-radius:999px;border:1px solid rgba(239,8,112,0.25);transition:background .15s,color .15s;}
+  .year-divider:hover .year-divider-pill{background:rgba(239,8,112,0.18);color:var(--text);}
+  .year-divider-arrow{font-size:9px;display:inline-block;transition:transform .2s;}
+  .year-divider.open .year-divider-arrow{transform:rotate(180deg);}
+  .year-divider-count{font-weight:700;color:var(--peach-1);font-size:11px;}
+  .year-group.hidden{display:none;}
 </style>
 <script src="https://accounts.google.com/gsi/client" async defer></script>
 </head>
@@ -1857,6 +1877,10 @@ function aplicarVisibilidadMundo(){
 }
 
 /* ---------- actividades ---------- */
+// Guardados por renderActividades() para poder armar (o volver a armar) el HTML de un año recién
+// cuando el usuario lo toca — ver attachYearToggleEvents(). Solo referencias livianas, nunca HTML.
+let actividadesPorAnioCache = new Map();
+let actividadesEntregasCache = new Map();
 document.getElementById("filterCanto").onclick=()=>{ filtroCanto=!filtroCanto; syncFilterPills(); renderActividades(); };
 document.getElementById("filterDoblaje").onclick=()=>{ filtroDoblaje=!filtroDoblaje; syncFilterPills(); renderActividades(); };
 function syncFilterPills(){
@@ -1882,8 +1906,65 @@ function renderActividades(){
     if(!entregasPorActividad.has(k)) entregasPorActividad.set(k,[]);
     entregasPorActividad.get(k).push(e);
   });
-  feed.innerHTML=activas.map(a=>cardHTML(a, entregasPorActividad.get(String(a.id))||[])).join("");
-  attachCardEvents(); bindAvatarFallbacks();
+  // El feed va del más reciente al más viejo (compararFechaCantoFirst arriba). El año en curso se
+  // renderiza siempre de una; las actividades de años anteriores NO se meten al DOM todavía —
+  // solo se agrupan en memoria (actividadesPorAnioCache, son solo referencias a lo que ya estaba
+  // en DB.actividades, prácticamente gratis) y se muestra un separador tocable por año. El HTML
+  // pesado (cards con imágenes, acordeones, tablas de entregas) recién se genera cuando tocás ese
+  // separador — y si lo volvés a cerrar, ese HTML se destruye (mcYearToggle lo saca del DOM), no
+  // queda "cacheado" ahí ocupando memoria/DOM. Si lo reabrís, se vuelve a generar al toque.
+  const anioActual = new Date().getFullYear();
+  const actuales = [];
+  const porAnio = new Map();
+  activas.forEach(a=>{
+    const anio = anioDeFecha(a.fechaFin);
+    if(!anio || anio===anioActual){ actuales.push(a); return; }
+    if(!porAnio.has(anio)) porAnio.set(anio, []);
+    porAnio.get(anio).push(a);
+  });
+  let html = actuales.map(a=>cardHTML(a, entregasPorActividad.get(String(a.id))||[])).join("");
+  porAnio.forEach((lista, anio)=>{
+    html += `<button type="button" class="year-divider" data-year-toggle="${anio}">
+      <span class="year-divider-pill"><span class="year-divider-arrow">▼</span><span>${anio}</span><span class="year-divider-count">${lista.length}</span></span>
+    </button>
+    <div class="year-group hidden" id="year-group-${anio}"></div>`;
+  });
+  feed.innerHTML = html;
+  actividadesPorAnioCache = porAnio;
+  actividadesEntregasCache = entregasPorActividad;
+  attachCardEvents(); bindAvatarFallbacks(); attachYearToggleEvents();
+}
+// Extrae el año de una fecha "YYYY-MM-DD..." leyendo el string directo (mismo criterio que
+// fmtFecha) para no toparse con el corrimiento de día/año que da new Date() con timezone local.
+function attachYearToggleEvents(){
+  document.querySelectorAll("[data-year-toggle]").forEach(btn=>{
+    btn.onclick=()=>{
+      const anio = parseInt(btn.dataset.yearToggle, 10);
+      const grupo = document.getElementById("year-group-"+anio);
+      const yaAbierto = btn.classList.contains("open");
+      if(yaAbierto){
+        // Se cierra: se tira el HTML ya generado (no se queda cacheado en el DOM).
+        grupo.innerHTML = "";
+        grupo.classList.add("hidden");
+        btn.classList.remove("open");
+      } else {
+        const lista = actividadesPorAnioCache.get(anio) || [];
+        grupo.innerHTML = lista.map(a=>cardHTML(a, actividadesEntregasCache.get(String(a.id))||[])).join("");
+        grupo.classList.remove("hidden");
+        btn.classList.add("open");
+        attachCardEvents(); bindAvatarFallbacks(); // recién ahora hay cards nuevas que necesitan sus handlers
+      }
+    };
+  });
+}
+// Extrae el año de una fecha "YYYY-MM-DD..." leyendo el string directo (mismo criterio que
+// fmtFecha) para no toparse con el corrimiento de día/año que da new Date() con timezone local.
+function anioDeFecha(f){
+  if(!f) return null;
+  const m=String(f).match(/^(\d{4})-\d{2}-\d{2}/);
+  if(m) return parseInt(m[1],10);
+  const d=new Date(f);
+  return isNaN(d.getTime()) ? null : d.getFullYear();
 }
 
 function cardHTML(a, entregasDeEsta){
@@ -3377,42 +3458,64 @@ async function abrirMinecraftModal(){
 
 function mcStartCarousel(){
   mcStopCarousel();
+  const cont = document.getElementById("mcCarouselContainer");
   if(!mcCarouselMedia.length){
-    document.getElementById("mcCarouselContainer").innerHTML = '<div class="mc-carousel-placeholder">Todavía no hay fotos/video del server 🍑</div>';
+    cont.innerHTML = '<div class="mc-carousel-placeholder">Todavía no hay fotos/video del server 🍑</div>';
     return;
   }
-  const cont = document.getElementById("mcCarouselContainer");
+  cont.querySelectorAll(".mc-carousel-placeholder").forEach(p=>p.remove());
   const barra = document.getElementById("mcProgressBar");
   const media = mcCarouselMedia[mcIndex];
   barra.style.transition = "none";
   barra.style.width = "0%";
 
+  // El slide que ya estaba mostrándose (si hay uno) es el que va a deslizarse afuera hacia la
+  // izquierda cuando entre el nuevo.
+  const anterior = cont.querySelector(".mc-slide.mc-pos-current");
+  const nuevo = document.createElement("div");
+  nuevo.className = "mc-slide mc-pos-enter";
+  nuevo.innerHTML = media.type === "video"
+    ? '<video class="mc-slide-video" src="'+media.src+'" autoplay muted playsinline></video>'
+    : '<img src="'+media.src+'" alt="Vista del servidor Peachesland">';
+  cont.appendChild(nuevo);
+  void nuevo.offsetWidth; // fuerza reflow para que la transición de entrada sí se anime
+
+  requestAnimationFrame(()=>{
+    nuevo.classList.remove("mc-pos-enter");
+    nuevo.classList.add("mc-pos-current");
+    if(anterior){
+      anterior.classList.remove("mc-pos-current");
+      anterior.classList.add("mc-pos-exit");
+      const viejoVid = anterior.querySelector(".mc-slide-video");
+      if(viejoVid) viejoVid.pause();
+      setTimeout(()=>anterior.remove(), 480); // se saca del DOM recién cuando termina de deslizarse afuera
+    }
+  });
+
   if(media.type === "video"){
-    cont.innerHTML = '<video id="mcVideo" src="'+media.src+'" autoplay muted playsinline></video>';
-    const vid = document.getElementById("mcVideo");
+    const vid = nuevo.querySelector(".mc-slide-video");
     vid.addEventListener("timeupdate", ()=>{
       if(!vid.duration) return;
       barra.style.transition = "none";
       barra.style.width = ((vid.currentTime/vid.duration)*100) + "%";
     });
     vid.onended = ()=>mcNextMedia();
-    // Si el archivo de video no existe todavía (carpeta ImagenesMinecraft vacía / nombre
-    // distinto), no nos quedamos trabados: pasamos a lo siguiente igual que con una foto rota.
+    // Si el archivo de video no carga (ej. lo borraron de la carpeta), no nos quedamos trabados:
+    // pasamos a lo siguiente igual que con una foto rota.
     vid.onerror = ()=>mcNextMedia();
   } else {
-    cont.innerHTML = '<img src="'+media.src+'" alt="Vista del servidor Peachesland" onerror="mcNextMedia()">';
     void barra.offsetWidth; // fuerza reflow para que la transición de abajo sí se anime
     barra.style.transition = "width "+MC_DURACION_FOTO+"ms linear";
     barra.style.width = "100%";
     mcTimer = setTimeout(mcNextMedia, MC_DURACION_FOTO);
+    nuevo.querySelector("img").onerror = ()=>mcNextMedia();
   }
 }
 
 function mcStopCarousel(){
   clearTimeout(mcTimer);
   mcTimer = null;
-  const vid = document.getElementById("mcVideo");
-  if(vid) vid.pause();
+  document.querySelectorAll("#mcCarouselContainer .mc-slide-video").forEach(v=>v.pause());
 }
 
 function mcNextMedia(){
