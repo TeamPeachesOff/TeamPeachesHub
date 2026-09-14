@@ -80,11 +80,7 @@
     ::-webkit-scrollbar-thumb{background:rgba(255,255,255,0.15);border-radius:99px;}
     ::-webkit-scrollbar-thumb:hover{background:rgba(255,255,255,0.35);}
   }
-  /* El scroll de la página principal (html) no engancha de forma confiable el estilo custom
-     en Edge, así que en vez de pelear con eso lo ocultamos por completo: sigue scrolleando
-     igual con mouse/touch/teclado, solo ya no se dibuja ninguna barra (ni la fea default). */
-  html{overflow-y:auto;scrollbar-width:none;-ms-overflow-style:none;}
-  html::-webkit-scrollbar{display:none;width:0;height:0;}
+  html{overflow-y:auto;}
   body{margin:0;font-family:'Segoe UI',Arial,sans-serif;background:linear-gradient(160deg,var(--bg),#241228 60%,#170b1c);color:var(--text);min-height:100vh;}
   a{color:inherit;text-decoration:none;}
   /* "El botón solo funciona si lo toco en una parte específica" — la causa típica de esto en móvil
@@ -556,6 +552,10 @@
   .assign-actions{display:flex;gap:8px;margin-top:14px;}
   .assign-actions button{flex:1;}
   .assign-skip-btn{background:var(--card-bg-2);color:var(--text-dim);}
+
+  /* ---------- Botón flotante "subir" (por tramos: header de año en año) ---------- */
+  .back-to-top-btn{position:fixed;right:16px;bottom:88px;width:48px;height:48px;border-radius:50%;background:linear-gradient(90deg,var(--peach-2),var(--peach-1));color:#fff;font-size:19px;display:flex;align-items:center;justify-content:center;box-shadow:0 6px 18px rgba(239,8,112,0.35);z-index:150;border:none;transition:transform .15s ease,opacity .15s ease;}
+  .back-to-top-btn:active{transform:scale(0.92);}
 </style>
 <script src="https://accounts.google.com/gsi/client" async defer></script>
 </head>
@@ -697,6 +697,7 @@
 <div id="staffStatusBadge">🛠️ Modo Staff activo</div>
 <div id="memberStatusBadge" title="Modo Miembro (solo lectura)">🍑</div>
 <div class="toast" id="toast"></div>
+<button type="button" id="backToTopBtn" class="back-to-top-btn hidden" aria-label="Subir">⬆️</button>
 
 <!-- NUEVO (corregido): aviso flotante que aparece solo cuando nadie inició sesión (nivel
      "publico"), para la gente que no leyó los anuncios y no sabe que existe el Modo Miembro. Si
@@ -2044,6 +2045,35 @@ function anioDeFecha(f){
   const d=new Date(f);
   return isNaN(d.getTime()) ? null : d.getFullYear();
 }
+
+/* ---------- botón flotante "subir" ----------
+   Aparece al bajar unos scrolls en Actividades. En vez de ir directo a la punta, sube de a un
+   tramo por toque: primero al separador de año (▼ 2024, ▼ 2025...) más cercano arriba de donde
+   estás, y si volvés a tocarlo desde ahí, al separador de ANTES (año más reciente), hasta llegar
+   arriba del todo (año actual). Así en un feed largo no perdés de referencia en qué año estabas. */
+const BACK_TO_TOP_SCROLL_THRESHOLD = 600; // px bajados desde arriba para que el botón aparezca
+let backToTopScrollTicking = false;
+function actualizarVisibilidadBackToTop(){
+  const btn=document.getElementById("backToTopBtn");
+  const enActividades=!document.getElementById("viewActividades").classList.contains("hidden");
+  btn.classList.toggle("hidden", !enActividades || window.scrollY < BACK_TO_TOP_SCROLL_THRESHOLD);
+}
+window.addEventListener("scroll", ()=>{
+  if(backToTopScrollTicking) return;
+  backToTopScrollTicking=true;
+  requestAnimationFrame(()=>{ actualizarVisibilidadBackToTop(); backToTopScrollTicking=false; });
+}, {passive:true});
+document.getElementById("backToTopBtn").onclick=()=>{
+  const paradas=[0, ...[...document.querySelectorAll(".year-divider")].map(el=>el.getBoundingClientRect().top+window.scrollY)];
+  const actual=window.scrollY;
+  // La parada de destino es la más cercana que quede ARRIBA de donde estás ahora (con un margen
+  // de 16px para que, si ya estás parado justo en un separador, el toque te mande a la parada de
+  // antes en vez de no moverse).
+  const candidatas=paradas.filter(y=>y < actual-16);
+  const destino=candidatas.length ? Math.max(...candidatas) : 0;
+  window.scrollTo({top:destino, behavior:"smooth"});
+};
+
 
 function cardHTML(a, entregasDeEsta){
   const estado=estadoActividad(a.fechaFin);
@@ -4060,6 +4090,7 @@ function switchTab(tab){
   document.getElementById("viewMundo").classList.add("hidden");
   document.getElementById("viewGoogleLogin").classList.add("hidden");
   document.getElementById("viewMemberPin").classList.add("hidden");
+  actualizarVisibilidadBackToTop();
 }
 document.getElementById("hamburgerBtn").onclick=()=>{ document.getElementById("drawer").classList.add("open"); document.getElementById("drawerOverlay").style.display="block"; };
 document.getElementById("drawerOverlay").onclick=closeDrawer;
@@ -4143,7 +4174,7 @@ document.getElementById("miembrosDrawerBtn").onclick=()=>{
 };
 function mostrarViewMemberPin(){
   document.querySelectorAll(".tab-btn").forEach(b=>b.classList.remove("active"));
-  document.getElementById("viewActividades").classList.add("hidden"); document.getElementById("viewAnuario").classList.add("hidden"); document.getElementById("viewMiembros").classList.add("hidden"); document.getElementById("viewMundo").classList.add("hidden"); document.getElementById("viewGoogleLogin").classList.add("hidden");
+  document.getElementById("viewActividades").classList.add("hidden"); document.getElementById("viewAnuario").classList.add("hidden"); document.getElementById("viewMiembros").classList.add("hidden"); document.getElementById("viewMundo").classList.add("hidden"); document.getElementById("viewGoogleLogin").classList.add("hidden"); actualizarVisibilidadBackToTop();
   document.getElementById("viewMemberPin").classList.remove("hidden");
   document.getElementById("memberPinMsg").textContent="";
   document.getElementById("memberPinInput").value="";
@@ -4199,7 +4230,7 @@ document.getElementById("avisoMiembroSiBtn").onclick = ()=>{
 };
 function mostrarViewMiembros(){
   document.querySelectorAll(".tab-btn").forEach(b=>b.classList.remove("active"));
-  document.getElementById("viewActividades").classList.add("hidden"); document.getElementById("viewAnuario").classList.add("hidden"); document.getElementById("viewGoogleLogin").classList.add("hidden"); document.getElementById("viewMundo").classList.add("hidden"); document.getElementById("viewMemberPin").classList.add("hidden");
+  document.getElementById("viewActividades").classList.add("hidden"); document.getElementById("viewAnuario").classList.add("hidden"); document.getElementById("viewGoogleLogin").classList.add("hidden"); document.getElementById("viewMundo").classList.add("hidden"); document.getElementById("viewMemberPin").classList.add("hidden"); actualizarVisibilidadBackToTop();
   document.getElementById("viewMiembros").classList.remove("hidden");
   document.getElementById("memberToolsRow1").classList.toggle("hidden", !staffPin);
   document.getElementById("memberToolsRow2").classList.toggle("hidden", !staffPin);
@@ -4215,7 +4246,7 @@ document.getElementById("staffDrawerBtn").onclick=()=>{
 };
 function mostrarViewGoogleLogin(){
   document.querySelectorAll(".tab-btn").forEach(b=>b.classList.remove("active"));
-  document.getElementById("viewActividades").classList.add("hidden"); document.getElementById("viewAnuario").classList.add("hidden"); document.getElementById("viewMiembros").classList.add("hidden"); document.getElementById("viewMundo").classList.add("hidden"); document.getElementById("viewMemberPin").classList.add("hidden");
+  document.getElementById("viewActividades").classList.add("hidden"); document.getElementById("viewAnuario").classList.add("hidden"); document.getElementById("viewMiembros").classList.add("hidden"); document.getElementById("viewMundo").classList.add("hidden"); document.getElementById("viewMemberPin").classList.add("hidden"); actualizarVisibilidadBackToTop();
   document.getElementById("viewGoogleLogin").classList.remove("hidden");
   document.getElementById("googleLoginMsg").textContent="";
   renderizarBotonGoogle();
