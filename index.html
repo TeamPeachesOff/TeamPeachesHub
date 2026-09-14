@@ -534,6 +534,28 @@
   .year-divider.open .year-divider-arrow{transform:rotate(180deg);}
   .year-divider-count{font-weight:700;color:var(--peach-1);font-size:11px;}
   .year-group.hidden{display:none;}
+
+  /* ---------- Asignar Imágenes (modo staff) ---------- */
+  .assign-img-btn{display:block;width:100%;margin:26px 0 10px;padding:16px;border-radius:16px;background:linear-gradient(90deg,var(--peach-2),var(--peach-1));color:#fff;font-weight:800;font-size:15px;text-align:center;box-shadow:0 6px 18px rgba(239,8,112,0.25);}
+  .assign-cat-choice{display:flex;flex-direction:column;gap:10px;margin-top:14px;}
+  .assign-cat-choice button{padding:16px;border-radius:14px;background:var(--card-bg-2);color:var(--text);font-weight:800;font-size:15px;}
+  .assign-nav{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:14px;}
+  .assign-nav button{flex-shrink:0;width:40px;height:40px;border-radius:12px;background:var(--card-bg-2);color:var(--text);font-weight:700;font-size:16px;}
+  .assign-nav button:disabled{opacity:.35;}
+  .assign-counter{font-weight:800;color:var(--peach-2);font-size:14px;text-align:center;flex:1;}
+  .assign-progress{font-size:11.5px;color:var(--text-dim);text-align:center;margin-bottom:14px;}
+  .assign-card{background:var(--card-bg-2);border-radius:16px;padding:14px;margin-bottom:14px;}
+  .assign-card-img{width:100%;aspect-ratio:1/1;max-height:220px;border-radius:12px;overflow:hidden;background:var(--card-bg);display:flex;align-items:center;justify-content:center;margin-bottom:12px;}
+  .assign-card-img img{width:100%;height:100%;object-fit:contain;}
+  .assign-card-img .assign-noimg{color:var(--text-dim);font-size:13px;text-align:center;padding:10px;}
+  .assign-card-title{font-weight:800;font-size:15.5px;margin-bottom:4px;}
+  .assign-card-dates{font-size:12.5px;color:var(--text-dim);margin-bottom:8px;}
+  .assign-dropzone{border:2px dashed rgba(255,255,255,0.18);border-radius:14px;padding:22px 12px;text-align:center;color:var(--text-dim);font-size:13px;font-weight:600;transition:background .15s,border-color .15s;cursor:pointer;}
+  .assign-dropzone.dragover{background:rgba(239,8,112,0.12);border-color:var(--peach-2);color:var(--text);}
+  .assign-status{text-align:center;font-size:12.5px;margin-top:8px;min-height:16px;color:var(--text-dim);}
+  .assign-actions{display:flex;gap:8px;margin-top:14px;}
+  .assign-actions button{flex:1;}
+  .assign-skip-btn{background:var(--card-bg-2);color:var(--text-dim);}
 </style>
 <script src="https://accounts.google.com/gsi/client" async defer></script>
 </head>
@@ -594,6 +616,7 @@
       <button class="pill-toggle on" id="filterDoblaje">🎙️ Doblaje</button>
     </div>
     <div id="actividadesFeed"></div>
+    <button type="button" id="assignImagesBtn" class="assign-img-btn hidden">🖼️ Asignar Imágenes</button>
   </section>
 
   <section id="viewAnuario" class="hidden"><div id="anuarioGrid"></div></section>
@@ -847,6 +870,44 @@
       <div class="form-group"><label>Enlace</label><input autocomplete="off" type="text" id="en_link"></div>
       <div class="modal-actions"><button type="submit" class="btn-primary">Guardar</button></div>
     </form>
+  </div>
+</div>
+
+<!-- Asignar Imágenes (modo staff): primero elegís Canto o Doblaje -->
+<div class="modal-overlay" id="asignarImgCategoriaModal" style="z-index:280;">
+  <div class="modal-box"><button class="modal-close" data-close="asignarImgCategoriaModal">✕</button>
+    <h3>🖼️ Asignar Imágenes</h3>
+    <p style="color:var(--text-dim);font-size:13px;">Elegí qué categoría vas a trabajar. Cada imagen que subas se guarda al toque, así que podés cerrar en cualquier momento sin perder lo ya hecho.</p>
+    <div class="assign-cat-choice">
+      <button type="button" data-assign-cat="canto">🎤 Asignar Canto</button>
+      <button type="button" data-assign-cat="doblaje">🎙️ Asignar Doblaje</button>
+    </div>
+  </div>
+</div>
+
+<!-- Asignar Imágenes (modo staff): tarjeta por tarjeta -->
+<div class="modal-overlay" id="asignarImgModal" style="z-index:280;">
+  <div class="modal-box"><button class="modal-close" data-close="asignarImgModal">✕</button>
+    <h3 id="asignarImgTitle">🖼️ Asignar Imágenes</h3>
+    <div class="assign-nav">
+      <button type="button" id="asignarImgPrevBtn">◀</button>
+      <div class="assign-counter" id="asignarImgCounter">1 de 1</div>
+      <button type="button" id="asignarImgNextBtn">▶</button>
+    </div>
+    <div class="assign-progress" id="asignarImgProgress"></div>
+    <div class="assign-card">
+      <div class="assign-card-img" id="asignarImgPreviewWrap"><div class="assign-noimg">Sin imagen todavía</div></div>
+      <div class="assign-card-title" id="asignarImgCardTitle"></div>
+      <div class="assign-card-dates" id="asignarImgCardDates"></div>
+      <div id="asignarImgCardBadges"></div>
+    </div>
+    <input autocomplete="off" type="file" id="asignarImgFile" accept="image/*" class="hidden">
+    <div class="assign-dropzone" id="asignarImgDropzone">📤 Tocá para elegir una imagen<br>o arrastrala hasta acá</div>
+    <div class="assign-status" id="asignarImgStatus"></div>
+    <div class="assign-actions">
+      <button type="button" class="btn-small assign-skip-btn" id="asignarImgSkipBtn">Saltar ⏭</button>
+      <button type="button" class="btn-small btn-primary" id="asignarImgDoneBtn">✅ Listo por ahora</button>
+    </div>
   </div>
 </div>
 
@@ -3421,6 +3482,10 @@ function closeModal(id){
   // El carrusel de Minecraft corre timers propios (y puede haber un <video> reproduciéndose con
   // su audio); si no se frena acá, seguiría corriendo en segundo plano con el modal ya cerrado.
   if(id==="minecraftModal") mcStopCarousel();
+  // Las imágenes asignadas ya se guardaron una por una (mutando el mismo objeto de DB.actividades),
+  // así que al cerrar solo hace falta volver a pintar el feed para que se vean — sin esperar un
+  // roundtrip nuevo al servidor.
+  if(id==="asignarImgModal") renderActividades();
 }
 // ================= Minecraft (Peachesland) - modal social ==================
 // Carrusel mixto foto/video: cada foto dura MC_DURACION_FOTO ms; un video corre hasta que
@@ -3748,6 +3813,132 @@ document.getElementById("activityForm").addEventListener("submit", async(e)=>{
   }
 });
 
+/* ---------- Asignar Imágenes (modo staff) ----------
+   Flujo tarjeta por tarjeta: elegís Canto o Doblaje, y vas pasando cada actividad de esa
+   categoría. Cada imagen que soltás/elegís se sube a GitHub (uploadImage, la misma acción que
+   ya usa el form normal) y se guarda al toque contra editActividad — así "guardar a medias" es
+   simplemente cerrar el modal cuando quieras: lo ya subido queda guardado, el resto sigue
+   pendiente para la próxima vez. No hace falta ningún cambio en el .gs. */
+let asignarImgLista=[];
+let asignarImgIndex=0;
+let asignarImgCategoria=null;
+let asignarImgSubiendo=false;
+
+document.getElementById("assignImagesBtn").onclick=()=>openModal("asignarImgCategoriaModal");
+document.querySelectorAll("[data-assign-cat]").forEach(btn=>{
+  btn.onclick=()=>{
+    closeModal("asignarImgCategoriaModal");
+    iniciarAsignarImagenes(btn.dataset.assignCat);
+  };
+});
+
+function iniciarAsignarImagenes(categoria){
+  asignarImgCategoria=categoria;
+  // Las que no tienen imagen todavía van primero (es el trabajo pendiente real); el resto queda
+  // después por si querés repasar/corregir alguna ya puesta. Dentro de cada grupo, más reciente primero.
+  const todas=DB.actividades.filter(a=>a.categoria===categoria);
+  const sinImagen=todas.filter(a=>!a.imagenUrl).sort((a,b)=>compararFechaCantoFirst(a,b,"fechaFin"));
+  const conImagen=todas.filter(a=>a.imagenUrl).sort((a,b)=>compararFechaCantoFirst(a,b,"fechaFin"));
+  asignarImgLista=[...sinImagen,...conImagen];
+  if(!asignarImgLista.length){ toast("No hay actividades de "+(categoria==="canto"?"Canto":"Doblaje")+" todavía"); return; }
+  asignarImgIndex=0;
+  document.getElementById("asignarImgTitle").textContent=categoria==="canto"?"🎤 Asignar Imágenes — Canto":"🎙️ Asignar Imágenes — Doblaje";
+  openModal("asignarImgModal");
+  renderAsignarImgCard();
+}
+
+function renderAsignarImgCard(){
+  const a=asignarImgLista[asignarImgIndex];
+  const total=asignarImgLista.length;
+  const pendientes=asignarImgLista.filter(x=>!x.imagenUrl).length;
+  document.getElementById("asignarImgCounter").textContent=`${asignarImgIndex+1} de ${total}`;
+  document.getElementById("asignarImgProgress").textContent=`${pendientes} sin imagen todavía`;
+  document.getElementById("asignarImgPrevBtn").disabled=asignarImgIndex<=0;
+  document.getElementById("asignarImgNextBtn").disabled=asignarImgIndex>=total-1;
+  document.getElementById("asignarImgCardTitle").textContent=a.titulo||"(sin título)";
+  document.getElementById("asignarImgCardDates").textContent=`${fmtFecha(a.fechaInicio)} → ${fmtFecha(a.fechaFin)}`;
+  document.getElementById("asignarImgCardBadges").innerHTML=`<span class="status-tag ${estadoActividad(a.fechaFin).clase}">${estadoActividad(a.fechaFin).texto}</span> ${participacionTag(a.participacion)}`;
+  document.getElementById("asignarImgPreviewWrap").innerHTML=a.imagenUrl
+    ? `<img src="${escAttr(a.imagenUrl)}" alt="">`
+    : `<div class="assign-noimg">Sin imagen todavía</div>`;
+  document.getElementById("asignarImgStatus").textContent="";
+  document.getElementById("asignarImgFile").value="";
+}
+
+// Payload igual al que arma el form normal de editar actividad (mismos campos, mismas
+// conversiones de fecha), pero leído directo del objeto de la actividad en vez del DOM —
+// así no hace falta abrir el form real para reusar exactamente la misma lógica de guardado.
+function datosActividadParaGuardar(a, nuevaImagenUrl){
+  return {
+    id: a.id,
+    titulo: a.titulo||"",
+    imagenUrl: nuevaImagenUrl,
+    descripcion: a.descripcion||"",
+    streamNombre: a.streamNombre||"",
+    streamFecha: toDateInput(a.streamFecha),
+    streamHora: toTimeHHMM(a.streamHora),
+    wishlist: a.wishlist||"",
+    fechaInicio: toDateInput(a.fechaInicio),
+    fechaFin: toDateInput(a.fechaFin),
+    linkForms: a.linkForms||"",
+    linkUnirse: a.linkUnirse||"",
+    linkScript: a.linkScript||"",
+    categoria: a.categoria||"",
+    participacion: a.participacion||"opcional",
+    ganadorCanto: a.ganadorCanto||"",
+    ganadorDoblaje: a.ganadorDoblaje||"",
+    mencionesHonorificas: a.mencionesHonorificas||"",
+    botonesPersonalizados: a.botonesPersonalizados||"[]",
+    enviarDiscordAnuncio: false,
+  };
+}
+
+async function asignarImgSubirArchivo(file){
+  if(asignarImgSubiendo) return;
+  if(!file || !file.type || !file.type.startsWith("image/")){ toast("Eso no es una imagen ❌"); return; }
+  asignarImgSubiendo=true;
+  const a=asignarImgLista[asignarImgIndex];
+  const st=document.getElementById("asignarImgStatus");
+  st.textContent="Subiendo imagen...";
+  try{
+    const base64Data=await fileToBase64(file);
+    const up=await apiPost({action:"uploadImage", filename:file.name, base64Data},"Subiendo imagen...");
+    if(!up.ok){ st.textContent="Error al subir: "+(up.error||""); asignarImgSubiendo=false; return; }
+    st.textContent="Guardando...";
+    const data=datosActividadParaGuardar(a, up.url);
+    const r=await apiPost({action:"editActividad", data},"Guardando actividad...");
+    if(!r.ok){ st.textContent="Error al guardar: "+(r.error||""); asignarImgSubiendo=false; return; }
+    // Reflejamos el cambio en memoria (DB.actividades y la lista de este recorrido) para no
+    // tener que recargar todo del servidor entre tarjeta y tarjeta.
+    a.imagenUrl=up.url;
+    st.textContent="Guardada ✅";
+    asignarImgSubiendo=false;
+    setTimeout(()=>{
+      if(asignarImgIndex<asignarImgLista.length-1){ asignarImgIndex++; renderAsignarImgCard(); }
+      else{ st.textContent="¡Listo! Repasaste todas 🎉"; document.getElementById("asignarImgProgress").textContent=`${asignarImgLista.filter(x=>!x.imagenUrl).length} sin imagen todavía`; }
+    }, 500);
+  }catch(err){
+    st.textContent="Error inesperado: "+(err.message||err);
+    asignarImgSubiendo=false;
+  }
+}
+
+document.getElementById("asignarImgDropzone").onclick=()=>document.getElementById("asignarImgFile").click();
+document.getElementById("asignarImgFile").addEventListener("change", e=>{
+  const file=e.target.files[0]; if(file) asignarImgSubirArchivo(file);
+});
+const asignarImgDropzoneEl=document.getElementById("asignarImgDropzone");
+["dragenter","dragover"].forEach(evt=>asignarImgDropzoneEl.addEventListener(evt, e=>{ e.preventDefault(); e.stopPropagation(); asignarImgDropzoneEl.classList.add("dragover"); }));
+["dragleave","drop"].forEach(evt=>asignarImgDropzoneEl.addEventListener(evt, e=>{ e.preventDefault(); e.stopPropagation(); asignarImgDropzoneEl.classList.remove("dragover"); }));
+asignarImgDropzoneEl.addEventListener("drop", e=>{
+  const file=e.dataTransfer && e.dataTransfer.files && e.dataTransfer.files[0];
+  if(file) asignarImgSubirArchivo(file);
+});
+document.getElementById("asignarImgPrevBtn").onclick=()=>{ if(asignarImgIndex>0){ asignarImgIndex--; renderAsignarImgCard(); } };
+document.getElementById("asignarImgNextBtn").onclick=()=>{ if(asignarImgIndex<asignarImgLista.length-1){ asignarImgIndex++; renderAsignarImgCard(); } };
+document.getElementById("asignarImgSkipBtn").onclick=()=>{ if(asignarImgIndex<asignarImgLista.length-1){ asignarImgIndex++; renderAsignarImgCard(); } else toast("Ya es la última"); };
+document.getElementById("asignarImgDoneBtn").onclick=async()=>{ closeModal("asignarImgModal"); await cargarDatos(); };
+
 /* ---------- form entrega ---------- */
 function openEntregaForm(idActividad){
   document.getElementById("en_idActividad").value=idActividad;
@@ -4064,6 +4255,7 @@ async function manejarRespuestaGoogle(response){
     toast("Modo Staff activado 🛠️");
     document.getElementById("staffStatusBadge").style.display="block";
     document.getElementById("addActBtn").classList.remove("hidden");
+    document.getElementById("assignImagesBtn").classList.remove("hidden");
     switchTab("actividades");
     await cargarDatos(); // vuelve a pedir los datos, ahora con el token, para traer todo completo
     await cargarEnlacesStaff(); // recién ahora, con la sesión ya validada, se piden los enlaces privados
@@ -4081,6 +4273,7 @@ async function cerrarSesionActual(mensaje){
   document.getElementById("staffStatusBadge").style.display="none";
   document.getElementById("memberStatusBadge").style.display="none";
   document.getElementById("addActBtn").classList.add("hidden");
+  document.getElementById("assignImagesBtn").classList.add("hidden");
   document.getElementById("memberToolsRow1").classList.add("hidden");
   document.getElementById("memberToolsRow2").classList.add("hidden");
   document.getElementById("memberToolsRow3").classList.add("hidden");
@@ -4141,6 +4334,7 @@ function resaltarIndicacion(descripcionEscapada){
   if (nivel === "staff") {
     document.getElementById("staffStatusBadge").style.display = "block";
     document.getElementById("addActBtn").classList.remove("hidden");
+    document.getElementById("assignImagesBtn").classList.remove("hidden");
     await cargarEnlacesStaff();
   } else if (nivel === "miembro") {
     document.getElementById("memberStatusBadge").style.display = "flex";
