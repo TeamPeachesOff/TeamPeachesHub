@@ -152,6 +152,18 @@
   .header-left{display:flex;align-items:center;gap:12px;}
   #hamburgerBtn{background:none;font-size:26px;color:var(--peach-1);padding:4px 8px;border-radius:8px;}
   #hamburgerBtn:hover{background:rgba(239,8,112,0.15);}
+  .header-right{display:flex;align-items:center;gap:8px;}
+  /* Chip redondo, mismo color que el ☰ (var(--peach-1)), del lado opuesto del header. */
+  .icon-chip-btn{background:none;font-size:17px;color:var(--peach-1);width:34px;height:34px;border-radius:999px;display:flex;align-items:center;justify-content:center;flex-shrink:0;}
+  .icon-chip-btn:hover,.icon-chip-btn.active{background:rgba(239,8,112,0.15);}
+  /* ---------- Barra de búsqueda de actividades ---------- */
+  .search-bar{display:flex;align-items:center;gap:8px;background:var(--card-bg);border:1px solid rgba(239,8,112,0.25);border-radius:999px;padding:8px 14px;margin-bottom:12px;}
+  .search-bar-icon{font-size:14px;opacity:0.7;flex-shrink:0;}
+  .search-bar input{flex:1;background:none;border:none;color:var(--text);font-size:14px;min-width:0;}
+  .search-bar input:focus{outline:none;}
+  .search-bar input::placeholder{color:var(--text-dim);}
+  .search-bar #searchClearBtn{background:none;color:var(--text-dim);font-size:14px;padding:2px 4px;flex-shrink:0;}
+  .search-results-info{font-size:12.5px;color:var(--text-dim);margin:-6px 0 10px 4px;}
   .logo{font-weight:800;font-size:19px;letter-spacing:0.5px;background:linear-gradient(90deg,var(--peach-2),#ffffff);-webkit-background-clip:text;background-clip:text;color:transparent;}
   .tabs{display:flex;gap:6px;background:var(--card-bg);padding:4px;border-radius:999px;}
   .tab-btn{padding:8px 16px;border-radius:999px;background:none;color:var(--text-dim);font-weight:600;font-size:14px;}
@@ -580,7 +592,14 @@
   .import-grupo-select{width:100%;padding:9px 10px;border-radius:10px;background:var(--card-bg);color:var(--text);border:1px solid rgba(255,255,255,0.12);font-size:13px;}
 
   /* ---------- Botón flotante "subir" (por tramos: header de año en año) ---------- */
-  .back-to-top-btn{position:fixed;right:16px;bottom:88px;width:48px;height:48px;border-radius:50%;background:linear-gradient(90deg,var(--peach-2),var(--peach-1));color:#fff;font-size:19px;display:flex;align-items:center;justify-content:center;box-shadow:0 6px 18px rgba(239,8,112,0.35);z-index:150;border:none;transition:transform .15s ease,opacity .15s ease;}
+  /* Tamaño 10% más chico (48px->43px, 19px->17px de glifo) y con una variante ".elevado" que sube
+     el botón cuando el badge de Staff (#staffStatusBadge, misma esquina) está visible, para que no
+     se encimen. Sin esa variante, se queda centrado en su esquina de siempre (bottom:16px, a la par
+     del right:16px). El span interno de la flecha se sube un par de px porque el glifo "▲" de por
+     sí no queda ópticamente centrado en su línea (le sobra aire abajo). */
+  .back-to-top-btn{position:fixed;right:16px;bottom:16px;width:43px;height:43px;border-radius:50%;background:linear-gradient(90deg,var(--peach-2),var(--peach-1));color:#fff;font-size:17px;display:flex;align-items:center;justify-content:center;box-shadow:0 6px 18px rgba(239,8,112,0.35);z-index:150;border:none;transition:transform .15s ease,opacity .15s ease,bottom .2s ease;}
+  .back-to-top-btn span{display:block;transform:translateY(-2px);}
+  .back-to-top-btn.elevado{bottom:64px;}
   .back-to-top-btn:active{transform:scale(0.92);}
 </style>
 <script src="https://accounts.google.com/gsi/client" async defer></script>
@@ -594,7 +613,14 @@
   <div id="topProgressBar"></div>
   <div class="header-inner">
     <div class="header-left"><button id="hamburgerBtn">☰</button><div class="logo">🍑 Peaches Hub</div></div>
-    <div class="tabs"><button class="tab-btn active" data-tab="actividades">Actividades</button><button class="tab-btn" data-tab="anuario">Anuario</button></div>
+    <!-- Buscador: por defecto va a la DERECHA de los tabs (mismo lado opuesto al ☰). Para pasarlo
+         a la IZQUIERDA de "Actividades" en vez de la derecha, solo hay que mover este <button
+         id="searchToggleBtn"> ANTES del <div class="tabs"> de la línea de abajo -- el CSS
+         (.header-right{display:flex}) no depende del orden. -->
+    <div class="header-right">
+      <div class="tabs"><button class="tab-btn active" data-tab="actividades">Actividades</button><button class="tab-btn" data-tab="anuario">Anuario</button></div>
+      <button type="button" id="searchToggleBtn" class="icon-chip-btn" aria-label="Buscar actividades">🔍</button>
+    </div>
   </div>
 </header>
 
@@ -638,6 +664,12 @@
   <section id="viewActividades">
     <button id="addActBtn" class="hidden">(+) Añadir Actividad</button>
     <a class="hidden pill-toggle regalito-btn" id="regalitoBtn" target="_blank" rel="noopener" href="https://forms.gle/FgSeqD33wE1R8Y8r6">🎁 Enviar regalito</a>
+    <div class="search-bar hidden" id="searchBarActividades">
+      <span class="search-bar-icon">🔍</span>
+      <input type="text" id="searchInput" placeholder="Buscar por título, descripción, mes o año (ej: mayo 2026)..." autocomplete="off">
+      <button type="button" id="searchClearBtn" class="hidden" aria-label="Limpiar búsqueda">✕</button>
+    </div>
+    <div id="searchResultsInfo" class="search-results-info hidden"></div>
     <div class="filter-pills">
       <button class="pill-toggle on" id="filterCanto">🎤 Canto</button>
       <button class="pill-toggle on" id="filterDoblaje">🎙️ Doblaje</button>
@@ -727,7 +759,7 @@
 <div id="staffStatusBadge">🛠️ Modo Staff activo</div>
 <div id="memberStatusBadge" title="Modo Miembro (solo lectura)">🍑</div>
 <div class="toast" id="toast"></div>
-<button type="button" id="backToTopBtn" class="back-to-top-btn hidden" aria-label="Subir">▲</button>
+<button type="button" id="backToTopBtn" class="back-to-top-btn hidden" aria-label="Subir"><span>▲</span></button>
 
 <!-- NUEVO (corregido): aviso flotante que aparece solo cuando nadie inició sesión (nivel
      "publico"), para la gente que no leyó los anuncios y no sabe que existe el Modo Miembro. Si
@@ -1123,6 +1155,9 @@ const APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwcnPM10DeRLE6R
 const LOGO_DEFAULT = "https://raw.githubusercontent.com/TeamPeachesOff/TeamPeachesHub/main/Logos/PeachesLogo.jpeg";
 const LOGO_FALLBACK = "https://i.imgur.com/wusLyff.jpeg";
 const MESES = ["ene","feb","mar","abr","may","jun","jul","ago","sep","oct","nov","dic"];
+// Nombres completos, solo para que el buscador (más abajo) pueda matchear "septiembre" además
+// de "sep". La UI de fechas sigue usando el arreglo abreviado de arriba, no se toca nada de eso.
+const MESES_LARGOS = ["enero","febrero","marzo","abril","mayo","junio","julio","agosto","septiembre","octubre","noviembre","diciembre"];
 const MESES_LARGO = ["Enero","Febrero","Marzo","Abril","Mayo","Junio","Julio","Agosto","Septiembre","Octubre","Noviembre","Diciembre"];
 
 let DB = { actividades: [], entregas: [], miembros: [], anuario: [] };
@@ -2031,9 +2066,119 @@ let actividadesPorAnioCache = new Map();
 let actividadesEntregasCache = new Map();
 document.getElementById("filterCanto").onclick=()=>{ filtroCanto=!filtroCanto; syncFilterPills(); renderActividades(); };
 document.getElementById("filterDoblaje").onclick=()=>{ filtroDoblaje=!filtroDoblaje; syncFilterPills(); renderActividades(); };
+// ---------- Wiring del buscador de actividades (ver funciones actividadCoincideBusqueda_ y cía. más abajo) ----------
+document.getElementById("searchToggleBtn").onclick=()=>{
+  if(typeof switchTab==="function") switchTab("actividades"); // el buscador es solo de Actividades
+  const barra=document.getElementById("searchBarActividades");
+  const abrir=barra.classList.contains("hidden");
+  barra.classList.toggle("hidden", !abrir);
+  document.getElementById("searchToggleBtn").classList.toggle("active", abrir);
+  if(abrir) document.getElementById("searchInput").focus();
+};
+let searchDebounceTimer_=null;
+document.getElementById("searchInput").addEventListener("input", (e)=>{
+  document.getElementById("searchClearBtn").classList.toggle("hidden", !e.target.value);
+  clearTimeout(searchDebounceTimer_);
+  searchDebounceTimer_=setTimeout(()=>{ searchQuery=e.target.value; renderActividades(); }, 200);
+});
+document.getElementById("searchClearBtn").onclick=()=>{
+  const input=document.getElementById("searchInput");
+  input.value=""; searchQuery=""; document.getElementById("searchClearBtn").classList.add("hidden");
+  renderActividades(); input.focus();
+};
 function syncFilterPills(){
   document.getElementById("filterCanto").classList.toggle("on",filtroCanto);
   document.getElementById("filterDoblaje").classList.toggle("on",filtroDoblaje);
+}
+
+// ============ BUSCADOR DE ACTIVIDADES (título, descripción y fecha, con tolerancia a errores) ============
+// Se busca sobre DB.actividades directo (ya está todo en memoria, ver comentario de arriba sobre
+// actividadesPorAnioCache), así encuentra resultados de CUALQUIER año, no solo el que está
+// desplegado en pantalla en ese momento.
+let searchQuery = "";
+
+// Distancia de Levenshtein clásica (cuántas letras hay que cambiar/agregar/quitar para que una
+// palabra se vuelva la otra). Normalizada a un % de similitud: 1.0 = idénticas, 0.0 = nada que ver.
+function distanciaLevenshtein_(a, b) {
+  if (a === b) return 0;
+  const la = a.length, lb = b.length;
+  if (la === 0) return lb;
+  if (lb === 0) return la;
+  let fila = new Array(lb + 1);
+  for (let j = 0; j <= lb; j++) fila[j] = j;
+  for (let i = 1; i <= la; i++) {
+    let anterior = fila[0];
+    fila[0] = i;
+    for (let j = 1; j <= lb; j++) {
+      const temp = fila[j];
+      fila[j] = Math.min(fila[j] + 1, fila[j - 1] + 1, anterior + (a[i - 1] === b[j - 1] ? 0 : 1));
+      anterior = temp;
+    }
+  }
+  return fila[lb];
+}
+function similitud_(a, b) {
+  const maxLen = Math.max(a.length, b.length);
+  if (maxLen === 0) return 1;
+  return 1 - (distanciaLevenshtein_(a, b) / maxLen);
+}
+// 75% pedido. Si en algún momento sale muy estricto/muy laxo, se ajusta SOLO acá.
+const UMBRAL_COINCIDENCIA_BUSQUEDA = 0.75;
+
+// Arma la fecha extraída (año/mes/día) igual que fmtFecha/anioDeFecha de arriba, sin pasar por
+// new Date(), para no arrastrar el mismo bug de corrimiento de día que ya se resolvió ahí.
+function extraerYMDFront_(valor) {
+  if (!valor) return null;
+  const s = String(valor);
+  let m = s.match(/^(\d{4})-(\d{1,2})-(\d{1,2})/);
+  if (m) return { anio: +m[1], mes: +m[2], dia: +m[3] };
+  m = s.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})/);
+  if (m) return { anio: +m[3], mes: +m[2], dia: +m[1] };
+  return null;
+}
+// Todas las "palabras" contra las que se compara la búsqueda: las de título/descripción, más
+// varias formas de cada fecha (día, mes en número, mes abreviado, mes completo, año) para que
+// buscar "mayo", "05", "may" o "2026" encuentre lo mismo.
+function palabrasBuscablesDeActividad_(a) {
+  const palabras = new Set();
+  (String(a.titulo || "") + " " + String(a.descripcion || ""))
+    .toLowerCase()
+    .split(/[^a-záéíóúñü0-9]+/i)
+    .forEach(p => { if (p) palabras.add(p); });
+  [a.fechaInicio, a.fechaFin].forEach(valor => {
+    const ymd = extraerYMDFront_(valor);
+    if (!ymd) return;
+    palabras.add(String(ymd.dia));
+    palabras.add(String(ymd.anio));
+    palabras.add(String(ymd.mes));
+    palabras.add(String(ymd.mes).padStart(2, "0"));
+    if (ymd.mes >= 1 && ymd.mes <= 12) {
+      palabras.add(MESES[ymd.mes - 1]);
+      palabras.add(MESES_LARGOS[ymd.mes - 1]);
+    }
+  });
+  return [...palabras];
+}
+// Compara un token de búsqueda contra la lista de palabras de una actividad: coincide si hay
+// match exacto, si el token es el inicio/parte de alguna palabra (para búsquedas cortas tipo
+// "sept"), o si la similitud (Levenshtein) llega al umbral -- así "cancion" encuentra "canción"
+// y "septienbre" encuentra "septiembre".
+function tokenCoincideConPalabras_(token, palabras) {
+  if (!token) return true;
+  for (const palabra of palabras) {
+    if (palabra === token) return true;
+    if (token.length >= 3 && palabra.includes(token)) return true;
+    if (similitud_(token, palabra) >= UMBRAL_COINCIDENCIA_BUSQUEDA) return true;
+  }
+  return false;
+}
+function actividadCoincideBusqueda_(actividad, query) {
+  const tokens = query.toLowerCase().trim().split(/\s+/).filter(Boolean);
+  if (tokens.length === 0) return true;
+  const palabras = palabrasBuscablesDeActividad_(actividad);
+  // Todos los tokens tienen que encontrar algo (así "mayo 2026" no trae cualquier cosa de mayo
+  // de cualquier año, ni cualquier actividad de 2026 sin importar el mes).
+  return tokens.every(t => tokenCoincideConPalabras_(t, palabras));
 }
 
 function renderActividades(){
@@ -2044,8 +2189,18 @@ function renderActividades(){
     if(a.categoria==="doblaje") return filtroDoblaje;
     return true;
   });
+  const buscando = searchQuery.trim().length > 0;
+  if(buscando) activas = activas.filter(a=>actividadCoincideBusqueda_(a, searchQuery));
   activas=activas.slice().sort((a,b)=>compararFechaCantoFirst(a,b,"fechaFin"));
-  if(activas.length===0){ feed.innerHTML=`<div class="empty-state">No hay actividades con este filtro. ${staffPin?'¡Agrega una!':''}</div>`; return; }
+  const infoBusqueda = document.getElementById("searchResultsInfo");
+  if(infoBusqueda){
+    infoBusqueda.classList.toggle("hidden", !buscando);
+    if(buscando) infoBusqueda.textContent = activas.length===1 ? `1 actividad encontrada` : `${activas.length} actividades encontradas`;
+  }
+  if(activas.length===0){
+    feed.innerHTML=`<div class="empty-state">${buscando ? "No se encontró ninguna actividad con esa búsqueda." : `No hay actividades con este filtro. ${staffPin?'¡Agrega una!':''}`}</div>`;
+    return;
+  }
   // Antes cardHTML() filtraba TODO DB.entregas por cada actividad (O(actividades x entregas)).
   // Agrupamos una sola vez acá y le pasamos a cada card ya listo su propio grupo (O(entregas) total).
   const entregasPorActividad=new Map();
@@ -2054,6 +2209,16 @@ function renderActividades(){
     if(!entregasPorActividad.has(k)) entregasPorActividad.set(k,[]);
     entregasPorActividad.get(k).push(e);
   });
+  // Buscando: se muestran TODOS los resultados en una sola lista plana, de cualquier año (para
+  // eso es el buscador, para no tener que ir abriendo año por año). Sin búsqueda activa, se
+  // mantiene el comportamiento de siempre (año actual de una, años viejos como separador tocable).
+  if(buscando){
+    feed.innerHTML = activas.map(a=>cardHTML(a, entregasPorActividad.get(String(a.id))||[])).join("");
+    actividadesPorAnioCache = new Map();
+    actividadesEntregasCache = entregasPorActividad;
+    attachCardEvents(); bindAvatarFallbacks();
+    return;
+  }
   // El feed va del más reciente al más viejo (compararFechaCantoFirst arriba). El año en curso se
   // renderiza siempre de una; las actividades de años anteriores NO se meten al DOM todavía —
   // solo se agrupan en memoria (actividadesPorAnioCache, son solo referencias a lo que ya estaba
@@ -2128,6 +2293,11 @@ function actualizarVisibilidadBackToTop(){
   const btn=document.getElementById("backToTopBtn");
   const enActividades=!document.getElementById("viewActividades").classList.contains("hidden");
   btn.classList.toggle("hidden", !enActividades || document.body.scrollTop < BACK_TO_TOP_SCROLL_THRESHOLD);
+  // Si el badge de "Modo Staff activo" está visible (misma esquina inferior derecha), el botón
+  // sube para no encimarse con él; si no, se queda centrado abajo en su esquina de siempre.
+  const badgeStaff=document.getElementById("staffStatusBadge");
+  const staffVisible=!!badgeStaff && getComputedStyle(badgeStaff).display !== "none";
+  btn.classList.toggle("elevado", staffVisible);
 }
 document.body.addEventListener("scroll", ()=>{
   if(backToTopScrollTicking) return;
@@ -4524,6 +4694,7 @@ async function manejarRespuestaGoogle(response){
     document.getElementById("googleLoginMsg").textContent = "";
     toast("Modo Staff activado 🛠️");
     document.getElementById("staffStatusBadge").style.display="block";
+    actualizarVisibilidadBackToTop();
     document.getElementById("addActBtn").classList.remove("hidden");
     document.getElementById("assignImagesBtn").classList.remove("hidden");
     document.getElementById("importEntregasBtn").classList.remove("hidden");
@@ -4543,6 +4714,7 @@ async function cerrarSesionActual(mensaje){
   enlacesStaff = null; // se borran de memoria: sin sesión activa, no deben quedar accesibles ni un momento más
   document.getElementById("staffStatusBadge").style.display="none";
   document.getElementById("memberStatusBadge").style.display="none";
+  actualizarVisibilidadBackToTop();
   document.getElementById("addActBtn").classList.add("hidden");
   document.getElementById("assignImagesBtn").classList.add("hidden");
   document.getElementById("importEntregasBtn").classList.add("hidden");
@@ -4605,6 +4777,7 @@ function resaltarIndicacion(descripcionEscapada){
   await cargarDatos();
   if (nivel === "staff") {
     document.getElementById("staffStatusBadge").style.display = "block";
+    actualizarVisibilidadBackToTop();
     document.getElementById("addActBtn").classList.remove("hidden");
     document.getElementById("assignImagesBtn").classList.remove("hidden");
     document.getElementById("importEntregasBtn").classList.remove("hidden");
