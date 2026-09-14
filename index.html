@@ -565,11 +565,26 @@
   .assign-actions button{flex:1;}
   .assign-skip-btn{background:var(--card-bg-2);color:var(--text-dim);}
 
+  /* ---------- Importar entregas desde Excel (modo staff) ---------- */
+  .assign-import-row{display:flex;gap:10px;margin:26px 0 10px;}
+  .assign-import-row .assign-img-btn{margin:0;flex:1;}
+  .import-entregas-btn{display:block;flex:1;margin:0;padding:16px 10px;border-radius:16px;background:linear-gradient(90deg,rgba(46,204,113,0.85),rgba(120,224,143,0.85));color:#fff;font-weight:800;font-size:15px;text-align:center;box-shadow:0 6px 18px rgba(46,204,113,0.25);}
+  .import-anio-choice{display:flex;flex-wrap:wrap;gap:10px;margin-top:14px;}
+  .import-anio-choice button{flex:1 1 30%;min-width:80px;padding:14px 6px;border-radius:14px;background:var(--card-bg-2);color:var(--text);font-weight:800;font-size:15px;}
+  .import-resumen{font-size:12.5px;color:var(--text-dim);margin-bottom:12px;}
+  .import-grupo-card{background:var(--card-bg-2);border-radius:14px;padding:12px;margin-bottom:10px;}
+  .import-grupo-titulo{font-weight:800;font-size:14px;margin-bottom:2px;}
+  .import-grupo-meta{font-size:11.5px;color:var(--text-dim);margin-bottom:8px;display:flex;flex-wrap:wrap;gap:6px;align-items:center;}
+  .import-match-ok{color:#2ecc71;font-weight:700;}
+  .import-match-no{color:var(--red,#e74c3c);font-weight:700;}
+  .import-grupo-select{width:100%;padding:9px 10px;border-radius:10px;background:var(--card-bg);color:var(--text);border:1px solid rgba(255,255,255,0.12);font-size:13px;}
+
   /* ---------- Botón flotante "subir" (por tramos: header de año en año) ---------- */
   .back-to-top-btn{position:fixed;right:16px;bottom:88px;width:48px;height:48px;border-radius:50%;background:linear-gradient(90deg,var(--peach-2),var(--peach-1));color:#fff;font-size:19px;display:flex;align-items:center;justify-content:center;box-shadow:0 6px 18px rgba(239,8,112,0.35);z-index:150;border:none;transition:transform .15s ease,opacity .15s ease;}
   .back-to-top-btn:active{transform:scale(0.92);}
 </style>
 <script src="https://accounts.google.com/gsi/client" async defer></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 </head>
 <body>
 
@@ -628,7 +643,10 @@
       <button class="pill-toggle on" id="filterDoblaje">🎙️ Doblaje</button>
     </div>
     <div id="actividadesFeed"></div>
-    <button type="button" id="assignImagesBtn" class="assign-img-btn hidden">🖼️ Asignar Imágenes</button>
+    <div class="assign-import-row">
+      <button type="button" id="assignImagesBtn" class="assign-img-btn hidden">🖼️ Asignar Imágenes</button>
+      <button type="button" id="importEntregasBtn" class="import-entregas-btn hidden">📥 Importar</button>
+    </div>
   </section>
 
   <section id="viewAnuario" class="hidden"><div id="anuarioGrid"></div></section>
@@ -920,6 +938,45 @@
     <div class="assign-actions">
       <button type="button" class="btn-small assign-skip-btn" id="asignarImgSkipBtn">Saltar ⏭</button>
       <button type="button" class="btn-small btn-primary" id="asignarImgDoneBtn">✅ Listo por ahora</button>
+    </div>
+  </div>
+</div>
+
+<!-- Importar Entregas desde Excel (modo staff): paso 1, elegir año para comparar contra
+     las actividades correctas (así "Enero - Fénix" de un año no se mezcla con la de otro). -->
+<div class="modal-overlay" id="importAnioModal" style="z-index:280;">
+  <div class="modal-box"><button class="modal-close" data-close="importAnioModal">✕</button>
+    <h3>📥 Importar Entregas</h3>
+    <p style="color:var(--text-dim);font-size:13px;">Elegí el año de las actividades contra las que se va a comparar el Excel. Esto evita confundir actividades con nombres parecidos de años distintos.</p>
+    <div class="import-anio-choice" id="importAnioLista"></div>
+  </div>
+</div>
+
+<!-- Importar Entregas desde Excel (modo staff): paso 2, subir el archivo. No se guarda en
+     ningún lado: solo se lee en el navegador para sacar los datos y arman las entregas. -->
+<div class="modal-overlay" id="importArchivoModal" style="z-index:280;">
+  <div class="modal-box"><button class="modal-close" data-close="importArchivoModal">✕</button>
+    <h3 id="importArchivoTitle">📥 Importar Entregas</h3>
+    <p style="color:var(--text-dim);font-size:13px;">Subí el Excel con las columnas <strong>Actividad</strong>, <strong>Usuario</strong>, <strong>Escena o Canción</strong> y <strong>Enlace</strong>. El archivo no se almacena: solo se leen los datos.</p>
+    <input autocomplete="off" type="file" id="importArchivoFile" accept=".xlsx,.xls" class="hidden">
+    <div class="assign-dropzone" id="importArchivoDropzone">📤 Tocá para elegir el Excel<br>o arrastralo hasta acá</div>
+    <div class="assign-status" id="importArchivoStatus"></div>
+  </div>
+</div>
+
+<!-- Importar Entregas desde Excel (modo staff): paso 3, revisión. Cada nombre distinto de
+     "Actividad" que trajo el Excel se compara (por parecido de texto, igual que el resto del
+     sitio) contra las actividades de la categoría/año elegido y se preselecciona la de mayor
+     coincidencia si supera el umbral. Todo queda editable antes de confirmar: nada se crea
+     todavía en este paso. -->
+<div class="modal-overlay" id="importRevisionModal" style="z-index:280;">
+  <div class="modal-box modal-box-wide"><button class="modal-close" data-close="importRevisionModal">✕</button>
+    <h3>📥 Revisar antes de importar</h3>
+    <div class="import-resumen" id="importRevisionResumen"></div>
+    <div id="importRevisionLista"></div>
+    <div class="modal-actions" style="display:flex;gap:8px;margin-top:14px;">
+      <button type="button" class="btn-small" id="importCancelarBtn" style="background:var(--card-bg-2);color:var(--text);flex:1;">Cancelar</button>
+      <button type="button" class="btn-small btn-update" id="importConfirmarBtn" style="flex:1;">✅ Importar entregas</button>
     </div>
   </div>
 </div>
@@ -3983,6 +4040,174 @@ document.getElementById("asignarImgNextBtn").onclick=()=>{ if(asignarImgIndex<as
 document.getElementById("asignarImgSkipBtn").onclick=()=>{ if(asignarImgIndex<asignarImgLista.length-1){ asignarImgIndex++; renderAsignarImgCard(); } else toast("Ya es la última"); };
 document.getElementById("asignarImgDoneBtn").onclick=async()=>{ closeModal("asignarImgModal"); await cargarDatos(); };
 
+/* ---------- Importar Entregas desde Excel (modo staff) ----------
+   Flujo: 1) elegís el año (para no comparar contra actividades de años distintos con nombre
+   parecido) 2) subís el Excel (Actividad / Usuario / Escena o Canción / Enlace; el archivo se
+   lee en el navegador y no se guarda en ningún lado) 3) se agrupan las filas por el texto
+   exacto de "Actividad" y cada grupo se compara (mismo coeficiente de Dice que ya usa "Asignar
+   automáticamente" en Pasar Lista) contra las actividades del año elegido, preseleccionando la
+   de mayor parecido cuando supera el umbral 4) pantalla de revisión editable, y recién al
+   confirmar se crea una entrega (addEntrega, la misma acción que usa el form normal "en_...")
+   por cada fila, TODAS las de un mismo grupo van a la actividad elegida para ese grupo. No hace
+   falta ningún cambio en el .gs. */
+let importAnio_=null;
+let importFilasCrudas_=[];
+let importGrupos_=[];
+let importEnCurso_=false;
+const IMPORT_UMBRAL_=0.6; // 60% de parecido (más permisivo que el 75% de miembros: los títulos de actividad suelen traer prefijos/variaciones)
+
+function candidatasDelAnioImport_(anio){
+  return (DB.actividades||[]).filter(a=>{
+    const d=new Date(a.fechaInicio);
+    return !isNaN(d) && d.getFullYear()===anio;
+  });
+}
+
+document.getElementById("importEntregasBtn").onclick=()=>{
+  const anios=[...new Set((DB.actividades||[]).map(a=>{ const d=new Date(a.fechaInicio); return isNaN(d)?null:d.getFullYear(); }).filter(Boolean))].sort((a,b)=>b-a);
+  if(!anios.length){ toast("No hay actividades registradas todavía"); return; }
+  document.getElementById("importAnioLista").innerHTML=anios.map(y=>`<button type="button" data-import-anio="${y}">${y}</button>`).join("");
+  document.querySelectorAll("[data-import-anio]").forEach(btn=>{
+    btn.onclick=()=>{
+      importAnio_=Number(btn.dataset.importAnio);
+      closeModal("importAnioModal");
+      document.getElementById("importArchivoFile").value="";
+      document.getElementById("importArchivoStatus").textContent="";
+      document.getElementById("importArchivoTitle").textContent=`📥 Importar Entregas — ${importAnio_}`;
+      openModal("importArchivoModal");
+    };
+  });
+  openModal("importAnioModal");
+};
+
+// Agrupa las filas por el texto de "Actividad" tal como vino en el Excel (normalizado para
+// agrupar, pero se muestra el texto original de la primera fila del grupo).
+function agruparFilasImport_(filas){
+  const grupos=[]; const indice=new Map();
+  filas.forEach(f=>{
+    const clave=normalizarTexto_(f.actividad);
+    if(!indice.has(clave)){ const g={texto:f.actividad, filas:[], candidatoId:null, score:0}; indice.set(clave,g); grupos.push(g); }
+    indice.get(clave).filas.push(f);
+  });
+  return grupos;
+}
+function matchearGruposImport_(grupos, candidatas, umbral){
+  grupos.forEach(g=>{
+    let mejor=null, mejorScore=0;
+    candidatas.forEach(a=>{
+      const score=similitud_(g.texto, a.titulo||"");
+      if(score>mejorScore){ mejorScore=score; mejor=a; }
+    });
+    g.score=mejor?mejorScore:0;
+    g.candidatoId=(mejor && mejorScore>=umbral)?String(mejor.id):null;
+  });
+}
+
+async function importArchivoLeer_(file){
+  const nombre=(file.name||"").toLowerCase();
+  if(!nombre.endsWith(".xlsx") && !nombre.endsWith(".xls")){ toast("Subí un archivo .xlsx o .xls ❌"); return; }
+  const st=document.getElementById("importArchivoStatus");
+  st.textContent="Leyendo archivo...";
+  try{
+    const buf=await file.arrayBuffer();
+    const wb=XLSX.read(buf,{type:"array"});
+    const hoja=wb.Sheets[wb.SheetNames[0]];
+    const filas=XLSX.utils.sheet_to_json(hoja,{defval:""});
+    if(!filas.length){ st.textContent="El Excel está vacío."; return; }
+    const encabezados=Object.keys(filas[0]);
+    const buscarCol=(...patrones)=>encabezados.find(h=>{ const n=normalizarTexto_(h); return patrones.some(p=>n.includes(p)); });
+    const colActividad=buscarCol("activ");
+    const colUsuario=buscarCol("usuario");
+    const colDetalle=buscarCol("escena","cancion");
+    const colEnlace=buscarCol("enlace","link");
+    if(!colActividad||!colUsuario||!colDetalle||!colEnlace){
+      st.textContent="No reconozco las columnas. Se esperan: Actividad, Usuario, Escena o Canción, Enlace.";
+      return;
+    }
+    importFilasCrudas_=filas.map(r=>({
+      actividad:String(r[colActividad]||"").trim(),
+      usuario:String(r[colUsuario]||"").trim(),
+      detalle:String(r[colDetalle]||"").trim(),
+      enlace:String(r[colEnlace]||"").trim(),
+    })).filter(r=>r.actividad && r.usuario);
+    if(!importFilasCrudas_.length){ st.textContent="No se encontraron filas válidas (con Actividad y Usuario)."; return; }
+    importGrupos_=agruparFilasImport_(importFilasCrudas_);
+    matchearGruposImport_(importGrupos_, candidatasDelAnioImport_(importAnio_), IMPORT_UMBRAL_);
+    closeModal("importArchivoModal");
+    renderImportRevision_();
+    openModal("importRevisionModal");
+  }catch(err){
+    st.textContent="Error leyendo el archivo: "+(err.message||err);
+  }
+}
+document.getElementById("importArchivoDropzone").onclick=()=>document.getElementById("importArchivoFile").click();
+document.getElementById("importArchivoFile").addEventListener("change", e=>{ const f=e.target.files[0]; if(f) importArchivoLeer_(f); });
+const importArchivoDropzoneEl_=document.getElementById("importArchivoDropzone");
+["dragenter","dragover"].forEach(evt=>importArchivoDropzoneEl_.addEventListener(evt, e=>{ e.preventDefault(); e.stopPropagation(); importArchivoDropzoneEl_.classList.add("dragover"); }));
+["dragleave","drop"].forEach(evt=>importArchivoDropzoneEl_.addEventListener(evt, e=>{ e.preventDefault(); e.stopPropagation(); importArchivoDropzoneEl_.classList.remove("dragover"); }));
+importArchivoDropzoneEl_.addEventListener("drop", e=>{
+  const f=e.dataTransfer && e.dataTransfer.files && e.dataTransfer.files[0];
+  if(f) importArchivoLeer_(f);
+});
+
+function renderImportRevision_(){
+  const candidatas=candidatasDelAnioImport_(importAnio_).sort((a,b)=>compararFechaCantoFirst(a,b,"fechaInicio"));
+  const totalFilas=importFilasCrudas_.length;
+  const confiados=importGrupos_.filter(g=>g.candidatoId).length;
+  document.getElementById("importRevisionResumen").textContent=
+    `Año ${importAnio_} · ${totalFilas} fila(s) en ${importGrupos_.length} actividad(es) del Excel · ${confiados}/${importGrupos_.length} detectadas automáticamente (${Math.round(IMPORT_UMBRAL_*100)}% de parecido o más)`;
+  document.getElementById("importRevisionLista").innerHTML=importGrupos_.map((g,i)=>{
+    const opciones=candidatas.map(a=>`<option value="${escAttr(a.id)}" ${String(a.id)===g.candidatoId?"selected":""}>${escAttr(a.titulo||"(sin título)")} ${a.categoria==="canto"?"🎤":a.categoria==="doblaje"?"🎙️":""}</option>`).join("");
+    const badge=g.candidatoId?`<span class="import-match-ok">✅ ${Math.round(g.score*100)}% coincidencia</span>`:`<span class="import-match-no">⚠️ Sin coincidencia — elegí manualmente</span>`;
+    return `<div class="import-grupo-card">
+      <div class="import-grupo-titulo">${escHtml(g.texto)}</div>
+      <div class="import-grupo-meta"><span>${g.filas.length} fila(s)</span>${badge}</div>
+      <select data-import-grupo="${i}" class="import-grupo-select">
+        <option value="">— Sin asignar (se omite) —</option>
+        ${opciones}
+      </select>
+    </div>`;
+  }).join("");
+  document.querySelectorAll("[data-import-grupo]").forEach(sel=>{
+    sel.onchange=()=>{ importGrupos_[Number(sel.dataset.importGrupo)].candidatoId=sel.value||null; };
+  });
+}
+
+document.getElementById("importCancelarBtn").onclick=()=>closeModal("importRevisionModal");
+document.getElementById("importConfirmarBtn").onclick=async()=>{
+  if(importEnCurso_) return;
+  const asignables=importGrupos_.filter(g=>g.candidatoId);
+  if(!asignables.length){ toast("No hay ninguna actividad asignada todavía"); return; }
+  const totalFilas=asignables.reduce((s,g)=>s+g.filas.length,0);
+  if(!await confirmarAccion(`Se van a crear ${totalFilas} entrega(s) en ${asignables.length} actividad(es). ¿Continuar?`)) return;
+  importEnCurso_=true;
+  const btn=document.getElementById("importConfirmarBtn"); btn.disabled=true;
+  let hechos=0, errores=0, idx=0;
+  for(const g of asignables){
+    const actividad=DB.actividades.find(a=>String(a.id)===String(g.candidatoId));
+    for(const f of g.filas){
+      idx++;
+      const data={
+        id:"ENT-"+Date.now()+"-"+idx,
+        idActividad:g.candidatoId,
+        tituloActividad:actividad?(actividad.titulo||""):"",
+        categoria:actividad?(actividad.categoria||""):"",
+        nombreUsuario:f.usuario,
+        detalleEntrega:f.detalle,
+        linkGrabacion:f.enlace,
+      };
+      try{
+        const r=await apiPost({action:"addEntrega", data}, `Importando ${idx} de ${totalFilas}...`);
+        if(r && r.ok) hechos++; else errores++;
+      }catch(err){ errores++; }
+    }
+  }
+  importEnCurso_=false; btn.disabled=false;
+  toast(`Importación lista: ${hechos} entrega(s) creada(s)${errores?`, ${errores} con error ⚠️`:" ✅"}`);
+  closeModal("importRevisionModal");
+  await cargarDatos();
+};
+
 /* ---------- form entrega ---------- */
 function openEntregaForm(idActividad){
   document.getElementById("en_idActividad").value=idActividad;
@@ -4301,6 +4526,7 @@ async function manejarRespuestaGoogle(response){
     document.getElementById("staffStatusBadge").style.display="block";
     document.getElementById("addActBtn").classList.remove("hidden");
     document.getElementById("assignImagesBtn").classList.remove("hidden");
+    document.getElementById("importEntregasBtn").classList.remove("hidden");
     switchTab("actividades");
     await cargarDatos(); // vuelve a pedir los datos, ahora con el token, para traer todo completo
     await cargarEnlacesStaff(); // recién ahora, con la sesión ya validada, se piden los enlaces privados
@@ -4319,6 +4545,7 @@ async function cerrarSesionActual(mensaje){
   document.getElementById("memberStatusBadge").style.display="none";
   document.getElementById("addActBtn").classList.add("hidden");
   document.getElementById("assignImagesBtn").classList.add("hidden");
+  document.getElementById("importEntregasBtn").classList.add("hidden");
   document.getElementById("memberToolsRow1").classList.add("hidden");
   document.getElementById("memberToolsRow2").classList.add("hidden");
   document.getElementById("memberToolsRow3").classList.add("hidden");
@@ -4380,6 +4607,7 @@ function resaltarIndicacion(descripcionEscapada){
     document.getElementById("staffStatusBadge").style.display = "block";
     document.getElementById("addActBtn").classList.remove("hidden");
     document.getElementById("assignImagesBtn").classList.remove("hidden");
+    document.getElementById("importEntregasBtn").classList.remove("hidden");
     await cargarEnlacesStaff();
   } else if (nivel === "miembro") {
     document.getElementById("memberStatusBadge").style.display = "flex";
