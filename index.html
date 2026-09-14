@@ -248,7 +248,12 @@
 
   /* ===== v22: Pasar Lista (asignar entregas a miembros) + Chambeadores del año ===== */
   .modal-box-wide{max-width:640px;}
-  #minecraftModal .modal-box-wide{max-width:720px;}
+  #minecraftModal .modal-box-wide{max-width:720px;padding-top:14px;}
+  /* La X sobre el carrusel de Minecraft NO es un botón con fondo circular como el resto de los
+     modales — es solo el símbolo, flotando arriba del video con sombra para que se lea sobre
+     cualquier escena clara u oscura, pero sin la cajita gris que le come protagonismo al video. */
+  #minecraftModal .modal-close{background:none;width:auto;height:auto;font-size:20px;line-height:1;color:#fff;text-shadow:0 2px 8px rgba(0,0,0,0.85),0 0 14px rgba(0,0,0,0.5);top:14px;right:14px;z-index:20;opacity:.92;transition:transform .15s,opacity .15s;}
+  #minecraftModal .modal-close:hover{opacity:1;transform:scale(1.15);}
   .pasar-lista-toolbar{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px;}
   .pl-act-card{background:var(--card-bg-2);border-radius:14px;margin-bottom:12px;overflow:hidden;border:1px solid rgba(255,255,255,0.07);}
   .pl-act-head{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:12px 14px;cursor:pointer;}
@@ -889,8 +894,6 @@
      dentro de closeModal, más abajo en el script). -->
 <div class="modal-overlay" id="minecraftModal">
   <div class="modal-box modal-box-wide"><button class="modal-close" data-close="minecraftModal">✕</button>
-    <h3>🎮 Peachesland</h3>
-    <p style="color:var(--text-dim);font-size:12.5px;margin-top:-8px;margin-bottom:16px;">Servidor de Minecraft de Team Peaches</p>
 
     <div class="mc-carousel" id="mcCarouselContainer">
       <div class="mc-carousel-placeholder">Cargando vista previa del server...</div>
