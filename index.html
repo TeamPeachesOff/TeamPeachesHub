@@ -248,6 +248,7 @@
 
   /* ===== v22: Pasar Lista (asignar entregas a miembros) + Chambeadores del año ===== */
   .modal-box-wide{max-width:640px;}
+  #minecraftModal .modal-box-wide{max-width:720px;}
   .pasar-lista-toolbar{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px;}
   .pl-act-card{background:var(--card-bg-2);border-radius:14px;margin-bottom:12px;overflow:hidden;border:1px solid rgba(255,255,255,0.07);}
   .pl-act-head{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:12px 14px;cursor:pointer;}
@@ -408,8 +409,13 @@
   .modal-box h3{margin-top:0;color:var(--peach-2);}
   .modal-close{position:absolute;top:14px;right:16px;background:rgba(255,255,255,0.08);color:var(--text-dim);font-size:18px;width:30px;height:30px;border-radius:50%;z-index:10;}
   /* --- Modal de Minecraft (Peachesland) --- todo escopado a #minecraftModal para no afectar
-     ningún otro modal ni reusar accidentalmente nombres de clase de otra sección. */
-  #minecraftModal .mc-carousel{position:relative;width:100%;aspect-ratio:16/9;background:#000;border-radius:14px;overflow:hidden;margin-bottom:6px;}
+     ningún otro modal ni reusar accidentalmente nombres de clase de otra sección.
+     El carrusel "sangra" hasta los bordes del modal (mismo ancho que le resta el padding) y usa
+     relación 21:9 con una viñeta sutil + resplandor rosado — se ve como una pantalla de cine, no
+     como una fotito de perfil. Sin barra de progreso: se veía "lageada" y le restaba foco a la
+     imagen/video en sí. */
+  #minecraftModal .mc-carousel{position:relative;width:calc(100% + 40px);margin:0 -20px 16px;aspect-ratio:21/9;background:#000;overflow:hidden;box-shadow:0 20px 50px -16px rgba(0,0,0,0.75), 0 0 34px -8px rgba(239,8,112,0.28);}
+  #minecraftModal .mc-carousel::after{content:"";position:absolute;inset:0;pointer-events:none;box-shadow:inset 0 0 60px 12px rgba(0,0,0,0.35);}
   /* Cada foto/video vive en su propio "slide" absoluto dentro del carrusel. El de arriba
      (mc-pos-current) ocupa el centro; al avanzar, el nuevo entra desde la derecha (mc-pos-enter →
      mc-pos-current) mientras el anterior se desliza afuera por la izquierda (mc-pos-exit), y
@@ -419,9 +425,7 @@
   #minecraftModal .mc-slide.mc-pos-enter{transform:translateX(100%);}
   #minecraftModal .mc-slide.mc-pos-current{transform:translateX(0%);}
   #minecraftModal .mc-slide.mc-pos-exit{transform:translateX(-100%);}
-  #minecraftModal .mc-carousel-placeholder{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;color:var(--text-dim);font-size:12.5px;text-align:center;padding:20px;line-height:1.5;}
-  #minecraftModal .mc-progress-container{width:100%;height:4px;background:rgba(255,255,255,0.12);border-radius:2px;overflow:hidden;margin-bottom:18px;}
-  #minecraftModal .mc-progress-bar{height:100%;width:0%;background:linear-gradient(90deg,var(--green),#8fe39a);}
+  #minecraftModal .mc-carousel-placeholder{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;color:var(--text-dim);font-size:12.5px;text-align:center;padding:20px;line-height:1.5;z-index:1;}
   #minecraftModal .mc-info-box{display:flex;align-items:center;justify-content:space-between;gap:10px;background:var(--card-bg-2);border-radius:12px;padding:12px 14px;margin-bottom:10px;}
   #minecraftModal .mc-info-label{font-size:10.5px;color:var(--text-dim);text-transform:uppercase;letter-spacing:.05em;margin-bottom:3px;}
   #minecraftModal .mc-info-value{font-size:15px;font-weight:700;color:var(--text);word-break:break-all;}
@@ -891,7 +895,6 @@
     <div class="mc-carousel" id="mcCarouselContainer">
       <div class="mc-carousel-placeholder">Cargando vista previa del server...</div>
     </div>
-    <div class="mc-progress-container"><div class="mc-progress-bar" id="mcProgressBar"></div></div>
 
     <div class="mc-switch" id="mcSwitch">
       <div class="mc-switch-thumb" id="mcSwitchThumb"></div>
@@ -3464,10 +3467,7 @@ function mcStartCarousel(){
     return;
   }
   cont.querySelectorAll(".mc-carousel-placeholder").forEach(p=>p.remove());
-  const barra = document.getElementById("mcProgressBar");
   const media = mcCarouselMedia[mcIndex];
-  barra.style.transition = "none";
-  barra.style.width = "0%";
 
   // El slide que ya estaba mostrándose (si hay uno) es el que va a deslizarse afuera hacia la
   // izquierda cuando entre el nuevo.
@@ -3494,19 +3494,11 @@ function mcStartCarousel(){
 
   if(media.type === "video"){
     const vid = nuevo.querySelector(".mc-slide-video");
-    vid.addEventListener("timeupdate", ()=>{
-      if(!vid.duration) return;
-      barra.style.transition = "none";
-      barra.style.width = ((vid.currentTime/vid.duration)*100) + "%";
-    });
     vid.onended = ()=>mcNextMedia();
     // Si el archivo de video no carga (ej. lo borraron de la carpeta), no nos quedamos trabados:
     // pasamos a lo siguiente igual que con una foto rota.
     vid.onerror = ()=>mcNextMedia();
   } else {
-    void barra.offsetWidth; // fuerza reflow para que la transición de abajo sí se anime
-    barra.style.transition = "width "+MC_DURACION_FOTO+"ms linear";
-    barra.style.width = "100%";
     mcTimer = setTimeout(mcNextMedia, MC_DURACION_FOTO);
     nuevo.querySelector("img").onerror = ()=>mcNextMedia();
   }
