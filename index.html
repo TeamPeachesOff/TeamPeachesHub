@@ -248,7 +248,7 @@
 
   /* ===== v22: Pasar Lista (asignar entregas a miembros) + Chambeadores del año ===== */
   .modal-box-wide{max-width:640px;}
-  #minecraftModal .modal-box-wide{max-width:720px;padding-top:14px;}
+  #minecraftModal .modal-box-wide{max-width:720px;padding-top:0;overflow-x:hidden;}
   /* La X sobre el carrusel de Minecraft NO es un botón con fondo circular como el resto de los
      modales — es solo el símbolo, flotando arriba del video con sombra para que se lea sobre
      cualquier escena clara u oscura, pero sin la cajita gris que le come protagonismo al video. */
@@ -419,7 +419,7 @@
      relación 21:9 con una viñeta sutil + resplandor rosado — se ve como una pantalla de cine, no
      como una fotito de perfil. Sin barra de progreso: se veía "lageada" y le restaba foco a la
      imagen/video en sí. */
-  #minecraftModal .mc-carousel{position:relative;width:calc(100% + 40px);margin:0 -20px 16px;aspect-ratio:21/9;background:#000;overflow:hidden;box-shadow:0 20px 50px -16px rgba(0,0,0,0.75), 0 0 34px -8px rgba(239,8,112,0.28);}
+  #minecraftModal .mc-carousel{position:relative;width:calc(100% + 40px);margin:0 -20px 16px;aspect-ratio:21/9;background:#000;overflow:hidden;border-radius:18px 18px 0 0;box-shadow:0 20px 50px -16px rgba(0,0,0,0.75), 0 0 34px -8px rgba(239,8,112,0.28);}
   #minecraftModal .mc-carousel::after{content:"";position:absolute;inset:0;pointer-events:none;box-shadow:inset 0 0 60px 12px rgba(0,0,0,0.35);}
   /* Cada foto/video vive en su propio "slide" absoluto dentro del carrusel. El de arriba
      (mc-pos-current) ocupa el centro; al avanzar, el nuevo entra desde la derecha (mc-pos-enter →
