@@ -152,10 +152,6 @@
   .header-left{display:flex;align-items:center;gap:12px;}
   #hamburgerBtn{background:none;font-size:26px;color:var(--peach-1);padding:4px 8px;border-radius:8px;}
   #hamburgerBtn:hover{background:rgba(239,8,112,0.15);}
-  .header-right{display:flex;align-items:center;gap:8px;}
-  /* Chip redondo, mismo color que el ☰ (var(--peach-1)), del lado opuesto del header. */
-  .icon-chip-btn{background:none;font-size:17px;color:var(--peach-1);width:34px;height:34px;border-radius:999px;display:flex;align-items:center;justify-content:center;flex-shrink:0;}
-  .icon-chip-btn:hover,.icon-chip-btn.active{background:rgba(239,8,112,0.15);}
   /* ---------- Barra de búsqueda de actividades ---------- */
   .search-bar{display:flex;align-items:center;gap:8px;background:var(--card-bg);border:1px solid rgba(239,8,112,0.25);border-radius:999px;padding:8px 14px;margin-bottom:12px;}
   .search-bar-icon{font-size:14px;opacity:0.7;flex-shrink:0;}
@@ -613,14 +609,7 @@
   <div id="topProgressBar"></div>
   <div class="header-inner">
     <div class="header-left"><button id="hamburgerBtn">☰</button><div class="logo">🍑 Peaches Hub</div></div>
-    <!-- Buscador: por defecto va a la DERECHA de los tabs (mismo lado opuesto al ☰). Para pasarlo
-         a la IZQUIERDA de "Actividades" en vez de la derecha, solo hay que mover este <button
-         id="searchToggleBtn"> ANTES del <div class="tabs"> de la línea de abajo -- el CSS
-         (.header-right{display:flex}) no depende del orden. -->
-    <div class="header-right">
-      <div class="tabs"><button class="tab-btn active" data-tab="actividades">Actividades</button><button class="tab-btn" data-tab="anuario">Anuario</button></div>
-      <button type="button" id="searchToggleBtn" class="icon-chip-btn" aria-label="Buscar actividades">🔍</button>
-    </div>
+    <div class="tabs"><button class="tab-btn active" data-tab="actividades">Actividades</button><button class="tab-btn" data-tab="anuario">Anuario</button></div>
   </div>
 </header>
 
@@ -664,16 +653,16 @@
   <section id="viewActividades">
     <button id="addActBtn" class="hidden">(+) Añadir Actividad</button>
     <a class="hidden pill-toggle regalito-btn" id="regalitoBtn" target="_blank" rel="noopener" href="https://forms.gle/FgSeqD33wE1R8Y8r6">🎁 Enviar regalito</a>
-    <div class="search-bar hidden" id="searchBarActividades">
+    <div class="filter-pills">
+      <button class="pill-toggle on" id="filterCanto">🎤 Canto</button>
+      <button class="pill-toggle on" id="filterDoblaje">🎙️ Doblaje</button>
+    </div>
+    <div class="search-bar" id="searchBarActividades">
       <span class="search-bar-icon">🔍</span>
       <input type="text" id="searchInput" placeholder="Buscar por título, descripción, mes o año (ej: mayo 2026)..." autocomplete="off">
       <button type="button" id="searchClearBtn" class="hidden" aria-label="Limpiar búsqueda">✕</button>
     </div>
     <div id="searchResultsInfo" class="search-results-info hidden"></div>
-    <div class="filter-pills">
-      <button class="pill-toggle on" id="filterCanto">🎤 Canto</button>
-      <button class="pill-toggle on" id="filterDoblaje">🎙️ Doblaje</button>
-    </div>
     <div id="actividadesFeed"></div>
     <div class="assign-import-row">
       <button type="button" id="assignImagesBtn" class="assign-img-btn hidden">🖼️ Asignar Imágenes</button>
@@ -2067,14 +2056,7 @@ let actividadesEntregasCache = new Map();
 document.getElementById("filterCanto").onclick=()=>{ filtroCanto=!filtroCanto; syncFilterPills(); renderActividades(); };
 document.getElementById("filterDoblaje").onclick=()=>{ filtroDoblaje=!filtroDoblaje; syncFilterPills(); renderActividades(); };
 // ---------- Wiring del buscador de actividades (ver funciones actividadCoincideBusqueda_ y cía. más abajo) ----------
-document.getElementById("searchToggleBtn").onclick=()=>{
-  if(typeof switchTab==="function") switchTab("actividades"); // el buscador es solo de Actividades
-  const barra=document.getElementById("searchBarActividades");
-  const abrir=barra.classList.contains("hidden");
-  barra.classList.toggle("hidden", !abrir);
-  document.getElementById("searchToggleBtn").classList.toggle("active", abrir);
-  if(abrir) document.getElementById("searchInput").focus();
-};
+// La barra queda siempre visible debajo de los filtros Canto/Doblaje, no hace falta abrirla/cerrarla.
 let searchDebounceTimer_=null;
 document.getElementById("searchInput").addEventListener("input", (e)=>{
   document.getElementById("searchClearBtn").classList.toggle("hidden", !e.target.value);
