@@ -106,7 +106,13 @@
      "Copiar"/"Buscar"), que es otra forma en la que un tap se puede "robar" antes de llegar al click.
      touch-action:manipulation apaga el delay de ~300ms que algunos navegadores móviles usan para
      esperar un posible doble-tap (zoom), hace que el primer tap responda de inmediato siempre. */
-  button{font-family:inherit;cursor:pointer;border:none;-webkit-user-select:none;user-select:none;-webkit-touch-callout:none;-webkit-tap-highlight-color:transparent;touch-action:manipulation;}
+  /* -webkit-appearance:none/appearance:none: sin esto, iOS Safari le sigue pintando su propio
+     "look" nativo de botón por debajo de CUALQUIER <button> con border-radius (un borde/degradado
+     clarito de sistema) aunque el CSS de acá ya le ponga su propio fondo -- se nota como una
+     rayita/esquina blanca asomando en los botones redondeados (pill-toggle, search-field-btn,
+     etc.), más visible en los que tienen fondo oscuro o degradado. Apagando el appearance nativo
+     el fondo que definimos pasa a ser el único que se pinta, sin nada del sistema asomando atrás. */
+  button{font-family:inherit;cursor:pointer;border:none;-webkit-appearance:none;appearance:none;-webkit-user-select:none;user-select:none;-webkit-touch-callout:none;-webkit-tap-highlight-color:transparent;touch-action:manipulation;}
   /* v17: el mismo problema de "el botón solo responde si lo toco en una parte específica" también
      pasaba en los enlaces con pinta de botón (<a class="btn-small">, .platform-btn, .social-link,
      etc.) — la regla de arriba solo cubría <button>, nunca <a>. Como en esta app CADA <a> del HTML
@@ -313,6 +319,18 @@
   .chambeador-row img{width:36px;height:36px;border-radius:50%;object-fit:cover;}
   .chambeador-nombre{flex:1;font-weight:700;font-size:13.5px;}
   .chambeador-total{font-weight:800;font-size:13.5px;color:var(--peach-1);}
+
+  /* v24: lista de periodos (vista 1 del modal de Chambeadores) */
+  .chambeadores-periodos-list{display:flex;flex-direction:column;gap:8px;}
+  .chambeadores-periodo-btn{width:100%;text-align:left;padding:12px 14px;border-radius:12px;background:var(--card-bg-2);
+    border:1px solid rgba(255,255,255,0.08);color:var(--text);font-family:inherit;display:flex;align-items:center;
+    justify-content:space-between;gap:10px;cursor:pointer;}
+  .chambeadores-periodo-btn:active{transform:scale(0.98);}
+  .chambeadores-periodo-nombre{font-weight:800;font-size:14px;}
+  .chambeadores-periodo-sub{font-size:11px;color:var(--text-dim);font-weight:500;margin-top:2px;}
+  .chambeadores-periodo-del{background:none;border:none;color:var(--text-dim);font-size:16px;padding:4px 6px;line-height:1;flex-shrink:0;}
+  .chambeadores-periodo-del:active{transform:scale(0.85);}
+  .chambeadores-volver-btn{background:var(--card-bg-2);border:1px solid rgba(255,255,255,0.1);color:var(--text-dim);}
 
   /* ===== ANUARIO: años / meses / bloques ===== */
   .anuario-year-group{position:relative;}
@@ -1107,21 +1125,44 @@
   </div>
 </div>
 
-<!-- v22: 🏆 Chambeadores del año/temporada — top por categoría, contado desde la última vez que
-     se reinició la temporada (botón manual, ver reiniciarTemporadaChambeadores en Code.gs). No
-     borra nada del historial, solo mueve la fecha de corte hacia adelante. -->
+<!-- v24: 🏆 Chambeadores por periodos — al abrir se ve primero la lista de periodos definidos
+     (más "General" = todo el historial); al tocar uno se ve el top por categoría contando SOLO
+     las entregas cuya fecha de envío cae dentro del rango de ese periodo. Staff puede definir
+     periodos nuevos (nombre + fecha inicio + fecha fin) y borrar los que ya no sirvan — ver
+     agregarPeriodo/eliminarPeriodo en Code.gs. Reemplaza la temporada única manual de v22/v23. -->
 <div class="modal-overlay" id="chambeadoresModal">
   <div class="modal-box"><button class="modal-close" data-close="chambeadoresModal">✕</button>
-    <h3>🏆 Chambeadores de la temporada</h3>
-    <div id="chambeadoresPeriodo" style="font-size:12px;color:var(--text-dim);margin-bottom:12px;"></div>
-    <!-- v23: antes se mostraban Canto y Doblaje apilados a la vez; ahora es un switch excluyente
-         (uno u otro, nunca ambos) para que el top se lea de un vistazo. -->
-    <div class="switch-pill" id="chambeadoresCategoriaSwitch" style="margin-bottom:14px;">
-      <button type="button" data-val="canto">🎤 Canto</button>
-      <button type="button" data-val="doblaje">🎙️ Doblaje</button>
+
+    <!-- Vista 1: lista de periodos -->
+    <div id="chambeadoresListaView">
+      <h3>🏆 Chambeadores</h3>
+      <div class="chambeadores-periodos-list" id="chambeadoresPeriodosList"></div>
+      <button type="button" class="btn-small btn-family hidden" id="agregarPeriodoBtn" style="width:100%;margin-top:12px;">➕ Agregar periodo</button>
     </div>
-    <div class="chambeadores-top" id="chambeadoresTop"></div>
-    <button type="button" class="btn-small btn-seguridad hidden" id="reiniciarTemporadaBtn" style="width:100%;margin-top:14px;">🔄 Reiniciar temporada</button>
+
+    <!-- Vista 2: top de un periodo (o "General") -->
+    <div id="chambeadoresRankingView" class="hidden">
+      <button type="button" class="btn-small chambeadores-volver-btn" id="volverPeriodosBtn">⬅ Periodos</button>
+      <h3 id="chambeadoresPeriodoTitulo" style="margin-top:10px;">🏆 Chambeadores</h3>
+      <div id="chambeadoresPeriodo" style="font-size:12px;color:var(--text-dim);margin-bottom:12px;"></div>
+      <!-- v23: antes se mostraban Canto y Doblaje apilados a la vez; ahora es un switch excluyente
+           (uno u otro, nunca ambos) para que el top se lea de un vistazo. -->
+      <div class="switch-pill" id="chambeadoresCategoriaSwitch" style="margin-bottom:14px;">
+        <button type="button" data-val="canto">🎤 Canto</button>
+        <button type="button" data-val="doblaje">🎙️ Doblaje</button>
+      </div>
+      <div class="chambeadores-top" id="chambeadoresTop"></div>
+    </div>
+
+    <!-- Vista 3 (Staff): formulario para agregar un periodo nuevo -->
+    <div id="chambeadoresFormView" class="hidden">
+      <button type="button" class="btn-small chambeadores-volver-btn" id="cancelarPeriodoBtn">⬅ Cancelar</button>
+      <h3 style="margin-top:10px;">➕ Agregar periodo</h3>
+      <div class="form-group"><label>Nombre del periodo (ej: 2026)</label><input autocomplete="off" type="text" id="per_nombre" placeholder="2026"></div>
+      <div class="form-group"><label>Fecha inicio</label><input autocomplete="off" type="date" id="per_inicio"></div>
+      <div class="form-group"><label>Fecha fin</label><input autocomplete="off" type="date" id="per_fin"></div>
+      <button type="button" class="btn-small btn-family" id="guardarPeriodoBtn" style="width:100%;">💾 Guardar periodo</button>
+    </div>
   </div>
 </div>
 
@@ -1164,7 +1205,7 @@ const MESES = ["ene","feb","mar","abr","may","jun","jul","ago","sep","oct","nov"
 const MESES_LARGOS = ["enero","febrero","marzo","abril","mayo","junio","julio","agosto","septiembre","octubre","noviembre","diciembre"];
 const MESES_LARGO = ["Enero","Febrero","Marzo","Abril","Mayo","Junio","Julio","Agosto","Septiembre","Octubre","Noviembre","Diciembre"];
 
-let DB = { actividades: [], entregas: [], miembros: [], anuario: [] };
+let DB = { actividades: [], entregas: [], miembros: [], anuario: [], periodos: [] };
 
 // ---------- Ocultar de verdad para lectores accesibles (Ticket: fuga en Modo Lectura de Edge) ----------
 // El "Modo Lectura" de Edge (y lectores de pantalla similares) extraen el texto de TODO el DOM sin
@@ -1662,7 +1703,8 @@ const ANALITICA_LABELS = {
   fetchSmulePhoto:"📸 Foto de Smule obtenida", actualizarTodasLasFotos:"🔄 Fotos actualizadas (lote)",
   testRecordatorio:"🔔 Prueba de Recordatorio", testCumpleanos:"🎂 Prueba de Cumpleaños", testSeguridad:"🔒 Prueba de Seguridad",
   addQueja:"📮 Buzón: queja/recomendación enviada", addReporte:"🐞 Reporte de error enviado",
-  obtenerEnlacesStaff:"🔗 Enlaces de Staff consultados", guardarEnlacesStaff:"⚙️ Enlaces de Staff guardados"
+  obtenerEnlacesStaff:"🔗 Enlaces de Staff consultados", guardarEnlacesStaff:"⚙️ Enlaces de Staff guardados",
+  agregarPeriodo:"🏆 Periodo de Chambeadores agregado", eliminarPeriodo:"🗑️ Periodo de Chambeadores borrado"
 };
 // Agrupa cada acción bajo una categoría, solo para que la tabla de analítica se lea más rápido.
 // Si aparece una acción sin categoría asignada acá, cae sola en "Otros" (nunca se pierde un dato).
@@ -1685,7 +1727,8 @@ const ANALITICA_CATEGORIA_DE = {
   uploadImage:"Multimedia", uploadScript:"Multimedia", uploadAdjunto:"Multimedia", fetchSmulePhoto:"Multimedia", actualizarTodasLasFotos:"Multimedia",
   addQueja:"Buzón y reportes", addReporte:"Buzón y reportes",
   testRecordatorio:"Pruebas del sistema", testCumpleanos:"Pruebas del sistema", testSeguridad:"Pruebas del sistema",
-  obtenerEnlacesStaff:"Enlaces de Staff", guardarEnlacesStaff:"Enlaces de Staff"
+  obtenerEnlacesStaff:"Enlaces de Staff", guardarEnlacesStaff:"Enlaces de Staff",
+  agregarPeriodo:"Actividades y entregas", eliminarPeriodo:"Actividades y entregas"
 };
 async function abrirAnalitica(){
   const r = await apiPost({action:"obtenerAnalitica"}, "Cargando analítica...");
@@ -3014,7 +3057,7 @@ document.getElementById("autoAsignarBtn").onclick = async ()=>{
   } else toast("Error: "+(r.error||""));
 };
 
-/* ---------- 🏆 Chambeadores del año (temporada manual, no borra historial) ---------- */
+/* ---------- 🏆 Chambeadores por periodos (v24) ---------- */
 // v23: idsDeEntrega_ ya existe más abajo (mismo archivo) -- categoriaDeEntrega_ es su hermana
 // para la categoría: las entregas viejas (de antes de que existiera la columna "categoria" en la
 // hoja Entregas) llegan sin ese dato, así que además de leerlo directo del registro, se cae de
@@ -3025,32 +3068,108 @@ function categoriaDeEntrega_(e){
   const act = DB.actividades && DB.actividades.find(a=>String(a.id)===String(e.idActividad));
   return (act && (act.categoria==="canto"||act.categoria==="doblaje")) ? act.categoria : null;
 }
+
+let chambeadoresPeriodoSel_ = null; // null = "General" (todo el historial), o {id,nombre,fechaInicio,fechaFin}
 function abrirChambeadores(){
-  if(!getSwitchPillValue("chambeadoresCategoriaSwitch")) setSwitchPill("chambeadoresCategoriaSwitch","canto");
-  document.getElementById("reiniciarTemporadaBtn").classList.toggle("hidden", nivel!=="staff");
-  renderChambeadores();
+  mostrarListaPeriodos_();
   openModal("chambeadoresModal");
 }
 document.getElementById("chambeadoresBtn").onclick=abrirChambeadores;
 document.getElementById("chambeadoresTrofeoBtn").onclick=abrirChambeadores;
 bindSwitchPill("chambeadoresCategoriaSwitch");
 document.querySelectorAll("#chambeadoresCategoriaSwitch button").forEach(btn=>btn.addEventListener("click", renderChambeadores));
+
+// ---------- Vista 1: lista de periodos ----------
+function periodosOrdenados_(){
+  // Del más nuevo al más viejo, por fecha de inicio (así "2026" queda arriba de "2025", etc.)
+  return (DB.periodos||[]).slice().sort((a,b)=> new Date(b.fechaInicio||0) - new Date(a.fechaInicio||0));
+}
+function mostrarListaPeriodos_(){
+  document.getElementById("chambeadoresFormView").classList.add("hidden");
+  document.getElementById("chambeadoresRankingView").classList.add("hidden");
+  document.getElementById("chambeadoresListaView").classList.remove("hidden");
+  document.getElementById("agregarPeriodoBtn").classList.toggle("hidden", nivel!=="staff");
+  renderListaPeriodos_();
+}
+function renderListaPeriodos_(){
+  const el = document.getElementById("chambeadoresPeriodosList");
+  const periodos = periodosOrdenados_();
+  let html = `<button type="button" class="chambeadores-periodo-btn" data-periodo="general">
+      <span><span class="chambeadores-periodo-nombre">🌐 General</span>
+      <div class="chambeadores-periodo-sub">Todo el historial</div></span>
+    </button>`;
+  html += periodos.map(p=>`<button type="button" class="chambeadores-periodo-btn" data-periodo="${escAttr(p.id)}">
+      <span><span class="chambeadores-periodo-nombre">${escHtml(p.nombre)}</span>
+      <div class="chambeadores-periodo-sub">${fmtFecha(p.fechaInicio)} – ${fmtFecha(p.fechaFin)}</div></span>
+      ${nivel==="staff" ? `<span class="chambeadores-periodo-del" data-del-periodo="${escAttr(p.id)}" title="Eliminar periodo">🗑️</span>` : ``}
+    </button>`).join("");
+  el.innerHTML = html;
+  if(!periodos.length && nivel!=="staff"){
+    el.insertAdjacentHTML("beforeend", `<div style="color:var(--text-dim);font-size:12.5px;padding:6px 2px;">Todavía no hay periodos definidos, solo "General".</div>`);
+  }
+  el.querySelectorAll("[data-periodo]").forEach(btn=>btn.addEventListener("click",(ev)=>{
+    if(ev.target.closest("[data-del-periodo]")) return;
+    abrirRankingPeriodo_(btn.dataset.periodo);
+  }));
+  el.querySelectorAll("[data-del-periodo]").forEach(btn=>btn.addEventListener("click",async(ev)=>{
+    ev.stopPropagation();
+    if(!await confirmarAccion("¿Eliminar este periodo? Esto NO borra ninguna entrega, solo el periodo (podés volver a crearlo si hace falta).")) return;
+    const r = await apiPost({action:"eliminarPeriodo", id:btn.dataset.delPeriodo}, "Eliminando periodo...");
+    if(r.ok){ toast("Periodo eliminado"); await cargarDatos(); renderListaPeriodos_(); } else toast("Error: "+(r.error||""));
+  }));
+}
+document.getElementById("volverPeriodosBtn").onclick = mostrarListaPeriodos_;
+
+// ---------- Vista 3 (Staff): agregar periodo ----------
+document.getElementById("agregarPeriodoBtn").onclick=()=>{
+  document.getElementById("per_nombre").value="";
+  document.getElementById("per_inicio").value="";
+  document.getElementById("per_fin").value="";
+  document.getElementById("chambeadoresListaView").classList.add("hidden");
+  document.getElementById("chambeadoresFormView").classList.remove("hidden");
+};
+document.getElementById("cancelarPeriodoBtn").onclick = mostrarListaPeriodos_;
+document.getElementById("guardarPeriodoBtn").onclick=async()=>{
+  const nombre = document.getElementById("per_nombre").value.trim();
+  const fechaInicio = document.getElementById("per_inicio").value;
+  const fechaFin = document.getElementById("per_fin").value;
+  if(!nombre){ toast("Ponele un nombre al periodo (ej: 2026)"); return; }
+  if(!fechaInicio || !fechaFin){ toast("Faltan la fecha de inicio o de fin"); return; }
+  if(new Date(fechaInicio) > new Date(fechaFin)){ toast("La fecha de inicio no puede ser después de la fecha de fin"); return; }
+  const data = {id:"PERIODO-"+Date.now(), nombre, fechaInicio, fechaFin};
+  const r = await apiPost({action:"agregarPeriodo", data}, "Guardando periodo...");
+  if(r.ok){ toast("Periodo agregado 🏆"); await cargarDatos(); mostrarListaPeriodos_(); } else toast("Error: "+(r.error||""));
+};
+
+// ---------- Vista 2: top del periodo elegido (o "General") ----------
+function abrirRankingPeriodo_(periodoId){
+  chambeadoresPeriodoSel_ = periodoId==="general" ? null : (DB.periodos||[]).find(p=>String(p.id)===String(periodoId)) || null;
+  document.getElementById("chambeadoresListaView").classList.add("hidden");
+  document.getElementById("chambeadoresRankingView").classList.remove("hidden");
+  if(!getSwitchPillValue("chambeadoresCategoriaSwitch")) setSwitchPill("chambeadoresCategoriaSwitch","canto");
+  renderChambeadores();
+}
 function renderChambeadores(){
-  const inicioTxt = DB.temporadaChambeadoresInicio;
-  const inicio = inicioTxt ? new Date(inicioTxt) : null;
-  document.getElementById("chambeadoresPeriodo").textContent = inicio
-    ? `Contando entregas desde el ${fmtFecha(inicio)} (última vez que se reinició la temporada).`
-    : `Contando todo el historial (la temporada todavía no se ha reiniciado nunca).`;
+  const p = chambeadoresPeriodoSel_;
+  document.getElementById("chambeadoresPeriodoTitulo").textContent = p ? `🏆 ${p.nombre}` : "🏆 General";
+  document.getElementById("chambeadoresPeriodo").textContent = p
+    ? `Contando entregas del ${fmtFecha(p.fechaInicio)} al ${fmtFecha(p.fechaFin)}.`
+    : `Contando todo el historial de entregas.`;
   const catSel = getSwitchPillValue("chambeadoresCategoriaSwitch") || "canto";
+  // El rango del periodo se arma en horario local (00:00 del día de inicio al 23:59:59 del día de
+  // fin) para que ambos extremos queden incluidos completos, sin importar la hora exacta en que se
+  // haya enviado cada entrega ese mismo día.
+  const inicio = p ? new Date(p.fechaInicio+"T00:00:00") : null;
+  const fin = p ? new Date(p.fechaFin+"T23:59:59") : null;
   const conteo = {};
   DB.entregas.forEach(e=>{
-    if(inicio){ const f=new Date(e.fecha); if(isNaN(f)||f<inicio) return; }
+    if(p){ const f=new Date(e.fecha); if(isNaN(f)||f<inicio||f>fin) return; }
     if(categoriaDeEntrega_(e)!==catSel) return;
     idsDeEntrega_(e).forEach(id=>{ conteo[id]=(conteo[id]||0)+1; });
   });
   const filas = Object.keys(conteo).map(id=>({id,total:conteo[id]})).sort((a,b)=>b.total-a.total).slice(0,10);
   const el=document.getElementById("chambeadoresTop");
-  if(!filas.length){ el.innerHTML=`<div style="color:var(--text-dim);font-size:13px;">Todavía no hay entregas asignadas en esta categoría.</div>`; return; }
+  if(!filas.length){ el.innerHTML=`<div style="color:var(--text-dim);font-size:13px;">Todavía no hay entregas asignadas en esta categoría${p?" para este periodo":""}.</div>`; return; }
   el.innerHTML = filas.map((f,i)=>{
     const m=DB.miembros.find(x=>String(x.id)===f.id);
     const medalla = i===0?"🥇":i===1?"🥈":i===2?"🥉":String(i+1);
@@ -3062,11 +3181,6 @@ function renderChambeadores(){
     </div>`;
   }).join("");
 }
-document.getElementById("reiniciarTemporadaBtn").onclick=async()=>{
-  if(!await confirmarAccion("¿Reiniciar la temporada de Chambeadores? El top vuelve a 0 y cuenta desde ahora en adelante. El historial completo de entregas NO se borra, solo cambia desde cuándo se cuenta.")) return;
-  const r=await apiPost({action:"reiniciarTemporadaChambeadores"}, "Reiniciando temporada...");
-  if(r.ok){ toast("Temporada reiniciada 🏆"); await cargarDatos(); renderChambeadores(); } else toast("Error: "+(r.error||""));
-};
 
 /* ---------- Mundo Peaches (globo 3D, Miembro+Staff) ---------- */
 let globoInstancia = null;
