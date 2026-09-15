@@ -170,8 +170,15 @@
      sola línea (sin flex-wrap), mismo ancho entre ellos (flex:1) y misma altura que .search-bar
      de arriba (height:40px en ambas). Cada uno se prende/apaga solo, de forma independiente. */
   .search-field-filters{display:flex;flex-wrap:nowrap;gap:6px;height:40px;margin-bottom:10px;}
-  .search-field-btn{flex:1 1 0;min-width:0;height:100%;box-sizing:border-box;border-radius:999px;background:var(--card-bg);border:1px solid rgba(239,8,112,0.15);color:var(--text-dim);font-size:12px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;padding:0 4px;transition:background .15s ease,color .15s ease;}
+  .search-field-btn{flex:1 1 0;min-width:0;height:100%;box-sizing:border-box;border-radius:10px;background:var(--card-bg);border:1px solid rgba(255,255,255,0.1);color:var(--text-dim);font-size:12px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;padding:0 4px;transition:background .15s ease,color .15s ease,border-color .15s ease;}
   .search-field-btn.on{background:linear-gradient(90deg,var(--peach-2),var(--peach-1));color:#fff;border-color:transparent;}
+  /* Mismo estilo (degradado + borde) que los botones de Staff en Miembros (btn-family/btn-update/
+     btn-cumple/btn-seguridad), uno de color distinto por campo -- pedido para que la barra de
+     filtros de la búsqueda combine visualmente con esos botones. */
+  .search-field-btn.on[data-field="titulo"]{background:linear-gradient(90deg,rgba(255,215,0,0.5),rgba(255,193,7,0.35));border-color:rgba(255,215,0,0.6);}
+  .search-field-btn.on[data-field="descripcion"]{background:linear-gradient(90deg,rgba(46,204,113,0.55),rgba(120,224,143,0.5));border-color:rgba(46,204,113,0.55);}
+  .search-field-btn.on[data-field="entrega"]{background:linear-gradient(90deg,rgba(231,76,60,0.55),rgba(255,143,143,0.4));border-color:rgba(231,76,60,0.55);}
+  .search-field-btn.on[data-field="fecha"]{background:linear-gradient(90deg,rgba(93,173,226,0.55),rgba(151,206,240,0.4));border-color:rgba(93,173,226,0.55);}
   .logo{font-weight:800;font-size:19px;letter-spacing:0.5px;background:linear-gradient(90deg,var(--peach-2),#ffffff);-webkit-background-clip:text;background-clip:text;color:transparent;}
   .tabs{display:flex;gap:6px;background:var(--card-bg);padding:4px;border-radius:999px;}
   .tab-btn{padding:8px 16px;border-radius:999px;background:none;color:var(--text-dim);font-weight:600;font-size:14px;}
@@ -208,8 +215,12 @@
   #addActBtn{display:block;width:100%;margin-bottom:14px;padding:12px;border-radius:14px;background:linear-gradient(90deg,var(--peach-2),#ffffff);color:#3d1f2a;font-weight:800;font-size:15px;}
 
   .filter-pills{display:flex;gap:8px;margin-bottom:16px;}
-  .pill-toggle{flex:1;padding:9px;border-radius:999px;background:var(--card-bg-2);color:var(--text-dim);font-weight:700;font-size:13px;text-align:center;transition:background .15s,color .15s;}
+  .pill-toggle{flex:1;padding:9px;border-radius:10px;background:var(--card-bg-2);color:var(--text-dim);font-weight:700;font-size:13px;text-align:center;transition:background .15s,color .15s,border-color .15s;border:1px solid transparent;}
   .pill-toggle.on{background:linear-gradient(90deg,var(--peach-2),var(--peach-1));color:#fff;}
+  /* Canto y Doblaje con su propio color prendido (mismo estilo degradado+borde que los botones de
+     Staff en Miembros: btn-family es rosa, este morado usa los mismos tonos que btn-admin). */
+  #filterCanto.on{background:linear-gradient(90deg,rgba(239,8,112,0.55),rgba(255,143,177,0.55));border-color:rgba(239,8,112,0.5);}
+  #filterDoblaje.on{background:linear-gradient(90deg,rgba(164,95,199,0.65),rgba(217,182,245,0.55));border-color:rgba(164,95,199,0.6);}
 
   .switch-pill{display:flex;background:var(--card-bg-2);border-radius:999px;padding:4px;gap:4px;flex-wrap:wrap;}
   .switch-pill button{flex:1;min-width:80px;padding:9px 6px;border-radius:999px;background:none;color:var(--text-dim);font-weight:700;font-size:12.5px;text-align:center;}
@@ -3149,21 +3160,46 @@ function abrirRankingPeriodo_(periodoId){
   if(!getSwitchPillValue("chambeadoresCategoriaSwitch")) setSwitchPill("chambeadoresCategoriaSwitch","canto");
   renderChambeadores();
 }
+// FIX (el filtro por periodo no filtraba nada, contaba TODO el historial siempre):
+// p.fechaInicio/p.fechaFin llegan del backend como Date de la hoja "Periodos", que al pasar por
+// JSON.stringify se convierten a texto ISO completo con hora ("2026-01-01T06:00:00.000Z"), no al
+// "2026-01-01" plano que se guardó desde el <input type="date">. El código anterior le pegaba
+// "T00:00:00" a ese texto tal cual, y el resultado ("...000ZT00:00:00") es una fecha inválida
+// (Invalid Date). Con inicio/fin inválidos, CUALQUIER comparación (f<inicio, f>fin) da false, así
+// que la entrega nunca se descartaba y terminaba contando todo, sin importar el periodo elegido.
+// La solución: quedarse solo con el año-mes-día (los primeros 10 caracteres del ISO sirven igual
+// si viene con hora que si no) y comparar como texto "yyyy-MM-dd", que ordena igual que una fecha
+// real sin tener que pasar por new Date() ni pelear con husos horarios (mismo truco que fmtFecha).
+function soloYMD_(v){
+  if(!v) return null;
+  const m = String(v).match(/^(\d{4}-\d{2}-\d{2})/);
+  return m ? m[1] : null;
+}
+// De qué fecha se agarra cada entrega para decidir en qué periodo cae: la fecha de ENTREGA de la
+// actividad a la que pertenece (act.fechaFin, el corte que Staff le puso a esa actividad), no la
+// fecha en que se registró/asignó la entrega en el sistema (e.fecha) -- así una entrega cargada
+// tarde (ej. con "Pasar Lista" varias semanas después) sigue contando para el periodo al que
+// realmente perteneció la actividad, y no para el periodo en el que Staff hizo la carga. Si la
+// actividad ya no existe o no tiene fechaFin, se usa e.fecha como respaldo.
+function fechaParaPeriodo_(e){
+  const act = DB.actividades && DB.actividades.find(a=>String(a.id)===String(e.idActividad));
+  return (act && act.fechaFin) ? act.fechaFin : e.fecha;
+}
 function renderChambeadores(){
   const p = chambeadoresPeriodoSel_;
   document.getElementById("chambeadoresPeriodoTitulo").textContent = p ? `🏆 ${p.nombre}` : "🏆 General";
   document.getElementById("chambeadoresPeriodo").textContent = p
-    ? `Contando entregas del ${fmtFecha(p.fechaInicio)} al ${fmtFecha(p.fechaFin)}.`
+    ? `Contando entregas de actividades con fecha de entrega del ${fmtFecha(p.fechaInicio)} al ${fmtFecha(p.fechaFin)}.`
     : `Contando todo el historial de entregas.`;
   const catSel = getSwitchPillValue("chambeadoresCategoriaSwitch") || "canto";
-  // El rango del periodo se arma en horario local (00:00 del día de inicio al 23:59:59 del día de
-  // fin) para que ambos extremos queden incluidos completos, sin importar la hora exacta en que se
-  // haya enviado cada entrega ese mismo día.
-  const inicio = p ? new Date(p.fechaInicio+"T00:00:00") : null;
-  const fin = p ? new Date(p.fechaFin+"T23:59:59") : null;
+  const inicioYMD = p ? soloYMD_(p.fechaInicio) : null;
+  const finYMD = p ? soloYMD_(p.fechaFin) : null;
   const conteo = {};
   DB.entregas.forEach(e=>{
-    if(p){ const f=new Date(e.fecha); if(isNaN(f)||f<inicio||f>fin) return; }
+    if(p){
+      const ymd = soloYMD_(fechaParaPeriodo_(e));
+      if(!ymd || !inicioYMD || !finYMD || ymd<inicioYMD || ymd>finYMD) return;
+    }
     if(categoriaDeEntrega_(e)!==catSel) return;
     idsDeEntrega_(e).forEach(id=>{ conteo[id]=(conteo[id]||0)+1; });
   });
