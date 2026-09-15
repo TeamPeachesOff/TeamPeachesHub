@@ -1567,7 +1567,24 @@ async function apiGet(silencioso){
   // y la persona puede seguir viendo e interactuando con todo mientras se actualiza por detrás.
   // silencioso=false (o sin dato): solo pasa en la primerísima carga de un navegador nuevo, sin
   // nada guardado todavía — ahí sí no hay nada que mostrar, así que se justifica el overlay.
-  if(silencioso) showTopProgress(); else showLoading("Cargando datos...");
+  // TOPE DE 2s en la pantalla completa de duraznos: a nadie le gusta quedar "atrapado" viendo
+  // el loader varios segundos (cold-start de Apps Script, conexión lenta, etc.). Si a los 2s
+  // todavía no hay respuesta, se esconde el overlay completo y se pasa a la barrita animada del
+  // header (no bloquea nada, se puede seguir usando la página mientras los datos terminan de
+  // llegar por detrás). Esto es SOLO para la carga inicial (silencioso=false); cuando ya hay algo
+  // en pantalla (silencioso=true) nunca hubo overlay completo para empezar.
+  let escaladoATop = false;
+  let timerEscalada = null;
+  if(silencioso){
+    showTopProgress();
+  } else {
+    showLoading("Cargando datos...");
+    timerEscalada = setTimeout(()=>{
+      escaladoATop = true;
+      hideLoading();
+      showTopProgress();
+    }, 2000);
+  }
   // v21: se manda el token de sesión de Staff (si hay) Y la clave de Miembro (si hay) — el
   // servidor decide con cuál de los dos, si alguno, corresponde nivel de acceso (ver doGet en
   // Code.gs). Si no hay ninguno de los dos, el servidor ya filtra solo lo mostrable al público.
@@ -1588,7 +1605,10 @@ async function apiGet(silencioso){
   }catch(networkErr){
     return {ok:false, error: networkErr && networkErr.name==="AbortError" ? "El servidor tardó demasiado en responder." : "No se pudo conectar con el servidor. Revisa tu conexión e intenta de nuevo."};
   }
-  finally{ if(silencioso) hideTopProgress(); else hideLoading(); }
+  finally{
+    if(timerEscalada) clearTimeout(timerEscalada);
+    if(silencioso || escaladoATop) hideTopProgress(); else hideLoading();
+  }
 }
 async function apiPost(payload, msg){
   showLoading(msg||"Guardando...");
