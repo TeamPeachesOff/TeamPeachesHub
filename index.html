@@ -1197,11 +1197,25 @@
 window.addEventListener("pageshow", function(e){
   if (e.persisted) {
     if (DB && Array.isArray(DB.actividades) && DB.actividades.length > 0) {
-      renderActividades(); renderAnuario(); renderMiembros();
+      renderTodoPreservandoScroll_();
     }
     cargarDatos();
   }
 });
+// FIX (la app "te movía" de donde estabas al volver de otra app en el celular, o al terminar
+// una carga de datos en segundo plano): renderActividades/renderAnuario/renderMiembros
+// reconstruyen su sección entera con innerHTML, y aunque el contenido termine siendo prácticamente
+// el mismo, ese reemplazo puede correr el scroll (sobre todo si algo cambió de alto arriba de
+// donde estabas viendo). Acá se guarda la posición exacta ANTES de reconstruir y se restaura
+// JUSTO después, en el mismo tick — así, salvo que de verdad haya contenido nuevo que cambie el
+// alto de la página, la persona se queda mirando lo mismo que estaba viendo.
+// NOTA: quien scrollea de verdad es <body>, no window (ver comentario en el CSS de body / en
+// actualizarVisibilidadBackToTop más abajo), por eso se lee/restaura body.scrollTop.
+function renderTodoPreservandoScroll_(){
+  const scrollPrevio = document.body.scrollTop;
+  renderActividades(); renderAnuario(); renderMiembros();
+  document.body.scrollTop = scrollPrevio;
+}
 const APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwcnPM10DeRLE6ReNX_AqeViRfKkHjpflT-QCw05oW_L8n5ohrDhfR_iPuzTqYNrG8H4A/exec";
 const LOGO_DEFAULT = "https://raw.githubusercontent.com/TeamPeachesOff/TeamPeachesHub/main/Logos/PeachesLogo.jpeg";
 const LOGO_FALLBACK = "https://i.imgur.com/wusLyff.jpeg";
@@ -2099,7 +2113,7 @@ function aplicarDatosCargados_(datos, esCache){
   aplicarEnlacesPublicos();
   aplicarVisibilidadBuzon();
   aplicarVisibilidadMundo();
-  renderActividades(); renderAnuario(); renderMiembros();
+  renderTodoPreservandoScroll_();
 }
 
 // Los enlaces públicos (Regalito, Anuario público) llegan en CADA carga de datos (enlacesPublicos,
@@ -2137,6 +2151,13 @@ function aplicarVisibilidadMundo(){
 // cuando el usuario lo toca — ver attachYearToggleEvents(). Solo referencias livianas, nunca HTML.
 let actividadesPorAnioCache = new Map();
 let actividadesEntregasCache = new Map();
+// FIX (te "saca" de donde estabas al terminar de cargar datos en segundo plano): renderActividades()
+// reconstruye el feed entero desde cero en CADA carga de datos (silenciosa o no), incluyendo años
+// viejos que estaban abiertos — antes ese HTML simplemente no se volvía a generar, así que un año
+// abierto se veía "cerrarse solo" apenas terminaba una carga de fondo, aunque la persona ni tocó
+// nada. Este set recuerda qué años quedaron abiertos entre una carga y la siguiente, para
+// reabrirlos automáticamente después de reconstruir el feed (ver el final de renderActividades()).
+let actividadesAniosAbiertos_ = new Set();
 document.getElementById("filterCanto").onclick=()=>{ filtroCanto=!filtroCanto; syncFilterPills(); renderActividades(); };
 document.getElementById("filterDoblaje").onclick=()=>{ filtroDoblaje=!filtroDoblaje; syncFilterPills(); renderActividades(); };
 // ---------- Wiring del buscador de actividades (ver funciones actividadCoincideBusqueda_ y cía. más abajo) ----------
@@ -2341,22 +2362,38 @@ function attachYearToggleEvents(){
   document.querySelectorAll("[data-year-toggle]").forEach(btn=>{
     btn.onclick=()=>{
       const anio = parseInt(btn.dataset.yearToggle, 10);
-      const grupo = document.getElementById("year-group-"+anio);
       const yaAbierto = btn.classList.contains("open");
       if(yaAbierto){
-        // Se cierra: se tira el HTML ya generado (no se queda cacheado en el DOM).
-        grupo.innerHTML = "";
-        grupo.classList.add("hidden");
-        btn.classList.remove("open");
+        cerrarAnioActividades_(anio, btn);
+        actividadesAniosAbiertos_.delete(anio); // la persona lo cerró a propósito: dejar de recordarlo
       } else {
-        const lista = actividadesPorAnioCache.get(anio) || [];
-        grupo.innerHTML = lista.map(a=>cardHTML(a, actividadesEntregasCache.get(String(a.id))||[])).join("");
-        grupo.classList.remove("hidden");
-        btn.classList.add("open");
-        attachCardEvents(); bindAvatarFallbacks(); // recién ahora hay cards nuevas que necesitan sus handlers
+        abrirAnioActividades_(anio, btn);
+        actividadesAniosAbiertos_.add(anio); // recordar para reabrirlo solo tras la próxima carga de datos
       }
     };
   });
+  // Reabre automáticamente los años que ya estaban abiertos antes de este render (ver
+  // actividadesAniosAbiertos_ arriba) — así una carga de datos en segundo plano nunca "cierra"
+  // por su cuenta un año que la persona tenía abierto.
+  actividadesAniosAbiertos_.forEach(anio=>{
+    const btn = document.querySelector(`[data-year-toggle="${anio}"]`);
+    if(btn && !btn.classList.contains("open")) abrirAnioActividades_(anio, btn);
+  });
+}
+function abrirAnioActividades_(anio, btn){
+  const grupo = document.getElementById("year-group-"+anio);
+  if(!grupo) return; // ese año ya no tiene actividades en la carga nueva (se borraron, etc.)
+  const lista = actividadesPorAnioCache.get(anio) || [];
+  grupo.innerHTML = lista.map(a=>cardHTML(a, actividadesEntregasCache.get(String(a.id))||[])).join("");
+  grupo.classList.remove("hidden");
+  btn.classList.add("open");
+  attachCardEvents(); bindAvatarFallbacks(); // recién ahora hay cards nuevas que necesitan sus handlers
+}
+function cerrarAnioActividades_(anio, btn){
+  // Se cierra: se tira el HTML ya generado (no se queda cacheado en el DOM).
+  const grupo = document.getElementById("year-group-"+anio);
+  if(grupo){ grupo.innerHTML = ""; grupo.classList.add("hidden"); }
+  btn.classList.remove("open");
 }
 // Extrae el año de una fecha "YYYY-MM-DD..." leyendo el string directo (mismo criterio que
 // fmtFecha) para no toparse con el corrimiento de día/año que da new Date() con timezone local.
