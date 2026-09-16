@@ -2792,10 +2792,22 @@ function entregasDelMiembroHTML_(idMiembro){
   if(!mias.length) return "";
   const porCategoria = {canto:[], doblaje:[], otras:[]};
   mias.forEach(e=>{ const cat=categoriaDeEntrega_(e)||"otras"; porCategoria[cat].push(e); });
-  // Más reciente arriba, más vieja abajo. Fechas inválidas/faltantes se mandan al final en vez de
-  // romper el orden del resto.
+  // Orden cronológico real, más nuevo arriba. ANTES se ordenaba por "e.fecha" (el momento en que
+  // la entrega se cargó al sistema), pero eso NO es lo mismo que la fecha real de la actividad:
+  // cuando se importan varias entregas juntas desde el Excel de "Importar", todas quedan con
+  // prácticamente el mismo "e.fecha" (el instante del import), así que dentro de ese lote el
+  // orden que sobrevivía era el orden de las filas en el Excel, no el cronológico real -- y si un
+  // lote viejo se importaba tarde, tampoco se acomodaba bien contra lotes más nuevos. Ahora se usa
+  // la fecha de entrega real de la Actividad (fechaFin) buscándola por idActividad, igual que ya
+  // se hace para el ranking de Periodos de Chambeadores; "e.fecha" queda solo de respaldo para
+  // entregas huérfanas (la actividad ya no existe o no tiene fechaFin).
+  const actividadPorId_ = new Map((DB.actividades||[]).map(a=>[String(a.id), a]));
+  const fechaOrdenDe_ = (e)=>{
+    const act = actividadPorId_.get(String(e.idActividad));
+    return (act && act.fechaFin) ? act.fechaFin : e.fecha;
+  };
   const porFechaDesc=(a,b)=>{
-    const fa=new Date(a.fecha), fb=new Date(b.fecha);
+    const fa=new Date(fechaOrdenDe_(a)), fb=new Date(fechaOrdenDe_(b));
     const ta=isNaN(fa)?-Infinity:fa.getTime(), tb=isNaN(fb)?-Infinity:fb.getTime();
     return tb-ta;
   };
