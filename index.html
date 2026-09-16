@@ -1626,6 +1626,13 @@ async function apiGet(silencioso){
 }
 async function apiPost(payload, msg){
   showLoading(msg||"Guardando...");
+  // Si se pasa de 8s sin respuesta, probablemente sea un cold-start de Apps Script (el servidor
+  // "dormido" tardando en arrancar) — se avisa para que no parezca que la app se congeló, en vez
+  // de dejar "Verificando..."/"Guardando..." fijo sin ninguna pista de qué está pasando.
+  const timerMensajeLargo = setTimeout(()=>{
+    const el = document.querySelector("#loadingOverlay .loading-text");
+    if(el) el.textContent = "Tardando más de lo normal — el servidor puede estar \"despertando\". Un momento más...";
+  }, 8000);
   try{
     payload.token=sessionToken||"";
     // Antes, si el fetch fallaba (sin internet) o el servidor respondía con algo que no era JSON
@@ -1639,9 +1646,14 @@ async function apiPost(payload, msg){
     // Nota: a diferencia de apiGet, acá NO se reintenta solo — reintentar automáticamente un
     // POST (que guarda/borra algo) podría duplicar la acción si el primer intento en realidad
     // sí llegó a completarse en el servidor y solo se perdió la respuesta. Sí se pone un timeout
-    // largo (20s) para no colgarse para siempre si Apps Script está lento despertando.
+    // largo (35s) para no colgarse para siempre si Apps Script está lento despertando.
+    // FIX: estaba en 20s, y un cold-start normal de Apps Script (el servidor "dormido" que tarda
+    // en arrancar tras un rato sin uso) puede perfectamente pasar de esos 20s incluso para algo
+    // tan liviano como validar el PIN de Miembro (solo compara un string) — el servidor terminaba
+    // respondiendo bien igual, pero el cliente ya se había rendido y mostraba error, dando la
+    // sensación de que "no deja entrar" cuando en realidad solo hacía falta esperar un poco más.
     const controller = new AbortController();
-    const timer = setTimeout(()=>controller.abort(), 20000);
+    const timer = setTimeout(()=>controller.abort(), 35000);
     let res;
     try{ res = await fetch(APPS_SCRIPT_URL,{method:"POST",headers:{"Content-Type":"text/plain;charset=utf-8"},body:JSON.stringify(payload),signal:controller.signal}); }
     finally{ clearTimeout(timer); }
@@ -1652,7 +1664,7 @@ async function apiPost(payload, msg){
     }
   }catch(networkErr){
     return {ok:false, error: networkErr && networkErr.name==="AbortError" ? "El servidor tardó demasiado en responder. Revisa si tu cambio se guardó antes de repetirlo." : "No se pudo conectar con el servidor. Revisa tu conexión e intenta de nuevo."};
-  } finally{ hideLoading(); }
+  } finally{ clearTimeout(timerMensajeLargo); hideLoading(); }
 }
 // Se llama SOLO justo después de que el servidor confirmó una sesión de Staff válida.
 // Si esto falla, enlacesStaff queda null y los botones simplemente avisan "no se pudo cargar".
