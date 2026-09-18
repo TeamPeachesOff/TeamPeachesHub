@@ -638,7 +638,7 @@
 <header>
   <div id="topProgressBar"></div>
   <div class="header-inner">
-    <div class="header-left"><button id="hamburgerBtn">☰</button><div class="logo" id="peachesLogoBadge" style="-webkit-user-select:none;user-select:none;-webkit-touch-callout:none;touch-action:manipulation;">🍑 Peaches Hub</div></div>
+    <div class="header-left"><button id="hamburgerBtn">☰</button><div class="logo">🍑 Peaches Hub</div></div>
     <div class="tabs"><button class="tab-btn active" data-tab="actividades">Actividades</button><button class="tab-btn" data-tab="anuario">Anuario</button></div>
   </div>
 </header>
@@ -785,7 +785,7 @@
 </main>
 
 <div id="staffStatusBadge">🛠️ Modo Staff activo</div>
-<div id="memberStatusBadge" title="Modo Miembro (solo lectura)">🍑</div>
+<div id="memberStatusBadge" title="Modo Miembro (solo lectura)" style="-webkit-user-select:none;user-select:none;-webkit-touch-callout:none;touch-action:manipulation;">🍑</div>
 <div class="toast" id="toast"></div>
 <button type="button" id="backToTopBtn" class="back-to-top-btn hidden" aria-label="Subir"><span>▲</span></button>
 
@@ -1184,10 +1184,12 @@
   </div>
 </div>
 
-<!-- Easter egg: manteniendo presionado 5s el badge "🍑 Peaches Hub" del header (ver #peachesLogoBadge)
-     se abre esta ventanita para elegir una velocidad de auto-scroll (0 a 10). Es global a la
-     página (mueve el scroll real de <body>, ver "html/body{overflow...}" en el CSS), así que
-     funciona igual estando en la pestaña Actividades o en Miembros. -->
+<!-- Easter egg: manteniendo presionado 3s el badge 🍑 flotante de "Modo Miembro"
+     (#memberStatusBadge, esquina inferior izquierda) se abre esta ventanita para elegir una
+     velocidad de auto-scroll (0 a 10). Es global a la página (mueve el scroll real de <body>, ver
+     "html/body{overflow...}" en el CSS), así que funciona igual en Actividades, Anuario o
+     Miembros. Un tap corto (sin mantener) sigue haciendo lo de siempre: preguntar si salir del
+     modo miembro. -->
 <div class="modal-overlay" id="scrollSpeedModal" style="z-index:500;">
   <div class="modal-box" style="max-width:260px;text-align:center;">
     <button class="modal-close" data-close="scrollSpeedModal">✕</button>
@@ -4164,9 +4166,9 @@ document.querySelectorAll(".modal-overlay").forEach(ov=>{
   });
 });
 
-// ============ Easter egg: auto-scroll manteniendo presionado el badge "🍑 Peaches Hub" ============
-// Mantener presionado 5s el badge del header abre una ventanita ("scrollSpeedModal") con un
-// slider de 0 a 10. Ese valor mueve, a través de requestAnimationFrame, el scroll real de <body>
+// ============ Easter egg: auto-scroll manteniendo presionado el badge 🍑 de Modo Miembro ============
+// Mantener presionado 3s el badge flotante "🍑" de Modo Miembro (#memberStatusBadge) abre una
+// ventanita ("scrollSpeedModal") con un slider de 0 a 10. Ese valor mueve, a través de requestAnimationFrame, el scroll real de <body>
 // (que es donde vive el overflow-y:auto de la página, ver CSS de más arriba) hacia abajo de forma
 // constante. No depende de qué pestaña/sección esté visible (Actividades, Anuario, o el drawer de
 // Miembros) porque scrollea el documento entero, no un contenedor de una sección en particular.
@@ -4219,23 +4221,32 @@ function peachesLongPressCancel(){
 }
 // Un touchmove se dispara todo el tiempo aunque el dedo esté quieto (jitter del sensor), así que
 // SOLO cancelamos si el dedo realmente se movió más que la tolerancia -- si no, un long-press real
-// en celular nunca llegaba a completar los 3s (se cancelaba solo, esa era la falla anterior).
+// en celular nunca llegaba a completar los 3s.
 function peachesLongPressTouchMove(e){
   if (!peachesLongPressTimer || !e.touches || !e.touches[0]) return;
   const dx = e.touches[0].clientX - peachesTouchStartX;
   const dy = e.touches[0].clientY - peachesTouchStartY;
   if (Math.sqrt(dx * dx + dy * dy) > PEACHES_MOVE_TOLERANCE) peachesLongPressCancel();
 }
-const peachesLogoBadge = document.getElementById("peachesLogoBadge");
-peachesLogoBadge.addEventListener("mousedown", peachesLongPressStart);
-peachesLogoBadge.addEventListener("touchstart", peachesLongPressStart, { passive: true });
-peachesLogoBadge.addEventListener("touchmove", peachesLongPressTouchMove, { passive: true });
+// El badge correcto es el 🍑 flotante de "Modo Miembro" (#memberStatusBadge, abajo a la
+// izquierda) -- NO el logo del header. Ese badge ya tiene un tap normal que pregunta "¿Salir del
+// modo miembro?" (asignado más abajo en este mismo script, vía ".onclick=..."); para no romperlo,
+// esperamos a que termine de cargar todo el script (setTimeout 0) y ahí "envolvemos" ese handler:
+// si el click viene de un long-press ya manejado, lo ignoramos; si no, dejamos pasar el tap normal.
+const peachesMemberBadge = document.getElementById("memberStatusBadge");
+peachesMemberBadge.addEventListener("mousedown", peachesLongPressStart);
+peachesMemberBadge.addEventListener("touchstart", peachesLongPressStart, { passive: true });
+peachesMemberBadge.addEventListener("touchmove", peachesLongPressTouchMove, { passive: true });
 ["mouseup", "mouseleave", "touchend", "touchcancel"].forEach(ev =>
-  peachesLogoBadge.addEventListener(ev, peachesLongPressCancel)
+  peachesMemberBadge.addEventListener(ev, peachesLongPressCancel)
 );
-// El logo normalmente no hace nada al tap corto, pero evitamos que el click final de un long-press
-// (mousedown+mouseup sobre el mismo elemento disparan un "click" después) haga algo inesperado.
-peachesLogoBadge.addEventListener("click", e => { if (peachesLongPressFired) e.preventDefault(); });
+setTimeout(() => {
+  const original = peachesMemberBadge.onclick;
+  peachesMemberBadge.onclick = function (e) {
+    if (peachesLongPressFired) { peachesLongPressFired = false; return; }
+    if (original) return original.call(this, e);
+  };
+}, 0);
 
 /* ---------- pill switches (categoría / participación) ---------- */
 function bindSwitchPill(containerId){
