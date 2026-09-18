@@ -638,7 +638,7 @@
 <header>
   <div id="topProgressBar"></div>
   <div class="header-inner">
-    <div class="header-left"><button id="hamburgerBtn">☰</button><div class="logo">🍑 Peaches Hub</div></div>
+    <div class="header-left"><button id="hamburgerBtn">☰</button><div class="logo" id="peachesLogoBadge" style="-webkit-user-select:none;user-select:none;-webkit-touch-callout:none;touch-action:manipulation;">🍑 Peaches Hub</div></div>
     <div class="tabs"><button class="tab-btn active" data-tab="actividades">Actividades</button><button class="tab-btn" data-tab="anuario">Anuario</button></div>
   </div>
 </header>
@@ -647,7 +647,7 @@
 <div id="drawer">
   <div class="drawer-title">Team Peaches</div>
   <div class="social-row">
-    <a class="social-link" target="_blank" onclick="trackUI('redSocial_web')" href="https://rigodemianrobledo.my.canva.site/peaches/">
+    <a class="social-link" target="_blank" onclick="trackUI('redSocial_web')" href="https://rigodemianrobledo.my.canva.site/peaches/#menuprincipal">
       <img src="https://raw.githubusercontent.com/TeamPeachesOff/TeamPeachesHub/main/Logos/PeachesLogo.jpeg" onerror="this.onerror=null;this.src='https://i.imgur.com/wusLyff.jpeg';" alt="Peaches"><span>Peaches</span>
     </a>
     <a class="social-link" target="_blank" onclick="trackUI('redSocial_youtube')" href="https://youtube.com/@teampeachesoff">
@@ -1180,6 +1180,22 @@
       <button type="button" data-dest="cancion">🥇 Mejor Canción</button>
       <button type="button" data-dest="doblaje">🎙️ Mejor Doblaje</button>
       <button type="button" data-dest="mencion">✨ Mención Honorífica</button>
+    </div>
+  </div>
+</div>
+
+<!-- Easter egg: manteniendo presionado 5s el badge "🍑 Peaches Hub" del header (ver #peachesLogoBadge)
+     se abre esta ventanita para elegir una velocidad de auto-scroll (0 a 10). Es global a la
+     página (mueve el scroll real de <body>, ver "html/body{overflow...}" en el CSS), así que
+     funciona igual estando en la pestaña Actividades o en Miembros. -->
+<div class="modal-overlay" id="scrollSpeedModal" style="z-index:500;">
+  <div class="modal-box" style="max-width:260px;text-align:center;">
+    <button class="modal-close" data-close="scrollSpeedModal">✕</button>
+    <h3 style="margin-top:0;">🍑 Velocidad de scroll</h3>
+    <div id="scrollSpeedValue" style="font-size:32px;font-weight:800;color:var(--peach-2);margin:8px 0;">0</div>
+    <input type="range" min="0" max="10" step="1" value="0" id="scrollSpeedSlider" style="width:100%;accent-color:var(--peach-2);">
+    <div style="display:flex;justify-content:space-between;font-size:11px;color:var(--text-dim);margin-top:4px;">
+      <span>0 · detenido</span><span>10 · máx</span>
     </div>
   </div>
 </div>
@@ -4147,6 +4163,58 @@ document.querySelectorAll(".modal-overlay").forEach(ov=>{
     ov.classList.remove("open");
   });
 });
+
+// ============ Easter egg: auto-scroll manteniendo presionado el badge "🍑 Peaches Hub" ============
+// Mantener presionado 5s el badge del header abre una ventanita ("scrollSpeedModal") con un
+// slider de 0 a 10. Ese valor mueve, a través de requestAnimationFrame, el scroll real de <body>
+// (que es donde vive el overflow-y:auto de la página, ver CSS de más arriba) hacia abajo de forma
+// constante. No depende de qué pestaña/sección esté visible (Actividades, Anuario, o el drawer de
+// Miembros) porque scrollea el documento entero, no un contenedor de una sección en particular.
+let peachesScrollSpeed = 0;
+let peachesScrollRAF = null;
+function peachesAutoScrollTick(){
+  if (peachesScrollSpeed > 0) {
+    document.body.scrollTop += peachesScrollSpeed * 0.6;
+    // Si ya llegamos al fondo, no tiene sentido seguir pidiendo frames.
+    const alFondo = document.body.scrollTop + document.body.clientHeight >= document.body.scrollHeight - 1;
+    if (alFondo) { peachesScrollRAF = null; return; }
+  }
+  peachesScrollRAF = requestAnimationFrame(peachesAutoScrollTick);
+}
+function peachesSetScrollSpeed(v){
+  peachesScrollSpeed = Math.max(0, Math.min(10, Number(v) || 0));
+  if (peachesScrollSpeed > 0 && !peachesScrollRAF) peachesScrollRAF = requestAnimationFrame(peachesAutoScrollTick);
+}
+const scrollSpeedSlider = document.getElementById("scrollSpeedSlider");
+const scrollSpeedValue = document.getElementById("scrollSpeedValue");
+scrollSpeedSlider.addEventListener("input", () => {
+  scrollSpeedValue.textContent = scrollSpeedSlider.value;
+  peachesSetScrollSpeed(scrollSpeedSlider.value);
+});
+
+let peachesLongPressTimer = null;
+function peachesLongPressStart(){
+  peachesLongPressCancel();
+  peachesLongPressTimer = setTimeout(() => {
+    peachesLongPressTimer = null;
+    scrollSpeedSlider.value = peachesScrollSpeed; // recuerda la última velocidad elegida
+    scrollSpeedValue.textContent = peachesScrollSpeed;
+    openModal("scrollSpeedModal");
+    if (navigator.vibrate) navigator.vibrate(30); // feedback táctil sutil en celular, si está disponible
+  }, 5000);
+}
+function peachesLongPressCancel(){
+  if (peachesLongPressTimer) { clearTimeout(peachesLongPressTimer); peachesLongPressTimer = null; }
+}
+const peachesLogoBadge = document.getElementById("peachesLogoBadge");
+peachesLogoBadge.addEventListener("mousedown", peachesLongPressStart);
+peachesLogoBadge.addEventListener("touchstart", peachesLongPressStart, { passive: true });
+["mouseup", "mouseleave", "touchend", "touchcancel", "touchmove"].forEach(ev =>
+  peachesLogoBadge.addEventListener(ev, peachesLongPressCancel)
+);
+// El logo normalmente no hace nada al tap corto, pero por las dudas evitamos que un click
+// "suelto" dispare algo inesperado (selección de texto, etc.) mientras se usa este gesto.
+peachesLogoBadge.addEventListener("click", e => e.preventDefault());
 
 /* ---------- pill switches (categoría / participación) ---------- */
 function bindSwitchPill(containerId){
