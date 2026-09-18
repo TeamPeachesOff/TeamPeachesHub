@@ -4193,28 +4193,49 @@ scrollSpeedSlider.addEventListener("input", () => {
 });
 
 let peachesLongPressTimer = null;
-function peachesLongPressStart(){
+let peachesLongPressFired = false;
+let peachesTouchStartX = 0, peachesTouchStartY = 0;
+const PEACHES_LONGPRESS_MS = 3000; // pedido: 3s, y no importa si se sigue presionando después
+const PEACHES_MOVE_TOLERANCE = 15; // px: tolerancia para no cancelar por microvibración del dedo
+function peachesOpenSpeedPopup(){
+  peachesLongPressFired = true;
+  peachesLongPressTimer = null;
+  scrollSpeedSlider.value = peachesScrollSpeed; // recuerda la última velocidad elegida
+  scrollSpeedValue.textContent = peachesScrollSpeed;
+  openModal("scrollSpeedModal");
+  if (navigator.vibrate) navigator.vibrate(30); // feedback táctil sutil en celular, si está disponible
+}
+function peachesLongPressStart(e){
   peachesLongPressCancel();
-  peachesLongPressTimer = setTimeout(() => {
-    peachesLongPressTimer = null;
-    scrollSpeedSlider.value = peachesScrollSpeed; // recuerda la última velocidad elegida
-    scrollSpeedValue.textContent = peachesScrollSpeed;
-    openModal("scrollSpeedModal");
-    if (navigator.vibrate) navigator.vibrate(30); // feedback táctil sutil en celular, si está disponible
-  }, 5000);
+  peachesLongPressFired = false;
+  if (e.touches && e.touches[0]) {
+    peachesTouchStartX = e.touches[0].clientX;
+    peachesTouchStartY = e.touches[0].clientY;
+  }
+  peachesLongPressTimer = setTimeout(peachesOpenSpeedPopup, PEACHES_LONGPRESS_MS);
 }
 function peachesLongPressCancel(){
   if (peachesLongPressTimer) { clearTimeout(peachesLongPressTimer); peachesLongPressTimer = null; }
 }
+// Un touchmove se dispara todo el tiempo aunque el dedo esté quieto (jitter del sensor), así que
+// SOLO cancelamos si el dedo realmente se movió más que la tolerancia -- si no, un long-press real
+// en celular nunca llegaba a completar los 3s (se cancelaba solo, esa era la falla anterior).
+function peachesLongPressTouchMove(e){
+  if (!peachesLongPressTimer || !e.touches || !e.touches[0]) return;
+  const dx = e.touches[0].clientX - peachesTouchStartX;
+  const dy = e.touches[0].clientY - peachesTouchStartY;
+  if (Math.sqrt(dx * dx + dy * dy) > PEACHES_MOVE_TOLERANCE) peachesLongPressCancel();
+}
 const peachesLogoBadge = document.getElementById("peachesLogoBadge");
 peachesLogoBadge.addEventListener("mousedown", peachesLongPressStart);
 peachesLogoBadge.addEventListener("touchstart", peachesLongPressStart, { passive: true });
-["mouseup", "mouseleave", "touchend", "touchcancel", "touchmove"].forEach(ev =>
+peachesLogoBadge.addEventListener("touchmove", peachesLongPressTouchMove, { passive: true });
+["mouseup", "mouseleave", "touchend", "touchcancel"].forEach(ev =>
   peachesLogoBadge.addEventListener(ev, peachesLongPressCancel)
 );
-// El logo normalmente no hace nada al tap corto, pero por las dudas evitamos que un click
-// "suelto" dispare algo inesperado (selección de texto, etc.) mientras se usa este gesto.
-peachesLogoBadge.addEventListener("click", e => e.preventDefault());
+// El logo normalmente no hace nada al tap corto, pero evitamos que el click final de un long-press
+// (mousedown+mouseup sobre el mismo elemento disparan un "click" después) haga algo inesperado.
+peachesLogoBadge.addEventListener("click", e => { if (peachesLongPressFired) e.preventDefault(); });
 
 /* ---------- pill switches (categoría / participación) ---------- */
 function bindSwitchPill(containerId){
