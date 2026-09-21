@@ -166,6 +166,20 @@
   .search-bar input::placeholder{color:var(--text-dim);}
   .search-bar #searchClearBtn{background:none;color:var(--text-dim);font-size:14px;padding:2px 4px;flex-shrink:0;}
   .search-results-info{font-size:12.5px;color:var(--text-dim);margin:-2px 0 10px 4px;}
+  /* Separador entre los resultados principales (90%+) y los "parecidos" (75%+) del buscador. */
+  .search-maybe-divider{display:flex;align-items:center;gap:10px;margin:22px 4px 14px;font-size:14px;font-weight:700;color:var(--peach-1);}
+  .search-maybe-divider::after{content:"";flex:1;height:1px;background:linear-gradient(90deg,rgba(239,8,112,0.5),transparent);}
+  /* Resaltado de lo que coincidió con la búsqueda: la palabra (marcador + subrayado dorado) y el
+     bloque que la contiene (fecha, descripción, fila de entrega) con un fondo suave y una franja a la izquierda. */
+  mark.search-hit{background:rgba(255,215,0,0.30);color:var(--text);border-radius:4px;padding:0 2px;box-shadow:inset 0 -2px 0 var(--gold);}
+  .search-hit-block{background:rgba(255,215,0,0.08);box-shadow:inset 3px 0 0 var(--gold);border-radius:8px;}
+  .card-dates.search-hit-block{align-self:flex-start;padding:2px 10px;color:var(--text);}
+  .desc-text.search-hit-block{padding:6px 10px;}
+  table.entregas-table tr.search-hit-row td{background:rgba(255,215,0,0.10);}
+  table.entregas-table tr.search-hit-row td:first-child{box-shadow:inset 3px 0 0 var(--gold);}
+  /* Botón del acordeón cuya sección contiene la coincidencia. Se usa ::after (no un hijo) porque el
+     JS de los acordeones reescribe el textContent del botón al abrir/cerrar y borraría cualquier hijo. */
+  .accordion-toggle.search-hit-toggle::after{content:"🔍";font-size:12px;margin-left:8px;}
   /* Fila de categorías del buscador (Actividad/Descripción/Entrega/Fecha): SIEMPRE los 4 en una
      sola línea (sin flex-wrap), mismo ancho entre ellos (flex:1) y misma altura que .search-bar
      de arriba (height:40px en ambas). Cada uno se prende/apaga solo, de forma independiente. */
@@ -2190,7 +2204,7 @@ let actividadesEntregasCache = new Map();
 let actividadesAniosAbiertos_ = new Set();
 document.getElementById("filterCanto").onclick=()=>{ filtroCanto=!filtroCanto; syncFilterPills(); renderActividades(); };
 document.getElementById("filterDoblaje").onclick=()=>{ filtroDoblaje=!filtroDoblaje; syncFilterPills(); renderActividades(); };
-// ---------- Wiring del buscador de actividades (ver funciones actividadCoincideBusqueda_ y cía. más abajo) ----------
+// ---------- Wiring del buscador de actividades (ver evaluarActividadBusqueda_ y cía. más abajo) ----------
 // La barra queda siempre visible debajo de los filtros Canto/Doblaje, no hace falta abrirla/cerrarla.
 let searchDebounceTimer_=null;
 document.getElementById("searchInput").addEventListener("input", (e)=>{
@@ -2207,7 +2221,7 @@ document.getElementById("searchClearBtn").onclick=()=>{
   renderActividades(); input.focus();
 };
 // Cada botón (Actividad/Descripción/Entrega/Fecha) prende/apaga SU categoría sola en searchFields,
-// sin afectar a las demás -- ver actividadCoincideBusqueda_ más abajo, que solo junta el
+// sin afectar a las demás -- ver evaluarActividadBusqueda_ más abajo, que solo junta el
 // vocabulario de las categorías que sigan prendidas.
 document.querySelectorAll(".search-field-btn").forEach(btn=>{
   btn.onclick=()=>{
@@ -2253,8 +2267,17 @@ function similitud_(a, b) {
   if (maxLen === 0) return 1;
   return 1 - (distanciaLevenshtein_(a, b) / maxLen);
 }
-// 75% pedido. Si en algún momento sale muy estricto/muy laxo, se ajusta SOLO acá.
-const UMBRAL_COINCIDENCIA_BUSQUEDA = 0.75;
+// ---- Precisión del buscador: dos niveles ----
+// PRINCIPALES (arriba): la palabra es igual, o contiene lo que escribiste (mínimo 3 letras, así
+// "sept" encuentra "septiembre"), o se parece un 90% o más. Ignora tildes y mayúsculas.
+// PARECIDAS ("O tal vez buscabas:", abajo): parecido entre 75% y 90%. Es la misma tolerancia a errores
+// de tipeo que tenía el buscador antes de separarlo en dos niveles.
+// Si en algún momento sale muy estricto/muy laxo, se ajusta SOLO acá.
+const UMBRAL_BUSQUEDA_PRINCIPAL = 0.90;
+const UMBRAL_BUSQUEDA_PARECIDA = 0.75;
+// true = al buscar, se abren solos los acordeones (Más Info / Entregas) donde está la coincidencia
+// para que se vea resaltada. false = quedan cerrados y solo se marca el botón con un 🔍.
+const BUSQUEDA_ABRIR_ACORDEONES = true;
 
 // Arma la fecha extraída (año/mes/día) igual que fmtFecha/anioDeFecha de arriba, sin pasar por
 // new Date(), para no arrastrar el mismo bug de corrimiento de día que ya se resolvió ahí.
@@ -2293,31 +2316,161 @@ function palabrasPorCategoria_(a, entregasDeActividad) {
   });
   return categorias;
 }
-// Compara un token de búsqueda contra la lista de palabras de una actividad: coincide si hay
-// match exacto, si el token es el inicio/parte de alguna palabra (para búsquedas cortas tipo
-// "sept"), o si la similitud (Levenshtein) llega al umbral -- así "cancion" encuentra "canción"
-// y "septienbre" encuentra "septiembre".
-function tokenCoincideConPalabras_(token, palabras) {
-  if (!token) return true;
-  for (const palabra of palabras) {
-    if (palabra === token) return true;
-    if (token.length >= 3 && palabra.includes(token)) return true;
-    if (similitud_(token, palabra) >= UMBRAL_COINCIDENCIA_BUSQUEDA) return true;
-  }
-  return false;
+// Texto sin tildes, mayúsculas ni símbolos, para poder comparar ("Canción!" == "cancion").
+function normalizarBusqueda_(s) {
+  return String(s || "").normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().replace(/[^a-z0-9]/g, "");
 }
-function actividadCoincideBusqueda_(actividad, entregasDeActividad, query) {
-  const tokens = query.toLowerCase().trim().split(/\s+/).filter(Boolean);
-  if (tokens.length === 0) return true;
+function bigramasBusqueda_(s) {
+  if (s.length < 2) return [s];
+  const out = [];
+  for (let i = 0; i < s.length - 1; i++) out.push(s.slice(i, i + 2));
+  return out;
+}
+// Parecido 0..1 entre dos textos YA normalizados (coeficiente de Dice sobre pares de letras). Es
+// exactamente la misma cuenta que hacía el buscador hasta ahora (la de "Parecido de texto" más
+// abajo, que por llamarse igual que la de Levenshtein de arriba es la que en realidad se usaba).
+// Se copia acá con nombre propio para que el buscador no dependa de esa coincidencia de nombres.
+// Devuelve 0 cuando ya se sabe que ni por asomo llega al mínimo (evita armar los pares de letras).
+function similitudBusqueda_(a, b) {
+  if (!a || !b) return 0;
+  if (a === b) return 1;
+  const na = a.length < 2 ? 1 : a.length - 1, nb = b.length < 2 ? 1 : b.length - 1;
+  if ((2 * Math.min(na, nb)) / (na + nb) < UMBRAL_BUSQUEDA_PARECIDA) return 0;
+  const bgA = bigramasBusqueda_(a), bgB = bigramasBusqueda_(b);
+  let comunes = 0;
+  bgA.forEach(bg => { const i = bgB.indexOf(bg); if (i !== -1) { comunes++; bgB.splice(i, 1); } });
+  return (2 * comunes) / (na + nb); // na/nb = cantidad original de pares (bgB se fue vaciando arriba)
+}
+// Qué tan bien coincide UN token de la búsqueda con UNA palabra (ambos ya normalizados):
+//   2 = coincidencia directa (igual, contenida, o parecido >= 90%)
+//   1 = coincidencia aproximada (parecido entre 75% y 90%) -> va en "O tal vez buscabas:"
+//   0 = no coincide
+function nivelTokenVsPalabra_(token, palabra) {
+  if (!token || !palabra) return 0;
+  if (palabra === token) return 2;
+  if (token.length >= 3 && palabra.includes(token)) return 2;
+  const s = similitudBusqueda_(token, palabra);
+  if (s >= UMBRAL_BUSQUEDA_PRINCIPAL) return 2;
+  if (s >= UMBRAL_BUSQUEDA_PARECIDA) return 1;
+  return 0;
+}
+// Evalúa una actividad contra la búsqueda. Devuelve null si no coincide, o
+// { nivel, categorias }: nivel 2 = resultado principal, nivel 1 = "tal vez buscabas"; y en
+// "categorias" en cuáles de titulo/descripcion/entrega/fecha cayó la coincidencia (sirve para
+// saber qué resaltar). Todos los tokens tienen que encontrar algo (así "mayo 2026" no trae
+// cualquier cosa de mayo de cualquier año, ni cualquier actividad de 2026 sin importar el mes);
+// el nivel de la actividad es el del token que peor coincidió. Solo cuentan las categorías
+// PRENDIDAS en searchFields -- si apagás "Descripción", un token que solo aparece ahí no cuenta.
+function evaluarActividadBusqueda_(actividad, entregasDeActividad, tokensN) {
+  if (tokensN.length === 0) return null;
   const porCategoria = palabrasPorCategoria_(actividad, entregasDeActividad);
-  // Solo se junta el "vocabulario" de las categorías que estén PRENDIDAS en searchFields --
-  // así, si apagás "Descripción", un token que solo aparece ahí deja de contar como match.
-  const palabras = Object.keys(searchFields)
-    .filter(cat => searchFields[cat])
-    .flatMap(cat => porCategoria[cat]);
-  // Todos los tokens tienen que encontrar algo (así "mayo 2026" no trae cualquier cosa de mayo
-  // de cualquier año, ni cualquier actividad de 2026 sin importar el mes).
-  return tokens.every(t => tokenCoincideConPalabras_(t, palabras));
+  const categoriasActivas = Object.keys(searchFields).filter(cat => searchFields[cat]);
+  const mejorPorToken = tokensN.map(() => 0);
+  const nivelPorCategoria = {};
+  categoriasActivas.forEach(cat => {
+    const palabrasN = porCategoria[cat].map(normalizarBusqueda_);
+    nivelPorCategoria[cat] = tokensN.map((token, i) => {
+      let mejor = 0;
+      for (const p of palabrasN) {
+        const n = nivelTokenVsPalabra_(token, p);
+        if (n > mejor) { mejor = n; if (mejor === 2) break; }
+      }
+      if (mejor > mejorPorToken[i]) mejorPorToken[i] = mejor;
+      return mejor;
+    });
+  });
+  const nivel = Math.min(...mejorPorToken);
+  if (nivel === 0) return null;
+  const categorias = {};
+  categoriasActivas.forEach(cat => { categorias[cat] = nivelPorCategoria[cat].some(n => n >= nivel); });
+  return { nivel, categorias };
+}
+// Envuelve en <mark class="search-hit"> las palabras de "elemento" que coinciden con la búsqueda
+// (con nivel >= nivelMin). Recorre solo nodos de texto, así no rompe el HTML que ya tenía adentro
+// (ej. el cuadrito de "Indicación:"). Devuelve cuántas palabras marcó.
+function resaltarPalabrasEn_(elemento, tokensN, nivelMin) {
+  if (!elemento) return 0;
+  const walker = document.createTreeWalker(elemento, NodeFilter.SHOW_TEXT);
+  const nodos = [];
+  while (walker.nextNode()) nodos.push(walker.currentNode);
+  let total = 0;
+  nodos.forEach(nodo => {
+    if (nodo.parentElement && nodo.parentElement.closest("mark.search-hit")) return;
+    // Con un grupo de captura, split deja las palabras en las posiciones impares.
+    const partes = nodo.nodeValue.split(/([a-záéíóúñü0-9]+)/i);
+    const frag = document.createDocumentFragment();
+    let hubo = false;
+    partes.forEach((txt, i) => {
+      if (i % 2 === 1) {
+        const pn = normalizarBusqueda_(txt);
+        if (tokensN.some(t => nivelTokenVsPalabra_(t, pn) >= nivelMin)) {
+          const m = document.createElement("mark");
+          m.className = "search-hit";
+          m.textContent = txt;
+          frag.appendChild(m);
+          hubo = true; total++;
+          return;
+        }
+      }
+      if (txt) frag.appendChild(document.createTextNode(txt));
+    });
+    if (hubo) nodo.parentNode.replaceChild(frag, nodo);
+  });
+  return total;
+}
+// Resalta, en cada tarjeta de resultado, el lugar exacto donde apareció lo buscado:
+//  - Título: las palabras marcadas.
+//  - Fecha: se resalta el bloque completo (en pantalla se ve "5 may 2026", y puedes haber buscado "mayo").
+//  - Descripción / Entregas: palabras marcadas + el bloque (texto de la descripción / fila de la
+//    entrega) resaltado, y el acordeón se abre solo (ver BUSQUEDA_ABRIR_ACORDEONES).
+// En los resultados principales solo se marca lo directo; en los "parecidos" también lo aproximado.
+function aplicarResaltadoBusqueda_(feed, resultados, tokensN) {
+  const tarjetas = new Map([...feed.querySelectorAll(".card[data-id]")].map(c => [c.dataset.id, c]));
+  resultados.forEach(({ actividad, info }) => {
+    const card = tarjetas.get(String(actividad.id));
+    if (!card || !info) return;
+    const id = String(actividad.id);
+    const nivelMin = info.nivel === 2 ? 2 : 1;
+    const botones = [...card.querySelectorAll("[data-toggle]")];
+    const botonDe = clave => botones.find(b => b.dataset.toggle === clave + "-" + id);
+    const abrir = (btn, cuerpo) => {
+      if (BUSQUEDA_ABRIR_ACORDEONES && btn && cuerpo && !cuerpo.classList.contains("open")) btn.click();
+    };
+
+    if (info.categorias.titulo) resaltarPalabrasEn_(card.querySelector(".card-title"), tokensN, nivelMin);
+
+    if (info.categorias.fecha) {
+      const fechas = card.querySelector(".card-dates");
+      if (fechas) fechas.classList.add("search-hit-block");
+    }
+
+    if (info.categorias.descripcion) {
+      const btn = botonDe("info"), cuerpo = document.getElementById("info-" + id);
+      if (btn) btn.classList.add("search-hit-toggle");
+      abrir(btn, cuerpo); // al abrir se rellena la descripción (ver attachCardEvents), recién ahí hay texto que marcar
+      const desc = cuerpo && cuerpo.querySelector(".desc-text");
+      if (desc && resaltarPalabrasEn_(desc, tokensN, nivelMin)) desc.classList.add("search-hit-block");
+    }
+
+    if (info.categorias.entrega) {
+      const btn = botonDe("entregas"), cuerpo = document.getElementById("entregas-" + id);
+      if (btn) btn.classList.add("search-hit-toggle");
+      abrir(btn, cuerpo);
+      // Las filas ya existen en el DOM aunque el acordeón esté cerrado, así que se marcan siempre.
+      if (cuerpo) cuerpo.querySelectorAll("tr[data-entrega-row]").forEach(fila => {
+        const celdas = fila.querySelectorAll("td"); // [check, Persona, Canción/Escena, Enlace, ...]
+        const marcadas = resaltarPalabrasEn_(celdas[1], tokensN, nivelMin) + resaltarPalabrasEn_(celdas[2], tokensN, nivelMin);
+        if (marcadas) fila.classList.add("search-hit-row");
+      });
+    }
+  });
+}
+// Texto de "N actividades encontradas" (+ cuántas parecidas hay debajo, si hay).
+function textoResumenBusqueda_(principales, parecidas) {
+  const txtPrincipales = principales === 1 ? "1 actividad encontrada" : `${principales} actividades encontradas`;
+  if (!parecidas) return txtPrincipales;
+  const txtParecidas = parecidas === 1 ? "1 parecida" : `${parecidas} parecidas`;
+  return principales ? `${txtPrincipales} · ${txtParecidas}` : `Sin coincidencias exactas · ${txtParecidas}`;
 }
 
 function renderActividades(){
@@ -2337,14 +2490,30 @@ function renderActividades(){
     entregasPorActividad.get(k).push(e);
   });
   const buscando = searchQuery.trim().length > 0;
-  if(buscando) activas = activas.filter(a=>actividadCoincideBusqueda_(a, entregasPorActividad.get(String(a.id)), searchQuery));
+  // Buscando, las actividades se reparten en dos grupos (ver UMBRAL_BUSQUEDA_PRINCIPAL/PARECIDA):
+  // "activas" pasa a ser solo los resultados principales, y "parecidas" son los del "O tal vez buscabas:".
+  let parecidas = [];
+  let tokensBusqueda = [];
+  const evaluacionesBusqueda = new Map();
+  if(buscando){
+    tokensBusqueda = searchQuery.toLowerCase().trim().split(/\s+/).filter(Boolean).map(normalizarBusqueda_);
+    const principales = [];
+    activas.forEach(a=>{
+      const info = evaluarActividadBusqueda_(a, entregasPorActividad.get(String(a.id)), tokensBusqueda);
+      if(!info) return;
+      evaluacionesBusqueda.set(String(a.id), info);
+      (info.nivel===2 ? principales : parecidas).push(a);
+    });
+    activas = principales;
+  }
   activas=activas.slice().sort((a,b)=>compararFechaCantoFirst(a,b,"fechaFin"));
+  parecidas=parecidas.slice().sort((a,b)=>compararFechaCantoFirst(a,b,"fechaFin"));
   const infoBusqueda = document.getElementById("searchResultsInfo");
   if(infoBusqueda){
     infoBusqueda.classList.toggle("hidden", !buscando);
-    if(buscando) infoBusqueda.textContent = activas.length===1 ? `1 actividad encontrada` : `${activas.length} actividades encontradas`;
+    if(buscando) infoBusqueda.textContent = textoResumenBusqueda_(activas.length, parecidas.length);
   }
-  if(activas.length===0){
+  if(activas.length===0 && parecidas.length===0){
     feed.innerHTML=`<div class="empty-state">${buscando ? "No se encontró ninguna actividad con esa búsqueda." : `No hay actividades con este filtro. ${staffPin?'¡Agrega una!':''}`}</div>`;
     return;
   }
@@ -2352,10 +2521,18 @@ function renderActividades(){
   // eso es el buscador, para no tener que ir abriendo año por año). Sin búsqueda activa, se
   // mantiene el comportamiento de siempre (año actual de una, años viejos como separador tocable).
   if(buscando){
-    feed.innerHTML = activas.map(a=>cardHTML(a, entregasPorActividad.get(String(a.id))||[])).join("");
+    const cardDe = a=>cardHTML(a, entregasPorActividad.get(String(a.id))||[]);
+    let html = activas.map(cardDe).join("");
+    if(parecidas.length){
+      html += `<div class="search-maybe-divider">${activas.length ? "O tal vez buscabas:" : "No hay coincidencias exactas. Tal vez buscabas:"}</div>`;
+      html += parecidas.map(cardDe).join("");
+    }
+    feed.innerHTML = html;
     actividadesPorAnioCache = new Map();
     actividadesEntregasCache = entregasPorActividad;
     attachCardEvents(); bindAvatarFallbacks();
+    // Después de attachCardEvents: el resaltado abre acordeones con click() y necesita sus handlers.
+    aplicarResaltadoBusqueda_(feed, [...activas, ...parecidas].map(a=>({actividad:a, info:evaluacionesBusqueda.get(String(a.id))})), tokensBusqueda);
     return;
   }
   // El feed va del más reciente al más viejo (compararFechaCantoFirst arriba). El año en curso se
