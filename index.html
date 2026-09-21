@@ -71,7 +71,7 @@
 <style>
   :root{
     --peach-1:#ff8fb1; --peach-2:#EF0870; --bg:#1a1020; --card-bg:#2a1830; --card-bg-2:#33203a;
-    --text:#fbeaf2; --text-dim:#c9a8bb; --green:#2ecc71; --yellow:#f1c40f; --red:#e74c3c; --gold:#ffd700; --radius:16px;
+    --text:#fbeaf2; --text-dim:#c9a8bb; --green:#2ecc71; --yellow:#f1c40f; --red:#e74c3c; --gold:#ffd700; --rosa-comp:#0DEF8A; --radius:16px;
   }
   *{box-sizing:border-box;}
   @media (min-width:768px) and (pointer:fine){
@@ -169,14 +169,14 @@
   /* Separador entre los resultados principales (90%+) y los "parecidos" (75%+) del buscador. */
   .search-maybe-divider{display:flex;align-items:center;gap:10px;margin:22px 4px 14px;font-size:14px;font-weight:700;color:var(--peach-1);}
   .search-maybe-divider::after{content:"";flex:1;height:1px;background:linear-gradient(90deg,rgba(239,8,112,0.5),transparent);}
-  /* Resaltado de lo que coincidió con la búsqueda: la palabra (marcador + subrayado dorado) y el
+  /* Resaltado de lo que coincidió con la búsqueda: la palabra (marcador + subrayado en el verde complementario del rosa, --rosa-comp) y el
      bloque que la contiene (fecha, descripción, fila de entrega) con un fondo suave y una franja a la izquierda. */
-  mark.search-hit{background:rgba(255,215,0,0.30);color:var(--text);border-radius:4px;padding:0 2px;box-shadow:inset 0 -2px 0 var(--gold);}
-  .search-hit-block{background:rgba(255,215,0,0.08);box-shadow:inset 3px 0 0 var(--gold);border-radius:8px;}
+  mark.search-hit{background:rgba(13,239,138,0.28);color:var(--text);border-radius:4px;padding:0 2px;box-shadow:inset 0 -2px 0 var(--rosa-comp);}
+  .search-hit-block{background:rgba(13,239,138,0.08);box-shadow:inset 3px 0 0 var(--rosa-comp);border-radius:8px;}
   .card-dates.search-hit-block{align-self:flex-start;padding:2px 10px;color:var(--text);}
   .desc-text.search-hit-block{padding:6px 10px;}
-  table.entregas-table tr.search-hit-row td{background:rgba(255,215,0,0.10);}
-  table.entregas-table tr.search-hit-row td:first-child{box-shadow:inset 3px 0 0 var(--gold);}
+  table.entregas-table tr.search-hit-row td{background:rgba(13,239,138,0.10);}
+  table.entregas-table tr.search-hit-row td:first-child{box-shadow:inset 3px 0 0 var(--rosa-comp);}
   /* Botón del acordeón cuya sección contiene la coincidencia. Se usa ::after (no un hijo) porque el
      JS de los acordeones reescribe el textContent del botón al abrir/cerrar y borraría cualquier hijo. */
   .accordion-toggle.search-hit-toggle::after{content:"🔍";font-size:12px;margin-left:8px;}
@@ -1359,6 +1359,32 @@ function restaurarMemberClave_(){
     setMemberClave_(claveCookie);
   }
 }
+// ============ ENLACE DE ACCESO PARA MIEMBROS (https://tu-pagina/#k=LA_CLAVE) ============
+// Problema que resuelve: la clave se guarda en el navegador (localStorage + cookie), pero hay
+// muchas formas de que ese guardado se pierda sin que la persona haga nada (ver restaurarSesion):
+// abrir el enlace desde el navegador interno de Discord/Instagram, modo incógnito, Safari en iPhone
+// que borra datos de sitios que no se abren en 7 días, "borrar datos al cerrar", cambiar de
+// celular... Y como la gente no se acuerda de la clave, cada vez que se pierde no saben cómo entrar.
+// Solución SIN poner la clave en este archivo (eso fue justo el error de seguridad que ya se
+// corrigió con PIN_MIEMBROS_AUTO): el enlace que se comparte SOLO en el canal privado de miembros
+// lleva la clave al final, después del "#". Al abrirlo, la página la valida contra el servidor
+// (activarModoMiembro), la guarda como siempre, y listo: esa persona queda adentro sin escribir
+// nada. Quien entre por la URL pública (sin "#k=...") ve la versión pública, igual que antes.
+// Se usa el fragmento (#) y no "?k=" a propósito: lo que va después del "#" NUNCA se manda por la
+// red (ni al hosting, ni en el Referer al abrir un link externo), y además se borra de la barra
+// de direcciones apenas se lee, para que no quede visible ni en el historial ni al compartir
+// pantalla. Devuelve la clave, o null si el enlace no traía ninguna.
+function tomarClaveDeEnlace_(){
+  let cruda = null;
+  try{
+    const m = String(location.hash || "").match(/[#&]k=([^&]*)/);
+    if(!m) return null;
+    cruda = m[1];
+  }catch(e){ return null; }
+  try{ history.replaceState(null, "", location.pathname + location.search); }catch(e){ /* si el navegador no deja limpiar la URL, se sigue igual */ }
+  try{ return decodeURIComponent(cruda) || null; }
+  catch(e){ return cruda || null; }
+}
 let modoEliminarEntregas = {};
 let anuarioCtx = null;
 let loadingCount = 0;
@@ -2140,17 +2166,26 @@ function aplicarDatosCargados_(datos, esCache){
       localStorage.removeItem("tph_session_rol");
       borrarCacheDatos();
     }
-    if (nivel!=="miembro" && memberPin) {
+    if (memberPin && nivel!=="miembro") {
       if (DB.claveMiembroProblema === "bloqueado") {
         // Bloqueo temporal por fuerza bruta (8 intentos fallidos de CUALQUIERA en el equipo, no
         // necesariamente vos) — la clave guardada sigue siendo válida, así que NO se borra. Se
         // avisa para que no cunda el pánico, y apenas pase el bloqueo (máx. 15 min) vuelve a
         // funcionar solo, sin tener que volver a escribir el PIN.
         toast("⏳ PIN de Miembro bloqueado temporalmente (demasiados intentos). Tu clave guardada sigue siendo válida, se reactiva sola en unos minutos.");
-      } else {
+      } else if (DB.claveMiembroProblema === "incorrecta") {
         // La clave guardada ya no sirve de verdad (por ejemplo, un admin la cambió): acá sí se borra.
-        limpiarMemberClave_("el servidor confirmó nivel!=='miembro' y claveMiembroProblema='incorrecta' (clave cambiada o inválida)");
+        limpiarMemberClave_("el servidor confirmó claveMiembroProblema='incorrecta' (clave cambiada o inválida)");
       }
+      // FIX ("casi siempre me pide la clave"): ANTES se borraba en CUALQUIER otro caso donde nivel no
+      // fuera "miembro". Pero doGet (Code.gs) manda nivel "staff" apenas hay una sesión de Google
+      // válida, y en ese caso ni siquiera mira la clave de Miembro -- así que cada Staff que alguna
+      // vez tuvo guardada la clave perdía la clave en su primera carga como Staff. Y como la sesión de
+      // Staff dura máximo 6 horas (DURACION_SESION_SEGUNDOS), al vencer volvía a quedar como público,
+      // sin clave guardada, y la app la pedía de nuevo. Ahora solo se borra cuando el servidor dice
+      // explícitamente que la clave es incorrecta (Code.gs manda eso SOLO cuando la clave enviada no
+      // coincide con PIN_MIEMBROS); en cualquier otro caso (Staff con sesión activa, respuesta rara) se
+      // conserva.
     }
   }
   if (DB.googleClientId && !googleSignInInicializado) inicializarGoogleSignIn(DB.googleClientId);
@@ -5296,7 +5331,18 @@ function resaltarIndicacion(descripcionEscapada){
     staffPin = tokenGuardado;
   }
   restaurarMemberClave_();
-  await cargarDatos();
+  // Enlace de acceso (ver tomarClaveDeEnlace_): si la URL trae #k=..., se valida y se guarda la clave
+  // ANTES de la carga inicial, así la persona entra ya como Miembro sin ver ninguna pantalla de clave.
+  // Si ya tenía guardada esa misma clave no se hace nada extra (no hay segundo viaje al servidor), y si
+  // el enlace es viejo (clave cambiada) NO se toca la clave que ya tuviera guardada.
+  const claveEnlace = tomarClaveDeEnlace_();
+  let entroPorEnlace = false;
+  if (claveEnlace && claveEnlace !== memberPin && !staffPin) {
+    const r = await activarModoMiembro(claveEnlace, "Entrando...");
+    entroPorEnlace = !!r.ok; // si salió bien, activarModoMiembro ya hizo la carga completa de datos
+    if (!r.ok) toast("⚠️ El enlace de acceso no funcionó: " + (r.error || "clave inválida") + " Pide a Staff el enlace actualizado.");
+  }
+  if (!entroPorEnlace) await cargarDatos();
   if (nivel === "staff") {
     document.getElementById("staffStatusBadge").style.display = "block";
     actualizarVisibilidadBackToTop();
