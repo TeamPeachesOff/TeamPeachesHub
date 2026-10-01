@@ -2,9 +2,17 @@
 <html lang="es">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <title>Team Peaches Hub 🍑</title>
 <link id="favicon" rel="icon" type="image/jpeg" href="https://raw.githubusercontent.com/TeamPeachesOff/TeamPeachesHub/main/Logos/PeachesLogo.jpeg">
+<!-- PWA: app instalable -->
+<link rel="manifest" href="manifest.webmanifest">
+<meta name="theme-color" content="#EF0870">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Peaches Hub">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
 <script>
 /*
 ****************************************************************************
@@ -2082,9 +2090,50 @@ function leerCacheDatos(){
 function guardarCacheDatos(datos){
   try{ localStorage.setItem(CACHE_DATOS_KEY, JSON.stringify(datos)); }
   catch(e){ /* localStorage lleno/deshabilitado: no rompe nada, solo no queda cache para la próxima */ }
+  idbGuardarDatos_(datos); // copia de respaldo en IndexedDB (app instalada: más duradera que localStorage)
 }
 function borrarCacheDatos(){
   try{ localStorage.removeItem(CACHE_DATOS_KEY); }catch(e){}
+  idbBorrarDatos_();
+}
+
+// ============ RESPALDO EN INDEXEDDB (app instalable) ============
+// Segunda copia de los datos. Si el navegador vacía localStorage entre visitas, al abrir la app se
+// restaura desde acá y nunca se arranca "en blanco". Todo es silencioso: si IndexedDB falla, la app
+// sigue funcionando solo con localStorage como antes.
+function idbAbrir_(){
+  return new Promise((resolve, reject)=>{
+    try{
+      const rq = indexedDB.open("tph_db", 1);
+      rq.onupgradeneeded = ()=>{ rq.result.createObjectStore("kv"); };
+      rq.onsuccess = ()=>resolve(rq.result);
+      rq.onerror = ()=>reject(rq.error);
+    }catch(e){ reject(e); }
+  });
+}
+async function idbGuardarDatos_(datos){
+  try{
+    const db = await idbAbrir_();
+    db.transaction("kv","readwrite").objectStore("kv").put(JSON.stringify(datos), CACHE_DATOS_KEY);
+  }catch(e){ /* sin IndexedDB: se ignora */ }
+}
+async function idbBorrarDatos_(){
+  try{
+    const db = await idbAbrir_();
+    db.transaction("kv","readwrite").objectStore("kv").delete(CACHE_DATOS_KEY);
+  }catch(e){}
+}
+// Si localStorage no tiene datos pero IndexedDB sí, los vuelve a poner en localStorage.
+async function restaurarCacheDesdeIDB_(){
+  try{
+    if(localStorage.getItem(CACHE_DATOS_KEY)) return;
+    const db = await idbAbrir_();
+    const raw = await new Promise((resolve, reject)=>{
+      const rq = db.transaction("kv","readonly").objectStore("kv").get(CACHE_DATOS_KEY);
+      rq.onsuccess = ()=>resolve(rq.result); rq.onerror = ()=>reject(rq.error);
+    });
+    if(raw){ try{ localStorage.setItem(CACHE_DATOS_KEY, raw); }catch(e){} }
+  }catch(e){}
 }
 
 // FIX (condición de carrera): si dos cargarDatos() quedan "en vuelo" al mismo tiempo (ej: acabás
@@ -5324,6 +5373,7 @@ function resaltarIndicacion(descripcionEscapada){
 // desde "AccesoAutorizado", el propio doGet ya contesta nivel:"publico" y cargarDatos() limpia
 // el estado local sola (ver ahí). No hace falta un segundo viaje de red para confirmar nada.
 (async function restaurarSesion(){
+  await restaurarCacheDesdeIDB_(); // si localStorage fue vaciado, recupera los datos desde IndexedDB
   const tokenGuardado = localStorage.getItem("tph_session_token");
   const rolGuardado = localStorage.getItem("tph_session_rol");
   if (tokenGuardado && rolGuardado==="staff") {
@@ -5356,6 +5406,47 @@ function resaltarIndicacion(descripcionEscapada){
     // nivel==="publico": nadie tiene sesión de Staff ni clave de Miembro activa -- probablemente
     // porque nunca se enteraron de que existe el Modo Miembro. Aviso pequeño, ver más arriba.
     openModal("avisoMiembroModal");
+  }
+})();
+</script>
+
+<!-- ============ PWA: instalación + service worker + almacenamiento persistente ============ -->
+<button id="btnInstalarApp" type="button" style="display:none;position:fixed;left:12px;bottom:calc(12px + env(safe-area-inset-bottom,0px));z-index:9999;background:#EF0870;color:#fff;border:none;border-radius:999px;padding:10px 16px;font-size:14px;font-weight:600;box-shadow:0 4px 14px rgba(0,0,0,.45);cursor:pointer;">📲 Instalar app</button>
+<script>
+(function(){
+  // 1) Service worker (solo con https o localhost; en file:// no existe)
+  if ("serviceWorker" in navigator && (location.protocol==="https:" || location.hostname==="localhost")) {
+    window.addEventListener("load", ()=>{
+      navigator.serviceWorker.register("sw.js").catch(e=>console.warn("[TPH] SW no registrado:", e));
+    });
+  }
+  // 2) Pedir al navegador que NO borre los datos guardados de la app
+  if (navigator.storage && navigator.storage.persist) {
+    navigator.storage.persist().then(ok=>console.info("[TPH] Almacenamiento persistente:", ok?"concedido":"no concedido (el navegador decide)")).catch(()=>{});
+  }
+  // 3) Botón de instalación
+  const btn = document.getElementById("btnInstalarApp");
+  const yaInstalada = window.matchMedia("(display-mode: standalone)").matches || navigator.standalone === true;
+  let promptDiferido = null;
+  window.addEventListener("beforeinstallprompt", e=>{
+    e.preventDefault(); promptDiferido = e;
+    if (!yaInstalada && !localStorage.getItem("tph_instalar_oculto")) btn.style.display = "block";
+  });
+  btn.addEventListener("click", async ()=>{
+    if (!promptDiferido) return;
+    promptDiferido.prompt();
+    await promptDiferido.userChoice.catch(()=>{});
+    promptDiferido = null; btn.style.display = "none";
+  });
+  window.addEventListener("appinstalled", ()=>{ btn.style.display = "none"; if (typeof toast==="function") toast("App instalada ✅"); });
+  // iPhone/iPad (Safari no tiene botón automático): se muestra una pista una sola vez
+  const esIOS = /iphone|ipad|ipod/i.test(navigator.userAgent) && !window.MSStream;
+  if (esIOS && !yaInstalada && !localStorage.getItem("tph_ios_pista")) {
+    btn.textContent = "📲 Cómo instalar"; btn.style.display = "block";
+    btn.addEventListener("click", ()=>{
+      alert("Para instalar en iPhone/iPad: toca el botón Compartir (cuadrito con flecha) y luego «Agregar a pantalla de inicio».");
+      localStorage.setItem("tph_ios_pista","1"); btn.style.display = "none";
+    });
   }
 })();
 </script>
