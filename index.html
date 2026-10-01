@@ -7,7 +7,6 @@
 <link id="favicon" rel="icon" type="image/jpeg" href="https://raw.githubusercontent.com/TeamPeachesOff/TeamPeachesHub/main/Logos/PeachesLogo.jpeg">
 <!-- PWA: app instalable -->
 <link rel="manifest" href="manifest.webmanifest">
-<link rel="preload" href="fonts/Minecraft-Regular.woff2" as="font" type="font/woff2" crossorigin>
 <meta name="theme-color" content="#180E1D">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-capable" content="yes">
@@ -4546,6 +4545,23 @@ function mcMusicDetener(){
 }
 // ---- Texto "Now playing: ..." estilo Minecraft: sin fondo, 3 s, colores en transición ----
 let mcNPTimer = null;
+// Coloca el "Now playing" justo debajo de la nota de la pestaña visible (Bedrock o Java) y lo centra
+// en el espacio vacío que queda entre esa nota y el borde de abajo de la ventana. Mide el layout real,
+// así que funciona igual con la nota en 2, 3 o 4 líneas (teléfono vs. PC).
+function mcCentrarNowPlaying(el){
+  try{
+    const slot = el.parentElement, box = el.closest(".modal-box");
+    const nota = document.querySelector('#minecraftModal [id^="mcContent"]:not(.hidden) .mc-note');
+    if(!slot || !box || !nota) return;
+    const padB = parseFloat(getComputedStyle(box).paddingBottom) || 20;
+    const lh = el.offsetHeight || 14;
+    const arriba = nota.getBoundingClientRect().bottom;      // donde termina el texto de arriba
+    const slotTop = slot.getBoundingClientRect().top;         // fin del contenido
+    const abajo = slotTop + padB;                             // borde de abajo de la ventana
+    const topAbs = arriba + (abajo - arriba - lh) / 2;        // centrado en el hueco
+    el.style.top = Math.max(0, topAbs - slotTop) + "px";
+  }catch(e){}
+}
 async function mcMostrarNowPlaying(nombre){
   const el = document.getElementById("mcNowPlaying");
   try{ await document.fonts.load('11.5px "MCFont"'); }catch(e){}
@@ -4556,6 +4572,7 @@ async function mcMostrarNowPlaying(nombre){
   // se achica un poquito para que nunca se corte (mínimo 7px).
   let px = 11.5;
   while(el.scrollWidth > el.clientWidth && px > 7){ px -= 0.5; el.style.fontSize = px+"px"; }
+  mcCentrarNowPlaying(el);
   void el.offsetWidth; el.classList.add("show");
   clearTimeout(mcNPTimer);
   mcNPTimer = setTimeout(()=>el.classList.remove("show"), 3000);
@@ -5590,12 +5607,12 @@ function resaltarIndicacion(descripcionEscapada){
 </script>
 
 <style>
-  /* Fuente tipo Minecraft (Mac's Minecraft, licencia OFL) — archivo en fonts/ */
-  @font-face{font-family:"MCFont";src:url("fonts/Minecraft-Regular.woff2") format("woff2");font-display:block;}
+  /* Fuente tipo Minecraft (Mac's Minecraft, licencia OFL) — incrustada en base64 aquí mismo, no depende de ningún archivo externo */
+  @font-face{font-family:"MCFont";src:url("data:font/woff2;base64,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") format("woff2");font-display:block;}
   /* El slot mide 0 de alto y va al final del contenido: el texto cae justo en el padding de abajo del
      modal, así que el tamaño de la ventana no cambia. */
   #minecraftModal .mc-np-slot{position:relative;height:0;margin:0 -20px;}
-  #mcNowPlaying{position:absolute;left:0;right:0;top:-20.5px;text-align:center;white-space:nowrap;overflow:hidden;pointer-events:none;
+  #mcNowPlaying{position:absolute;left:0;right:0;top:3px;text-align:center;white-space:nowrap;overflow:hidden;pointer-events:none;
     opacity:0;font-family:"MCFont","Minecraftia",monospace;font-size:11.5px;line-height:14px;background:none;
     -webkit-font-smoothing:none;font-smooth:never;image-rendering:pixelated;padding:0 14px;box-sizing:border-box;}
   /* 3 s: entra, recorre lima, rosa, morado, azul claro, cyan, verde y amarillo, y se va */
@@ -5603,6 +5620,34 @@ function resaltarIndicacion(descripcionEscapada){
   @keyframes mcFade{0%{opacity:0}8%{opacity:1}86%{opacity:1}100%{opacity:0}}
   @keyframes mcColores{0.0%{color:#55ff55;text-shadow:2px 2px 0 #153f15}16.67%{color:#ff55ff;text-shadow:2px 2px 0 #3f153f}33.33%{color:#aa00aa;text-shadow:2px 2px 0 #2a002a}50.0%{color:#5555ff;text-shadow:2px 2px 0 #15153f}66.67%{color:#55ffff;text-shadow:2px 2px 0 #153f3f}83.33%{color:#00aa00;text-shadow:2px 2px 0 #002a00}100.0%{color:#ffff55;text-shadow:2px 2px 0 #3f3f15}}
 </style>
+<script>
+/* Color de la barra de estado / notch: la app arriba es el header (#180E1D). Cuando se abre una ventana,
+   el menú o la pantalla de carga, esa zona queda oscurecida por su capa; se pinta la barra con ese mismo
+   tono para que no se vea una raya más clara cortando la pantalla. */
+(function(){
+  var meta=document.querySelector('meta[name="theme-color"]'); if(!meta) return;
+  var BASE=[24,14,29], q=false, vistos=[];
+  function hex(c){return "#"+c.map(function(v){v=Math.max(0,Math.min(255,Math.round(v)));return (v<16?"0":"")+v.toString(16);}).join("");}
+  function sync(){
+    q=false; var c=BASE.slice();
+    function sobre(rgb,a){for(var i=0;i<3;i++)c[i]=c[i]*(1-a)+rgb[i]*a;}
+    document.querySelectorAll(".modal-overlay.open").forEach(function(){sobre([0,0,0],0.6);});
+    var d=document.getElementById("drawerOverlay"); if(d&&getComputedStyle(d).display!=="none") sobre([0,0,0],0.5);
+    var l=document.getElementById("loadingOverlay"); if(l&&getComputedStyle(l).display!=="none") sobre([15,8,20],0.72);
+    var h=hex(c); if(meta.getAttribute("content")!==h) meta.setAttribute("content",h);
+  }
+  function pedir(){ if(!q){q=true; requestAnimationFrame(sync);} }
+  var mo=new MutationObserver(pedir);
+  function enganchar(){
+    document.querySelectorAll(".modal-overlay,#drawerOverlay,#loadingOverlay").forEach(function(el){
+      if(vistos.indexOf(el)===-1){vistos.push(el); mo.observe(el,{attributes:true,attributeFilter:["class","style"]});}
+    });
+    pedir();
+  }
+  enganchar();
+  new MutationObserver(enganchar).observe(document.body,{childList:true});
+})();
+</script>
 <!-- ============ PWA: instalación + service worker + almacenamiento persistente ============ -->
 <style>
   #btnInstalarApp{display:none;position:fixed;left:14px;bottom:14px;z-index:61;height:38px;min-width:38px;padding:0;margin:0;border:none;border-radius:999px;background:rgba(239,8,112,0.35);color:#fff;font-weight:700;font-size:13.5px;box-shadow:0 4px 14px rgba(0,0,0,.4);cursor:pointer;align-items:center;justify-content:flex-start;overflow:hidden;white-space:nowrap;transition:bottom .4s ease;}
