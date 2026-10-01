@@ -96,8 +96,8 @@
      raíz) ese mismo CSS SÍ se aplica siempre, en todos los navegadores — es el mismo truco que ya
      hacía ver bien al scroll de #drawer. Los elementos position:fixed (drawer, modales, toasts,
      botón de subir) no se ven afectados por este cambio: siguen fijos al viewport igual que antes. */
-  html{height:100%;overflow:hidden;}
-  body{margin:0;font-family:'Segoe UI',Arial,sans-serif;background:linear-gradient(160deg,var(--bg),#241228 60%,#170b1c);color:var(--text);height:100%;overflow-y:auto;-webkit-overflow-scrolling:touch;
+  html{height:100%;overflow:hidden;background:#180E1D;color-scheme:dark;overscroll-behavior:none;}
+  body{margin:0;font-family:'Segoe UI',Arial,sans-serif;background:#180E1D linear-gradient(160deg,var(--bg),#241228 60%,#170b1c) fixed;overscroll-behavior:none;color:var(--text);height:100%;overflow-y:auto;-webkit-overflow-scrolling:touch;
     scrollbar-width:thin;scrollbar-color:rgba(255,255,255,0.28) transparent;}
   body::-webkit-scrollbar{width:6px;}
   body::-webkit-scrollbar-track{background:transparent;}
@@ -4546,8 +4546,9 @@ function mcMusicDetener(){
 }
 // ---- Texto "Now playing: ..." estilo Minecraft: sin fondo, 3 s, colores en transición ----
 let mcNPTimer = null;
-function mcMostrarNowPlaying(nombre){
+async function mcMostrarNowPlaying(nombre){
   const el = document.getElementById("mcNowPlaying");
+  try{ await document.fonts.load('11.5px "MCFont"'); }catch(e){}
   el.classList.remove("show");
   el.style.fontSize = "11.5px";
   el.textContent = "Now playing: " + nombre;

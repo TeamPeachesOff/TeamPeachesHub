@@ -4,11 +4,11 @@
  * - Las llamadas al servidor (Apps Script, Google login, GitHub API) NUNCA pasan por acá: los datos
  *   se guardan desde index.html (localStorage + IndexedDB), no desde el service worker.
  * Para forzar que todos reciban una versión nueva, sube el número de VERSION. */
-const VERSION = "v3";
+const VERSION = "v4";
 const SHELL_CACHE = "tph-shell-" + VERSION;
 const ASSET_CACHE = "tph-assets-v1";      // no se borra al cambiar VERSION (fotos/librerías)
 const MAX_ASSETS = 400;
-const SHELL = ["./", "./index.html", "./manifest.webmanifest", "./icons/icon-192.png", "./icons/icon-512.png", "./icons/apple-touch-icon.png", "./fonts/Minecraft-Regular.woff2"];
+const SHELL = ["./", "./index.html", "./manifest.webmanifest", "./icons/icon-192.png", "./icons/icon-512.png", "./icons/icon-maskable-512.png", "./icons/apple-touch-icon.png", "./fonts/Minecraft-Regular.woff2"];
 
 // Hosts que jamás se cachean (datos vivos / autenticación / escritura)
 const NO_CACHE_HOSTS = ["script.google.com", "script.googleusercontent.com", "accounts.google.com", "api.github.com", "oauth2.googleapis.com", "apis.google.com"];
