@@ -1,0 +1,25 @@
+{
+  "name": "Team Peaches Hub",
+  "short_name": "Peaches Hub",
+  "description": "Actividades, anuario y miembros de Team Peaches.",
+  "start_url": ".",
+  "scope": ".",
+  "display": "standalone",
+  "background_color": "#180E1D",
+  "theme_color": "#180E1D",
+  "lang": "es",
+  "icons": [
+    {
+      "src": "icons/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "icons/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    }
+  ]
+}

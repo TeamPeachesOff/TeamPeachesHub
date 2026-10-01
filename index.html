@@ -8,7 +8,7 @@
 <link rel="icon" type="image/png" sizes="512x512" href="icons/icon-512.png">
 <link id="favicon" rel="shortcut icon" type="image/jpeg" href="https://raw.githubusercontent.com/TeamPeachesOff/TeamPeachesHub/main/Logos/PeachesLogo.jpeg">
 <!-- PWA: app instalable -->
-<link rel="manifest" href="manifest.webmanifest">
+<link rel="manifest" href="manifest.json">
 <meta name="theme-color" content="#180E1D">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-capable" content="yes">
@@ -5709,9 +5709,9 @@ function resaltarIndicacion(descripcionEscapada){
   // 1) Service worker (solo con https o localhost; en file:// no existe)
   if ("serviceWorker" in navigator && (location.protocol==="https:" || location.hostname==="localhost")) {
     // ACTUALIZACIÓN OBLIGATORIA. Cada vez que subas cambios: sube el número de VERSION en sw.js
-    // (ej. "v7" -> "v8") Y este APP_SW_VERSION (7 -> 8). Si alguien tiene abierta una página más vieja
+    // (ej. "v8" -> "v9") Y este APP_SW_VERSION (8 -> 9). Si alguien tiene abierta una página más vieja
     // que el service worker, sale una ventana que no se puede cerrar y lo obliga a actualizar.
-    const APP_SW_VERSION = 7;
+    const APP_SW_VERSION = 8;
     function bloquearParaActualizar(){
       if (document.getElementById("tphForzarUpdate")) return;
       const d = document.createElement("div");

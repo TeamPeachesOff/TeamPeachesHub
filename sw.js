@@ -4,11 +4,11 @@
  * - Las llamadas al servidor (Apps Script, Google login, GitHub API) NUNCA pasan por acá: los datos
  *   se guardan desde index.html (localStorage + IndexedDB), no desde el service worker.
  * Para forzar que todos reciban una versión nueva, sube el número de VERSION. */
-const VERSION = "v7"; // sube también APP_SW_VERSION (número) en index.html
+const VERSION = "v8"; // sube también APP_SW_VERSION (número) en index.html
 const SHELL_CACHE = "tph-shell-" + VERSION;
 const ASSET_CACHE = "tph-assets-v1";      // no se borra al cambiar VERSION (fotos/librerías)
 const MAX_ASSETS = 400;
-const SHELL = ["./", "./index.html", "./manifest.webmanifest", "./icons/icon-192.png", "./icons/icon-512.png", "./icons/icon-maskable-512.png", "./icons/apple-touch-icon.png"];
+const SHELL = ["./", "./index.html", "./manifest.json", "./icons/icon-192.png", "./icons/icon-512.png", "./icons/icon-maskable-512.png", "./icons/apple-touch-icon.png"];
 
 // Hosts que jamás se cachean (datos vivos / autenticación / escritura)
 const NO_CACHE_HOSTS = ["script.google.com", "script.googleusercontent.com", "accounts.google.com", "api.github.com", "oauth2.googleapis.com", "apis.google.com"];
@@ -54,7 +54,7 @@ async function navegacion_(req) {
 async function mismoOrigen_(req) {
   const cache = await caches.open(SHELL_CACHE);
   // Manifest: red primero (si no, el navegador seguía instalando con el manifest viejo guardado).
-  if (/manifest\.webmanifest$/.test(new URL(req.url).pathname)) {
+  if (/manifest\.json$/.test(new URL(req.url).pathname)) {
     try { const r = await fetch(req, { cache: "reload" }); if (r && r.ok) { cache.put(req, r.clone()); return r; } } catch (e) {}
     return (await cache.match(req)) || Response.error();
   }
