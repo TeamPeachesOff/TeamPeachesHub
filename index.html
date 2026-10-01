@@ -7,6 +7,7 @@
 <link id="favicon" rel="icon" type="image/jpeg" href="https://raw.githubusercontent.com/TeamPeachesOff/TeamPeachesHub/main/Logos/PeachesLogo.jpeg">
 <!-- PWA: app instalable -->
 <link rel="manifest" href="manifest.webmanifest">
+<link rel="preload" href="fonts/Minecraft-Regular.woff2" as="font" type="font/woff2" crossorigin>
 <meta name="theme-color" content="#180E1D">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-capable" content="yes">
@@ -4276,7 +4277,7 @@ function closeModal(id){
   document.getElementById(id).classList.remove("open");
   // El carrusel de Minecraft corre timers propios (y puede haber un <video> reproduciéndose con
   // su audio); si no se frena acá, seguiría corriendo en segundo plano con el modal ya cerrado.
-  if(id==="minecraftModal") mcStopCarousel();
+  if(id==="minecraftModal"){ mcStopCarousel(); mcMusicDetener(); }
   // Las imágenes asignadas ya se guardaron una por una (mutando el mismo objeto de DB.actividades),
   // así que al cerrar solo hace falta volver a pintar el feed para que se vean — sin esperar un
   // roundtrip nuevo al servidor.
@@ -4291,50 +4292,142 @@ function closeModal(id){
 // arma el carrusel con lo que haya ahí en ese momento. Para agregar, sacar o reemplazar fotos/
 // videos del carrusel alcanza con subir o borrar archivos en esa carpeta de GitHub — no hay que
 // tocar este archivo nunca más. Se aceptan imágenes (jpg/jpeg/png/gif/webp) y videos (mp4/webm/mov).
-const MC_REPO_API = "https://api.github.com/repos/TeamPeachesOff/TeamPeachesHub/contents/ImagenesMinecraft";
+const MC_REPO_OWNER = "TeamPeachesOff", MC_REPO_NAME = "TeamPeachesHub", MC_REPO_BRANCH = "main";
+const MC_RAW_BASE = "https://raw.githubusercontent.com/"+MC_REPO_OWNER+"/"+MC_REPO_NAME+"/"+MC_REPO_BRANCH+"/";
 const MC_EXT_IMAGEN = ["jpg","jpeg","png","gif","webp"];
 const MC_EXT_VIDEO = ["mp4","webm","mov"];
+const MC_EXT_AUDIO = ["mp3","ogg","wav","m4a","aac","flac","opus"];
 const MC_DURACION_FOTO = 3000;
+// Video de respaldo: se descarga apenas abre la página (y queda guardado en el dispositivo). Si no se
+// puede listar/cargar el resto del carrusel, este video se repite en bucle, así nunca queda vacío.
+const MC_VIDEO1_URL = MC_RAW_BASE + "ImagenesMinecraft/Pagina%20Peaches%201.mp4";
+const MC_VIDEO_FALLBACK = {type:"video", src:MC_VIDEO1_URL};
 let mcCarouselMedia = [];
-let mcMediaListo = false; // evita re-pedir el listado a GitHub cada vez que se reabre el modal
+let mcMediaListo = false;
 let mcIndex = 0;
-let mcTimer = null;
+let mcTimer = null, mcStallTimer = null;
+let mcFallos = 0; // fallos seguidos de carga; con 2 seguidos se cae al video de respaldo
 
-// Trae el listado de la carpeta y lo convierte en el arreglo {type, src} que usa el carrusel.
-// Si la carpeta todavía no existe, está vacía, o falla la red, mcCarouselMedia queda en [] y
-// mcStartCarousel ya sabe mostrar el placeholder correspondiente (no rompe nada).
+// ---- Listado de una carpeta del repo ----
+// Problema que había: la API de GitHub sin token solo deja 60 consultas por hora por IP, y al pasarse
+// responde error -> el carrusel quedaba vacío (sin fotos ni videos). Ahora: (1) se guarda el último
+// listado bueno en el dispositivo (15 min "fresco"), (2) si GitHub falla se usa jsDelivr, y (3) si todo
+// falla se usa el último listado guardado, por viejo que sea. Devuelve [{name,url}] o null si no hubo cómo.
+const _listadosEnCurso = {};
+function listarCarpetaRepo_(carpeta){
+  if(_listadosEnCurso[carpeta]) return _listadosEnCurso[carpeta];
+  const p = (async()=>{
+    const KEY = "tph_list_"+carpeta, FRESCO_MS = 15*60*1000;
+    let guardado = null;
+    try{ guardado = JSON.parse(localStorage.getItem(KEY)||"null"); }catch(e){}
+    if(guardado && Array.isArray(guardado.items) && Date.now()-guardado.t < FRESCO_MS) return guardado.items;
+    let items = null;
+    try{
+      const r = await fetch("https://api.github.com/repos/"+MC_REPO_OWNER+"/"+MC_REPO_NAME+"/contents/"+encodeURIComponent(carpeta)+"?ref="+MC_REPO_BRANCH);
+      if(r.ok){
+        const arr = await r.json();
+        if(Array.isArray(arr)) items = arr.filter(f=>f.type==="file").map(f=>({name:f.name, url:f.download_url}));
+      }
+    }catch(e){}
+    if(!items){
+      try{
+        const r = await fetch("https://data.jsdelivr.com/v1/packages/gh/"+MC_REPO_OWNER+"/"+MC_REPO_NAME+"@"+MC_REPO_BRANCH+"?structure=flat");
+        if(r.ok){
+          const d = await r.json();
+          const pref = "/"+carpeta+"/";
+          items = (d.files||[]).filter(f=>f.name.indexOf(pref)===0 && f.name.indexOf("/",pref.length)===-1)
+            .map(f=>{ const n=f.name.slice(pref.length); return {name:n, url:MC_RAW_BASE+encodeURIComponent(carpeta)+"/"+encodeURIComponent(n)}; });
+        }
+      }catch(e){}
+    }
+    if(items){
+      try{ localStorage.setItem(KEY, JSON.stringify({t:Date.now(), items:items})); }catch(e){}
+      return items;
+    }
+    return guardado && Array.isArray(guardado.items) ? guardado.items : null;
+  })();
+  _listadosEnCurso[carpeta] = p;
+  p.then(()=>{ setTimeout(()=>{ delete _listadosEnCurso[carpeta]; }, 60*1000); });
+  return p;
+}
+
+// ---- Video 1: descarga al abrir la página, guardado en Cache API (la 2ª vez ya es instantáneo) ----
+let mcVideo1Promise = null, mcVideo1BlobUrl = null;
+function mcPrecargarVideo1(){
+  if(mcVideo1Promise) return mcVideo1Promise;
+  mcVideo1Promise = (async()=>{
+    try{
+      let resp = null, cache = null;
+      try{ cache = await caches.open("tph-media-v1"); resp = await cache.match(MC_VIDEO1_URL); }catch(e){}
+      if(!resp){
+        resp = await fetch(MC_VIDEO1_URL, {mode:"cors"});
+        if(!resp.ok) throw new Error("video1 "+resp.status);
+        if(cache){ try{ await cache.put(MC_VIDEO1_URL, resp.clone()); }catch(e){} }
+      }
+      const blob = await resp.blob();
+      mcVideo1BlobUrl = URL.createObjectURL(blob);
+    }catch(e){ mcVideo1Promise = null; } // si falló, el próximo intento vuelve a probar
+    return mcVideo1BlobUrl;
+  })();
+  return mcVideo1Promise;
+}
+
 async function mcCargarMedia(){
   if(mcMediaListo) return;
-  try{
-    const res = await fetch(MC_REPO_API);
-    if(!res.ok) throw new Error("No se pudo listar ImagenesMinecraft ("+res.status+")");
-    const archivos = await res.json();
-    mcCarouselMedia = archivos
-      .filter(f=>f.type==="file")
-      .map(f=>{
-        const ext = (f.name.split(".").pop()||"").toLowerCase();
-        if(MC_EXT_IMAGEN.includes(ext)) return {type:"image", src:f.download_url};
-        if(MC_EXT_VIDEO.includes(ext)) return {type:"video", src:f.download_url};
-        return null; // archivo que no es imagen/video (ej. un .gitkeep) se ignora, no rompe el carrusel
-      })
-      .filter(Boolean)
-      .sort((a,b)=>a.src.localeCompare(b.src)); // orden estable y predecible (alfabético)
-  } catch(e){
-    mcCarouselMedia = [];
+  const lista = await listarCarpetaRepo_("ImagenesMinecraft");
+  let media = [];
+  if(lista){
+    media = lista.map(f=>{
+      const ext = (f.name.split(".").pop()||"").toLowerCase();
+      if(MC_EXT_IMAGEN.includes(ext)) return {type:"image", src:f.url, name:f.name};
+      if(MC_EXT_VIDEO.includes(ext)) return {type:"video", src:f.url, name:f.name};
+      return null;
+    }).filter(Boolean).sort((a,b)=>a.name.localeCompare(b.name, undefined, {numeric:true}));
+    // el video 1 siempre va primero (es el que ya se bajó al abrir la página)
+    const i1 = media.findIndex(m=>m.src===MC_VIDEO1_URL);
+    if(i1 > 0) media.unshift(media.splice(i1,1)[0]);
   }
-  mcMediaListo = true;
+  // Sin listado (GitHub/jsDelivr caídos y nada guardado) o carpeta vacía: video de respaldo en bucle.
+  mcCarouselMedia = media.length ? media : [MC_VIDEO_FALLBACK];
+  mcMediaListo = !!(lista && media.length); // si cayó al respaldo, la próxima vez se reintenta el listado
 }
 
 async function abrirMinecraftModal(){
   openModal("minecraftModal");
-  mcIndex = 0;
+  mcMusicIniciar(); // dentro del clic: así el navegador deja sonar el audio
+  mcIndex = 0; mcFallos = 0;
   document.getElementById("mcCarouselContainer").innerHTML = '<div class="mc-carousel-placeholder">Cargando vista previa del server...</div>';
   await mcCargarMedia();
+  // Si el video 1 aún se está bajando, se le da hasta 3.5 s antes de empezar a verlo en streaming.
+  await Promise.race([mcPrecargarVideo1(), new Promise(r=>setTimeout(r,3500))]);
   mcStartCarousel();
+}
+
+function mcSrcDe_(media){ return (media.src===MC_VIDEO1_URL && mcVideo1BlobUrl) ? mcVideo1BlobUrl : media.src; }
+
+// Calienta la siguiente foto/video mientras se ve la actual, para que el cambio no espere descarga.
+function mcPrecargarSiguiente_(){
+  if(mcCarouselMedia.length < 2) return;
+  const sig = mcCarouselMedia[(mcIndex+1) % mcCarouselMedia.length];
+  try{
+    if(sig.type==="image"){ new Image().src = sig.src; }
+    else if(sig.src!==MC_VIDEO1_URL){ const v=document.createElement("video"); v.preload="auto"; v.muted=true; v.src=sig.src; }
+  }catch(e){}
+}
+
+function mcFalloCarga_(){
+  mcFallos++;
+  if(mcFallos >= 2 && !(mcCarouselMedia.length===1 && mcCarouselMedia[0].src===MC_VIDEO1_URL)){
+    mcCarouselMedia = [MC_VIDEO_FALLBACK]; mcIndex = 0; mcMediaListo = false; mcFallos = 0;
+    mcStartCarousel();
+  } else if(mcCarouselMedia.length > 1){ mcNextMedia(); }
+  else { mcStartCarousel(); }
 }
 
 function mcStartCarousel(){
   mcStopCarousel();
+  const modalAbierto = document.getElementById("minecraftModal").classList.contains("open");
+  if(!modalAbierto) return; // el modal se cerró mientras cargaba el listado
   const cont = document.getElementById("mcCarouselContainer");
   if(!mcCarouselMedia.length){
     cont.innerHTML = '<div class="mc-carousel-placeholder">Todavía no hay fotos/video del server 🍑</div>';
@@ -4342,17 +4435,16 @@ function mcStartCarousel(){
   }
   cont.querySelectorAll(".mc-carousel-placeholder").forEach(p=>p.remove());
   const media = mcCarouselMedia[mcIndex];
+  const solo = mcCarouselMedia.length === 1;
 
-  // El slide que ya estaba mostrándose (si hay uno) es el que va a deslizarse afuera hacia la
-  // izquierda cuando entre el nuevo.
   const anterior = cont.querySelector(".mc-slide.mc-pos-current");
   const nuevo = document.createElement("div");
   nuevo.className = "mc-slide mc-pos-enter";
   nuevo.innerHTML = media.type === "video"
-    ? '<video class="mc-slide-video" src="'+media.src+'" autoplay muted playsinline></video>'
+    ? '<video class="mc-slide-video" src="'+mcSrcDe_(media)+'" preload="auto" autoplay muted playsinline'+(solo?' loop':'')+'></video>'
     : '<img src="'+media.src+'" alt="Vista del servidor Peachesland">';
   cont.appendChild(nuevo);
-  void nuevo.offsetWidth; // fuerza reflow para que la transición de entrada sí se anime
+  void nuevo.offsetWidth;
 
   requestAnimationFrame(()=>{
     nuevo.classList.remove("mc-pos-enter");
@@ -4362,35 +4454,105 @@ function mcStartCarousel(){
       anterior.classList.add("mc-pos-exit");
       const viejoVid = anterior.querySelector(".mc-slide-video");
       if(viejoVid) viejoVid.pause();
-      setTimeout(()=>anterior.remove(), 480); // se saca del DOM recién cuando termina de deslizarse afuera
+      setTimeout(()=>anterior.remove(), 480);
     }
   });
 
   if(media.type === "video"){
     const vid = nuevo.querySelector(".mc-slide-video");
-    vid.onended = ()=>mcNextMedia();
-    // Si el archivo de video no carga (ej. lo borraron de la carpeta), no nos quedamos trabados:
-    // pasamos a lo siguiente igual que con una foto rota.
-    vid.onerror = ()=>mcNextMedia();
+    vid.onended = ()=>{ if(!solo) mcNextMedia(); };
+    vid.onerror = ()=>mcFalloCarga_();
+    vid.onplaying = ()=>{ mcFallos = 0; clearTimeout(mcStallTimer); mcPrecargarSiguiente_(); };
+    // Si en 20 s no arrancó (red lenta/colgada), no nos quedamos trabados mirando negro.
+    mcStallTimer = setTimeout(()=>{ if(vid.readyState < 3) mcFalloCarga_(); }, 20000);
   } else {
+    const img = nuevo.querySelector("img");
+    img.onload = ()=>{ mcFallos = 0; mcPrecargarSiguiente_(); };
+    img.onerror = ()=>mcFalloCarga_();
     mcTimer = setTimeout(mcNextMedia, MC_DURACION_FOTO);
-    nuevo.querySelector("img").onerror = ()=>mcNextMedia();
   }
 }
 
 function mcStopCarousel(){
-  clearTimeout(mcTimer);
-  mcTimer = null;
+  clearTimeout(mcTimer); mcTimer = null;
+  clearTimeout(mcStallTimer); mcStallTimer = null;
   document.querySelectorAll("#mcCarouselContainer .mc-slide-video").forEach(v=>v.pause());
 }
 
 function mcNextMedia(){
-  // Solo seguimos si el modal sigue abierto (evita que un video que estaba por terminar dispare
-  // el avance justo después de que el usuario ya cerró el modal).
   if(!document.getElementById("minecraftModal").classList.contains("open")) return;
   mcIndex = (mcIndex + 1) % mcCarouselMedia.length;
   mcStartCarousel();
 }
+
+// ================= Música de fondo (carpeta musicDisc) — SOLO con el modal abierto =================
+// Suena al azar cualquier archivo de audio que haya en la carpeta musicDisc del repo (sin importar el
+// nombre), al 15% del volumen. Al terminar una pasa a otra al azar. Al cerrar el modal se detiene.
+const MC_MUSIC_FOLDER = "musicDisc";
+const MC_MUSIC_VOL = 0.15;
+let mcAudio = null, mcMusicActive = false, mcMusicUltimo = -1, mcMusicErrores = 0, mcNombrePendiente = null, mcMusicLista = [];
+function mcSilencioWav_(){
+  const n = 800, b = new Uint8Array(44+n), dv = new DataView(b.buffer);
+  const w = (o,s)=>{ for(let i=0;i<s.length;i++) b[o+i]=s.charCodeAt(i); };
+  w(0,"RIFF"); dv.setUint32(4,36+n,true); w(8,"WAVEfmt "); dv.setUint32(16,16,true); dv.setUint16(20,1,true); dv.setUint16(22,1,true);
+  dv.setUint32(24,8000,true); dv.setUint32(28,8000,true); dv.setUint16(32,1,true); dv.setUint16(34,8,true); w(36,"data"); dv.setUint32(40,n,true);
+  for(let i=0;i<n;i++) b[44+i]=128;
+  let s=""; for(let i=0;i<b.length;i++) s+=String.fromCharCode(b[i]);
+  return "data:audio/wav;base64,"+btoa(s);
+}
+async function mcMusicIniciar(){
+  mcMusicActive = true; mcMusicErrores = 0;
+  if(!mcAudio){
+    mcAudio = new Audio();
+    mcAudio.preload = "auto";
+    mcAudio.addEventListener("ended", ()=>{ if(mcMusicActive) mcMusicSiguiente(); });
+    mcAudio.addEventListener("playing", ()=>{
+      if(mcNombrePendiente){ mcMostrarNowPlaying(mcNombrePendiente); mcNombrePendiente = null; mcMusicErrores = 0; }
+    });
+    mcAudio.addEventListener("error", ()=>{
+      if(!mcMusicActive || !mcAudio.getAttribute("src") || mcAudio.src.indexOf("data:")===0) return;
+      if(++mcMusicErrores < 5) mcMusicSiguiente(); // archivo roto: se prueba con otro
+    });
+  }
+  mcAudio.volume = MC_MUSIC_VOL;
+  // "Desbloqueo" dentro del clic (iPhone/Safari exigen que el audio arranque desde un gesto del usuario)
+  try{ mcAudio.src = mcSilencioWav_(); mcAudio.play().catch(()=>{}); }catch(e){}
+  const lista = await listarCarpetaRepo_(MC_MUSIC_FOLDER);
+  if(!mcMusicActive) return; // ya cerraron el modal
+  mcMusicLista = (lista||[]).filter(f=>MC_EXT_AUDIO.includes((f.name.split(".").pop()||"").toLowerCase()));
+  if(mcMusicLista.length) mcMusicSiguiente();
+}
+function mcMusicSiguiente(){
+  if(!mcMusicActive || !mcMusicLista.length) return;
+  let i = Math.floor(Math.random()*mcMusicLista.length);
+  if(mcMusicLista.length > 1 && i === mcMusicUltimo) i = (i + 1 + Math.floor(Math.random()*(mcMusicLista.length-1))) % mcMusicLista.length;
+  mcMusicUltimo = i;
+  const pista = mcMusicLista[i];
+  mcNombrePendiente = pista.name.replace(/\.[^.]+$/, ""); // nombre completo, sin la extensión
+  mcAudio.volume = MC_MUSIC_VOL;
+  mcAudio.src = pista.url;
+  mcAudio.play().catch(()=>{});
+}
+function mcMusicDetener(){
+  mcMusicActive = false; mcNombrePendiente = null;
+  if(mcAudio){ try{ mcAudio.pause(); }catch(e){} }
+  const el = document.getElementById("mcNowPlaying");
+  if(el) el.classList.remove("show");
+  clearTimeout(mcNPTimer);
+}
+// ---- Texto "Now playing: ..." estilo Minecraft: sin fondo, 3 s, colores en transición ----
+let mcNPTimer = null;
+function mcMostrarNowPlaying(nombre){
+  const el = document.getElementById("mcNowPlaying");
+  el.textContent = "Now playing: " + nombre;
+  el.classList.remove("show"); void el.offsetWidth; el.classList.add("show");
+  clearTimeout(mcNPTimer);
+  mcNPTimer = setTimeout(()=>el.classList.remove("show"), 3000);
+}
+
+// Arranque: apenas abre la página se baja el video 1; y poco después se calientan los listados.
+mcPrecargarVideo1();
+setTimeout(()=>{ listarCarpetaRepo_("ImagenesMinecraft"); listarCarpetaRepo_(MC_MUSIC_FOLDER); }, 2500);
 
 function mcSwitchTab(tab){
   const esBedrock = tab === "bedrock";
@@ -5410,6 +5572,19 @@ function resaltarIndicacion(descripcionEscapada){
 })();
 </script>
 
+<style>
+  /* Fuente tipo Minecraft (Mac's Minecraft, licencia OFL) — archivo en fonts/ */
+  @font-face{font-family:"MCFont";src:url("fonts/Minecraft-Regular.woff2") format("woff2");font-display:block;}
+  #mcNowPlaying{position:fixed;left:50%;bottom:calc(26px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);z-index:700;pointer-events:none;
+    max-width:92vw;text-align:center;line-height:1.25;opacity:0;--sh:2px;font-family:"MCFont","Minecraftia",monospace;font-size:16px;
+    -webkit-font-smoothing:none;font-smooth:never;image-rendering:pixelated;background:none;}
+  @media (min-width:520px){ #mcNowPlaying{font-size:24px;--sh:3px;} }
+  /* 3 s en total: entra, pasa por los 8 colores (lima, rosa, morado, azul, azul claro, cyan, verde, amarillo) y se va */
+  #mcNowPlaying.show{animation:mcColores 3s linear forwards, mcFade 3s ease forwards;}
+  @keyframes mcFade{0%{opacity:0}8%{opacity:1}86%{opacity:1}100%{opacity:0}}
+  @keyframes mcColores{0.0%{color:#55ff55;text-shadow:var(--sh) var(--sh) 0 #153f15}14.29%{color:#ff55ff;text-shadow:var(--sh) var(--sh) 0 #3f153f}28.57%{color:#aa00aa;text-shadow:var(--sh) var(--sh) 0 #2a002a}42.86%{color:#0000aa;text-shadow:var(--sh) var(--sh) 0 #00002a}57.14%{color:#5555ff;text-shadow:var(--sh) var(--sh) 0 #15153f}71.43%{color:#55ffff;text-shadow:var(--sh) var(--sh) 0 #153f3f}85.71%{color:#00aa00;text-shadow:var(--sh) var(--sh) 0 #002a00}100.0%{color:#ffff55;text-shadow:var(--sh) var(--sh) 0 #3f3f15}}
+</style>
+<div id="mcNowPlaying" aria-live="polite"></div>
 <!-- ============ PWA: instalación + service worker + almacenamiento persistente ============ -->
 <style>
   #btnInstalarApp{display:none;position:fixed;left:14px;bottom:calc(60px + env(safe-area-inset-bottom,0px));z-index:61;height:38px;min-width:38px;padding:0;border:none;border-radius:999px;background:linear-gradient(90deg,var(--peach-2),var(--peach-1));color:#fff;font-weight:700;font-size:13.5px;box-shadow:0 4px 14px rgba(0,0,0,.45);cursor:pointer;align-items:center;overflow:hidden;white-space:nowrap;}
