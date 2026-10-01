@@ -1151,6 +1151,9 @@
       <button type="button" class="mc-open-btn" onclick="mcAbrirJava()">📋 Copiar y abrir Minecraft</button>
       <p class="mc-note">Para agregar el servidor en Java: Abre el juego > Multijugador > Agregar servidor > Pega esta dirección > Juega :D</p>
     </div>
+
+    <!-- Now playing: vive en el espacio vacío de abajo del modal (no cambia su tamaño) -->
+    <div class="mc-np-slot"><div id="mcNowPlaying" aria-live="polite"></div></div>
   </div>
 </div>
 
@@ -4393,6 +4396,7 @@ async function mcCargarMedia(){
 }
 
 async function abrirMinecraftModal(){
+  closeDrawer(); // si se abrió desde la barra lateral, se cierra
   openModal("minecraftModal");
   mcMusicIniciar(); // dentro del clic: así el navegador deja sonar el audio
   mcIndex = 0; mcFallos = 0;
@@ -4544,11 +4548,22 @@ function mcMusicDetener(){
 let mcNPTimer = null;
 function mcMostrarNowPlaying(nombre){
   const el = document.getElementById("mcNowPlaying");
+  el.classList.remove("show");
+  el.style.fontSize = "16px";
   el.textContent = "Now playing: " + nombre;
-  el.classList.remove("show"); void el.offsetWidth; el.classList.add("show");
+  // Si el nombre es largo, se achica la letra hasta que quepa completo en una línea (mínimo 9px).
+  let px = 16;
+  while(el.scrollWidth > el.clientWidth && px > 9){ px--; el.style.fontSize = px+"px"; }
+  void el.offsetWidth; el.classList.add("show");
   clearTimeout(mcNPTimer);
   mcNPTimer = setTimeout(()=>el.classList.remove("show"), 3000);
 }
+
+// Red de seguridad: si el modal se cierra por CUALQUIER camino, la música y el carrusel se detienen.
+new MutationObserver(()=>{
+  const m = document.getElementById("minecraftModal");
+  if(m && !m.classList.contains("open") && mcMusicActive){ mcStopCarousel(); mcMusicDetener(); }
+}).observe(document.getElementById("minecraftModal"), {attributes:true, attributeFilter:["class"]});
 
 // Arranque: apenas abre la página se baja el video 1; y poco después se calientan los listados.
 mcPrecargarVideo1();
@@ -4585,7 +4600,7 @@ document.querySelectorAll(".modal-overlay").forEach(ov=>{
   ov.addEventListener("click", e=>{
     if(e.target!==ov) return;
     if(FORM_MODALS.includes(ov.id)) return; // formulario real: solo se cierra con la X, a propósito
-    ov.classList.remove("open");
+    closeModal(ov.id); // (antes se quitaba la clase "open" directo y se saltaba la limpieza, ej. la música de Minecraft)
   });
 });
 
@@ -5575,16 +5590,17 @@ function resaltarIndicacion(descripcionEscapada){
 <style>
   /* Fuente tipo Minecraft (Mac's Minecraft, licencia OFL) — archivo en fonts/ */
   @font-face{font-family:"MCFont";src:url("fonts/Minecraft-Regular.woff2") format("woff2");font-display:block;}
-  #mcNowPlaying{position:fixed;left:50%;bottom:calc(26px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);z-index:700;pointer-events:none;
-    max-width:92vw;text-align:center;line-height:1.25;opacity:0;--sh:2px;font-family:"MCFont","Minecraftia",monospace;font-size:16px;
-    -webkit-font-smoothing:none;font-smooth:never;image-rendering:pixelated;background:none;}
-  @media (min-width:520px){ #mcNowPlaying{font-size:24px;--sh:3px;} }
-  /* 3 s en total: entra, pasa por los 8 colores (lima, rosa, morado, azul, azul claro, cyan, verde, amarillo) y se va */
+  /* El slot mide 0 de alto y va al final del contenido: el texto cae justo en el padding de abajo del
+     modal, así que el tamaño de la ventana no cambia. */
+  #minecraftModal .mc-np-slot{position:relative;height:0;margin:0 -20px;}
+  #mcNowPlaying{position:absolute;left:0;right:0;top:6px;text-align:center;white-space:nowrap;overflow:hidden;pointer-events:none;
+    opacity:0;font-family:"MCFont","Minecraftia",monospace;font-size:16px;line-height:18px;background:none;
+    -webkit-font-smoothing:none;font-smooth:never;image-rendering:pixelated;padding:0 14px;box-sizing:border-box;}
+  /* 3 s: entra, recorre lima, rosa, morado, azul claro, cyan, verde y amarillo, y se va */
   #mcNowPlaying.show{animation:mcColores 3s linear forwards, mcFade 3s ease forwards;}
   @keyframes mcFade{0%{opacity:0}8%{opacity:1}86%{opacity:1}100%{opacity:0}}
-  @keyframes mcColores{0.0%{color:#55ff55;text-shadow:var(--sh) var(--sh) 0 #153f15}14.29%{color:#ff55ff;text-shadow:var(--sh) var(--sh) 0 #3f153f}28.57%{color:#aa00aa;text-shadow:var(--sh) var(--sh) 0 #2a002a}42.86%{color:#0000aa;text-shadow:var(--sh) var(--sh) 0 #00002a}57.14%{color:#5555ff;text-shadow:var(--sh) var(--sh) 0 #15153f}71.43%{color:#55ffff;text-shadow:var(--sh) var(--sh) 0 #153f3f}85.71%{color:#00aa00;text-shadow:var(--sh) var(--sh) 0 #002a00}100.0%{color:#ffff55;text-shadow:var(--sh) var(--sh) 0 #3f3f15}}
+  @keyframes mcColores{0.0%{color:#55ff55;text-shadow:2px 2px 0 #153f15}16.67%{color:#ff55ff;text-shadow:2px 2px 0 #3f153f}33.33%{color:#aa00aa;text-shadow:2px 2px 0 #2a002a}50.0%{color:#5555ff;text-shadow:2px 2px 0 #15153f}66.67%{color:#55ffff;text-shadow:2px 2px 0 #153f3f}83.33%{color:#00aa00;text-shadow:2px 2px 0 #002a00}100.0%{color:#ffff55;text-shadow:2px 2px 0 #3f3f15}}
 </style>
-<div id="mcNowPlaying" aria-live="polite"></div>
 <!-- ============ PWA: instalación + service worker + almacenamiento persistente ============ -->
 <style>
   #btnInstalarApp{display:none;position:fixed;left:14px;bottom:calc(60px + env(safe-area-inset-bottom,0px));z-index:61;height:38px;min-width:38px;padding:0;border:none;border-radius:999px;background:linear-gradient(90deg,var(--peach-2),var(--peach-1));color:#fff;font-weight:700;font-size:13.5px;box-shadow:0 4px 14px rgba(0,0,0,.45);cursor:pointer;align-items:center;overflow:hidden;white-space:nowrap;}
