@@ -4568,12 +4568,12 @@ async function mcMostrarNowPlaying(nombre){
   const el = document.getElementById("mcNowPlaying");
   try{ await document.fonts.load('11.5px "MCFont"'); }catch(e){}
   el.classList.remove("show");
-  el.style.fontSize = "16px";
+  el.style.fontSize = "11.5px";
   el.textContent = "Now playing: " + nombre;
-  // 16px = 2x el píxel de la fuente (se ve nítida). Si el nombre es tan largo que no cabe en una línea,
-  // se achica de 1 en 1 para que nunca se corte (mínimo 9px).
-  let px = 16;
-  while(el.scrollWidth > el.clientWidth && px > 9){ px -= 1; el.style.fontSize = px+"px"; }
+  // Mismo tamaño que la nota de arriba (11.5px). Si el nombre es tan largo que no cabe en una línea,
+  // se achica un poquito para que nunca se corte (mínimo 7px).
+  let px = 11.5;
+  while(el.scrollWidth > el.clientWidth && px > 7){ px -= 0.5; el.style.fontSize = px+"px"; }
   mcCentrarNowPlaying(el);
   void el.offsetWidth; el.classList.add("show");
   clearTimeout(mcNPTimer);
@@ -5613,9 +5613,9 @@ function resaltarIndicacion(descripcionEscapada){
   @font-face{font-family:"MCFont";src:url("data:font/woff2;base64,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") format("woff2");font-display:block;}
   /* El slot mide 0 de alto y va al final del contenido: el texto cae justo en el padding de abajo del
      modal, así que el tamaño de la ventana no cambia. */
-  #minecraftModal .mc-np-slot{position:relative;height:8px;margin:0 -20px;}
-  #mcNowPlaying{position:absolute;left:0;right:0;top:5px;text-align:center;white-space:nowrap;overflow:hidden;pointer-events:none;
-    opacity:0;font-family:"MCFont","Minecraftia",monospace;font-size:16px;line-height:18px;word-spacing:.375em;font-synthesis:none;background:none;
+  #minecraftModal .mc-np-slot{position:relative;height:0;margin:0 -20px;}
+  #mcNowPlaying{position:absolute;left:0;right:0;top:3px;text-align:center;white-space:nowrap;overflow:hidden;pointer-events:none;
+    opacity:0;font-family:"MCFont","Minecraftia",monospace;font-size:11.5px;line-height:14px;word-spacing:.4em;font-synthesis:none;background:none;
     -webkit-font-smoothing:none;font-smooth:never;image-rendering:pixelated;padding:0 14px;box-sizing:border-box;}
   /* 3 s: entra, recorre lima, rosa, morado, azul claro, cyan, verde y amarillo, y se va */
   #mcNowPlaying.show{animation:mcColores 3s linear forwards, mcFade 3s ease forwards;}
@@ -5708,9 +5708,41 @@ function resaltarIndicacion(descripcionEscapada){
 (function(){
   // 1) Service worker (solo con https o localhost; en file:// no existe)
   if ("serviceWorker" in navigator && (location.protocol==="https:" || location.hostname==="localhost")) {
+    // ACTUALIZACIÓN OBLIGATORIA. Cada vez que subas cambios: sube el número de VERSION en sw.js
+    // (ej. "v7" -> "v8") Y este APP_SW_VERSION (7 -> 8). Si alguien tiene abierta una página más vieja
+    // que el service worker, sale una ventana que no se puede cerrar y lo obliga a actualizar.
+    const APP_SW_VERSION = 7;
+    function bloquearParaActualizar(){
+      if (document.getElementById("tphForzarUpdate")) return;
+      const d = document.createElement("div");
+      d.id = "tphForzarUpdate";
+      d.style.cssText = "position:fixed;inset:0;z-index:2147483000;background:rgba(10,4,14,.94);display:flex;align-items:center;justify-content:center;padding:24px;";
+      d.innerHTML = '<div style="max-width:320px;width:100%;text-align:center;background:linear-gradient(170deg,#2f1a38,#1f1127);border:1px solid rgba(239,8,112,.4);border-radius:18px;padding:26px 22px;box-shadow:0 18px 50px rgba(0,0,0,.6);color:#fbeaf2;font-family:inherit;">'
+        + '<div style="font-size:38px;margin-bottom:8px;">🍑</div>'
+        + '<div style="font-size:18px;font-weight:800;margin-bottom:8px;">Hay una versión nueva</div>'
+        + '<div style="font-size:13.5px;color:#c9a8bb;margin-bottom:18px;line-height:1.5;">Estás usando una versión vieja de Peaches Hub. Actualiza para seguir usando la app.</div>'
+        + '<button id="tphForzarBtn" type="button" style="width:100%;padding:13px;border:none;border-radius:12px;font-weight:800;font-size:15px;color:#fff;background:linear-gradient(90deg,#EF0870,#ff8fb1);cursor:pointer;">Actualizar ahora</button></div>';
+      document.body.appendChild(d);
+      document.getElementById("tphForzarBtn").onclick = ()=>{ location.reload(); };
+    }
+    function revisarVersionSW(){
+      const sw = navigator.serviceWorker.controller; if (!sw || !navigator.onLine) return;
+      const ch = new MessageChannel();
+      ch.port1.onmessage = e => {
+        const v = e.data && Number(e.data.version);
+        if (v && v > APP_SW_VERSION) bloquearParaActualizar();   // el SW es más nuevo que esta página
+      };
+      try { sw.postMessage({type:"VERSION"}, [ch.port2]); } catch(err){}
+    }
     window.addEventListener("load", ()=>{
-      navigator.serviceWorker.register("sw.js").catch(e=>console.warn("[TPH] SW no registrado:", e));
+      navigator.serviceWorker.register("sw.js").then(reg=>{
+        revisarVersionSW();
+        const buscar = ()=>{ if (navigator.onLine) reg.update().catch(()=>{}); };
+        document.addEventListener("visibilitychange", ()=>{ if (document.visibilityState==="visible"){ buscar(); revisarVersionSW(); } });
+        setInterval(buscar, 5*60*1000);
+      }).catch(e=>console.warn("[TPH] SW no registrado:", e));
     });
+    navigator.serviceWorker.addEventListener("controllerchange", revisarVersionSW);
   }
   // 2) Pedir al navegador que NO borre los datos guardados de la app
   if (navigator.storage && navigator.storage.persist) {

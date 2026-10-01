@@ -4,7 +4,7 @@
  * - Las llamadas al servidor (Apps Script, Google login, GitHub API) NUNCA pasan por acá: los datos
  *   se guardan desde index.html (localStorage + IndexedDB), no desde el service worker.
  * Para forzar que todos reciban una versión nueva, sube el número de VERSION. */
-const VERSION = "v6";
+const VERSION = "v7"; // sube también APP_SW_VERSION (número) en index.html
 const SHELL_CACHE = "tph-shell-" + VERSION;
 const ASSET_CACHE = "tph-assets-v1";      // no se borra al cambiar VERSION (fotos/librerías)
 const MAX_ASSETS = 400;
@@ -15,6 +15,11 @@ const NO_CACHE_HOSTS = ["script.google.com", "script.googleusercontent.com", "ac
 
 self.addEventListener("install", e => {
   e.waitUntil(caches.open(SHELL_CACHE).then(c => Promise.all(SHELL.map(u => c.add(new Request(u, { cache: "reload" })).catch(() => {})))).then(() => self.skipWaiting()));
+});
+
+// La página pregunta su versión para saber si está desactualizada
+self.addEventListener("message", e => {
+  if (e.data && e.data.type === "VERSION" && e.ports && e.ports[0]) e.ports[0].postMessage({ version: parseInt(VERSION.replace(/\D/g, ""), 10) });
 });
 
 self.addEventListener("activate", e => {
@@ -36,7 +41,7 @@ async function navegacion_(req) {
   try {
     const ctrl = new AbortController();
     const t = setTimeout(() => ctrl.abort(), 4000);
-    const res = await fetch(req, { signal: ctrl.signal });
+    const res = await fetch(req, { signal: ctrl.signal, cache: "no-cache" }); // revalida: nunca una página vieja del caché HTTP
     clearTimeout(t);
     if (res && res.ok) cache.put("./index.html", res.clone());
     return res;
