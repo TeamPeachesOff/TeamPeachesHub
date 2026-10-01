@@ -2,16 +2,16 @@
 <html lang="es">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Team Peaches Hub 🍑</title>
 <link id="favicon" rel="icon" type="image/jpeg" href="https://raw.githubusercontent.com/TeamPeachesOff/TeamPeachesHub/main/Logos/PeachesLogo.jpeg">
 <!-- PWA: app instalable -->
 <link rel="manifest" href="manifest.webmanifest">
-<meta name="theme-color" content="#EF0870">
+<meta name="theme-color" content="#180E1D">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="Peaches Hub">
-<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-status-bar-style" content="black">
 <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
 <script>
 /*
@@ -151,7 +151,7 @@
      tablets/laptops de gama media-baja, aunque en un celular/PC potente no se note. Como el fondo
      ya era casi opaco (0.92), subir la opacidad un poco y sacar el blur se ve prácticamente
      idéntico pero deja de pagar ese costo en cada scroll. */
-  header{position:sticky;top:0;z-index:50;background:rgba(24,14,29,0.97);border-bottom:1px solid rgba(239,8,112,0.25);}
+  header{position:sticky;top:0;z-index:50;background:#180E1D;border-bottom:1px solid rgba(239,8,112,0.25);}
   /* Barra de progreso del header: reemplaza la rayita fija de abajo por una animada cuando se
      está actualizando datos EN SEGUNDO PLANO (no bloquea nada, la persona sigue viendo e
      interactuando con todo mientras tanto). Cuando no está actualizando, se ve exactamente igual
@@ -5411,7 +5411,56 @@ function resaltarIndicacion(descripcionEscapada){
 </script>
 
 <!-- ============ PWA: instalación + service worker + almacenamiento persistente ============ -->
-<button id="btnInstalarApp" type="button" style="display:none;position:fixed;left:12px;bottom:calc(12px + env(safe-area-inset-bottom,0px));z-index:9999;background:#EF0870;color:#fff;border:none;border-radius:999px;padding:10px 16px;font-size:14px;font-weight:600;box-shadow:0 4px 14px rgba(0,0,0,.45);cursor:pointer;">📲 Instalar app</button>
+<style>
+  #btnInstalarApp{display:none;position:fixed;left:14px;bottom:calc(60px + env(safe-area-inset-bottom,0px));z-index:61;height:38px;min-width:38px;padding:0;border:none;border-radius:999px;background:linear-gradient(90deg,var(--peach-2),var(--peach-1));color:#fff;font-weight:700;font-size:13.5px;box-shadow:0 4px 14px rgba(0,0,0,.45);cursor:pointer;align-items:center;overflow:hidden;white-space:nowrap;}
+  #btnInstalarApp .ia-emoji{width:38px;height:38px;display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0;}
+  #btnInstalarApp .ia-txt{max-width:0;opacity:0;transition:max-width .6s ease,opacity .5s ease,padding .6s ease;padding-right:0;}
+  #btnInstalarApp.con-texto .ia-txt{max-width:120px;opacity:1;padding-right:14px;}
+  #btnInstalarApp.entrando{display:inline-flex;animation:iaPop .5s cubic-bezier(.2,1.4,.4,1) both;}
+  #btnInstalarApp.saliendo{display:inline-flex;animation:iaSalir .45s ease-in both;}
+  @keyframes iaPop{0%{transform:scale(0) rotate(-40deg);opacity:0}100%{transform:scale(1) rotate(0);opacity:1}}
+  @keyframes iaSalir{0%{transform:translateX(0);opacity:1}100%{transform:translateX(-90px);opacity:0}}
+
+  #instalarModal{z-index:420;background:rgba(10,4,14,.72);}
+  #instalarModal .ia-box{max-width:330px;text-align:center;padding:26px 22px 20px;border:1px solid rgba(239,8,112,.35);background:linear-gradient(170deg,#2f1a38,#1f1127);box-shadow:0 18px 50px rgba(0,0,0,.6),0 0 40px rgba(239,8,112,.18);overflow:hidden;}
+  #instalarModal.open .ia-box{animation:iaModal .45s cubic-bezier(.2,1.3,.4,1) both;}
+  @keyframes iaModal{0%{transform:translateY(30px) scale(.9);opacity:0}100%{transform:none;opacity:1}}
+  #instalarModal .ia-glow{position:absolute;top:-70px;left:50%;width:220px;height:220px;margin-left:-110px;background:radial-gradient(circle,rgba(239,8,112,.45),transparent 65%);pointer-events:none;}
+  #instalarModal .ia-icon{position:relative;width:84px;height:84px;border-radius:22px;margin:0 auto 12px;box-shadow:0 8px 24px rgba(239,8,112,.45);animation:iaFlota 3s ease-in-out infinite;}
+  @keyframes iaFlota{0%,100%{transform:translateY(0)}50%{transform:translateY(-5px)}}
+  #instalarModal h3{position:relative;margin:0 0 6px;font-size:19px;color:#fff;}
+  #instalarModal .ia-sub{position:relative;font-size:13.5px;color:var(--text-dim);margin-bottom:14px;}
+  #instalarModal .ia-lista{position:relative;list-style:none;margin:0 0 16px;padding:0;text-align:left;font-size:13px;}
+  #instalarModal .ia-lista li{display:flex;gap:10px;align-items:center;background:rgba(255,255,255,.05);border-radius:12px;padding:8px 12px;margin-bottom:6px;}
+  #instalarModal .ia-check{position:relative;display:flex;align-items:center;justify-content:center;gap:8px;font-size:12.5px;color:var(--text-dim);margin-bottom:14px;cursor:pointer;-webkit-user-select:none;user-select:none;}
+  #instalarModal .ia-check input{width:16px;height:16px;accent-color:#EF0870;margin:0;}
+  #instalarModal .ia-botones{position:relative;display:flex;gap:10px;}
+  #instalarModal .ia-botones button{flex:1;padding:11px;border-radius:12px;font-weight:800;font-size:14px;}
+  #instalarModal .ia-ahora{background:rgba(255,255,255,.1);color:var(--text);}
+  #instalarModal .ia-instalar{background:linear-gradient(90deg,var(--peach-2),var(--peach-1));color:#fff;box-shadow:0 4px 14px rgba(239,8,112,.4);}
+</style>
+
+<button id="btnInstalarApp" type="button" aria-label="Instalar app"><span class="ia-emoji">📲</span><span class="ia-txt">Instalar app</span></button>
+
+<div class="modal-overlay" id="instalarModal">
+  <div class="modal-box ia-box">
+    <div class="ia-glow"></div>
+    <img class="ia-icon" src="icons/icon-192.png" alt="Peaches Hub">
+    <h3>¿Descargar la página como app? 🍑</h3>
+    <div class="ia-sub" id="iaSub">Instálala en tu dispositivo, es gratis y no ocupa casi nada.</div>
+    <ul class="ia-lista" id="iaLista">
+      <li><span>⚡</span><span>Abre al instante desde tu pantalla de inicio</span></li>
+      <li><span>📴</span><span>Funciona aunque no tengas internet</span></li>
+      <li><span>🔒</span><span>Tus datos quedan guardados en tu dispositivo</span></li>
+    </ul>
+    <label class="ia-check"><input type="checkbox" id="iaNoMostrar"> No mostrar de nuevo</label>
+    <div class="ia-botones">
+      <button type="button" class="ia-ahora" id="iaAhora">Ahora no</button>
+      <button type="button" class="ia-instalar" id="iaInstalar">Instalar</button>
+    </div>
+  </div>
+</div>
+
 <script>
 (function(){
   // 1) Service worker (solo con https o localhost; en file:// no existe)
@@ -5424,29 +5473,78 @@ function resaltarIndicacion(descripcionEscapada){
   if (navigator.storage && navigator.storage.persist) {
     navigator.storage.persist().then(ok=>console.info("[TPH] Almacenamiento persistente:", ok?"concedido":"no concedido (el navegador decide)")).catch(()=>{});
   }
-  // 3) Botón de instalación
+
+  // 3) Botón + ventanita de instalación
+  const OCULTO_KEY = "tph_instalar_oculto";
   const btn = document.getElementById("btnInstalarApp");
+  const modal = document.getElementById("instalarModal");
+  const chk = document.getElementById("iaNoMostrar");
+  const bInstalar = document.getElementById("iaInstalar");
+  const bAhora = document.getElementById("iaAhora");
+  const leer = ()=>{ try{ return localStorage.getItem(OCULTO_KEY)==="1"; }catch(e){ return false; } };
+  const guardar = v=>{ try{ v ? localStorage.setItem(OCULTO_KEY,"1") : localStorage.removeItem(OCULTO_KEY); }catch(e){} };
+
+  // ¿Ya está instalada y la estás usando como app? (ventana independiente)
   const yaInstalada = window.matchMedia("(display-mode: standalone)").matches || navigator.standalone === true;
-  let promptDiferido = null;
-  window.addEventListener("beforeinstallprompt", e=>{
-    e.preventDefault(); promptDiferido = e;
-    if (!yaInstalada && !localStorage.getItem("tph_instalar_oculto")) btn.style.display = "block";
-  });
-  btn.addEventListener("click", async ()=>{
-    if (!promptDiferido) return;
-    promptDiferido.prompt();
-    await promptDiferido.userChoice.catch(()=>{});
-    promptDiferido = null; btn.style.display = "none";
-  });
-  window.addEventListener("appinstalled", ()=>{ btn.style.display = "none"; if (typeof toast==="function") toast("App instalada ✅"); });
-  // iPhone/iPad (Safari no tiene botón automático): se muestra una pista una sola vez
   const esIOS = /iphone|ipad|ipod/i.test(navigator.userAgent) && !window.MSStream;
-  if (esIOS && !yaInstalada && !localStorage.getItem("tph_ios_pista")) {
-    btn.textContent = "📲 Cómo instalar"; btn.style.display = "block";
-    btn.addEventListener("click", ()=>{
-      alert("Para instalar en iPhone/iPad: toca el botón Compartir (cuadrito con flecha) y luego «Agregar a pantalla de inicio».");
-      localStorage.setItem("tph_ios_pista","1"); btn.style.display = "none";
-    });
+  let promptDiferido = null, timers = [], mostrado = false;
+
+  // Secuencia: aparece solo el emoji -> se despliega el texto (10 s) -> se encoge -> 5 s después se va.
+  function mostrarBoton(){
+    if (mostrado || yaInstalada || leer()) return;
+    mostrado = true;
+    btn.classList.add("entrando");
+    timers.push(setTimeout(()=>btn.classList.add("con-texto"), 1200));
+    timers.push(setTimeout(()=>btn.classList.remove("con-texto"), 1200 + 10000));
+    timers.push(setTimeout(()=>{
+      btn.classList.remove("entrando"); btn.classList.add("saliendo");
+      setTimeout(()=>{ btn.style.display="none"; btn.classList.remove("saliendo"); }, 460);
+    }, 1200 + 10000 + 5000));
+  }
+  function quitarBotonYa(){
+    timers.forEach(clearTimeout); timers = [];
+    btn.classList.remove("entrando","con-texto","saliendo"); btn.style.display = "none";
+  }
+  function abrirModal(){ chk.checked = false; modal.classList.add("open"); }
+  function cerrarModal(){
+    modal.classList.remove("open");
+    if (chk.checked) { guardar(true); quitarBotonYa(); }
+  }
+
+  window.addEventListener("beforeinstallprompt", e=>{
+    // Chrome/Edge/Android solo disparan esto cuando la app NO está instalada.
+    e.preventDefault(); promptDiferido = e; mostrarBoton();
+  });
+  btn.addEventListener("click", abrirModal);
+  bAhora.addEventListener("click", cerrarModal);
+  modal.addEventListener("click", e=>{ if (e.target===modal) cerrarModal(); });
+
+  bInstalar.addEventListener("click", async ()=>{
+    if (promptDiferido) {
+      const dp = promptDiferido; promptDiferido = null;
+      if (chk.checked) { guardar(true); }
+      modal.classList.remove("open");
+      try { dp.prompt(); await dp.userChoice; } catch(e){}
+      quitarBotonYa();
+    } else {
+      cerrarModal(); // iPhone/iPad: las instrucciones ya estaban en la ventana
+    }
+  });
+
+  window.addEventListener("appinstalled", ()=>{
+    // Al instalarla se borra la marca "no mostrar": si algún día la desinstalas, el botón vuelve.
+    guardar(false); quitarBotonYa(); modal.classList.remove("open");
+    if (typeof toast==="function") toast("App instalada ✅");
+  });
+
+  // iPhone/iPad: Safari no tiene instalación automática, así que la ventana explica los pasos.
+  if (esIOS && !yaInstalada && !leer()) {
+    document.getElementById("iaSub").textContent = "En iPhone/iPad se instala desde Safari en 2 pasos:";
+    document.getElementById("iaLista").innerHTML =
+      '<li><span>1️⃣</span><span>Toca el botón <b>Compartir</b> (el cuadrito con la flecha ⬆️)</span></li>' +
+      '<li><span>2️⃣</span><span>Elige <b>«Agregar a pantalla de inicio»</b></span></li>';
+    bInstalar.textContent = "Entendido";
+    mostrarBoton();
   }
 })();
 </script>

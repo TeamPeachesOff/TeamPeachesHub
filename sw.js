@@ -4,7 +4,7 @@
  * - Las llamadas al servidor (Apps Script, Google login, GitHub API) NUNCA pasan por acá: los datos
  *   se guardan desde index.html (localStorage + IndexedDB), no desde el service worker.
  * Para forzar que todos reciban una versión nueva, sube el número de VERSION. */
-const VERSION = "v1";
+const VERSION = "v2";
 const SHELL_CACHE = "tph-shell-" + VERSION;
 const ASSET_CACHE = "tph-assets-v1";      // no se borra al cambiar VERSION (fotos/librerías)
 const MAX_ASSETS = 400;
