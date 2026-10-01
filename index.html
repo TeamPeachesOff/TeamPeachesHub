@@ -465,7 +465,7 @@
   #memberPinInput{width:100%;text-align:center;font-size:24px;letter-spacing:8px;padding:14px;border-radius:12px;border:1px solid rgba(255,255,255,0.15);background:var(--card-bg-2);color:var(--text);margin:16px 0;}
   #memberPinMsg{font-size:13px;color:var(--red);min-height:18px;}
   #googleLoginMsg{font-size:13px;color:var(--red);min-height:18px;}
-  #staffStatusBadge{display:none;position:fixed;bottom:14px;right:14px;background:linear-gradient(90deg,#6a3d8f,#a45fc7);color:#fff;padding:8px 14px;border-radius:999px;font-size:12.5px;font-weight:700;z-index:60;box-shadow:0 4px 14px rgba(0,0,0,0.4);cursor:pointer;}
+  #staffStatusBadge{display:none;position:fixed;bottom:14px;right:14px;width:38px;height:38px;background:rgba(239,8,112,0.35);color:#fff;border-radius:50%;font-size:18px;z-index:60;box-shadow:0 4px 14px rgba(0,0,0,0.4);cursor:pointer;align-items:center;justify-content:center;}
   /* Discreto a propósito: modo Miembro es solo lectura, no necesita tanta prominencia como Staff.
      Es solo el emoji, sin texto, para que pase desapercibido. */
   #memberStatusBadge{display:none;position:fixed;bottom:14px;left:14px;width:38px;height:38px;background:rgba(239,8,112,0.35);color:#fff;border-radius:50%;font-size:18px;z-index:60;box-shadow:0 4px 14px rgba(0,0,0,0.4);cursor:pointer;align-items:center;justify-content:center;}
@@ -807,7 +807,7 @@
   </section>
 </main>
 
-<div id="staffStatusBadge">🛠️ Modo Staff activo</div>
+<div id="staffStatusBadge" title="Modo Staff activo">👑</div>
 <div id="memberStatusBadge" title="Modo Miembro (solo lectura)" style="-webkit-user-select:none;user-select:none;-webkit-touch-callout:none;touch-action:manipulation;">🍑</div>
 <div class="toast" id="toast"></div>
 <button type="button" id="backToTopBtn" class="back-to-top-btn hidden" aria-label="Subir"><span>▲</span></button>
@@ -4549,11 +4549,12 @@ let mcNPTimer = null;
 function mcMostrarNowPlaying(nombre){
   const el = document.getElementById("mcNowPlaying");
   el.classList.remove("show");
-  el.style.fontSize = "16px";
+  el.style.fontSize = "11.5px";
   el.textContent = "Now playing: " + nombre;
-  // Si el nombre es largo, se achica la letra hasta que quepa completo en una línea (mínimo 9px).
-  let px = 16;
-  while(el.scrollWidth > el.clientWidth && px > 9){ px--; el.style.fontSize = px+"px"; }
+  // Mismo tamaño que la nota de arriba (11.5px). Si el nombre es tan largo que no cabe en una línea,
+  // se achica un poquito para que nunca se corte (mínimo 7px).
+  let px = 11.5;
+  while(el.scrollWidth > el.clientWidth && px > 7){ px -= 0.5; el.style.fontSize = px+"px"; }
   void el.offsetWidth; el.classList.add("show");
   clearTimeout(mcNPTimer);
   mcNPTimer = setTimeout(()=>el.classList.remove("show"), 3000);
@@ -5476,7 +5477,7 @@ async function manejarRespuestaGoogle(response){
     localStorage.setItem("tph_session_rol", "staff");
     document.getElementById("googleLoginMsg").textContent = "";
     toast("Modo Staff activado 🛠️");
-    document.getElementById("staffStatusBadge").style.display="block";
+    document.getElementById("staffStatusBadge").style.display="flex";
     actualizarVisibilidadBackToTop();
     document.getElementById("addActBtn").classList.remove("hidden");
     document.getElementById("assignImagesBtn").classList.remove("hidden");
@@ -5571,7 +5572,7 @@ function resaltarIndicacion(descripcionEscapada){
   }
   if (!entroPorEnlace) await cargarDatos();
   if (nivel === "staff") {
-    document.getElementById("staffStatusBadge").style.display = "block";
+    document.getElementById("staffStatusBadge").style.display = "flex";
     actualizarVisibilidadBackToTop();
     document.getElementById("addActBtn").classList.remove("hidden");
     document.getElementById("assignImagesBtn").classList.remove("hidden");
@@ -5593,8 +5594,8 @@ function resaltarIndicacion(descripcionEscapada){
   /* El slot mide 0 de alto y va al final del contenido: el texto cae justo en el padding de abajo del
      modal, así que el tamaño de la ventana no cambia. */
   #minecraftModal .mc-np-slot{position:relative;height:0;margin:0 -20px;}
-  #mcNowPlaying{position:absolute;left:0;right:0;top:6px;text-align:center;white-space:nowrap;overflow:hidden;pointer-events:none;
-    opacity:0;font-family:"MCFont","Minecraftia",monospace;font-size:16px;line-height:18px;background:none;
+  #mcNowPlaying{position:absolute;left:0;right:0;top:3px;text-align:center;white-space:nowrap;overflow:hidden;pointer-events:none;
+    opacity:0;font-family:"MCFont","Minecraftia",monospace;font-size:11.5px;line-height:14px;background:none;
     -webkit-font-smoothing:none;font-smooth:never;image-rendering:pixelated;padding:0 14px;box-sizing:border-box;}
   /* 3 s: entra, recorre lima, rosa, morado, azul claro, cyan, verde y amarillo, y se va */
   #mcNowPlaying.show{animation:mcColores 3s linear forwards, mcFade 3s ease forwards;}
@@ -5603,9 +5604,11 @@ function resaltarIndicacion(descripcionEscapada){
 </style>
 <!-- ============ PWA: instalación + service worker + almacenamiento persistente ============ -->
 <style>
-  #btnInstalarApp{display:none;position:fixed;left:14px;bottom:calc(60px + env(safe-area-inset-bottom,0px));z-index:61;height:38px;min-width:38px;padding:0;border:none;border-radius:999px;background:linear-gradient(90deg,var(--peach-2),var(--peach-1));color:#fff;font-weight:700;font-size:13.5px;box-shadow:0 4px 14px rgba(0,0,0,.45);cursor:pointer;align-items:center;overflow:hidden;white-space:nowrap;}
-  #btnInstalarApp .ia-emoji{width:38px;height:38px;display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0;}
-  #btnInstalarApp .ia-txt{max-width:0;opacity:0;transition:max-width .6s ease,opacity .5s ease,padding .6s ease;padding-right:0;}
+  #btnInstalarApp{display:none;position:fixed;left:14px;bottom:14px;z-index:61;height:38px;min-width:38px;padding:0;margin:0;border:none;border-radius:999px;background:rgba(239,8,112,0.35);color:#fff;font-weight:700;font-size:13.5px;box-shadow:0 4px 14px rgba(0,0,0,.4);cursor:pointer;align-items:center;justify-content:flex-start;overflow:hidden;white-space:nowrap;transition:bottom .4s ease;}
+  /* Cuando el badge de miembro ya existe (abajo a la izquierda), el botón sube para quedar encima de él */
+  #btnInstalarApp.sobre-badge{bottom:60px;}
+  #btnInstalarApp .ia-emoji{width:38px;height:38px;display:flex;align-items:center;justify-content:center;font-size:18px;line-height:1;flex:0 0 38px;padding:0;}
+  #btnInstalarApp .ia-txt{line-height:38px;max-width:0;opacity:0;transition:max-width .6s ease,opacity .5s ease,padding .6s ease;padding-right:0;}
   #btnInstalarApp.con-texto .ia-txt{max-width:120px;opacity:1;padding-right:14px;}
   #btnInstalarApp.entrando{display:inline-flex;animation:iaPop .5s cubic-bezier(.2,1.4,.4,1) both;}
   #btnInstalarApp.saliendo{display:inline-flex;animation:iaSalir .45s ease-in both;}
@@ -5616,7 +5619,7 @@ function resaltarIndicacion(descripcionEscapada){
   #instalarModal .ia-box{max-width:330px;text-align:center;padding:26px 22px 20px;border:1px solid rgba(239,8,112,.35);background:linear-gradient(170deg,#2f1a38,#1f1127);box-shadow:0 18px 50px rgba(0,0,0,.6),0 0 40px rgba(239,8,112,.18);overflow:hidden;}
   #instalarModal.open .ia-box{animation:iaModal .45s cubic-bezier(.2,1.3,.4,1) both;}
   @keyframes iaModal{0%{transform:translateY(30px) scale(.9);opacity:0}100%{transform:none;opacity:1}}
-  #instalarModal .ia-glow{position:absolute;top:-70px;left:50%;width:220px;height:220px;margin-left:-110px;background:radial-gradient(circle,rgba(239,8,112,.45),transparent 65%);pointer-events:none;}
+  #instalarModal .ia-glow{position:absolute;top:-32px;left:50%;width:200px;height:200px;margin-left:-100px;background:radial-gradient(circle,rgba(239,8,112,.45),transparent 65%);pointer-events:none;}
   #instalarModal .ia-icon{position:relative;width:84px;height:84px;border-radius:22px;margin:0 auto 12px;box-shadow:0 8px 24px rgba(239,8,112,.45);animation:iaFlota 3s ease-in-out infinite;}
   @keyframes iaFlota{0%,100%{transform:translateY(0)}50%{transform:translateY(-5px)}}
   #instalarModal h3{position:relative;margin:0 0 6px;font-size:19px;color:#fff;}
@@ -5638,11 +5641,12 @@ function resaltarIndicacion(descripcionEscapada){
     <div class="ia-glow"></div>
     <img class="ia-icon" src="icons/icon-192.png" alt="Peaches Hub">
     <h3>¿Descargar la página como app? 🍑</h3>
-    <div class="ia-sub" id="iaSub">Instálala en tu dispositivo, es gratis y no ocupa casi nada.</div>
+    <div class="ia-sub" id="iaSub">Instálala en tu dispositivo, no ocupa casi nada.</div>
     <ul class="ia-lista" id="iaLista">
-      <li><span>⚡</span><span>Abre al instante desde tu pantalla de inicio</span></li>
-      <li><span>📴</span><span>Funciona aunque no tengas internet</span></li>
-      <li><span>🔒</span><span>Tus datos quedan guardados en tu dispositivo</span></li>
+      <li><span>🍑</span><span>Todo Team Peaches a un toque</span></li>
+      <li><span>🖥️</span><span>Pantalla completa, sin barras del navegador</span></li>
+      <li><span>🔗</span><span>Tus enlaces y actividades siempre a la mano</span></li>
+      <li><span>🎬</span><span>Como una app más en tu pantalla de inicio</span></li>
     </ul>
     <label class="ia-check"><input type="checkbox" id="iaNoMostrar"> No mostrar de nuevo</label>
     <div class="ia-botones">
@@ -5701,6 +5705,15 @@ function resaltarIndicacion(descripcionEscapada){
     modal.classList.remove("open");
     if (chk.checked) { guardar(true); quitarBotonYa(); }
   }
+
+  // Mientras el badge de miembro no exista (tarda en cargar), el botón va pegado abajo; cuando aparece, sube.
+  const badgeMiembro = document.getElementById("memberStatusBadge");
+  function acomodarBoton(){
+    const visible = !!badgeMiembro && getComputedStyle(badgeMiembro).display !== "none";
+    btn.classList.toggle("sobre-badge", visible);
+  }
+  if (badgeMiembro) new MutationObserver(acomodarBoton).observe(badgeMiembro, {attributes:true, attributeFilter:["style","class"]});
+  acomodarBoton();
 
   window.addEventListener("beforeinstallprompt", e=>{
     // Chrome/Edge/Android solo disparan esto cuando la app NO está instalada.
