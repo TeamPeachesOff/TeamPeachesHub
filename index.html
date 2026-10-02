@@ -243,7 +243,8 @@
      si la tarjeta crece al abrir un acordeón, la portada queda cuadrada y fija (sticky) mientras haces scroll.
      Columnas automáticas (mínimo 560px por tarjeta); ancho total limitado a 16:9 del alto de la ventana.
      ===================================================================================== */
-  @media (min-width:900px){
+  /* Se aplica en escritorio (>=900px) Y en teléfono girado (horizontal, poco alto), para que no se vea el diseño viejo. */
+  @media (min-width:900px), (orientation:landscape) and (max-height:600px) and (min-width:560px){
     :root{--ancho-escritorio:min(calc(100vw - 48px), max(900px, calc((100vh - 36px) * 16 / 9)));}
     body:has(#viewActividades:not(.hidden)) .header-inner{max-width:var(--ancho-escritorio);padding-left:0;padding-right:0;}
     main:has(> #viewActividades:not(.hidden)){max-width:var(--ancho-escritorio);padding-left:0;padding-right:0;}
@@ -273,6 +274,21 @@
     #actividadesFeed .card > .accordion{grid-column:2;}
     #actividadesFeed .card-title{font-size:17px;}
   }
+
+  /* Teléfono horizontal: usa casi todo el ancho de la pantalla (sin el tope de ancho de escritorio). */
+  @media (orientation:landscape) and (max-height:600px) and (max-width:899px){
+    :root{--ancho-escritorio:calc(100vw - 24px);}
+    #actividadesFeed .card{max-width:none;}
+  }
+
+  /* ===== INICIO: TELÉFONO VERTICAL SIN MARCO (portada pegada a los bordes, como en escritorio) =====
+     PARA VOLVER A ATRÁS: borra todo este bloque (hasta "FIN: TELÉFONO VERTICAL SIN MARCO"). */
+  @media (max-width:480px){
+    #actividadesFeed .card-top{padding:0;}
+    #actividadesFeed .card-img-wrap{border-radius:0;}
+    #actividadesFeed .card-info{padding:12px 14px 8px;}
+  }
+  /* ===== FIN: TELÉFONO VERTICAL SIN MARCO ===== */
 
   #addActBtn{display:block;width:100%;margin-bottom:14px;padding:12px;border-radius:14px;background:linear-gradient(90deg,var(--peach-2),#ffffff);color:#3d1f2a;font-weight:800;font-size:15px;}
 
@@ -5915,7 +5931,7 @@ function resaltarIndicacion(descripcionEscapada){
       <li><span>🎬</span><span>Como una app más en tu pantalla de inicio</span></li>
     </ul>
     <div id="iaSamsung" style="display:none;position:relative;text-align:left;font-size:12.5px;line-height:1.45;background:rgba(255,255,255,.07);border:1px solid rgba(255,143,177,.35);border-radius:12px;padding:10px 12px;margin-bottom:12px;">
-      🌐 La app se instalará usando <b>Chrome</b>, porque otros navegadores tienden a fallar con el color de la barra, las fuentes y el ícono.
+      🌐 La app se instalará usando <b>Chrome</b>, porque suele fallar en otros navegadores. Se te redirigirá a Chrome y ahí solo toca <b>Instalar</b> de nuevo.
     </div>
     <label class="ia-check"><input type="checkbox" id="iaNoMostrar"> No mostrar de nuevo</label>
     <div class="ia-botones">
@@ -6028,10 +6044,22 @@ function resaltarIndicacion(descripcionEscapada){
   // Android + Samsung Internet: la instalación se hace obligatoriamente desde Chrome (no afecta a PC ni a otros navegadores).
   // Si Chrome no está instalado, el intent vuelve a esta misma página y todo sigue como antes.
   const usarChrome = /Android/i.test(navigator.userAgent) && /SamsungBrowser/i.test(navigator.userAgent) && !yaInstalada;
+  // Al redirigir se agrega ?instalar=1: en Chrome eso abre la ventana de instalar ya desplegada.
+  // Si Chrome no está, el fallback vuelve a la URL normal (sin ese parámetro) y la página abre como siempre.
   function abrirEnChrome(){
-    location.href = "intent://" + location.host + location.pathname + location.search +
+    const q = location.search ? location.search + "&instalar=1" : "?instalar=1";
+    location.href = "intent://" + location.host + location.pathname + q +
       "#Intent;scheme=" + location.protocol.replace(":","") + ";package=com.android.chrome;S.browser_fallback_url=" + encodeURIComponent(location.href) + ";end";
   }
+  // Llegaste redirigido desde otro navegador: abre la ventana de instalar de una vez (si no, la página abre normal).
+  (function(){
+    let params; try { params = new URLSearchParams(location.search); } catch(e){ return; }
+    if (params.get("instalar") !== "1") return;
+    params.delete("instalar");
+    const limpio = location.pathname + (params.toString() ? "?" + params.toString() : "") + location.hash;
+    try { history.replaceState(null, "", limpio); } catch(e){}
+    if (!yaInstalada) setTimeout(abrirModal, 900);
+  })();
 
   bInstalar.addEventListener("click", async ()=>{
     if (usarChrome) { abrirEnChrome(); return; }
@@ -6055,7 +6083,6 @@ function resaltarIndicacion(descripcionEscapada){
   // Samsung Internet (Android): muestra el aviso corto y el botón pasa a "Instalar en Chrome".
   if (usarChrome) {
     document.getElementById("iaSamsung").style.display = "block";
-    bInstalar.textContent = "Instalar en Chrome";
     mostrarBoton();
   }
 
