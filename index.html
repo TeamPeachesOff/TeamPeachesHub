@@ -978,10 +978,10 @@
       <div class="form-group">
         <label>Link de entrega (Forms)</label>
         <select id="af_linkFormsSel">
-          <option value="CFG_ENTREGA_OFICIAL_CANTO_LINK">Canto Oficial</option>
-          <option value="CFG_ENTREGA_SEMANAL_CANTO_LINK">Canto Semanal</option>
-          <option value="CFG_ENTREGA_OFICIAL_DOBLAJE_LINK">Doblaje Oficial</option>
-          <option value="CFG_ENTREGA_SEMANAL_DOBLAJE_LINK">Doblaje Semanal</option>
+          <option value="CFG_FORM_ENTREGA_OFICIAL_CANTO_LINK">Canto Oficial</option>
+          <option value="CFG_FORM_ENTREGA_SEMANAL_CANTO_LINK">Canto Semanal</option>
+          <option value="CFG_FORM_ENTREGA_OFICIAL_DOBLAJE_LINK">Doblaje Oficial</option>
+          <option value="CFG_FORM_ENTREGA_SEMANAL_DOBLAJE_LINK">Doblaje Semanal</option>
           <option value="nuevo">Nuevo Enlace</option>
         </select>
         <input autocomplete="off" type="text" id="af_linkForms" placeholder="https://forms.gle/..." style="margin-top:6px;">
@@ -1839,16 +1839,29 @@ function abrirModalEnlaces(){
     {clave:"CFG_EDITAR_ANUARIO_LINK", label:"✏️ Editar Anuario (staff)"},
     {clave:"CFG_EDITAR_INFO_LINK", label:"🖋️ Editar página de Info (staff)"},
     {clave:"CFG_SHEETS_LINK", label:"🗂️ Base de Datos (staff)"},
-    {clave:"CFG_GITHUB_LINK", label:"💻 GitHub (staff)"},
-    {clave:"CFG_ENTREGA_SEMANAL_CANTO_LINK", label:"🍑 Entregas · Semanal · Canto (staff)"},
-    {clave:"CFG_ENTREGA_SEMANAL_DOBLAJE_LINK", label:"🍑 Entregas · Semanal · Doblaje (staff)"},
-    {clave:"CFG_ENTREGA_OFICIAL_CANTO_LINK", label:"🍑 Entregas · Oficial · Canto (staff)"},
-    {clave:"CFG_ENTREGA_OFICIAL_DOBLAJE_LINK", label:"🍑 Entregas · Oficial · Doblaje (staff)"}
+    {clave:"CFG_GITHUB_LINK", label:"💻 GitHub (staff)"}
   ];
+  // Cada tipo de entrega tiene 2 enlaces emparejados: el de Staff (edición/respuestas, solo lo ve Staff)
+  // y el de Entrega (el formulario que se les da a los miembros; es el que ofrece el selector al crear una actividad).
+  const pares = [
+    {titulo:"🎤 Canto · Oficial",   staff:"CFG_ENTREGA_OFICIAL_CANTO_LINK",   entrega:"CFG_FORM_ENTREGA_OFICIAL_CANTO_LINK"},
+    {titulo:"🎤 Canto · Semanal",   staff:"CFG_ENTREGA_SEMANAL_CANTO_LINK",   entrega:"CFG_FORM_ENTREGA_SEMANAL_CANTO_LINK"},
+    {titulo:"🎙️ Doblaje · Oficial", staff:"CFG_ENTREGA_OFICIAL_DOBLAJE_LINK", entrega:"CFG_FORM_ENTREGA_OFICIAL_DOBLAJE_LINK"},
+    {titulo:"🎙️ Doblaje · Semanal", staff:"CFG_ENTREGA_SEMANAL_DOBLAJE_LINK", entrega:"CFG_FORM_ENTREGA_SEMANAL_DOBLAJE_LINK"}
+  ];
+  const clavesPares = []; pares.forEach(p=>{ clavesPares.push(p.staff, p.entrega); });
+  const faltaBackend = pares.some(p=>enlacesStaff[p.entrega]===undefined);
+  const campoHTML = (clave,label,ph)=>`<div class="form-group" style="margin-bottom:6px;"><label>${label}</label><input autocomplete="off" type="text" id="enl_${clave}" placeholder="${ph}" value="${escAttr(enlacesStaff[clave]||"")}"></div>`;
   document.getElementById("memberModalContent").innerHTML = `
     <h3>⚙️ Editar Enlaces</h3>
     <div style="display:flex;flex-direction:column;gap:10px;">
-      ${campos.map(c=>`<div class="form-group"><label>${c.label}</label><input autocomplete="off" type="text" id="enl_${c.clave}" placeholder="https://forms.gle/..." value="${escAttr(enlacesStaff[c.clave]||"")}"></div>`).join("")}
+      ${campos.map(c=>`<div class="form-group"><label>${c.label}</label><input autocomplete="off" type="text" id="enl_${c.clave}" placeholder="https://..." value="${escAttr(enlacesStaff[c.clave]||"")}"></div>`).join("")}
+      ${faltaBackend?`<div style="font-size:12px;color:var(--gold);">⚠️ El backend aún no conoce los enlaces de Entrega (CFG_FORM_ENTREGA_*): agrégalos en CONFIG_ENLACES de Code.gs y publica una versión nueva, o no se guardarán.</div>`:""}
+      ${pares.map(p=>`<div style="background:var(--card-bg-2);padding:10px;border-radius:12px;">
+        <div style="font-weight:800;color:var(--peach-2);margin-bottom:8px;">${p.titulo}</div>
+        ${campoHTML(p.staff,"🔒 Staff (edición, solo Staff)","https://docs.google.com/forms/.../edit")}
+        ${campoHTML(p.entrega,"📤 Entrega (se le da a los miembros)","https://forms.gle/...")}
+      </div>`).join("")}
     </div>
     <div style="display:flex;gap:10px;margin-top:14px;">
       <button class="btn-small btn-admin" id="enlacesVolverBtn">⬅️ Volver</button>
@@ -1858,6 +1871,7 @@ function abrirModalEnlaces(){
   document.getElementById("enlacesGuardarBtn").onclick = async ()=>{
     const enlaces = {};
     campos.forEach(c=>{ enlaces[c.clave] = document.getElementById("enl_"+c.clave).value.trim(); });
+    clavesPares.forEach(k=>{ enlaces[k] = document.getElementById("enl_"+k).value.trim(); });
     const r = await apiPost({action:"guardarEnlacesStaff", enlaces}, "Guardando enlaces...");
     if(r.ok){
       enlacesStaff = r.enlaces;
@@ -4883,9 +4897,12 @@ function openActivityForm(id, esAnuarioItem){
   // hay que forzar el ajuste de altura acá para que abra ya con el tamaño correcto.
   document.querySelectorAll("#activityFormModal textarea").forEach(autoExpandTextarea);
 }
-/* ---------- Selector de enlace de entrega (4 fijos editables en Enlaces de Staff + Nuevo) ---------- */
-const NOMBRES_ENLACE_ENTREGA_={CFG_ENTREGA_OFICIAL_CANTO_LINK:"Canto Oficial",CFG_ENTREGA_SEMANAL_CANTO_LINK:"Canto Semanal",CFG_ENTREGA_OFICIAL_DOBLAJE_LINK:"Doblaje Oficial",CFG_ENTREGA_SEMANAL_DOBLAJE_LINK:"Doblaje Semanal"};
-// desdeValor=true: deduce la opción a partir del link que ya hay en el campo (abrir/editar/autollenar).
+/* ---------- Selector de enlace de entrega (4 enlaces de ENTREGA definidos en Enlaces de Staff + Nuevo) ---------- */
+// OJO: son claves distintas a las de edición de Staff (CFG_ENTREGA_*): estas son las que se les da a los miembros.
+const NOMBRES_ENLACE_ENTREGA_={CFG_FORM_ENTREGA_OFICIAL_CANTO_LINK:"Canto Oficial",CFG_FORM_ENTREGA_SEMANAL_CANTO_LINK:"Canto Semanal",CFG_FORM_ENTREGA_OFICIAL_DOBLAJE_LINK:"Doblaje Oficial",CFG_FORM_ENTREGA_SEMANAL_DOBLAJE_LINK:"Doblaje Semanal"};
+function normalizarUrlLink_(u){ return String(u||"").trim().toLowerCase().replace(/^https?:\/\//,"").replace(/^www\./,"").replace(/[?#].*$/,"").replace(/\/+$/,""); }
+// desdeValor=true: deduce la opción comparando el link que ya hay en el campo con los 4 definidos
+// (si coincide con uno se marca ese; si no coincide con ninguno queda como "Nuevo Enlace" / personalizado).
 function sincronizarSelectorLinkForms_(desdeValor){
   const sel=document.getElementById("af_linkFormsSel"), inp=document.getElementById("af_linkForms"), st=document.getElementById("af_linkFormsStatus");
   const enl=enlacesStaff||{};
@@ -4894,14 +4911,16 @@ function sincronizarSelectorLinkForms_(desdeValor){
     o.textContent=NOMBRES_ENLACE_ENTREGA_[o.value]+(enl[o.value]?"":" (sin configurar)");
   });
   if(desdeValor){
-    const actual=inp.value.trim();
-    const clave=actual?Object.keys(NOMBRES_ENLACE_ENTREGA_).find(k=>enl[k]&&enl[k].trim()===actual):null;
+    const actual=normalizarUrlLink_(inp.value);
+    const clave=actual?Object.keys(NOMBRES_ENLACE_ENTREGA_).find(k=>enl[k]&&normalizarUrlLink_(enl[k])===actual):null;
     sel.value=clave||"nuevo";
+    if(clave) inp.value=enl[clave];   // deja el valor exacto que está definido
   }
   const esNuevo=sel.value==="nuevo";
   if(!esNuevo && !desdeValor) inp.value=enl[sel.value]||"";
   inp.readOnly=!esNuevo; inp.style.opacity=esNuevo?"1":"0.7";
-  st.textContent=(!esNuevo && !enl[sel.value]) ? "⚠️ Este enlace aún no está configurado: ponlo en Enlaces de Staff." : "";
+  if(!esNuevo) st.textContent=enl[sel.value]?"":(enl[sel.value]===undefined?"⚠️ Falta registrar este enlace en el backend (Code.gs, CONFIG_ENLACES).":"⚠️ Este enlace aún no está configurado: ponlo en Enlaces de Staff.");
+  else st.textContent=inp.value.trim()?"ℹ️ Enlace personalizado (no coincide con ninguno de los 4 definidos).":"";
 }
 document.getElementById("af_linkFormsSel").addEventListener("change",()=>{
   const sel=document.getElementById("af_linkFormsSel");
@@ -4909,6 +4928,7 @@ document.getElementById("af_linkFormsSel").addEventListener("change",()=>{
   sincronizarSelectorLinkForms_(false);
   if(sel.value==="nuevo") document.getElementById("af_linkForms").focus();
 });
+document.getElementById("af_linkForms").addEventListener("input",()=>{ if(document.getElementById("af_linkFormsSel").value==="nuevo") sincronizarSelectorLinkForms_(true); });
 
 /* ---------- Pegar mensaje de WhatsApp: detecta el formato y autollena el formulario ---------- */
 const MESES_WA_={enero:1,febrero:2,marzo:3,abril:4,mayo:5,junio:6,julio:7,agosto:8,septiembre:9,setiembre:9,octubre:10,noviembre:11,diciembre:12};
