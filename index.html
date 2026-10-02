@@ -340,6 +340,8 @@
   table.entregas-table th{text-align:left;color:var(--peach-2);padding:6px 4px;border-bottom:1px solid rgba(255,255,255,0.1);}
   table.entregas-table td{padding:6px 4px;border-bottom:1px solid rgba(255,255,255,0.05);vertical-align:middle;}
   table.entregas-table a{color:var(--peach-1);text-decoration:underline;}
+  table.entregas-table a.play-btn, a.play-btn{text-decoration:none;}
+  table.entregas-table .col-enlace{text-align:center;}
   .anuario-mini-btn{background:rgba(255,215,0,0.18);color:var(--gold);padding:5px 8px;border-radius:8px;font-size:11px;font-weight:700;white-space:nowrap;}
   .entregas-toolbar{display:flex;gap:8px;margin-top:10px;flex-wrap:wrap;}
 
@@ -973,7 +975,18 @@
       <div class="form-group"><label>Wishlist (ideas, una por línea)</label><textarea autocomplete="off" id="af_wishlist"></textarea></div>
       <div class="form-group"><label>Fecha inicio</label><input autocomplete="off" type="date" id="af_fechaInicio"></div>
       <div class="form-group"><label>Fecha fin</label><input autocomplete="off" type="date" id="af_fechaFin"></div>
-      <div class="form-group"><label>Link de entrega (Forms)</label><input autocomplete="off" type="text" id="af_linkForms"></div>
+      <div class="form-group">
+        <label>Link de entrega (Forms)</label>
+        <select id="af_linkFormsSel">
+          <option value="CFG_ENTREGA_OFICIAL_CANTO_LINK">Canto Oficial</option>
+          <option value="CFG_ENTREGA_SEMANAL_CANTO_LINK">Canto Semanal</option>
+          <option value="CFG_ENTREGA_OFICIAL_DOBLAJE_LINK">Doblaje Oficial</option>
+          <option value="CFG_ENTREGA_SEMANAL_DOBLAJE_LINK">Doblaje Semanal</option>
+          <option value="nuevo">Nuevo Enlace</option>
+        </select>
+        <input autocomplete="off" type="text" id="af_linkForms" placeholder="https://forms.gle/..." style="margin-top:6px;">
+        <div class="upload-status" id="af_linkFormsStatus" style="text-align:left;"></div>
+      </div>
       <div class="form-group"><label>Link para unirse (Smule, si es grupal)</label><input autocomplete="off" type="text" id="af_linkUnirse"></div>
       <div class="form-group">
         <label>Script/Letra (PDF, si es grupal)</label>
@@ -1835,7 +1848,7 @@ function abrirModalEnlaces(){
   document.getElementById("memberModalContent").innerHTML = `
     <h3>⚙️ Editar Enlaces</h3>
     <div style="display:flex;flex-direction:column;gap:10px;">
-      ${campos.map(c=>`<div class="form-group"><label>${c.label}</label><input autocomplete="off" type="text" id="enl_${c.clave}" value="${escAttr(enlacesStaff[c.clave]||"")}"></div>`).join("")}
+      ${campos.map(c=>`<div class="form-group"><label>${c.label}</label><input autocomplete="off" type="text" id="enl_${c.clave}" placeholder="https://forms.gle/..." value="${escAttr(enlacesStaff[c.clave]||"")}"></div>`).join("")}
     </div>
     <div style="display:flex;gap:10px;margin-top:14px;">
       <button class="btn-small btn-admin" id="enlacesVolverBtn">⬅️ Volver</button>
@@ -2830,12 +2843,12 @@ function cardHTML(a, entregasDeEsta){
       <div class="accordion-body" id="entregas-${a.id}">
         ${entregasDeEsta.length?`
         <table class="entregas-table" id="tabla-${a.id}">
-          <tr><th></th><th>Persona</th><th>Canción/Escena</th><th>Enlace</th>${staffPin?"<th></th>":""}</tr>
+          <tr><th></th><th>Persona</th><th>Canción/Escena</th><th class="col-enlace">Enlace</th>${staffPin?"<th></th>":""}</tr>
           ${entregasDeEsta.map(e=>`<tr data-entrega-row="${e.id}">
             <td><input autocomplete="off" type="checkbox" class="js-check-entrega hidden" data-id="${e.id}" data-act="${a.id}"></td>
             <td>${escHtml(e.nombreUsuario||"")}</td>
             <td>${escHtml(e.detalleEntrega||"")}</td>
-            <td>${e.linkGrabacion?`<a href="${escAttr(e.linkGrabacion)}" target="_blank" title="Escuchar" aria-label="Escuchar">▷</a>`:""}</td>
+            <td class="col-enlace">${e.linkGrabacion?`<a class="play-btn" href="${escAttr(e.linkGrabacion)}" target="_blank" title="Escuchar" aria-label="Escuchar">▷</a>`:""}</td>
             ${staffPin?`<td><button class="anuario-mini-btn" data-anuario-entrega="${a.id}" data-titulo="${escAttr(a.titulo||"")}" data-nombre="${escAttr(e.nombreUsuario||"")}" data-detalle="${escAttr(e.detalleEntrega||"")}" data-link="${escAttr(e.linkGrabacion||"")}">👑</button></td>`:""}
           </tr>`).join("")}
         </table>`:`<div style="color:var(--text-dim);">Todavía no hay entregas registradas.</div>`}
@@ -3206,7 +3219,7 @@ function entregasDelMiembroHTML_(idMiembro){
           <div class="pl-entrega-nombre">${escHtml(e.tituloActividad||"")}</div>
           <div class="pl-entrega-detalle">${escHtml(e.detalleEntrega||"")}</div>
         </div>
-        ${e.linkGrabacion?`<a class="btn-small btn-family" target="_blank" href="${escAttr(e.linkGrabacion)}" title="Escuchar" aria-label="Escuchar">▷</a>`:""}
+        ${e.linkGrabacion?`<a class="btn-small btn-family play-btn" target="_blank" href="${escAttr(e.linkGrabacion)}" title="Escuchar" aria-label="Escuchar">▷</a>`:""}
       </div>`).join("")}
     </div>`;
   const hayFiltro = porCategoria.canto.length || porCategoria.doblaje.length;
@@ -4838,6 +4851,8 @@ function openActivityForm(id, esAnuarioItem){
   document.getElementById("af_fechaInicio").value=a?toDateInput(a.fechaInicio):"";
   document.getElementById("af_fechaFin").value=a?toDateInput(a.fechaFin):"";
   document.getElementById("af_linkForms").value=a?a.linkForms||"":"";
+  sincronizarSelectorLinkForms_(true);
+  if(!enlacesStaff) cargarEnlacesStaff().then(()=>sincronizarSelectorLinkForms_(true));
   document.getElementById("af_linkUnirse").value=a?a.linkUnirse||"":"";
   document.getElementById("af_linkScript").value=a?a.linkScript||"":"";
   document.getElementById("af_scriptFile").value=""; document.getElementById("af_scriptStatus").textContent="";
@@ -4868,6 +4883,33 @@ function openActivityForm(id, esAnuarioItem){
   // hay que forzar el ajuste de altura acá para que abra ya con el tamaño correcto.
   document.querySelectorAll("#activityFormModal textarea").forEach(autoExpandTextarea);
 }
+/* ---------- Selector de enlace de entrega (4 fijos editables en Enlaces de Staff + Nuevo) ---------- */
+const NOMBRES_ENLACE_ENTREGA_={CFG_ENTREGA_OFICIAL_CANTO_LINK:"Canto Oficial",CFG_ENTREGA_SEMANAL_CANTO_LINK:"Canto Semanal",CFG_ENTREGA_OFICIAL_DOBLAJE_LINK:"Doblaje Oficial",CFG_ENTREGA_SEMANAL_DOBLAJE_LINK:"Doblaje Semanal"};
+// desdeValor=true: deduce la opción a partir del link que ya hay en el campo (abrir/editar/autollenar).
+function sincronizarSelectorLinkForms_(desdeValor){
+  const sel=document.getElementById("af_linkFormsSel"), inp=document.getElementById("af_linkForms"), st=document.getElementById("af_linkFormsStatus");
+  const enl=enlacesStaff||{};
+  Array.from(sel.options).forEach(o=>{
+    if(o.value==="nuevo") return;
+    o.textContent=NOMBRES_ENLACE_ENTREGA_[o.value]+(enl[o.value]?"":" (sin configurar)");
+  });
+  if(desdeValor){
+    const actual=inp.value.trim();
+    const clave=actual?Object.keys(NOMBRES_ENLACE_ENTREGA_).find(k=>enl[k]&&enl[k].trim()===actual):null;
+    sel.value=clave||"nuevo";
+  }
+  const esNuevo=sel.value==="nuevo";
+  if(!esNuevo && !desdeValor) inp.value=enl[sel.value]||"";
+  inp.readOnly=!esNuevo; inp.style.opacity=esNuevo?"1":"0.7";
+  st.textContent=(!esNuevo && !enl[sel.value]) ? "⚠️ Este enlace aún no está configurado: ponlo en Enlaces de Staff." : "";
+}
+document.getElementById("af_linkFormsSel").addEventListener("change",()=>{
+  const sel=document.getElementById("af_linkFormsSel");
+  if(sel.value==="nuevo") document.getElementById("af_linkForms").value=""; // al pasar a "Nuevo", se limpia el enlace fijo anterior
+  sincronizarSelectorLinkForms_(false);
+  if(sel.value==="nuevo") document.getElementById("af_linkForms").focus();
+});
+
 /* ---------- Pegar mensaje de WhatsApp: detecta el formato y autollena el formulario ---------- */
 const MESES_WA_={enero:1,febrero:2,marzo:3,abril:4,mayo:5,junio:6,julio:7,agosto:8,septiembre:9,setiembre:9,octubre:10,noviembre:11,diciembre:12};
 function parsearMensajeWhatsapp_(raw){
@@ -4927,7 +4969,7 @@ function aplicarMensajeWhatsapp_(){
   if(d.descripcion){ document.getElementById("af_descripcion").value=d.descripcion; llenados.push("descripción"); }
   if(d.fechaInicio){ document.getElementById("af_fechaInicio").value=d.fechaInicio; llenados.push("fecha de envío"); }
   if(d.fechaFin){ document.getElementById("af_fechaFin").value=d.fechaFin; llenados.push("fecha de entrega"); }
-  if(d.linkForms){ document.getElementById("af_linkForms").value=d.linkForms; llenados.push("enlace del formulario"); }
+  if(d.linkForms){ document.getElementById("af_linkForms").value=d.linkForms; sincronizarSelectorLinkForms_(true); llenados.push("enlace del formulario"); }
   if(d.categoria){ setSwitchPill("af_categoriaSwitch", d.categoria); llenados.push("categoría"); }
   document.querySelectorAll("#activityFormModal textarea").forEach(autoExpandTextarea);
   document.getElementById("af_waBox").classList.add("hidden");
