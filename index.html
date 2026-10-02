@@ -1506,7 +1506,8 @@ function hideTopProgress(){
 }
 
 /* ---------- utilidades ---------- */
-function toast(msg){ const t=document.getElementById("toast"); t.textContent=msg; t.classList.add("show"); setTimeout(()=>t.classList.remove("show"),2200); }
+let _toastTimer=null;
+function toast(msg, ms){ const t=document.getElementById("toast"); t.textContent=msg; t.classList.add("show"); clearTimeout(_toastTimer); _toastTimer=setTimeout(()=>t.classList.remove("show"), ms||2200); }
 // PERF: helper genérico de debounce. Los buscadores (Miembros, Mundo) reconstruyen listas enteras
 // con innerHTML por cada letra tipeada — en un celular/tablet de gama baja, tipear rápido antes
 // disparaba un re-render completo por cada tecla y la escritura se sentía trabada/con lag. Con
@@ -6067,7 +6068,13 @@ function resaltarIndicacion(descripcionEscapada){
       const dp = promptDiferido; promptDiferido = null;
       if (chk.checked) { guardar(true); }
       modal.classList.remove("open");
-      try { dp.prompt(); await dp.userChoice; } catch(e){}
+      try {
+        dp.prompt();
+        const eleccion = await dp.userChoice;
+        if (eleccion && eleccion.outcome === "accepted" && typeof toast === "function") {
+          toast("La app se está instalando en segundo plano, en unos segundos estará disponible", 6000);
+        }
+      } catch(e){}
       quitarBotonYa();
     } else {
       cerrarModal(); // iPhone/iPad: las instrucciones ya estaban en la ventana
