@@ -5914,9 +5914,8 @@ function resaltarIndicacion(descripcionEscapada){
       <li><span>🔗</span><span>Tus enlaces y actividades siempre a la mano</span></li>
       <li><span>🎬</span><span>Como una app más en tu pantalla de inicio</span></li>
     </ul>
-    <div id="iaSamsung" style="display:none;position:relative;text-align:left;font-size:12.5px;line-height:1.45;background:rgba(255,193,7,.1);border:1px solid rgba(255,193,7,.35);border-radius:12px;padding:10px 12px;margin-bottom:12px;">
-      ⚠️ En <b>Samsung Internet</b> Android puede mostrar un aviso de «app no segura» al instalar (es un fallo del navegador, no de la página). Para evitarlo, instálala desde <b>Chrome</b>.
-      <button type="button" id="iaChrome" style="display:block;width:100%;margin-top:8px;padding:9px;border:none;border-radius:10px;font-weight:700;font-size:13px;color:#fff;background:#1a73e8;">Abrir en Chrome</button>
+    <div id="iaSamsung" style="display:none;position:relative;text-align:left;font-size:12.5px;line-height:1.45;background:rgba(255,255,255,.07);border:1px solid rgba(255,143,177,.35);border-radius:12px;padding:10px 12px;margin-bottom:12px;">
+      🌐 La app se instalará usando <b>Chrome</b>, porque otros navegadores tienden a fallar con el color de la barra, las fuentes y el ícono.
     </div>
     <label class="ia-check"><input type="checkbox" id="iaNoMostrar"> No mostrar de nuevo</label>
     <div class="ia-botones">
@@ -6026,7 +6025,16 @@ function resaltarIndicacion(descripcionEscapada){
   bAhora.addEventListener("click", cerrarModal);
   modal.addEventListener("click", e=>{ if (e.target===modal) cerrarModal(); });
 
+  // Android + Samsung Internet: la instalación se hace obligatoriamente desde Chrome (no afecta a PC ni a otros navegadores).
+  // Si Chrome no está instalado, el intent vuelve a esta misma página y todo sigue como antes.
+  const usarChrome = /Android/i.test(navigator.userAgent) && /SamsungBrowser/i.test(navigator.userAgent) && !yaInstalada;
+  function abrirEnChrome(){
+    location.href = "intent://" + location.host + location.pathname + location.search +
+      "#Intent;scheme=" + location.protocol.replace(":","") + ";package=com.android.chrome;S.browser_fallback_url=" + encodeURIComponent(location.href) + ";end";
+  }
+
   bInstalar.addEventListener("click", async ()=>{
+    if (usarChrome) { abrirEnChrome(); return; }
     if (promptDiferido) {
       const dp = promptDiferido; promptDiferido = null;
       if (chk.checked) { guardar(true); }
@@ -6044,13 +6052,10 @@ function resaltarIndicacion(descripcionEscapada){
     if (typeof toast==="function") toast("App instalada ✅");
   });
 
-  // Samsung Internet: avisa del fallo conocido y ofrece abrir esta misma página en Chrome.
-  if (/SamsungBrowser/i.test(navigator.userAgent) && !yaInstalada) {
+  // Samsung Internet (Android): muestra el aviso corto y el botón pasa a "Instalar en Chrome".
+  if (usarChrome) {
     document.getElementById("iaSamsung").style.display = "block";
-    document.getElementById("iaChrome").addEventListener("click", ()=>{
-      location.href = "intent://" + location.host + location.pathname + location.search +
-        "#Intent;scheme=https;package=com.android.chrome;S.browser_fallback_url=" + encodeURIComponent(location.href) + ";end";
-    });
+    bInstalar.textContent = "Instalar en Chrome";
     mostrarBoton();
   }
 
