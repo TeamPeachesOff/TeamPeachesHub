@@ -1635,9 +1635,14 @@ function toBandlabUrl(raw){
 }
 function limpiarTelefono(raw){ return String(raw||"").replace(/\D/g,""); }
 function rankCategoria(c){ return c==="canto"?0:c==="doblaje"?1:2; }
+// Con la misma fecha: primero las Oficiales y luego las Semanales (las Purga al final); dentro de cada grupo,
+// primero Canto y luego Doblaje. Así, en 2 columnas queda Oficial|Oficial arriba y Semanal|Semanal abajo.
+function rankParticipacion(p){ return p==="obligatoria"?0:p==="purga"?2:1; }
 function compararFechaCantoFirst(a,b,campo){
   const da=new Date(a[campo]||0).getTime(), db=new Date(b[campo]||0).getTime();
   if(db!==da) return db-da;
+  const dp=rankParticipacion(a.participacion)-rankParticipacion(b.participacion);
+  if(dp!==0) return dp;
   return rankCategoria(a.categoria)-rankCategoria(b.categoria);
 }
 function parseWinnerLines(text){
