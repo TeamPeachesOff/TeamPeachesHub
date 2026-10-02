@@ -253,10 +253,11 @@
     #viewActividades .search-bar{margin-bottom:16px;}
     #viewActividades .filter-pills .pill-toggle{padding:11px;font-size:13.5px;}
     /* Cuadrícula de tarjetas */
-    #actividadesFeed,#actividadesFeed .year-group{display:grid;grid-template-columns:repeat(auto-fill,minmax(560px,1fr));gap:18px;align-items:start;}
+    #actividadesFeed,#actividadesFeed .year-group{display:grid;grid-template-columns:repeat(auto-fill,minmax(max(560px,calc((100% - 19px) / 2)),1fr));gap:18px;align-items:start;}
     #actividadesFeed > :not(.card),#actividadesFeed .year-group > :not(.card){grid-column:1 / -1;}
     #actividadesFeed .year-group.hidden{display:none;}
     #actividadesFeed .card{margin-bottom:0;overflow:clip;display:grid;grid-template-columns:220px minmax(0,1fr);grid-template-rows:minmax(0,1fr);grid-auto-rows:auto;min-height:220px;max-width:860px;width:100%;justify-self:center;border:0;box-shadow:0 0 0 1px rgba(255,255,255,0.07);}
+    #actividadesFeed .card.doble{grid-column:1 / -1;max-width:calc(860px * 2 + 18px);}
     #actividadesFeed .card-top{display:contents;}
     #actividadesFeed .card-img-wrap{grid-column:1;grid-row:1 / span 20;width:220px;height:220px;flex:none;align-self:start;position:sticky;top:96px;border-radius:0;background:var(--card-bg-2);}
     #actividadesFeed .card-img-wrap img{object-fit:contain;}
@@ -498,6 +499,7 @@
   #memberPinInput{width:100%;text-align:center;font-size:24px;letter-spacing:8px;padding:14px;border-radius:12px;border:1px solid rgba(255,255,255,0.15);background:var(--card-bg-2);color:var(--text);margin:16px 0;}
   #memberPinMsg{font-size:13px;color:var(--red);min-height:18px;}
   #googleLoginMsg{font-size:13px;color:var(--red);min-height:18px;}
+  #googleSignInBtn, #googleSignInBtn iframe{color-scheme:light;}
   #staffStatusBadge{display:none;position:fixed;bottom:14px;right:14px;width:38px;height:38px;background:rgba(239,8,112,0.35);color:#fff;border-radius:50%;font-size:18px;z-index:60;box-shadow:0 4px 14px rgba(0,0,0,0.4);cursor:pointer;align-items:center;justify-content:center;}
   /* Discreto a propósito: modo Miembro es solo lectura, no necesita tanta prominencia como Staff.
      Es solo el emoji, sin texto, para que pase desapercibido. */
@@ -834,9 +836,6 @@
         <button type="submit" class="btn-primary" style="width:100%;padding:12px;border-radius:12px;font-weight:800;">Desbloquear</button>
       </form>
     </div>
-    </div>
-  </section>
-    </div>
   </section>
 </main>
 
@@ -972,6 +971,14 @@
         <label>Botones personalizados (máx. 3)</label>
         <div id="af_customButtons"></div>
         <button type="button" class="btn-small btn-family" id="af_addCustomBtn" style="width:100%;">➕ Añadir botón personalizado</button>
+      </div>
+      <div class="form-group" id="af_dobleGroup">
+        <label>↔️ ¿Doble espacio?</label>
+        <div class="switch-pill" id="af_dobleSwitch">
+          <button type="button" data-val="0">No</button>
+          <button type="button" data-val="1">Sí</button>
+        </div>
+        <div class="upload-status" style="text-align:left;">Solo en escritorio: la tarjeta ocupa el ancho de las 2 columnas. En celular no cambia nada.</div>
       </div>
       <div class="form-group">
         <label>Categoría</label>
@@ -2774,7 +2781,7 @@ function cardHTML(a, entregasDeEsta){
   entregasDeEsta = entregasDeEsta || DB.entregas.filter(e=>String(e.idActividad)===String(a.id));
   const fechasTxt=`${fmtFecha(a.fechaInicio)} → ${fmtFecha(a.fechaFin)}`;
   return `
-  <div class="card" data-id="${a.id}">
+  <div class="card${esTrue(a.dobleEspacio)?" doble":""}" data-id="${a.id}">
     <div class="card-top">
       <div class="card-img-wrap">${a.imagenUrl?`<img class="js-longpress" data-filename="${escAttr((a.titulo||'actividad')+'.jpg')}" src="${escAttr(a.imagenUrl)}" alt="" loading="lazy" decoding="async">`:""}</div>
       <div class="card-info">
@@ -4748,6 +4755,7 @@ function setSwitchPill(containerId, val){ document.getElementById(containerId).q
 function getSwitchPillValue(containerId){ const sel=document.querySelector(`#${containerId} button.sel`); return sel?sel.dataset.val:""; }
 bindSwitchPill("af_categoriaSwitch");
 bindSwitchPill("af_participacionSwitch");
+bindSwitchPill("af_dobleSwitch");
 
 // El switch de Discord no usa bindSwitchPill genérico: a diferencia de categoría/participación,
 // acá SÍ hace falta interceptar el click cuando se prende "Enviar anuncio" y la actividad ya se
@@ -4822,9 +4830,11 @@ function openActivityForm(id, esAnuarioItem){
   botonesPersonalizadosDe(a||{}).forEach(agregarFilaBotonPersonalizado);
   setSwitchPill("af_categoriaSwitch", a?(a.categoria||""):"");
   setSwitchPill("af_participacionSwitch", a?(a.participacion||"opcional"):"opcional");
+  setSwitchPill("af_dobleSwitch", (a && esTrue(a.dobleEspacio)) ? "1" : "0");
   const esAnuarioActual=!!esAnuarioItem;
   document.getElementById("activityForm").dataset.modoAnuario=esAnuarioActual?"1":"0";
   document.getElementById("af_anuarioFields").classList.toggle("hidden", !esAnuarioActual);
+  document.getElementById("af_dobleGroup").classList.toggle("hidden", esAnuarioActual);
   document.getElementById("af_ganadorCanto").value=a?a.ganadorCanto||"":"";
   document.getElementById("af_ganadorDoblaje").value=a?a.ganadorDoblaje||"":"";
   document.getElementById("af_menciones").value=a?a.mencionesHonorificas||"":"";
@@ -4901,7 +4911,10 @@ document.getElementById("activityForm").addEventListener("submit", async(e)=>{
       botonesPersonalizados: JSON.stringify(leerBotonesPersonalizados()),
     };
     const esModoAnuario=document.getElementById("activityForm").dataset.modoAnuario==="1";
-    if(!esModoAnuario) data.enviarDiscordAnuncio=getSwitchPillValue("af_discordSwitch")==="1";
+    if(!esModoAnuario){
+      data.enviarDiscordAnuncio=getSwitchPillValue("af_discordSwitch")==="1";
+      data.dobleEspacio=getSwitchPillValue("af_dobleSwitch")==="1" ? "TRUE" : "FALSE";
+    }
     let r;
     if(esModoAnuario){ data.id=id; r=await apiPost({action:"editAnuario", data},"Guardando tarjeta del Anuario..."); }
     else if(id){ data.id=id; r=await apiPost({action:"editActividad", data},"Guardando actividad..."); }
@@ -4997,6 +5010,7 @@ function datosActividadParaGuardar(a, nuevaImagenUrl){
     mencionesHonorificas: a.mencionesHonorificas||"",
     botonesPersonalizados: a.botonesPersonalizados||"[]",
     enviarDiscordAnuncio: false,
+    dobleEspacio: esTrue(a.dobleEspacio) ? "TRUE" : "FALSE",
   };
 }
 
