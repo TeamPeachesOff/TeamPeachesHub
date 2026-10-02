@@ -245,7 +245,7 @@
      ===================================================================================== */
   /* Se aplica en escritorio (>=900px) Y en teléfono girado (horizontal, poco alto), para que no se vea el diseño viejo. */
   @media (min-width:900px), (orientation:landscape) and (max-height:600px) and (min-width:560px){
-    :root{--ancho-escritorio:min(calc(100vw - 48px), max(900px, calc((100vh - 36px) * 16 / 9)));}
+    :root{--ancho-escritorio:min(calc(100vw - 48px), max(900px, calc((100vh - 36px) * 16 / 9)), 3494px);} /* 3494px = 4 tarjetas de 860px: tope de 4 columnas */
     body:has(#viewActividades:not(.hidden)) .header-inner{max-width:var(--ancho-escritorio);padding-left:0;padding-right:0;}
     main:has(> #viewActividades:not(.hidden)){max-width:var(--ancho-escritorio);padding-left:0;padding-right:0;}
     /* Controles: regalito a todo el ancho, Canto|Doblaje mitad y mitad, buscador a todo el ancho */
@@ -254,7 +254,7 @@
     #viewActividades .search-bar{margin-bottom:16px;}
     #viewActividades .filter-pills .pill-toggle{padding:11px;font-size:13.5px;}
     /* Cuadrícula de tarjetas */
-    #actividadesFeed,#actividadesFeed .year-group{display:grid;grid-template-columns:repeat(auto-fill,minmax(max(560px,calc((100% - 19px) / 2)),1fr));gap:18px;align-items:start;}
+    #actividadesFeed,#actividadesFeed .year-group{display:grid;grid-template-columns:repeat(auto-fill,minmax(max(560px,calc((100% - 54px) / 4)),860px));justify-content:center;gap:18px;align-items:start;} /* hasta 4 columnas, siempre centradas */
     #actividadesFeed > :not(.card),#actividadesFeed .year-group > :not(.card){grid-column:1 / -1;}
     #actividadesFeed .year-group.hidden{display:none;}
     #actividadesFeed .card{margin-bottom:0;overflow:clip;display:grid;grid-template-columns:220px minmax(0,1fr);grid-template-rows:minmax(0,1fr);grid-auto-rows:auto;min-height:220px;max-width:860px;width:100%;justify-self:center;border:0;box-shadow:0 0 0 1px rgba(255,255,255,0.07);}
@@ -263,7 +263,7 @@
     #actividadesFeed,#actividadesFeed .year-group{container-type:inline-size;}
     @container (min-width:1138px){
       #actividadesFeed .card.doble,
-      #actividadesFeed .card:has(.accordion-body.open){grid-column:1 / -1;max-width:calc(860px * 2 + 18px);}
+      #actividadesFeed .card:has(.accordion-body.open){grid-column:span 2;max-width:calc(860px * 2 + 18px);} /* el doble ocupa 2 columnas, no todas */
     }
     #actividadesFeed .card-top{display:contents;}
     #actividadesFeed .card-img-wrap{grid-column:1;grid-row:1 / span 20;width:220px;height:220px;flex:none;align-self:start;position:sticky;top:96px;border-radius:0;background:var(--card-bg-2);}
@@ -404,6 +404,10 @@
   .chambeador-row{display:flex;align-items:center;gap:10px;padding:8px 10px;border-radius:12px;background:var(--card-bg-2);}
   .chambeador-puesto{font-weight:900;font-size:15px;width:22px;text-align:center;color:var(--gold);}
   .chambeador-row img{width:36px;height:36px;border-radius:50%;object-fit:cover;}
+  .chambeador-row[data-chambeador-id]{cursor:pointer;transition:background .15s,transform .1s;}
+  .chambeador-row[data-chambeador-id]:hover{background:rgba(239,8,112,0.16);}
+  .chambeador-row[data-chambeador-id]:active{transform:scale(0.98);}
+  #memberModal.sobre-chambeadores{z-index:270;} /* perfil por encima de la ventana de Chambeadores (260) */
   .chambeador-nombre{flex:1;font-weight:700;font-size:13.5px;}
   .chambeador-total{font-weight:800;font-size:13.5px;color:var(--peach-1);}
 
@@ -449,7 +453,7 @@
 
   /* ---- Mundo Peaches (globo 3D) ---- */
   #viewMundo{position:fixed;inset:0;z-index:250;background:#050912;display:flex;flex-direction:column;padding:0;}
-  .mundo-topbar{display:flex;align-items:center;gap:10px;padding:12px 14px;background:rgba(10,14,25,0.85);backdrop-filter:blur(6px);z-index:5;}
+  .mundo-topbar{display:flex;align-items:center;gap:10px;padding:12px 14px;background:rgba(10,14,25,0.85);z-index:5;}
   .mundo-back-btn{flex-shrink:0;padding:10px 14px;border-radius:12px;background:var(--card-bg-2);color:var(--text);font-weight:700;font-size:13px;}
   .mundo-topbar input{flex:1;min-width:0;padding:10px 12px;border-radius:12px;border:1px solid rgba(255,255,255,0.12);background:rgba(255,255,255,0.06);color:#fff;font-size:13.5px;}
   .mundo-zoom-btns{flex-shrink:0;display:flex;gap:6px;}
@@ -1360,10 +1364,11 @@ let DB = { actividades: [], entregas: [], miembros: [], anuario: [], periodos: [
 // El atributo NATIVO `hidden` de HTML sí es respetado por esas herramientas, así que lo mantenemos
 // sincronizado automáticamente con la clase .hidden en cualquier elemento del sitio, sin tener que
 // tocar cada uno de los toggles de "hidden" que ya existen en el código.
-function syncNativeHidden(el){ if(el && el.classList) el.hidden = el.classList.contains("hidden"); }
+function syncNativeHidden(el){ if(el && el.classList){ const h = el.classList.contains("hidden"); if(el.hidden !== h) el.hidden = h; } }
 document.querySelectorAll(".hidden").forEach(syncNativeHidden);
 new MutationObserver(muts=>{
-  muts.forEach(m=>syncNativeHidden(m.target));
+  const vistos = new Set(); // varios cambios al mismo elemento en un lote = una sola revisión
+  for(let i=0;i<muts.length;i++){ const t=muts[i].target; if(!vistos.has(t)){ vistos.add(t); syncNativeHidden(t); } }
 }).observe(document.body, {attributes:true, attributeFilter:["class"], subtree:true});
 // v20/v21: dos mecanismos de acceso distintos, cada uno con su propia variable.
 // sessionToken (Staff): token de SESIÓN emitido por el servidor tras un login de Google válido
@@ -2089,14 +2094,19 @@ async function downloadImage(url, filename){
     toast("Imagen descargada en el dispositivo ✅");
   }catch(err){ toast("No se pudo descargar la imagen ❌"); }
 }
+const LONGPRESS_DESCARGA_MS = 2000; // mantener presionada la imagen 2 s para descargarla
 function enableLongPress(img, filename){
   if(!img||img.dataset.longPressBound) return; img.dataset.longPressBound="1";
-  let timer=null;
-  const start=()=>{ timer=setTimeout(()=>downloadImage(img.src,filename),550); };
+  let timer=null, tocando=false;
   const cancel=()=>{ if(timer){clearTimeout(timer);timer=null;} };
-  img.addEventListener("touchstart",start,{passive:true}); img.addEventListener("touchend",cancel); img.addEventListener("touchmove",cancel);
+  const start=()=>{ cancel(); timer=setTimeout(()=>{ timer=null; downloadImage(img.src,filename); }, LONGPRESS_DESCARGA_MS); };
+  const finToque=()=>{ cancel(); setTimeout(()=>{ tocando=false; }, 700); };
+  img.addEventListener("touchstart",()=>{ tocando=true; start(); },{passive:true});
+  img.addEventListener("touchend",finToque); img.addEventListener("touchcancel",finToque); img.addEventListener("touchmove",cancel);
   img.addEventListener("mousedown",start); img.addEventListener("mouseup",cancel); img.addEventListener("mouseleave",cancel);
-  img.addEventListener("contextmenu",(e)=>{e.preventDefault();downloadImage(img.src,filename);});
+  // En el celular, mantener presionado dispara "contextmenu" a los ~0.5 s: solo se bloquea el menú nativo (sin descargar).
+  // En PC, el clic derecho sigue descargando de una vez.
+  img.addEventListener("contextmenu",(e)=>{ e.preventDefault(); if(!tocando) downloadImage(img.src,filename); });
 }
 // PERF: loading="lazy" + decoding="async" evita que el navegador decodifique/pinte de entrada
 // TODAS las fotos de una lista larga de miembros (bloqueando el hilo principal en un equipo
@@ -2193,8 +2203,8 @@ function leerCacheDatos(){
     return parsed;
   }catch(e){ return null; }
 }
-function guardarCacheDatos(datos){
-  try{ localStorage.setItem(CACHE_DATOS_KEY, JSON.stringify(datos)); }
+function guardarCacheDatos(datos, rawYa){
+  try{ localStorage.setItem(CACHE_DATOS_KEY, rawYa || JSON.stringify(datos)); }
   catch(e){ /* localStorage lleno/deshabilitado: no rompe nada, solo no queda cache para la próxima */ }
   idbGuardarDatos_(datos); // copia de respaldo en IndexedDB (app instalada: más duradera que localStorage)
 }
@@ -2256,6 +2266,7 @@ let cargaDatosSeq_ = 0;
 async function cargarDatos(){
   const miSeq_ = ++cargaDatosSeq_;
   const cachePrevio = leerCacheDatos();
+  let rawCachePrevio = null; try{ rawCachePrevio = localStorage.getItem(CACHE_DATOS_KEY); }catch(e){}
   const yaHabiaAlgoEnPantalla = !!cachePrevio || (DB && Array.isArray(DB.actividades) && (DB.actividades.length > 0 || DB.anuario.length > 0));
   if(cachePrevio){
     // Paso 1 (instantáneo, sin esperar red): pinta lo último guardado ya mismo.
@@ -2273,8 +2284,12 @@ async function cargarDatos(){
     if(!nuevo || typeof nuevo!=="object" || nuevo.ok===false || !Array.isArray(nuevo.actividades) || !Array.isArray(nuevo.anuario)){
       throw new Error((nuevo && nuevo.error) ? nuevo.error : "Respuesta inesperada del servidor: "+JSON.stringify(nuevo).slice(0,200));
     }
-    guardarCacheDatos(nuevo);
-    aplicarDatosCargados_(nuevo);
+    // PERF: si lo que llegó es idéntico a lo que ya se pintó desde el caché, no hay nada nuevo que dibujar:
+    // se evita reescribir el caché (localStorage + IndexedDB) y repintar todo el feed/anuario/miembros.
+    let rawNuevo = null; try{ rawNuevo = JSON.stringify(nuevo); }catch(e){}
+    const identico = !!(cachePrevio && rawNuevo && rawCachePrevio === rawNuevo);
+    if(!identico) guardarCacheDatos(nuevo, rawNuevo);
+    aplicarDatosCargados_(nuevo, false, identico);
   }
   catch(err){
     if(miSeq_ !== cargaDatosSeq_) return; // idem: un error de una llamada vieja tampoco debe pisar nada
@@ -2289,7 +2304,8 @@ async function cargarDatos(){
   }
 }
 
-function aplicarDatosCargados_(datos, esCache){
+function aplicarDatosCargados_(datos, esCache, sinRepintar){
+  const estadoAntes_ = [sessionToken, memberPin, staffPin];
   DB = datos;
   // "nivel" sale SIEMPRE de lo que el servidor resolvió — nunca de lo que el cliente cree
   // tener. Staff: a partir del token de sesión (ver validarSesion_ en Code.gs). Miembro: a
@@ -2347,6 +2363,8 @@ function aplicarDatosCargados_(datos, esCache){
   aplicarEnlacesPublicos();
   aplicarVisibilidadBuzon();
   aplicarVisibilidadMundo();
+  // Mismos datos que ya están pintados y mismas credenciales: no hace falta repintar (se ve idéntico).
+  if(sinRepintar && estadoAntes_[0]===sessionToken && estadoAntes_[1]===memberPin && estadoAntes_[2]===staffPin) return;
   renderTodoPreservandoScroll_();
 }
 
@@ -3147,6 +3165,7 @@ function renderMiembros(filtro=""){
 function openMemberModal(id){
   const m=DB.miembros.find(x=>String(x.id)===String(id));
   if(!m) return;
+  document.getElementById("memberModal").classList.remove("sobre-chambeadores"); // (se vuelve a poner solo si se abrió desde Chambeadores)
   trackUI("abrirTarjetaMiembro");
   const strikes=Number(m.strikes)||0, faltas=Number(m.faltas)||0, strikesPermanentes=Number(m.strikesPermanentes)||0;
   document.getElementById("memberModalContent").innerHTML=`
@@ -3679,13 +3698,22 @@ function renderChambeadores(){
   el.innerHTML = filas.map((f,i)=>{
     const m=DB.miembros.find(x=>String(x.id)===f.id);
     const medalla = i===0?"🥇":i===1?"🥈":i===2?"🥉":String(i+1);
-    return `<div class="chambeador-row">
+    return `<div class="chambeador-row"${m?` data-chambeador-id="${escAttr(String(m.id))}" role="button" tabindex="0"`:""}>
       <div class="chambeador-puesto">${medalla}</div>
       <img src="${escAttr(m?(m.avatarUrl||LOGO_DEFAULT):LOGO_DEFAULT)}" onerror="this.onerror=null;this.src='${LOGO_DEFAULT}';">
       <div class="chambeador-nombre">${escHtml(m?m.nombre:"(miembro ya no existe)")}</div>
       <div class="chambeador-total">${f.total}</div>
     </div>`;
   }).join("");
+  // Tocar a alguien del top abre su perfil ENCIMA de esta ventana (Chambeadores no se cierra).
+  el.querySelectorAll("[data-chambeador-id]").forEach(fila=>{
+    const abrir=()=>{
+      openMemberModal(fila.dataset.chambeadorId);
+      if(document.getElementById("memberModal").classList.contains("open")) document.getElementById("memberModal").classList.add("sobre-chambeadores");
+    };
+    fila.onclick=abrir;
+    fila.onkeydown=e=>{ if(e.key==="Enter"||e.key===" "){ e.preventDefault(); abrir(); } };
+  });
 }
 
 /* ---------- Mundo Peaches (globo 3D, Miembro+Staff) ---------- */
@@ -4389,6 +4417,7 @@ function openModal(id){
 }
 function closeModal(id){
   document.getElementById(id).classList.remove("open");
+  if(id==="memberModal") document.getElementById(id).classList.remove("sobre-chambeadores");
   // El carrusel de Minecraft corre timers propios (y puede haber un <video> reproduciéndose con
   // su audio); si no se frena acá, seguiría corriendo en segundo plano con el modal ya cerrado.
   if(id==="minecraftModal"){ mcStopCarousel(); mcMusicDetener(); }
@@ -4697,8 +4726,20 @@ new MutationObserver(()=>{
 }).observe(document.getElementById("minecraftModal"), {attributes:true, attributeFilter:["class"]});
 
 // Arranque: apenas abre la página se baja el video 1; y poco después se calientan los listados.
-mcPrecargarVideo1();
-setTimeout(()=>{ listarCarpetaRepo_("ImagenesMinecraft"); listarCarpetaRepo_(MC_MUSIC_FOLDER); }, 2500);
+// PERF: el video pesa ~14 MB; antes se bajaba (y se cargaba en memoria) apenas abría la página, compitiendo con la
+// carga de datos. Ahora espera a que la página termine de cargar + unos segundos de tiempo libre, y se salta en
+// conexión lenta o con "ahorro de datos". Si abren Minecraft antes, abrirMinecraftModal() lo pide igual (sin cambios).
+(function(){
+  const con = navigator.connection || {};
+  const conexionLenta = !!con.saveData || /(^|-)(2g|3g)$/.test(con.effectiveType || "");
+  const lanzar = ()=>{
+    if(!conexionLenta) mcPrecargarVideo1();
+    listarCarpetaRepo_("ImagenesMinecraft"); listarCarpetaRepo_(MC_MUSIC_FOLDER);
+  };
+  const enReposo = ()=>{ if(window.requestIdleCallback) requestIdleCallback(lanzar,{timeout:15000}); else setTimeout(lanzar,2000); };
+  const arrancar = ()=>setTimeout(enReposo, 6000);
+  if(document.readyState==="complete") arrancar(); else window.addEventListener("load", arrancar, {once:true});
+})();
 
 function mcSwitchTab(tab){
   const esBedrock = tab === "bedrock";
@@ -5849,7 +5890,7 @@ function resaltarIndicacion(descripcionEscapada){
   /* El slot mide 0 de alto y va al final del contenido: el texto cae justo en el padding de abajo del
      modal, así que el tamaño de la ventana no cambia. */
   #minecraftModal .mc-np-slot{position:relative;height:0;margin:0 -20px;}
-  #mcNowPlaying{position:absolute;left:0;right:0;top:3px;text-align:center;white-space:nowrap;overflow:hidden;pointer-events:none;
+  #mcNowPlaying{position:absolute;left:0;right:0;top:-2px;text-align:center;white-space:nowrap;overflow:hidden;pointer-events:none;
     opacity:0;font-family:"MCFont","Minecraftia",monospace;font-size:11.5px;line-height:14px;word-spacing:.4em;font-synthesis:none;background:none;
     -webkit-font-smoothing:none;font-smooth:never;image-rendering:pixelated;padding:0 14px;box-sizing:border-box;}
   /* 3 s: entra, recorre lima, rosa, morado, azul claro, cyan, verde y amarillo, y se va */
@@ -5915,8 +5956,27 @@ function resaltarIndicacion(descripcionEscapada){
   #instalarModal .ia-botones button{flex:1;padding:11px;border-radius:12px;font-weight:800;font-size:14px;}
   #instalarModal .ia-ahora{background:rgba(255,255,255,.1);color:var(--text);}
   #instalarModal .ia-instalar{background:linear-gradient(90deg,var(--peach-2),var(--peach-1));color:#fff;box-shadow:0 4px 14px rgba(239,8,112,.4);}
+
+  /* Aviso animado "La app se está descargando" (3 s) */
+  #iaAviso{position:fixed;top:calc(env(safe-area-inset-top,0px) + 12px);left:50%;width:min(92vw,380px);z-index:700;display:flex;align-items:center;gap:12px;padding:12px 16px 15px;border-radius:18px;overflow:hidden;
+    background:linear-gradient(135deg,#3a1d44,#241228);border:1px solid rgba(255,143,177,.45);box-shadow:0 12px 34px rgba(0,0,0,.55),0 0 28px rgba(239,8,112,.35);
+    opacity:0;pointer-events:none;transform:translate(-50%,-130%);}
+  #iaAviso.show{animation:iaAvisoAnim 3s ease forwards;}
+  #iaAviso .ia-av-icon{position:relative;flex:0 0 42px;height:42px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:22px;background:linear-gradient(135deg,var(--peach-2),var(--peach-1));}
+  #iaAviso .ia-av-icon::after{content:"";position:absolute;inset:-4px;border-radius:50%;border:2px solid rgba(255,143,177,.7);animation:iaAvPulso 1s ease-out infinite;}
+  #iaAviso .ia-av-icon span{display:inline-block;animation:iaAvRebote .8s ease-in-out infinite;}
+  #iaAviso .ia-av-txt{display:flex;flex-direction:column;gap:2px;min-width:0;}
+  #iaAviso .ia-av-txt b{font-size:14.5px;color:#fff;}
+  #iaAviso .ia-av-txt small{font-size:12px;line-height:1.35;color:var(--text-dim);}
+  #iaAviso .ia-av-barra{position:absolute;left:0;bottom:0;height:3px;width:100%;transform-origin:left;background:linear-gradient(90deg,var(--peach-2),var(--peach-1));}
+  #iaAviso.show .ia-av-barra{animation:iaAvBarra 3s linear forwards;}
+  @keyframes iaAvisoAnim{0%{opacity:0;transform:translate(-50%,-130%) scale(.92)}14%{opacity:1;transform:translate(-50%,0) scale(1.04)}20%{transform:translate(-50%,0) scale(1)}86%{opacity:1;transform:translate(-50%,0) scale(1)}100%{opacity:0;transform:translate(-50%,-130%) scale(.95)}}
+  @keyframes iaAvBarra{from{transform:scaleX(1)}to{transform:scaleX(0)}}
+  @keyframes iaAvPulso{0%{transform:scale(.9);opacity:.9}100%{transform:scale(1.35);opacity:0}}
+  @keyframes iaAvRebote{0%,100%{transform:translateY(-2px)}50%{transform:translateY(3px)}}
 </style>
 
+<div id="iaAviso" role="status" aria-live="polite"><div class="ia-av-icon"><span>📲</span></div><div class="ia-av-txt"><b>La app se está descargando</b><small>Se instala en segundo plano, en unos segundos estará disponible</small></div><i class="ia-av-barra"></i></div>
 <button id="btnInstalarApp" type="button" aria-label="Instalar app"><span class="ia-emoji">📲</span><span class="ia-txt">Instalar app</span></button>
 
 <div class="modal-overlay" id="instalarModal">
@@ -6072,7 +6132,8 @@ function resaltarIndicacion(descripcionEscapada){
         dp.prompt();
         const eleccion = await dp.userChoice;
         if (eleccion && eleccion.outcome === "accepted" && typeof toast === "function") {
-          toast("La app se está instalando en segundo plano, en unos segundos estará disponible", 6000);
+          const av = document.getElementById("iaAviso");
+          if (av) { av.classList.remove("show"); void av.offsetWidth; av.classList.add("show"); setTimeout(()=>av.classList.remove("show"), 3100); }
         }
       } catch(e){}
       quitarBotonYa();
