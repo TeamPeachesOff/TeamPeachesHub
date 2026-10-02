@@ -257,7 +257,12 @@
     #actividadesFeed > :not(.card),#actividadesFeed .year-group > :not(.card){grid-column:1 / -1;}
     #actividadesFeed .year-group.hidden{display:none;}
     #actividadesFeed .card{margin-bottom:0;overflow:clip;display:grid;grid-template-columns:220px minmax(0,1fr);grid-template-rows:minmax(0,1fr);grid-auto-rows:auto;min-height:220px;max-width:860px;width:100%;justify-self:center;border:0;box-shadow:0 0 0 1px rgba(255,255,255,0.07);}
-    #actividadesFeed .card.doble{grid-column:1 / -1;max-width:calc(860px * 2 + 18px);}
+    /* Doble espacio: solo se ensancha cuando de verdad caben 2 columnas (2*560 + 18 de separación = 1138px).
+       Con 1 sola columna se ve igual que una tarjeta normal. */
+    #actividadesFeed,#actividadesFeed .year-group{container-type:inline-size;}
+    @container (min-width:1138px){
+      #actividadesFeed .card.doble{grid-column:1 / -1;max-width:calc(860px * 2 + 18px);}
+    }
     #actividadesFeed .card-top{display:contents;}
     #actividadesFeed .card-img-wrap{grid-column:1;grid-row:1 / span 20;width:220px;height:220px;flex:none;align-self:start;position:sticky;top:96px;border-radius:0;background:var(--card-bg-2);}
     #actividadesFeed .card-img-wrap img{object-fit:contain;}
@@ -939,10 +944,18 @@
     <h3 id="activityFormTitle">Nueva actividad</h3>
     <form id="activityForm" autocomplete="off">
       <input autocomplete="off" type="hidden" id="af_id">
+      <div class="form-group" id="af_waGroup">
+        <button type="button" class="btn-small btn-family" id="af_waBtn" style="width:100%;">📲 Pegar mensaje de WhatsApp</button>
+        <div id="af_waBox" class="hidden" style="margin-top:8px;">
+          <textarea autocomplete="off" id="af_waText" placeholder="Pega aquí el mensaje completo de WhatsApp: se rellena solo"></textarea>
+          <button type="button" class="btn-small btn-primary" id="af_waApply" style="width:100%;margin-top:6px;">✨ Autollenar</button>
+        </div>
+        <div class="upload-status" id="af_waStatus" style="text-align:left;"></div>
+      </div>
       <div class="form-group"><label>Título</label><input autocomplete="off" type="text" id="af_titulo" required></div>
-      <div class="form-group"><label>Imagen (URL)</label><input autocomplete="off" type="text" id="af_imagenUrl"></div>
+      <input autocomplete="off" type="hidden" id="af_imagenUrl">
       <div class="form-group">
-        <label>O sube una imagen</label>
+        <label>Imagen</label>
         <input autocomplete="off" type="file" id="af_imagenFile" accept=".jpg,.jpeg,.png,image/jpeg,image/png">
         <div class="upload-status" id="af_uploadStatus"></div>
       </div>
@@ -2098,10 +2111,10 @@ function streamBlockHTML(a){
   const gcalUrl="https://calendar.google.com/calendar/render?action=TEMPLATE"
     +"&text="+encodeURIComponent(a.streamNombre)
     +"&dates="+isoStart+"/"+isoEnd
-    +"&details="+encodeURIComponent(a.descripcion||"")
+    +"&details="+encodeURIComponent(quitarNegritasMd_(a.descripcion))
     +"&location="+encodeURIComponent("Server de Peaches");
   // Botón 2: descarga un archivo .ics (sirve para Apple Calendar, Outlook, Samsung, etc. — en celular normalmente se agrega con un tap)
-  return `<div class="stream-block"><div class="stream-title">📺 ${escHtml(a.streamNombre)}</div><div class="stream-time">🗓️ ${localStr}<br><span style="opacity:0.75;">(convertido a tu zona horaria: ${tz})</span></div><div class="stream-actions"><a class="btn-small btn-primary" target="_blank" href="${escAttr(gcalUrl)}">📅 Google Calendar</a><button class="btn-small btn-family" data-ics data-ics-nombre="${escAttr(a.streamNombre)}" data-ics-start="${isoStart}" data-ics-end="${isoEnd}" data-ics-desc="${escAttr(a.descripcion||'')}">📅 Agregar a Calendario</button></div></div>`;
+  return `<div class="stream-block"><div class="stream-title">📺 ${escHtml(a.streamNombre)}</div><div class="stream-time">🗓️ ${localStr}<br><span style="opacity:0.75;">(convertido a tu zona horaria: ${tz})</span></div><div class="stream-actions"><a class="btn-small btn-primary" target="_blank" href="${escAttr(gcalUrl)}">📅 Google Calendar</a><button class="btn-small btn-family" data-ics data-ics-nombre="${escAttr(a.streamNombre)}" data-ics-start="${isoStart}" data-ics-end="${isoEnd}" data-ics-desc="${escAttr(quitarNegritasMd_(a.descripcion))}">📅 Agregar a Calendario</button></div></div>`;
 }
 function escIcs(s){ return String(s||"").replace(/\\/g,"\\\\").replace(/;/g,"\\;").replace(/,/g,"\\,").replace(/\n/g,"\\n"); }
 function descargarICS(nombre,isoStart,isoEnd,descripcion){
@@ -2851,7 +2864,7 @@ function attachCardEvents(){
         const id=body.id.replace("info-","");
         const a=DB.actividades.find(x=>String(x.id)===String(id));
         let html=streamBlockHTML(a);
-        html+=`<div class="desc-text">${resaltarIndicacion(escHtml(a.descripcion||"Sin descripción."))}</div>`;
+        html+=`<div class="desc-text">${negritasMd_(resaltarIndicacion(escHtml(a.descripcion||"Sin descripción.")))}</div>`;
         // El botón de copiar (a nivel de tarjeta) sigue usando extraerHashtags() igual que antes —
         // lo que se quitó de acá es solo el listado repetido debajo de la descripción, porque
         // muchas descripciones ya incluyen sus propios hashtags escritos a mano y se veían dos veces.
@@ -4814,7 +4827,8 @@ function openActivityForm(id, esAnuarioItem){
   document.getElementById("af_id").value=a?a.id:"";
   document.getElementById("af_titulo").value=a?a.titulo||"":"";
   document.getElementById("af_imagenUrl").value=a?a.imagenUrl||"":"";
-  document.getElementById("af_imagenFile").value=""; document.getElementById("af_uploadStatus").textContent="";
+  document.getElementById("af_imagenFile").value=""; document.getElementById("af_uploadStatus").textContent=(a&&a.imagenUrl)?"Imagen actual guardada ✅ (sube otra para reemplazarla)":"";
+  document.getElementById("af_waBox").classList.add("hidden"); document.getElementById("af_waText").value=""; document.getElementById("af_waStatus").textContent="";
   document.getElementById("af_descripcion").value=a?a.descripcion||"":"";
   document.getElementById("af_streamNombre").value=a?a.streamNombre||"":"";
   document.getElementById("af_streamFecha").value=a?toDateInput(a.streamFecha):"";
@@ -4835,6 +4849,7 @@ function openActivityForm(id, esAnuarioItem){
   document.getElementById("activityForm").dataset.modoAnuario=esAnuarioActual?"1":"0";
   document.getElementById("af_anuarioFields").classList.toggle("hidden", !esAnuarioActual);
   document.getElementById("af_dobleGroup").classList.toggle("hidden", esAnuarioActual);
+  document.getElementById("af_waGroup").classList.toggle("hidden", esAnuarioActual);
   document.getElementById("af_ganadorCanto").value=a?a.ganadorCanto||"":"";
   document.getElementById("af_ganadorDoblaje").value=a?a.ganadorDoblaje||"":"";
   document.getElementById("af_menciones").value=a?a.mencionesHonorificas||"":"";
@@ -4852,6 +4867,80 @@ function openActivityForm(id, esAnuarioItem){
   // hay que forzar el ajuste de altura acá para que abra ya con el tamaño correcto.
   document.querySelectorAll("#activityFormModal textarea").forEach(autoExpandTextarea);
 }
+/* ---------- Pegar mensaje de WhatsApp: detecta el formato y autollena el formulario ---------- */
+const MESES_WA_={enero:1,febrero:2,marzo:3,abril:4,mayo:5,junio:6,julio:7,agosto:8,septiembre:9,setiembre:9,octubre:10,noviembre:11,diciembre:12};
+function parsearMensajeWhatsapp_(raw){
+  const out={};
+  let texto=String(raw||"")
+    .replace(/[\u2066-\u2069\u200e\u200f\u202a-\u202e\u200b]/g,"")   // marcas invisibles que mete WhatsApp (@⁨Chat general⁩)
+    .replace(/\u00a0/g," ").replace(/\r/g,"");
+  // Menciones sueltas (@Chat general): la línea desaparece
+  texto=texto.split("\n").filter(l=>!/^\s*@\S/.test(l)).join("\n");
+  const lineas=texto.split("\n");
+  const iTitulo=lineas.findIndex(l=>l.trim());
+  if(iTitulo===-1) return out;
+  // Título: primera línea, sin asteriscos, espacios dobles colapsados (los emojis se quedan)
+  out.titulo=lineas[iTitulo].replace(/\*/g,"").replace(/\s{2,}/g," ").trim();
+  // Fin de la descripción: primera línea que EMPIEZA con "Fecha de entrega/envío" o "Entrega de la actividad"
+  const reCorte=/^[^\p{L}\d]*(?:fecha\s+de\s+(?:entrega|env[ií]o)|entrega\s+de\s+la\s+actividad)/iu;
+  let iCorte=lineas.findIndex((l,i)=>i>iTitulo&&reCorte.test(l.trim()));
+  if(iCorte===-1) iCorte=lineas.length;
+  let desc=lineas.slice(iTitulo+1,iCorte).join("\n");
+  desc=desc.replace(/^[ \t]*>[ \t]?/gm,"");                                    // el > se borra
+  desc=desc.replace(/\*+\s*(Indicaci[oó]n)\s*:\s*\*+/gi,"$1:").replace(/\*+\s*(Indicaci[oó]n)\s*\*+\s*:/gi,"$1:"); // la tarjeta ya resalta "Indicación"
+  desc=desc.replace(/\*{1,3}([^*\n]+?)\*{1,3}/g,"**$1**");                     // *x* de WhatsApp -> **x** (negrita)
+  desc=desc.replace(/[ \t]+$/gm,"").replace(/\n{3,}/g,"\n\n").trim();
+  out.descripcion=desc;
+  // Fechas
+  const plano=texto.replace(/\*/g,"");
+  const nom="([a-záéíóúñ]+)", dia="(?:d[ií]a\\s+)?(\\d{1,2})", anio="(?:\\s+(?:de|del)\\s+(\\d{4}))?";
+  const reRango=new RegExp("del?\\s+"+dia+"\\s+de\\s+"+nom+anio+"\\s+(?:hasta|al)\\s+(?:el\\s+)?"+dia+"\\s+de\\s+"+nom+anio,"i");
+  const hoyAnio=new Date().getFullYear();
+  const pad=n=>String(n).padStart(2,"0");
+  let m=plano.match(reRango);
+  if(m && MESES_WA_[m[2].toLowerCase()] && MESES_WA_[m[5].toLowerCase()]){
+    const mi=MESES_WA_[m[2].toLowerCase()], mf=MESES_WA_[m[5].toLowerCase()];
+    const yi=m[3]?+m[3]:hoyAnio;
+    let yf=m[6]?+m[6]:yi;
+    if(!m[6] && (mf<mi || (mf===mi && +m[4]<+m[1]))) yf=yi+1;
+    out.fechaInicio=yi+"-"+pad(mi)+"-"+pad(+m[1]);
+    out.fechaFin=yf+"-"+pad(mf)+"-"+pad(+m[4]);
+  }else{
+    const m2=plano.match(new RegExp("hasta\\s+(?:el\\s+)?"+dia+"\\s+de\\s+"+nom+anio,"i"));
+    if(m2 && MESES_WA_[m2[2].toLowerCase()]) out.fechaFin=(m2[3]?+m2[3]:hoyAnio)+"-"+pad(MESES_WA_[m2[2].toLowerCase()])+"-"+pad(+m2[1]);
+  }
+  // Enlace de entrega: solo el del formulario (se ignora el de la página oficial)
+  const urls=(texto.match(/https?:\/\/[^\s]+/g)||[]).map(u=>u.replace(/[)\].,;:!?]+$/,""));
+  out.linkForms=urls.find(u=>/forms\.gle|docs\.google\.com\/forms|forms\.office|typeform/i.test(u)) || urls.find(u=>!/teampeachesoff\.github\.io/i.test(u)) || "";
+  // Categoría por el título
+  const t=out.titulo.toLowerCase(), iD=t.indexOf("doblaje"), iC=t.indexOf("canto");
+  if(iD>-1 && (iC===-1||iD<iC)) out.categoria="doblaje"; else if(iC>-1) out.categoria="canto";
+  return out;
+}
+function aplicarMensajeWhatsapp_(){
+  const st=document.getElementById("af_waStatus");
+  const d=parsearMensajeWhatsapp_(document.getElementById("af_waText").value);
+  if(!d.titulo){ st.textContent="⚠️ No reconocí el mensaje, revisa que esté completo."; return; }
+  const llenados=["título"];
+  document.getElementById("af_titulo").value=d.titulo;
+  if(d.descripcion){ document.getElementById("af_descripcion").value=d.descripcion; llenados.push("descripción"); }
+  if(d.fechaInicio){ document.getElementById("af_fechaInicio").value=d.fechaInicio; llenados.push("fecha de envío"); }
+  if(d.fechaFin){ document.getElementById("af_fechaFin").value=d.fechaFin; llenados.push("fecha de entrega"); }
+  if(d.linkForms){ document.getElementById("af_linkForms").value=d.linkForms; llenados.push("enlace del formulario"); }
+  if(d.categoria){ setSwitchPill("af_categoriaSwitch", d.categoria); llenados.push("categoría"); }
+  document.querySelectorAll("#activityFormModal textarea").forEach(autoExpandTextarea);
+  document.getElementById("af_waBox").classList.add("hidden");
+  document.getElementById("af_waText").value="";
+  st.textContent="✅ Autollenado: "+llenados.join(", ")+(d.fechaInicio||d.fechaFin?"":" · ⚠️ no encontré las fechas, ponlas a mano")+". Revisa antes de guardar.";
+}
+document.getElementById("af_waBtn").onclick=()=>{
+  const box=document.getElementById("af_waBox");
+  box.classList.toggle("hidden");
+  if(!box.classList.contains("hidden")) document.getElementById("af_waText").focus();
+};
+document.getElementById("af_waApply").onclick=aplicarMensajeWhatsapp_;
+document.getElementById("af_waText").addEventListener("paste",()=>setTimeout(aplicarMensajeWhatsapp_,60));
+
 document.getElementById("af_imagenFile").addEventListener("change", async(e)=>{
   const file=e.target.files[0]; if(!file) return;
   const st=document.getElementById("af_uploadStatus"); st.textContent="Subiendo imagen...";
@@ -4925,6 +5014,11 @@ document.getElementById("activityForm").addEventListener("submit", async(e)=>{
       let msg="Guardado ✅";
       if(typeof r.discordEnviado!=="undefined") msg+= r.discordEnviado ? " · Anunciado en Discord 📣" : (" · Discord: "+(r.discordError||"no se pudo enviar"));
       toast(msg); closeModal("activityFormModal"); await cargarDatos();
+      // Aviso de diagnóstico: si el servidor no devuelve el campo, la hoja/Code.gs aún no lo conocen
+      if(!esModoAnuario && data.dobleEspacio==="TRUE"){
+        const guardada=(DB&&DB.actividades||[]).find(x=>String(x.id)===String(data.id));
+        if(guardada && !("dobleEspacio" in guardada)) setTimeout(()=>toast("⚠️ El servidor no guardó «Doble espacio»: falta la columna dobleEspacio en la hoja / Code.gs"),1800);
+      }
     } else toast("Error: "+(r.error||""));
   }catch(err){
     toast("Error inesperado al guardar: "+(err.message||err));
@@ -5604,6 +5698,8 @@ function escAttr(str){ return escHtml(str); }
 // SOLO esa porcion (la palabra + los dos puntos + el resto de esa misma linea) en un cuadrito para
 // resaltarla. No mueve el texto de donde esta ni lo duplica -- solo lo envuelve in-place. La
 // palabra "Indicacion" va en negrita, tal como se pidio.
+function negritasMd_(html){ return String(html).replace(/\*\*([^*\n]+?)\*\*/g,"<strong>$1</strong>"); }
+function quitarNegritasMd_(t){ return String(t||"").replace(/\*\*/g,""); }
 function resaltarIndicacion(descripcionEscapada){
   const regex=/(Indicaci[oó]n)(\s*:)([^\n]*)/i;
   const m=descripcionEscapada.match(regex);
