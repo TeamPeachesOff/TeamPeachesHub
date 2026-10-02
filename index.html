@@ -2815,7 +2815,11 @@ document.body.addEventListener("scroll", ()=>{
   requestAnimationFrame(()=>{ actualizarVisibilidadBackToTop(); backToTopScrollTicking=false; });
 }, {passive:true});
 document.getElementById("backToTopBtn").onclick=()=>{
-  const paradas=[0, ...[...document.querySelectorAll(".year-divider")].map(el=>el.getBoundingClientRect().top+document.body.scrollTop)];
+  // El header es sticky y tapa lo que queda debajo, así que a cada parada se le resta su alto
+  // (+ un respiro) para que el separador de año quede visible justo debajo del header.
+  const headerH=(document.querySelector("header")||{offsetHeight:0}).offsetHeight;
+  const OFFSET_ANIO=headerH+28;
+  const paradas=[0, ...[...document.querySelectorAll(".year-divider")].map(el=>Math.max(0, el.getBoundingClientRect().top+document.body.scrollTop-OFFSET_ANIO))];
   const actual=document.body.scrollTop;
   // La parada de destino es la más cercana que quede ARRIBA de donde estás ahora (con un margen
   // de 16px para que, si ya estás parado justo en un separador, el toque te mande a la parada de
