@@ -4,7 +4,7 @@
  * - Las llamadas al servidor (Apps Script, Google login, GitHub API) NUNCA pasan por acá: los datos
  *   se guardan desde index.html (localStorage + IndexedDB), no desde el service worker.
  * Para forzar que todos reciban una versión nueva, sube el número de VERSION. */
-const VERSION = "v8"; // sube también APP_SW_VERSION (número) en index.html
+const VERSION = "v10"; // súbelo en CADA despliegue: es lo que dispara la ventana de «Actualizar ahora»
 const SHELL_CACHE = "tph-shell-" + VERSION;
 const ASSET_CACHE = "tph-assets-v1";      // no se borra al cambiar VERSION (fotos/librerías)
 const MAX_ASSETS = 400;
@@ -14,11 +14,13 @@ const SHELL = ["./", "./index.html", "./manifest.json", "./icons/icon-192.png", 
 const NO_CACHE_HOSTS = ["script.google.com", "script.googleusercontent.com", "accounts.google.com", "api.github.com", "oauth2.googleapis.com", "apis.google.com"];
 
 self.addEventListener("install", e => {
-  e.waitUntil(caches.open(SHELL_CACHE).then(c => Promise.all(SHELL.map(u => c.add(new Request(u, { cache: "reload" })).catch(() => {})))).then(() => self.skipWaiting()));
+  e.waitUntil(caches.open(SHELL_CACHE).then(c => Promise.all(SHELL.map(u => c.add(new Request(u, { cache: "reload" })).catch(() => {})))));
 });
 
 // La página pregunta su versión para saber si está desactualizada
 self.addEventListener("message", e => {
+  // La versión nueva espera hasta que la persona toca "Actualizar ahora" en la ventana (ver index.html).
+  if (e.data && e.data.type === "SKIP_WAITING") { self.skipWaiting(); return; }
   if (e.data && e.data.type === "VERSION" && e.ports && e.ports[0]) e.ports[0].postMessage({ version: parseInt(VERSION.replace(/\D/g, ""), 10) });
 });
 
