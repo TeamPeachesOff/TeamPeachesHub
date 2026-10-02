@@ -254,8 +254,14 @@
     #viewActividades .search-bar{margin-bottom:16px;}
     #viewActividades .filter-pills .pill-toggle{padding:11px;font-size:13.5px;}
     /* Cuadrícula de tarjetas */
-    #actividadesFeed,#actividadesFeed .year-group{display:grid;grid-template-columns:repeat(auto-fill,minmax(max(560px,calc((100% - 54px) / 4)),860px));justify-content:center;gap:18px;align-items:start;} /* hasta 4 columnas, siempre centradas */
+    /* Columnas: 1 (pantallas angostas), 2 o 4 — nunca 3. TODAS las columnas miden EXACTAMENTE lo mismo: son "minmax(0,1fr)"
+       (reparto igual, el contenido de una tarjeta jamás ensancha su columna) dentro de un contenedor centrado con ancho tope. */
+    #viewActividades{container-name:vact;container-type:inline-size;}
+    #actividadesFeed,#actividadesFeed .year-group{display:grid;grid-template-columns:minmax(0,1fr);gap:18px;align-items:start;width:100%;max-width:860px;margin-left:auto;margin-right:auto;}
+    @container vact (min-width:1138px){ #actividadesFeed,#actividadesFeed .year-group{grid-template-columns:repeat(2,minmax(0,1fr));max-width:calc(860px * 2 + 18px);} }
+    @container vact (min-width:2294px){ #actividadesFeed,#actividadesFeed .year-group{grid-template-columns:repeat(4,minmax(0,1fr));max-width:calc(860px * 4 + 18px * 3);} }
     #actividadesFeed > :not(.card),#actividadesFeed .year-group > :not(.card){grid-column:1 / -1;}
+    #actividadesFeed > .year-divider{margin-left:0;margin-right:0;} /* sin los 2px laterales de móvil: el píldora del año queda EXACTAMENTE al centro de las tarjetas */
     #actividadesFeed .year-group.hidden{display:none;}
     #actividadesFeed .card{margin-bottom:0;overflow:clip;display:grid;grid-template-columns:220px minmax(0,1fr);grid-template-rows:minmax(0,1fr);grid-auto-rows:auto;min-height:220px;max-width:860px;width:100%;justify-self:center;border:0;box-shadow:0 0 0 1px rgba(255,255,255,0.07);}
     /* Doble espacio: solo se ensancha cuando de verdad caben 2 columnas (2*560 + 18 de separación = 1138px).
@@ -1787,12 +1793,13 @@ async function apiGet(silencioso){
     if(silencioso || escaladoATop) hideTopProgress(); else hideLoading();
   }
 }
-async function apiPost(payload, msg){
-  showLoading(msg||"Guardando...");
+async function apiPost(payload, msg, silencioso){
+  // silencioso=true: carga de fondo (p. ej. los enlaces de Staff al abrir la app) — no tapa la vista con el overlay.
+  if(!silencioso) showLoading(msg||"Guardando...");
   // Si se pasa de 8s sin respuesta, probablemente sea un cold-start de Apps Script (el servidor
   // "dormido" tardando en arrancar) — se avisa para que no parezca que la app se congeló, en vez
   // de dejar "Verificando..."/"Guardando..." fijo sin ninguna pista de qué está pasando.
-  const timerMensajeLargo = setTimeout(()=>{
+  const timerMensajeLargo = silencioso ? null : setTimeout(()=>{
     const el = document.querySelector("#loadingOverlay .loading-text");
     if(el) el.textContent = "Tardando más de lo normal — el servidor puede estar \"despertando\". Un momento más...";
   }, 8000);
@@ -1827,14 +1834,25 @@ async function apiPost(payload, msg){
     }
   }catch(networkErr){
     return {ok:false, error: networkErr && networkErr.name==="AbortError" ? "El servidor tardó demasiado en responder. Revisa si tu cambio se guardó antes de repetirlo." : "No se pudo conectar con el servidor. Revisa tu conexión e intenta de nuevo."};
-  } finally{ clearTimeout(timerMensajeLargo); hideLoading(); }
+  } finally{ clearTimeout(timerMensajeLargo); if(!silencioso) hideLoading(); }
 }
 // Se llama SOLO justo después de que el servidor confirmó una sesión de Staff válida.
 // Si esto falla, enlacesStaff queda null y los botones simplemente avisan "no se pudo cargar".
-async function cargarEnlacesStaff(){
-  const r = await apiPost({action:"obtenerEnlacesStaff"});
+async function cargarEnlacesStaff(silencioso){
+  // Con silencioso=true (arranque / login) NO se muestra la pantalla "Guardando...": antes, al abrir la app como Staff,
+  // esa pantalla aparecía encima de la vista ya cargada hasta que llegaban los enlaces. Un solo reintento antes de avisar.
+  let r = await apiPost({action:"obtenerEnlacesStaff"}, null, !!silencioso);
+  if(silencioso && !(r && r.ok) && sessionToken){
+    await new Promise(res=>setTimeout(res,4000));
+    r = await apiPost({action:"obtenerEnlacesStaff"}, null, true);
+  }
   enlacesStaff = (r && r.ok) ? r.enlaces : null;
   if(!enlacesStaff) toast("No se pudieron cargar los enlaces de Staff");
+}
+// Pide los enlaces cuando el navegador ya terminó de pintar la vista (van siempre al final).
+function programarEnlacesStaff_(){
+  const pedir = ()=>{ if(!enlacesStaff && nivel==="staff" && sessionToken) cargarEnlacesStaff(true); };
+  if(window.requestIdleCallback) requestIdleCallback(pedir,{timeout:2500}); else setTimeout(pedir,400);
 }
 // Analítica de interacciones de UI (v16): fire-and-forget a propósito — NO usa apiPost (que muestra
 // el overlay de "Guardando..." y espera respuesta) porque esto nunca debe frenar ni demorar la
@@ -2094,7 +2112,7 @@ async function downloadImage(url, filename){
     toast("Imagen descargada en el dispositivo ✅");
   }catch(err){ toast("No se pudo descargar la imagen ❌"); }
 }
-const LONGPRESS_DESCARGA_MS = 2000; // mantener presionada la imagen 2 s para descargarla
+const LONGPRESS_DESCARGA_MS = 1000; // mantener presionada la imagen 1 s para descargarla
 function enableLongPress(img, filename){
   if(!img||img.dataset.longPressBound) return; img.dataset.longPressBound="1";
   let timer=null, tocando=false;
@@ -2268,6 +2286,14 @@ async function cargarDatos(){
   const cachePrevio = leerCacheDatos();
   let rawCachePrevio = null; try{ rawCachePrevio = localStorage.getItem(CACHE_DATOS_KEY); }catch(e){}
   const yaHabiaAlgoEnPantalla = !!cachePrevio || (DB && Array.isArray(DB.actividades) && (DB.actividades.length > 0 || DB.anuario.length > 0));
+  // PERF: la petición de red sale PRIMERO y el caché se pinta mientras viaja (antes se pintaba todo el caché y
+  // recién después salía la petición, así que el tiempo de pintado se sumaba a la espera). Mismo resultado, más rápido.
+  // silencioso=true en cuanto ya había algo pintado en pantalla (de cache, o porque esta
+  // llamada viene de después de guardar/borrar algo con la app ya cargada antes): la barrita
+  // del header se anima, pero la persona sigue viendo e interactuando con todo — nunca vuelve
+  // a aparecer la pantalla de carga completa en ese caso.
+  const pedidoRed_ = apiGet(yaHabiaAlgoEnPantalla);
+  pedidoRed_.catch(()=>{}); // evita aviso de "promesa sin capturar" si el pintado del caché lanzara antes de llegar al await
   if(cachePrevio){
     // Paso 1 (instantáneo, sin esperar red): pinta lo último guardado ya mismo.
     // esCache=true: esto es solo una vista previa con datos posiblemente viejos, nunca debe
@@ -2275,11 +2301,7 @@ async function cargarDatos(){
     aplicarDatosCargados_(cachePrevio, true);
   }
   try{
-    // silencioso=true en cuanto ya había algo pintado en pantalla (de cache, o porque esta
-    // llamada viene de después de guardar/borrar algo con la app ya cargada antes): la barrita
-    // del header se anima, pero la persona sigue viendo e interactuando con todo — nunca vuelve
-    // a aparecer la pantalla de carga completa en ese caso.
-    const nuevo = await apiGet(yaHabiaAlgoEnPantalla);
+    const nuevo = await pedidoRed_;
     if(miSeq_ !== cargaDatosSeq_) return; // ya hay una llamada más nueva en curso: esta respuesta quedó vieja, se ignora entera
     if(!nuevo || typeof nuevo!=="object" || nuevo.ok===false || !Array.isArray(nuevo.actividades) || !Array.isArray(nuevo.anuario)){
       throw new Error((nuevo && nuevo.error) ? nuevo.error : "Respuesta inesperada del servidor: "+JSON.stringify(nuevo).slice(0,200));
@@ -2359,6 +2381,9 @@ function aplicarDatosCargados_(datos, esCache, sinRepintar){
       // conserva.
     }
   }
+  // Rol en pantalla YA: con caché vieja que dice "publico" pero con credenciales guardadas, se mantiene el rol optimista
+  // (no se apaga ni parpadea); con la respuesta real del servidor se aplica el rol verdadero.
+  aplicarUIRol_((esCache && nivel==="publico") ? rolGuardadoOptimista_() : nivel);
   if (DB.googleClientId && !googleSignInInicializado) inicializarGoogleSignIn(DB.googleClientId);
   aplicarEnlacesPublicos();
   aplicarVisibilidadBuzon();
@@ -2366,6 +2391,24 @@ function aplicarDatosCargados_(datos, esCache, sinRepintar){
   // Mismos datos que ya están pintados y mismas credenciales: no hace falta repintar (se ve idéntico).
   if(sinRepintar && estadoAntes_[0]===sessionToken && estadoAntes_[1]===memberPin && estadoAntes_[2]===staffPin) return;
   renderTodoPreservandoScroll_();
+}
+
+// Muestra/oculta lo que depende del rol: insignia 👑/🍑 y botones de Staff. Antes solo se mostraban DESPUÉS de que
+// terminaba la petición de red; ahora se aplican apenas se sabe el rol (credenciales guardadas → caché → respuesta real).
+function aplicarUIRol_(nivelUI){
+  const esStaff = nivelUI==="staff", esMiembro = nivelUI==="miembro";
+  const bS = document.getElementById("staffStatusBadge"), bM = document.getElementById("memberStatusBadge");
+  const dS = esStaff ? "flex" : "none", dM = esMiembro ? "flex" : "none";
+  if(bS.style.display !== dS) bS.style.display = dS;
+  if(bM.style.display !== dM) bM.style.display = dM;
+  ["addActBtn","assignImagesBtn","importEntregasBtn"].forEach(id=>document.getElementById(id).classList.toggle("hidden", !esStaff));
+  actualizarVisibilidadBackToTop();
+}
+// Rol "optimista" a partir de lo guardado en este dispositivo (solo para mostrar la UI al instante; el servidor confirma después).
+function rolGuardadoOptimista_(){
+  if(sessionToken) return "staff";
+  if(memberPin) return "miembro";
+  return "publico";
 }
 
 // Los enlaces públicos (Regalito, Anuario público) llegan en CADA carga de datos (enlacesPublicos,
@@ -5582,6 +5625,73 @@ function switchTab(tab){
 document.getElementById("hamburgerBtn").onclick=()=>{ document.getElementById("drawer").classList.add("open"); document.getElementById("drawerOverlay").style.display="block"; };
 document.getElementById("drawerOverlay").onclick=closeDrawer;
 function closeDrawer(){ document.getElementById("drawer").classList.remove("open"); document.getElementById("drawerOverlay").style.display="none"; }
+
+/* ---------- Gesto: deslizar hacia la derecha abre el sidebar; hacia la izquierda lo cierra (sigue al dedo) ---------- */
+(function(){
+  const drawer = document.getElementById("drawer"), overlay = document.getElementById("drawerOverlay");
+  const ZONA_INICIO = 0.45;   // el gesto de abrir debe empezar en el 45% izquierdo de la pantalla (no solo en el borde: ahí Android usa su gesto de "atrás")
+  const UMBRAL = 10;          // px de movimiento para decidir si es horizontal o vertical
+  let modo = null, x0 = 0, y0 = 0, t0 = 0, dx = 0, ancho = 280, decidido = false, arrastrando = false;
+
+  // ¿El toque empezó sobre algo que ya usa el gesto horizontal? (tablas con scroll lateral, globo 3D, inputs, ventanas abiertas…)
+  function bloqueado(el){
+    if(!el || !el.closest) return false;
+    if(el.closest("canvas,input,textarea,select,[contenteditable='true'],.no-swipe")) return true;
+    for(let n = el; n && n !== document.body; n = n.parentElement){
+      if(n.scrollWidth > n.clientWidth + 1){
+        const ox = getComputedStyle(n).overflowX;
+        if(ox === "auto" || ox === "scroll") return true;
+      }
+    }
+    return false;
+  }
+  function reiniciar(){
+    modo = null; decidido = false; arrastrando = false;
+    drawer.style.transition = ""; drawer.style.transform = ""; overlay.style.opacity = "";
+  }
+  document.addEventListener("touchstart", e=>{
+    if(e.touches.length !== 1){ reiniciar(); return; }
+    const t = e.touches[0];
+    x0 = t.clientX; y0 = t.clientY; t0 = e.timeStamp; dx = 0; decidido = false; arrastrando = false;
+    if(drawer.classList.contains("open")){ modo = "cerrar"; return; }
+    if(x0 > window.innerWidth * ZONA_INICIO || document.querySelector(".modal-overlay.open, #loadingOverlay.show") || bloqueado(e.target)){ modo = null; return; }
+    modo = "abrir";
+  }, {passive:true});
+
+  document.addEventListener("touchmove", e=>{
+    if(!modo) return;
+    const t = e.touches[0];
+    dx = t.clientX - x0;
+    const dy = t.clientY - y0;
+    if(!decidido){
+      if(Math.abs(dx) < UMBRAL && Math.abs(dy) < UMBRAL) return;
+      decidido = true;
+      const buenaDireccion = Math.abs(dx) > Math.abs(dy) * 1.4 && ((modo === "abrir" && dx > 0) || (modo === "cerrar" && dx < 0));
+      if(!buenaDireccion){ modo = null; return; } // era scroll vertical u otro gesto: no se toca nada
+      arrastrando = true;
+      ancho = drawer.offsetWidth || 280;
+      drawer.style.transition = "none";
+      if(modo === "abrir"){ overlay.style.display = "block"; overlay.style.opacity = "0"; }
+    }
+    if(!arrastrando) return;
+    const avance = modo === "abrir" ? Math.min(Math.max(dx, 0), ancho) : ancho + Math.min(Math.max(dx, -ancho), 0);
+    drawer.style.transform = "translateX(" + (avance - ancho) + "px)";
+    overlay.style.opacity = String(avance / ancho);
+  }, {passive:true});
+
+  function terminar(e, cancelado){
+    if(!modo || !arrastrando){ reiniciar(); return; }
+    const rapido = Math.abs(dx) / Math.max(1, e.timeStamp - t0) > 0.5;   // deslizó rápido (px/ms) aunque sea corto
+    const pasoMitad = Math.abs(dx) > ancho * 0.35;
+    const confirmar = !cancelado && (pasoMitad || rapido);
+    const abrir = modo === "abrir" ? confirmar : !confirmar;
+    reiniciar(); // quita los estilos en línea: la clase decide el estado final y la transición CSS anima desde donde quedó el dedo
+    if(abrir){ drawer.classList.add("open"); overlay.style.display = "block"; }
+    else closeDrawer();
+  }
+  document.addEventListener("touchend", e=>terminar(e, false), {passive:true});
+  document.addEventListener("touchcancel", e=>terminar(e, true), {passive:true});
+})();
 function abrirStaffHub(){
   if(!staffPin){ toast("Activa el modo Staff primero"); return; }
   closeDrawer();
@@ -5778,7 +5888,7 @@ async function manejarRespuestaGoogle(response){
     document.getElementById("importEntregasBtn").classList.remove("hidden");
     switchTab("actividades");
     await cargarDatos(); // vuelve a pedir los datos, ahora con el token, para traer todo completo
-    await cargarEnlacesStaff(); // recién ahora, con la sesión ya validada, se piden los enlaces privados
+    await cargarEnlacesStaff(true); // recién ahora, con la sesión ya validada, se piden los enlaces privados (en silencio, sin tapar la vista)
   } else {
     document.getElementById("googleLoginMsg").textContent = r.error || "No se pudo iniciar sesión.";
   }
@@ -5847,7 +5957,8 @@ function resaltarIndicacion(descripcionEscapada){
 // desde "AccesoAutorizado", el propio doGet ya contesta nivel:"publico" y cargarDatos() limpia
 // el estado local sola (ver ahí). No hace falta un segundo viaje de red para confirmar nada.
 (async function restaurarSesion(){
-  await restaurarCacheDesdeIDB_(); // si localStorage fue vaciado, recupera los datos desde IndexedDB
+  // 1) ROL PRIMERO (síncrono, sin red ni IndexedDB): se leen las credenciales guardadas y la insignia/botones del rol
+  //    aparecen al instante. El servidor lo confirma (o lo corrige) cuando llega la respuesta real.
   const tokenGuardado = localStorage.getItem("tph_session_token");
   const rolGuardado = localStorage.getItem("tph_session_rol");
   if (tokenGuardado && rolGuardado==="staff") {
@@ -5855,6 +5966,9 @@ function resaltarIndicacion(descripcionEscapada){
     staffPin = tokenGuardado;
   }
   restaurarMemberClave_();
+  aplicarUIRol_(rolGuardadoOptimista_());
+  // Si localStorage fue vaciado, recupera los datos desde IndexedDB (solo hace trabajo en ese caso).
+  await restaurarCacheDesdeIDB_();
   // Enlace de acceso (ver tomarClaveDeEnlace_): si la URL trae #k=..., se valida y se guarda la clave
   // ANTES de la carga inicial, así la persona entra ya como Miembro sin ver ninguna pantalla de clave.
   // Si ya tenía guardada esa misma clave no se hace nada extra (no hay segundo viaje al servidor), y si
@@ -5866,17 +5980,13 @@ function resaltarIndicacion(descripcionEscapada){
     entroPorEnlace = !!r.ok; // si salió bien, activarModoMiembro ya hizo la carga completa de datos
     if (!r.ok) toast("⚠️ El enlace de acceso no funcionó: " + (r.error || "clave inválida") + " Pide a Staff el enlace actualizado.");
   }
+  // 2) VISTA: caché al instante + datos frescos (el rol real queda aplicado por aplicarDatosCargados_).
   if (!entroPorEnlace) await cargarDatos();
+  aplicarUIRol_(nivel);
+  // 3) ENLACES AL FINAL, en segundo plano y sin pantalla de carga encima de la vista.
   if (nivel === "staff") {
-    document.getElementById("staffStatusBadge").style.display = "flex";
-    actualizarVisibilidadBackToTop();
-    document.getElementById("addActBtn").classList.remove("hidden");
-    document.getElementById("assignImagesBtn").classList.remove("hidden");
-    document.getElementById("importEntregasBtn").classList.remove("hidden");
-    await cargarEnlacesStaff();
-  } else if (nivel === "miembro") {
-    document.getElementById("memberStatusBadge").style.display = "flex";
-  } else {
+    programarEnlacesStaff_();
+  } else if (nivel === "publico") {
     // nivel==="publico": nadie tiene sesión de Staff ni clave de Miembro activa -- probablemente
     // porque nunca se enteraron de que existe el Modo Miembro. Aviso pequeño, ver más arriba.
     openModal("avisoMiembroModal");
