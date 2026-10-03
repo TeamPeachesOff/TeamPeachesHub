@@ -709,6 +709,21 @@
   .import-match-no{color:var(--red,#e74c3c);font-weight:700;}
   .import-grupo-select{width:100%;padding:9px 10px;border-radius:10px;background:var(--card-bg);color:var(--text);border:1px solid rgba(255,255,255,0.12);font-size:13px;}
 
+  /* ---------- Importar entregas pegando una tabla tipo Excel (modo staff) ---------- */
+  #importPegarModal .modal-box{overflow-x:hidden;}
+  .paste-ayuda{font-size:12.5px;color:var(--text-dim);margin:0 0 12px;line-height:1.45;}
+  table.paste-table{width:100%;table-layout:fixed;border-collapse:collapse;}
+  table.paste-table th{text-align:left;vertical-align:bottom;padding:4px 4px 8px;font-size:12px;line-height:1.25;color:var(--peach-2);font-weight:800;white-space:normal;overflow-wrap:break-word;word-break:normal;}
+  table.paste-table th small{display:block;font-weight:600;font-size:10.5px;color:var(--text-dim);margin-top:2px;}
+  table.paste-table td{padding:3px;vertical-align:top;}
+  table.paste-table th:nth-child(1),table.paste-table td:nth-child(1){width:34%;}
+  table.paste-table th:nth-child(2),table.paste-table td:nth-child(2){width:44%;}
+  table.paste-table th:nth-child(3),table.paste-table td:nth-child(3){width:22%;}
+  .paste-cell{display:block;width:100%;box-sizing:border-box;min-height:38px;padding:8px;border-radius:9px;border:1px solid rgba(255,255,255,0.12);background:var(--card-bg-2);color:var(--text);font-family:inherit;font-size:13px;line-height:1.3;resize:none;overflow:hidden;white-space:pre-wrap;overflow-wrap:anywhere;word-break:break-word;}
+  input.paste-cell{text-overflow:ellipsis;white-space:nowrap;overflow:hidden;height:38px;}
+  .paste-cell:focus{outline:none;border-color:var(--peach-1);}
+  .paste-count{font-size:12px;color:var(--text-dim);margin-top:10px;}
+
   /* ---------- Botón flotante "subir" (por tramos: header de año en año) ---------- */
   /* Mismo diseño que los badges flotantes (#staffStatusBadge / #memberStatusBadge) y el botón de instalar:
      38px, círculo, rgba(239,8,112,0.35), misma sombra, esquina a 14px. Igual que "Instalar app" con el badge
@@ -1152,6 +1167,29 @@
     <div class="modal-actions" style="display:flex;gap:8px;margin-top:14px;">
       <button type="button" class="btn-small" id="importCancelarBtn" style="background:var(--card-bg-2);color:var(--text);flex:1;">Cancelar</button>
       <button type="button" class="btn-small btn-update" id="importConfirmarBtn" style="flex:1;">✅ Importar entregas</button>
+    </div>
+  </div>
+</div>
+
+<!-- Importar Entregas pegando desde Excel (modo staff): tabla de 3 columnas que crece sola.
+     Se puede pegar un bloque copiado de Excel y se reparte celda por celda. -->
+<div class="modal-overlay" id="importPegarModal" style="z-index:280;">
+  <div class="modal-box modal-box-wide"><button class="modal-close" data-close="importPegarModal">✕</button>
+    <h3>📥 Importar Entregas</h3>
+    <p class="paste-ayuda">Copiá las celdas en Excel (<b>3 columnas, en este orden</b>) y pegalas en la primera celda. Se rellenan todas las filas solas. También podés escribir a mano: al llenar la última fila aparece otra.</p>
+    <input type="hidden" id="importPegarAct">
+    <table class="paste-table" id="importPegarTabla">
+      <thead><tr>
+        <th>1 · Nombre de usuario</th>
+        <th>2 · Detalle de entrega<small>Canción / escena</small></th>
+        <th>3 · Link de grabación</th>
+      </tr></thead>
+      <tbody id="importPegarBody"></tbody>
+    </table>
+    <div class="paste-count" id="importPegarContador"></div>
+    <div class="modal-actions" style="display:flex;gap:8px;margin-top:14px;">
+      <button type="button" class="btn-small" id="importPegarLimpiar" style="background:var(--card-bg-2);color:var(--text);flex:1;">🧹 Limpiar</button>
+      <button type="button" class="btn-small btn-update" id="importPegarConfirmar" style="flex:2;">✅ Importar entregas</button>
     </div>
   </div>
 </div>
@@ -3020,11 +3058,7 @@ async function probarRecordatorio(idActividad){
   const r=await apiPost({action:"testRecordatorio", idActividad},"Enviando aviso de prueba...");
   if(r.ok) toast("Mensaje de prueba enviado a Discord 🔔"); else toast("Error: "+(r.error||""));
 }
-async function importarEntregas(idActividad){
-  if(!await confirmarAccion("¿Importar todas las entregas de la hoja 'Importar' a esta actividad? Se vaciará esa hoja después.")) return;
-  const r=await apiPost({action:"importarEntregas", idActividad},"Importando entregas...");
-  if(r.ok){ toast(`Se importaron ${r.count} entregas ✅`); await cargarDatos(); } else toast("Error: "+(r.error||""));
-}
+function importarEntregas(idActividad){ abrirPegarEntregas(idActividad); }
 function toggleModoBorrarEntregas(actId,on){
   const tabla=document.getElementById("tabla-"+actId), toolbar=document.getElementById("borrar-toolbar-"+actId);
   if(tabla) tabla.querySelectorAll(".js-check-entrega").forEach(c=>{ c.classList.toggle("hidden",!on); if(!on) c.checked=false; });
@@ -5496,6 +5530,133 @@ document.getElementById("importConfirmarBtn").onclick=async()=>{
   importEnCurso_=false; btn.disabled=false;
   toast(`Importación lista: ${hechos} entrega(s) creada(s)${errores?`, ${errores} con error ⚠️`:" ✅"}`);
   closeModal("importRevisionModal");
+  await cargarDatos();
+};
+
+/* ---------- Importar entregas pegando una tabla tipo Excel (modo staff) ----------
+   Tabla de 3 columnas (usuario / detalle / link). Siempre queda una fila vacía al final: cuando
+   se escribe en ella se agrega otra. Al pegar un bloque copiado de Excel (texto con tabuladores y
+   saltos de línea, con comillas cuando una celda tiene varias líneas) se reparte celda por celda
+   desde la celda donde se pegó, creando las filas que hagan falta. Cada fila con datos crea una
+   entrega con la misma acción addEntrega del form normal. No requiere cambios en el .gs. */
+function pegarParsearTSV_(texto){
+  const filas=[]; let fila=[], cel="", enComillas=false, i=0;
+  texto=texto.replace(/\r\n?/g,"\n");
+  while(i<texto.length){
+    const ch=texto[i];
+    if(enComillas){
+      if(ch==='"'){ if(texto[i+1]==='"'){ cel+='"'; i+=2; continue; } enComillas=false; i++; continue; }
+      cel+=ch; i++; continue;
+    }
+    if(ch==='"' && cel===""){ enComillas=true; i++; continue; }
+    if(ch==="\t"){ fila.push(cel); cel=""; i++; continue; }
+    if(ch==="\n"){ fila.push(cel); filas.push(fila); fila=[]; cel=""; i++; continue; }
+    cel+=ch; i++;
+  }
+  if(cel!=="" || fila.length){ fila.push(cel); filas.push(fila); }
+  return filas;
+}
+function pegarAutoAjustar_(el){
+  if(el.tagName!=="TEXTAREA") return;
+  el.style.height="auto"; el.style.height=Math.max(38,el.scrollHeight+2)+"px";
+}
+function pegarFilaVacia_(tr){ return [...tr.querySelectorAll(".paste-cell")].every(c=>!c.value.trim()); }
+function pegarAgregarFila_(vals){
+  const tr=document.createElement("tr");
+  tr.innerHTML=`<td><textarea class="paste-cell" rows="1" data-col="0" autocomplete="off"></textarea></td>
+    <td><textarea class="paste-cell" rows="1" data-col="1" autocomplete="off"></textarea></td>
+    <td><input class="paste-cell" type="text" data-col="2" autocomplete="off"></td>`;
+  const cells=tr.querySelectorAll(".paste-cell");
+  if(vals) vals.forEach((v,i)=>{ if(cells[i]) cells[i].value=v||""; });
+  cells.forEach(c=>{
+    c.addEventListener("input",()=>{ pegarAutoAjustar_(c); pegarMantenerFilaVacia_(); });
+    c.addEventListener("paste",pegarManejarPaste_);
+    c.addEventListener("blur",()=>setTimeout(pegarMantenerFilaVacia_,0));
+  });
+  document.getElementById("importPegarBody").appendChild(tr);
+  return tr;
+}
+function pegarTitulo_(c){ if(c.tagName==="INPUT") c.title=c.value; }
+function pegarMantenerFilaVacia_(){
+  const body=document.getElementById("importPegarBody");
+  let filas=[...body.querySelectorAll("tr")];
+  if(!filas.length || !pegarFilaVacia_(filas[filas.length-1])) pegarAgregarFila_();
+  // si sobran filas vacías al final (y no tienen el foco) se quitan, dejando una sola
+  filas=[...body.querySelectorAll("tr")];
+  while(filas.length>1 && pegarFilaVacia_(filas[filas.length-1]) && pegarFilaVacia_(filas[filas.length-2]) && !filas[filas.length-1].contains(document.activeElement)){
+    filas.pop().remove();
+  }
+  body.querySelectorAll("input.paste-cell").forEach(pegarTitulo_);
+  const n=[...body.querySelectorAll("tr")].filter(tr=>!pegarFilaVacia_(tr)).length;
+  document.getElementById("importPegarContador").textContent=n?`${n} fila(s) con datos listas para importar`:"Todavía no hay datos.";
+}
+function pegarManejarPaste_(e){
+  const texto=(e.clipboardData||window.clipboardData).getData("text");
+  if(!texto || !/[\t\n\r]/.test(texto)) return; // texto simple de una sola celda: pegado normal
+  e.preventDefault();
+  const body=document.getElementById("importPegarBody");
+  const tr0=e.target.closest("tr");
+  let filaIdx=[...body.querySelectorAll("tr")].indexOf(tr0);
+  const colIni=Number(e.target.dataset.col);
+  let grid=pegarParsearTSV_(texto);
+  // Excel termina el bloque con un salto de línea: no debe crear una fila vacía extra
+  while(grid.length && grid[grid.length-1].every(c=>c==="")) grid.pop();
+  grid.forEach((cols,r)=>{
+    let filas=[...body.querySelectorAll("tr")];
+    while(filas.length<=filaIdx+r){ pegarAgregarFila_(); filas=[...body.querySelectorAll("tr")]; }
+    const cells=filas[filaIdx+r].querySelectorAll(".paste-cell");
+    cols.forEach((v,c)=>{ const dest=cells[colIni+c]; if(dest) dest.value=v.replace(/^\s+|\s+$/g,""); });
+  });
+  body.querySelectorAll(".paste-cell").forEach(pegarAutoAjustar_);
+  pegarMantenerFilaVacia_();
+}
+function pegarReiniciar_(){
+  document.getElementById("importPegarBody").innerHTML="";
+  pegarAgregarFila_(); pegarMantenerFilaVacia_();
+}
+function abrirPegarEntregas(idActividad){
+  document.getElementById("importPegarAct").value=idActividad;
+  pegarReiniciar_();
+  openModal("importPegarModal");
+  const first=document.querySelector("#importPegarBody .paste-cell"); if(first) first.focus();
+}
+window.addEventListener("resize",()=>document.querySelectorAll("#importPegarBody textarea.paste-cell").forEach(pegarAutoAjustar_));
+document.getElementById("importPegarLimpiar").onclick=async()=>{
+  if([...document.querySelectorAll("#importPegarBody tr")].every(pegarFilaVacia_)) return;
+  if(await confirmarAccion("¿Vaciar toda la tabla?")) pegarReiniciar_();
+};
+document.getElementById("importPegarConfirmar").onclick=async()=>{
+  const idActividad=document.getElementById("importPegarAct").value;
+  const actividad=DB.actividades.find(a=>String(a.id)===String(idActividad));
+  const filas=[...document.querySelectorAll("#importPegarBody tr")].filter(tr=>!pegarFilaVacia_(tr)).map(tr=>{
+    const c=tr.querySelectorAll(".paste-cell");
+    return {tr, usuario:c[0].value.trim(), detalle:c[1].value.trim(), enlace:c[2].value.trim()};
+  });
+  if(!filas.length){ toast("No hay datos para importar"); return; }
+  const sinNombre=filas.find(f=>!f.usuario);
+  if(sinNombre){ toast("Hay filas sin nombre de usuario ⚠️"); sinNombre.tr.querySelector(".paste-cell").focus(); return; }
+  if(!await confirmarAccion(`Se van a crear ${filas.length} entrega(s) en esta actividad. ¿Continuar?`)) return;
+  const btn=document.getElementById("importPegarConfirmar"); btn.disabled=true;
+  let hechos=0, errores=0;
+  try{
+    for(let idx=0; idx<filas.length; idx++){
+      const f=filas[idx];
+      const data={
+        id:"ENT-"+Date.now()+"-"+(idx+1),
+        idActividad:idActividad,
+        tituloActividad:actividad?(actividad.titulo||""):"",
+        categoria:actividad?(actividad.categoria||""):"",
+        nombreUsuario:f.usuario, detalleEntrega:f.detalle, linkGrabacion:f.enlace,
+      };
+      try{
+        const r=await apiPost({action:"addEntrega", data}, `Importando ${idx+1} de ${filas.length}...`);
+        if(r && r.ok){ hechos++; f.tr.remove(); } else errores++;
+      }catch(err){ errores++; }
+    }
+  } finally { btn.disabled=false; }
+  toast(`Importación lista: ${hechos} entrega(s) creada(s)${errores?`, ${errores} con error ⚠️ (quedaron en la tabla)`:" ✅"}`);
+  pegarMantenerFilaVacia_();
+  if(!errores) closeModal("importPegarModal");
   await cargarDatos();
 };
 
