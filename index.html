@@ -364,6 +364,7 @@
   table.entregas-table a{color:var(--peach-1);text-decoration:underline;}
   table.entregas-table a.play-btn, a.play-btn{text-decoration:none;}
   table.entregas-table .col-enlace{text-align:center;}
+  .persona-link{color:inherit;font:inherit;text-decoration:none;cursor:pointer;}
   .anuario-mini-btn{background:rgba(255,215,0,0.18);color:var(--gold);padding:5px 8px;border-radius:8px;font-size:11px;font-weight:700;white-space:nowrap;}
   .entregas-toolbar{display:flex;gap:8px;margin-top:10px;flex-wrap:wrap;}
 
@@ -1087,9 +1088,13 @@
     <h3>Registrar entrega</h3>
     <form id="entregaForm" autocomplete="off">
       <input autocomplete="off" type="hidden" id="en_idActividad">
-      <div class="form-group"><label>Nombre(s)</label><input autocomplete="off" type="text" id="en_nombre" placeholder="Si es grupal, poné a todos juntos (ej: Ana, Luis y Karla)" required></div>
+      <div class="form-group"><label>Nombre(s)</label><input autocomplete="off" type="text" id="en_nombre" placeholder="Si es grupal, poné a todos juntos (ej: Ana, Luis y Karla). Puedes dejarlo vacío si eliges miembros abajo."></div>
       <div class="form-group"><label>Canción / Escena</label><input autocomplete="off" type="text" id="en_detalle" required></div>
       <div class="form-group"><label>Enlace</label><input autocomplete="off" type="text" id="en_link"></div>
+      <div class="form-group"><label>Asignar a miembros (opcional)</label>
+        <input autocomplete="off" type="text" class="chip-search" id="en_buscar" placeholder="🔍 Buscar miembro...">
+        <div class="chip-grid" id="en_chipGrid" style="max-height:26vh;"></div>
+      </div>
       <div class="modal-actions"><button type="submit" class="btn-primary">Guardar</button></div>
     </form>
   </div>
@@ -1225,12 +1230,23 @@
   </div>
 </div>
 
+<div class="modal-overlay" id="asignarActividadModal">
+  <div class="modal-box modal-box-wide"><button class="modal-close" data-close="asignarActividadModal">✕</button>
+    <h3>👤 Asignar entregas</h3>
+    <div id="aa_titulo" style="font-size:13px;color:var(--text-dim);margin-bottom:10px;"></div>
+    <div class="pasar-lista-toolbar">
+      <button type="button" class="btn-small btn-update" id="aa_autoBtn" style="flex:1;">⚡ Asignar automáticamente las de esta actividad</button>
+    </div>
+    <div id="aa_msg" style="font-size:12px;color:var(--text-dim);margin-bottom:10px;"></div>
+    <div id="aa_body"></div>
+  </div>
+</div>
 <div class="modal-overlay" id="entregaEditModal">
   <div class="modal-box modal-box-wide"><button class="modal-close" data-close="entregaEditModal">✕</button>
     <h3>✏️ Editar entrega</h3>
     <div id="ee_info" style="font-size:12.5px;color:var(--text-dim);margin-bottom:10px;"></div>
     <input type="hidden" id="ee_id">
-    <div class="form-group"><label>Nombre(s) tal como se muestra</label><input autocomplete="off" type="text" id="ee_nombre"></div>
+    <div class="form-group"><label>Texto del nombre (si hay personas asignadas, se muestran sus perfiles)</label><input autocomplete="off" type="text" id="ee_nombre"></div>
     <div class="form-group"><label>Canción / Escena</label><input autocomplete="off" type="text" id="ee_detalle"></div>
     <div class="form-group"><label>Enlace</label><input autocomplete="off" type="text" id="ee_link"></div>
     <div class="form-group"><label>Personas asignadas (toca para agregar o quitar)</label>
@@ -2611,6 +2627,7 @@ function palabrasPorCategoria_(a, entregasDeActividad) {
   };
   (entregasDeActividad || []).forEach(e => {
     categorias.entrega.push(...partirEnPalabras(e.nombreUsuario));
+    miembrosDeEntrega_(e).forEach(m=>categorias.entrega.push(...partirEnPalabras(m.nombre)));
     categorias.entrega.push(...partirEnPalabras(e.detalleEntrega));
   });
   [a.fechaInicio, a.fechaFin].forEach(valor => {
@@ -3005,7 +3022,7 @@ function cardHTML(a, entregasDeEsta){
           <tr><th></th><th>Persona</th><th>Canción/Escena</th><th class="col-enlace">Enlace</th>${staffPin?"<th></th>":""}</tr>
           ${entregasDeEsta.map(e=>`<tr data-entrega-row="${e.id}">
             <td><input autocomplete="off" type="checkbox" class="js-check-entrega hidden" data-id="${e.id}" data-act="${a.id}"></td>
-            <td>${escHtml(e.nombreUsuario||"")}</td>
+            <td>${personaEntregaHTML_(e)}</td>
             <td>${escHtml(e.detalleEntrega||"")}</td>
             <td class="col-enlace">${e.linkGrabacion?`<a class="play-btn" href="${escAttr(e.linkGrabacion)}" target="_blank" title="Escuchar" aria-label="Escuchar">▷</a>`:""}</td>
             ${staffPin?`<td style="white-space:nowrap;"><div style="display:flex;gap:4px;flex-wrap:wrap;"><button class="anuario-mini-btn" data-anuario-entrega="${a.id}" data-titulo="${escAttr(a.titulo||"")}" data-nombre="${escAttr(e.nombreUsuario||"")}" data-detalle="${escAttr(e.detalleEntrega||"")}" data-link="${escAttr(e.linkGrabacion||"")}">👑</button><button class="anuario-mini-btn" data-edit-entrega="${e.id}" title="Editar entrega" style="background:rgba(164,95,199,0.25);color:#d9b6f5;">✏️</button></div></td>`:""}
@@ -3015,6 +3032,7 @@ function cardHTML(a, entregasDeEsta){
         <div class="entregas-toolbar">
           <button class="btn-small btn-admin" data-add-entrega="${a.id}">(+) Registrar Entrega</button>
           <button class="btn-small btn-family" data-import-entregas="${a.id}">📥 Importar Entregas</button>
+          ${entregasDeEsta.length?`<button class="btn-small btn-admin" data-asignar-entregas="${a.id}">👤 Asignar Entregas</button>`:""}
           ${entregasDeEsta.length?`<button class="btn-small btn-danger" data-toggle-borrar="${a.id}">🗑️ Eliminar</button>`:""}
         </div>
         <div class="entregas-toolbar hidden" id="borrar-toolbar-${a.id}">
@@ -3055,6 +3073,11 @@ function attachCardEvents(){
   document.querySelectorAll("[data-add-entrega]").forEach(btn=>btn.onclick=()=>openEntregaForm(btn.dataset.addEntrega));
   document.querySelectorAll("[data-import-entregas]").forEach(btn=>btn.onclick=()=>importarEntregas(btn.dataset.importEntregas));
   document.querySelectorAll("[data-anuario-entrega]").forEach(btn=>btn.onclick=()=>abrirModalAnuario(btn.dataset.anuarioEntrega,btn.dataset.titulo,btn.dataset.nombre,btn.dataset.detalle,btn.dataset.link));
+  document.querySelectorAll("[data-asignar-entregas]").forEach(btn=>btn.onclick=()=>abrirAsignarActividad_(btn.dataset.asignarEntregas));
+  document.querySelectorAll("[data-open-member]").forEach(el=>{
+    el.onclick=()=>openMemberModal(el.dataset.openMember);
+    el.onkeydown=ev=>{ if(ev.key==="Enter"||ev.key===" "){ ev.preventDefault(); openMemberModal(el.dataset.openMember); } };
+  });
   document.querySelectorAll("[data-edit-entrega]").forEach(btn=>btn.onclick=()=>abrirEditarEntrega(btn.dataset.editEntrega));
   document.querySelectorAll("[data-toggle-borrar]").forEach(btn=>btn.onclick=()=>toggleModoBorrarEntregas(btn.dataset.toggleBorrar,true));
   document.querySelectorAll("[data-cancel-borrar]").forEach(btn=>btn.onclick=()=>toggleModoBorrarEntregas(btn.dataset.cancelBorrar,false));
@@ -3337,6 +3360,20 @@ async function borrarCastigos(idMiembro){ if(!await confirmarAccion("¿Poner fal
    idMiembro, categoria y fecha (ver aviso en Code.gs) — si no existen, esto simplemente no
    encuentra nada que mostrar/asignar, sin romper el resto de la app. */
 function idsDeEntrega_(e){ return String((e&&e.idMiembro)||"").split(",").map(s=>s.trim()).filter(Boolean); }
+// Miembros asignados a una entrega (solo los que existen y tienen nombre).
+function miembrosDeEntrega_(e){
+  return idsDeEntrega_(e).map(id=>(DB.miembros||[]).find(m=>String(m.id)===String(id))).filter(m=>m&&m.nombre);
+}
+// Celda "Persona": si la entrega ya tiene miembros asignados, se muestra su nombre (en vez del
+// texto crudo que se escribió al registrar) y cada nombre abre su perfil. Se ve igual que texto
+// normal (sin subrayado ni cambio de color), solo el cursor indica que se puede tocar.
+// El texto original NO se borra de la hoja: lo sigue usando "Asignar automáticamente" y se puede
+// ver/editar con ✏️; solo cambia lo que se muestra. Sin asignación, se muestra el texto tal cual.
+function personaEntregaHTML_(e){
+  const ms=miembrosDeEntrega_(e);
+  if(!ms.length) return escHtml(e.nombreUsuario||"");
+  return ms.map(m=>`<span class="persona-link" role="link" tabindex="0" data-open-member="${escAttr(m.id)}">${escHtml(m.nombre)}</span>`).join(", ");
+}
 
 // Sección "🎶 Entregas" del perfil de un miembro: separadas por categoría, más reciente primero,
 // con link para escuchar sin tener que ir a buscarlas entre todas las entregas de todas las
@@ -3628,9 +3665,60 @@ document.getElementById("asignarGuardarBtn").onclick=async()=>{
 };
 async function guardarAsignacionEntrega_(idEntrega, ids){
   const r=await apiPost({action:"asignarEntregas", asignaciones:[{id:idEntrega, idMiembro: ids.join(",")}]}, "Guardando asignación...");
-  if(r.ok){ toast(ids.length?"Asignado ✅":"Marcada como sin asignar"); closeModal("asignarMiembrosModal"); await cargarDatos(); renderPasarLista(); }
+  if(r.ok){ toast(ids.length?"Asignado ✅":"Marcada como sin asignar"); closeModal("asignarMiembrosModal"); await cargarDatos(); renderPasarLista();
+    if(document.getElementById("asignarActividadModal").classList.contains("open")) renderAsignarActividad_(); }
   else toast("Error: "+(r.error||""));
 }
+
+/* ---------- 👤 Asignar entregas desde la tarjeta de la actividad (Staff) ---------- */
+let asignarActividadActual_ = null;
+function abrirAsignarActividad_(idActividad){
+  asignarActividadActual_ = String(idActividad);
+  document.getElementById("aa_msg").textContent = "";
+  renderAsignarActividad_();
+  openModal("asignarActividadModal");
+}
+function renderAsignarActividad_(){
+  if(!asignarActividadActual_) return;
+  const a = DB.actividades.find(x=>String(x.id)===asignarActividadActual_);
+  const entregas = DB.entregas.filter(e=>String(e.idActividad)===asignarActividadActual_);
+  const sinAsignar = entregas.filter(e=>!idsDeEntrega_(e).length).length;
+  document.getElementById("aa_titulo").innerHTML = `<strong>${escHtml(a?(a.titulo||""):"")}</strong> · ${entregas.length} entrega(s) · ${sinAsignar} sin asignar`;
+  const cont = document.getElementById("aa_body");
+  if(!entregas.length){ cont.innerHTML = `<div class="empty-state">Esta actividad no tiene entregas.</div>`; return; }
+  cont.innerHTML = entregas.map(e=>{
+    const nombres = miembrosDeEntrega_(e).map(m=>m.nombre);
+    return `<div class="pl-entrega-row">
+      <div class="pl-entrega-info">
+        <div class="pl-entrega-nombre">${escHtml(e.nombreUsuario||"")}</div>
+        <div class="pl-entrega-detalle">${escHtml(e.detalleEntrega||"")}</div>
+        <div class="pl-entrega-asignados">${nombres.length?("✅ "+nombres.map(escHtml).join(", ")):"⚠️ Sin asignar"}</div>
+      </div>
+      <div class="pl-entrega-btns">
+        ${e.linkGrabacion?`<button type="button" class="btn-small btn-family" data-aa-abrir="${escAttr(e.linkGrabacion)}">🔗 Abrir</button>`:""}
+        <button type="button" class="btn-small btn-admin" data-aa-asignar="${e.id}">👤 Asignar</button>
+      </div>
+    </div>`;
+  }).join("");
+  cont.querySelectorAll("[data-aa-abrir]").forEach(btn=>btn.onclick=()=>window.open(btn.dataset.aaAbrir,"_blank","noopener"));
+  cont.querySelectorAll("[data-aa-asignar]").forEach(btn=>btn.onclick=()=>abrirAsignarMiembros(btn.dataset.aaAsignar));
+}
+document.getElementById("aa_autoBtn").onclick = async ()=>{
+  const sinAsignar = DB.entregas.filter(e=>String(e.idActividad)===asignarActividadActual_ && !idsDeEntrega_(e).length);
+  if(!sinAsignar.length){ toast("No hay entregas sin asignar 🎉"); return; }
+  const asignaciones=[]; let sinDetectar=0;
+  sinAsignar.forEach(e=>{
+    const ids=detectarMiembrosEnTexto_(e.nombreUsuario, 0.75);
+    if(ids.length) asignaciones.push({id:e.id, idMiembro:ids.join(",")}); else sinDetectar++;
+  });
+  if(!asignaciones.length){ toast("No se pudo detectar a nadie automáticamente 😕 Asígnalas a mano con \"👤 Asignar\"."); return; }
+  const r = await apiPost({action:"asignarEntregas", asignaciones}, "Asignando automáticamente...");
+  if(r.ok){
+    toast(`✅ ${asignaciones.length} asignada(s), ${sinDetectar} sin detectar.`);
+    document.getElementById("aa_msg").textContent = `Última corrida: ${asignaciones.length} asignadas, ${sinDetectar} sin detectar (asígnalas a mano).`;
+    await cargarDatos(); renderAsignarActividad_(); renderPasarLista();
+  } else toast("Error: "+(r.error||""));
+};
 
 /* ---------- ✏️ Editar entrega individual (Staff) ---------- */
 let editEntregaSel_ = new Set();
@@ -5752,22 +5840,56 @@ document.getElementById("importPegarConfirmar").onclick=async()=>{
 function openEntregaForm(idActividad){
   document.getElementById("en_idActividad").value=idActividad;
   document.getElementById("en_nombre").value=""; document.getElementById("en_detalle").value=""; document.getElementById("en_link").value="";
+  document.getElementById("en_buscar").value="";
+  entregaFormSel_ = new Set();
+  renderEntregaFormChips_("");
   openModal("entregaFormModal");
 }
+let entregaFormSel_ = new Set();
+function renderEntregaFormChips_(filtro){
+  const f = normalizarTexto_(filtro||"");
+  const grid = document.getElementById("en_chipGrid");
+  const lista = (DB.miembros||[]).filter(m=>m.nombre)
+    .filter(m=>!f || normalizarTexto_(m.nombre).includes(f) || normalizarTexto_(m.usuarioSmule).includes(f))
+    .slice().sort((a,b)=>(a.nombre||"").localeCompare(b.nombre||""));
+  grid.innerHTML = lista.length ? lista.map(m=>`<button type="button" class="member-chip ${entregaFormSel_.has(String(m.id))?"sel":""}" data-en-chip="${m.id}">
+    <img src="${escAttr(m.avatarUrl||LOGO_DEFAULT)}" onerror="this.onerror=null;this.src='${LOGO_DEFAULT}';">${escHtml(m.nombre||"")}
+  </button>`).join("") : `<div style="color:var(--text-dim);font-size:13px;">Sin resultados.</div>`;
+  grid.querySelectorAll("[data-en-chip]").forEach(chip=>chip.onclick=()=>{
+    const id = String(chip.dataset.enChip);
+    if(entregaFormSel_.has(id)) entregaFormSel_.delete(id); else entregaFormSel_.add(id);
+    chip.classList.toggle("sel");
+  });
+}
+document.getElementById("en_buscar").addEventListener("input", debounce(function(){ renderEntregaFormChips_(this.value); }, 150));
 document.getElementById("entregaForm").addEventListener("submit", async(e)=>{
   e.preventDefault();
-  const btn=e.target.querySelector('button[type="submit"]'); btn.disabled=true;
+  const btn=e.target.querySelector('button[type="submit"]');
+  const idsSel=[...entregaFormSel_];
+  let nombreTxt=document.getElementById("en_nombre").value.trim();
+  if(!nombreTxt && idsSel.length){
+    nombreTxt = idsSel.map(id=>{ const m=(DB.miembros||[]).find(x=>String(x.id)===id); return m?m.nombre:""; }).filter(Boolean).join(", ");
+  }
+  if(!nombreTxt){ toast("Escribe un nombre o elige al menos un miembro"); return; }
+  btn.disabled=true;
   const idActividad=document.getElementById("en_idActividad").value;
   const actividad=DB.actividades.find(a=>String(a.id)===String(idActividad));
   const data={ id:"ENT-"+Date.now(), idActividad:idActividad, tituloActividad:actividad?(actividad.titulo||""):"",
     categoria:actividad?(actividad.categoria||""):"",
-    nombreUsuario:document.getElementById("en_nombre").value, detalleEntrega:document.getElementById("en_detalle").value,
+    nombreUsuario:nombreTxt, detalleEntrega:document.getElementById("en_detalle").value,
     linkGrabacion:document.getElementById("en_link").value };
   // try/finally: si apiPost lanza (red caída, timeout), el botón igual se reactiva y se avisa con
   // un toast, en vez de quedar bloqueado para siempre sin ningún feedback (bug reportado).
   try{
     const r=await apiPost({action:"addEntrega", data},"Registrando entrega...");
-    if(r.ok){ toast("Entrega registrada ✅"); closeModal("entregaFormModal"); await cargarDatos(); } else toast("Error: "+(r.error||""));
+    if(r.ok){
+      let msg="Entrega registrada ✅";
+      if(idsSel.length){
+        const ra=await apiPost({action:"asignarEntregas", asignaciones:[{id:data.id, idMiembro:idsSel.join(",")}]}, "Asignando...");
+        msg = ra.ok ? "Entrega registrada y asignada ✅" : "Entrega registrada, pero no se pudo asignar: "+(ra.error||"");
+      }
+      toast(msg); closeModal("entregaFormModal"); await cargarDatos();
+    } else toast("Error: "+(r.error||""));
   }catch(err){
     toast("Error inesperado al guardar: "+(err.message||err));
   }finally{
