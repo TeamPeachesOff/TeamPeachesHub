@@ -365,6 +365,11 @@
   table.entregas-table a.play-btn, a.play-btn{text-decoration:none;}
   table.entregas-table .col-enlace{text-align:center;}
   .persona-link{color:inherit;font:inherit;text-decoration:none;cursor:pointer;}
+  /* Celda Persona: si la lista de nombres no cabe en una línea, se reparte parejo en 2+ líneas
+     (ej. 8 y 7) en vez de llenar la primera y dejar una cola corta. Cada nombre va en un bloque
+     que no se parte, así el salto siempre cae justo después de una coma. */
+  table.entregas-table td.td-persona{text-wrap:balance;}
+  .persona-nw{white-space:nowrap;}
   .anuario-mini-btn{background:rgba(255,215,0,0.18);color:var(--gold);padding:5px 8px;border-radius:8px;font-size:11px;font-weight:700;white-space:nowrap;}
   .entregas-toolbar{display:flex;gap:8px;margin-top:10px;flex-wrap:wrap;}
 
@@ -538,6 +543,12 @@
   #staffStatusBadge{display:none;position:fixed;bottom:14px;right:14px;width:38px;height:38px;background:rgba(239,8,112,0.35);color:#fff;border-radius:50%;font-size:18px;z-index:60;box-shadow:0 4px 14px rgba(0,0,0,0.4);cursor:pointer;align-items:center;justify-content:center;}
   /* Discreto a propósito: modo Miembro es solo lectura, no necesita tanta prominencia como Staff.
      Es solo el emoji, sin texto, para que pase desapercibido. */
+  /* Badge "Sin registro" (modo sin contar estadísticas). Mismo diseño que los demás badges; va
+     ENCIMA del de Miembro (sube con ".elevado" cuando ese badge está visible, igual que el botón de
+     instalar) y, si no hay badge de Miembro, baja a la esquina. */
+  #noTrackBadge{display:none;position:fixed;bottom:14px;left:14px;width:38px;height:38px;background:rgba(239,8,112,0.35);color:#fff;border-radius:50%;font-size:18px;z-index:60;box-shadow:0 4px 14px rgba(0,0,0,0.4);cursor:pointer;align-items:center;justify-content:center;transition:bottom .4s ease;-webkit-user-select:none;user-select:none;-webkit-touch-callout:none;-webkit-tap-highlight-color:transparent;touch-action:manipulation;}
+  #noTrackBadge.elevado{bottom:60px;}
+  .logo{-webkit-user-select:none;user-select:none;-webkit-touch-callout:none;-webkit-tap-highlight-color:transparent;touch-action:manipulation;cursor:default;}
   #memberStatusBadge{display:none;position:fixed;bottom:14px;left:14px;width:38px;height:38px;background:rgba(239,8,112,0.35);color:#fff;border-radius:50%;font-size:18px;z-index:60;box-shadow:0 4px 14px rgba(0,0,0,0.4);cursor:pointer;align-items:center;justify-content:center;}
 
   /* z-index 260: tiene que quedar POR ENCIMA de #viewMundo (250) — antes estaba en 200, por debajo,
@@ -890,6 +901,7 @@
 </main>
 
 <div id="staffStatusBadge" title="Modo Staff activo">👑</div>
+<div id="noTrackBadge" title="Sin registro: tus visitas y clics no se cuentan en las estadísticas (toca para volver a contar)">👻</div>
 <div id="memberStatusBadge" title="Modo Miembro (solo lectura)" style="-webkit-user-select:none;user-select:none;-webkit-touch-callout:none;touch-action:manipulation;">🍑</div>
 <div class="toast" id="toast"></div>
 <button type="button" id="backToTopBtn" class="back-to-top-btn hidden" aria-label="Subir"><span>▲</span></button>
@@ -1845,6 +1857,7 @@ async function apiGet(silencioso){
     const params=[];
     if(sessionToken) params.push("token="+encodeURIComponent(sessionToken));
     if(memberPin) params.push("clave="+encodeURIComponent(memberPin));
+    if(noTrack) params.push("notrack=1");
     let url=APPS_SCRIPT_URL+(params.length?("?"+params.join("&")):"");
     const res = await fetchConReintento_(url);
     try{
@@ -1895,7 +1908,7 @@ async function apiPost(payload, msg, silencioso){
     const controller = new AbortController();
     const timer = setTimeout(()=>controller.abort(), 35000);
     let res;
-    try{ res = await fetch(APPS_SCRIPT_URL,{method:"POST",headers:{"Content-Type":"text/plain;charset=utf-8"},body:JSON.stringify(payload),signal:controller.signal}); }
+    try{ res = await fetch(APPS_SCRIPT_URL,{method:"POST",headers:{"Content-Type":"text/plain;charset=utf-8"},body:JSON.stringify(noTrack?Object.assign({},payload,{notrack:true}):payload),signal:controller.signal}); }
     finally{ clearTimeout(timer); }
     try{
       return await res.json();
@@ -1935,7 +1948,64 @@ function programarEnlacesStaff_(){
 // números y haciendo imposible saber qué usa de verdad el resto del equipo. Ahora se manda el
 // token igual que en apiPost, así el backend (ver esStaff en doPost, Code.gs) manda estos clics
 // a AnalyticsStaff cuando corresponde y JAMÁS a la analítica anónima si es Staff.
+// ---------- Modo "sin registro": este dispositivo deja de contar en las estadísticas ----------
+// Se activa/desactiva tocando 5 veces seguidas el logo "🍑 Peaches Hub" (o abriendo la página con
+// ?notrack=1 / ?notrack=0). Se guarda en localStorage y en una cookie de respaldo (igual que la
+// clave de Miembro), así sobrevive aunque el navegador limpie uno de los dos. Mientras esté activo:
+// no se manda trackUI (clics y botones) y las peticiones al servidor llevan notrack=1 para que
+// tampoco cuente la visita (ver doGet/doPost en Code.gs).
+let noTrack = false;
+(function initNoTrack_(){
+  try{
+    const q = new URLSearchParams(location.search).get("notrack");
+    if(q==="1"||q==="0"){
+      noTrack = q==="1";
+      try{ localStorage.setItem("tph_notrack", noTrack?"1":"0"); }catch(e){}
+      setCookieLarga_("tph_notrack", noTrack?"1":"0", 730);
+      setTimeout(()=>{ try{ toast(noTrack?"Sin registro activado 👻 (este dispositivo ya no cuenta)":"Estadísticas activadas de nuevo 📊"); }catch(e){} }, 700);
+    }else{
+      let v=null;
+      try{ v=localStorage.getItem("tph_notrack"); }catch(e){}
+      if(v===null) v=leerCookie_("tph_notrack");
+      noTrack = v==="1";
+    }
+  }catch(e){ /* nunca debe romper la carga */ }
+})();
+function actualizarBadgeNoTrack_(){
+  const b=document.getElementById("noTrackBadge"); if(!b) return;
+  b.style.display = noTrack ? "flex" : "none";
+  const m=document.getElementById("memberStatusBadge");
+  const miembroVisible = !!m && getComputedStyle(m).display!=="none";
+  b.classList.toggle("elevado", miembroVisible);
+}
+function setNoTrack_(valor, avisar){
+  noTrack = !!valor;
+  try{ localStorage.setItem("tph_notrack", noTrack?"1":"0"); }catch(e){}
+  setCookieLarga_("tph_notrack", noTrack?"1":"0", 730);
+  actualizarBadgeNoTrack_();
+  if(avisar) toast(noTrack?"Sin registro activado 👻 (este dispositivo ya no cuenta)":"Estadísticas activadas de nuevo 📊");
+}
+(function engancharNoTrack_(){
+  // 5 toques seguidos al logo (cada toque a menos de 700 ms del anterior) para que no se active por accidente.
+  const logo=document.querySelector("header .logo"); if(!logo) return;
+  let toques=0, ultimo=0;
+  logo.addEventListener("click", ()=>{
+    const ahora=Date.now();
+    toques = (ahora-ultimo<=700) ? toques+1 : 1;
+    ultimo=ahora;
+    if(toques>=5){ toques=0; setNoTrack_(!noTrack, true); }
+  });
+  const badge=document.getElementById("noTrackBadge");
+  if(badge) badge.onclick=async()=>{
+    if(await confirmarAccion("¿Volver a contar tus visitas y clics en las estadísticas?")) setNoTrack_(false, true);
+  };
+  // Si el badge de Miembro aparece/desaparece (login/logout), el de "sin registro" baja/sube al instante.
+  const m=document.getElementById("memberStatusBadge");
+  if(m) new MutationObserver(actualizarBadgeNoTrack_).observe(m,{attributes:true,attributeFilter:["style","class"]});
+  actualizarBadgeNoTrack_();
+})();
 function trackUI(clave){
+  if(noTrack) return; // modo "sin registro": no se manda nada
   try{
     fetch(APPS_SCRIPT_URL,{method:"POST",headers:{"Content-Type":"text/plain;charset=utf-8"},body:JSON.stringify({action:"trackUI", clave, token:sessionToken||""})}).catch(()=>{});
   }catch(e){ /* nunca debe romper el click que la disparó */ }
@@ -3022,7 +3092,7 @@ function cardHTML(a, entregasDeEsta){
           <tr><th></th><th>Persona</th><th>Canción/Escena</th><th class="col-enlace">Enlace</th>${staffPin?"<th></th>":""}</tr>
           ${entregasDeEsta.map(e=>`<tr data-entrega-row="${e.id}">
             <td><input autocomplete="off" type="checkbox" class="js-check-entrega hidden" data-id="${e.id}" data-act="${a.id}"></td>
-            <td>${personaEntregaHTML_(e)}</td>
+            <td class="td-persona">${personaEntregaHTML_(e)}</td>
             <td>${escHtml(e.detalleEntrega||"")}</td>
             <td class="col-enlace">${e.linkGrabacion?`<a class="play-btn" href="${escAttr(e.linkGrabacion)}" target="_blank" title="Escuchar" aria-label="Escuchar">▷</a>`:""}</td>
             ${staffPin?`<td style="white-space:nowrap;"><div style="display:flex;gap:4px;flex-wrap:wrap;"><button class="anuario-mini-btn" data-anuario-entrega="${a.id}" data-titulo="${escAttr(a.titulo||"")}" data-nombre="${escAttr(e.nombreUsuario||"")}" data-detalle="${escAttr(e.detalleEntrega||"")}" data-link="${escAttr(e.linkGrabacion||"")}">👑</button><button class="anuario-mini-btn" data-edit-entrega="${e.id}" title="Editar entrega" style="background:rgba(164,95,199,0.25);color:#d9b6f5;">✏️</button></div></td>`:""}
@@ -3310,13 +3380,13 @@ function openMemberModal(id){
       ${(m.generacionNum!==undefined && m.generacionNum!==null && m.generacionNum!=="")?`<tr><td>🌱 Generación</td><td>${fmtGeneracion(m.generacionNum)}</td></tr>`:""}
     </table>
     <div class="platform-row">
-      ${m.usuarioSmule?`<a class="platform-btn" target="_blank" onclick="trackUI('irASmule')" href="${escAttr(toSmuleUrl(m.usuarioSmule))}">
+      ${m.usuarioSmule?`<a class="platform-btn" target="_blank" data-track="irASmule" data-dbl-copy="${escAttr(m.usuarioSmule)}" data-dbl-msg="Usuario de Smule copiado" title="Clic: abrir Smule · Doble clic: copiar usuario" href="${escAttr(toSmuleUrl(m.usuarioSmule))}">
         <img src="https://raw.githubusercontent.com/TeamPeachesOff/TeamPeachesHub/main/Logos/SmuleLogo.png" onerror="this.onerror=null;this.src='https://blog.smule.com/wp-content/uploads/smule-icon.png';"><span>Smule</span></a>`:""}
       ${m.usuarioBandlab?`<a class="platform-btn" target="_blank" onclick="trackUI('irABandlab')" href="${escAttr(toBandlabUrl(m.usuarioBandlab))}">
         <img src="https://raw.githubusercontent.com/TeamPeachesOff/TeamPeachesHub/main/Logos/BandLabLogo.png" onerror="this.onerror=null;this.src='https://onbukei.com/wp-content/uploads/2021/10/bandlab-music-making-studio.png';"><span>BandLab</span></a>`:""}
       ${m.usuarioDiscord?`<button class="platform-btn" data-copy-discord="${escAttr(m.usuarioDiscord)}">
         <img src="https://raw.githubusercontent.com/TeamPeachesOff/TeamPeachesHub/main/Logos/DiscordLogo.webp" onerror="this.onerror=null;this.src='https://freelogopng.com/images/all_img/1691730767discord-logo-transparent.png';"><span>Copiar Discord</span></button>`:""}
-      ${m.telefono?`<a class="platform-btn" target="_blank" onclick="trackUI('irAWhatsapp')" href="https://wa.me/${escAttr(limpiarTelefono(m.telefono))}">
+      ${m.telefono?`<a class="platform-btn" target="_blank" data-track="irAWhatsapp" data-dbl-copy="${escAttr(String(m.telefono).trim())}" data-dbl-msg="Número de WhatsApp copiado" title="Clic: abrir WhatsApp · Doble clic: copiar número" href="https://wa.me/${escAttr(limpiarTelefono(m.telefono))}">
         <img src="https://raw.githubusercontent.com/TeamPeachesOff/TeamPeachesHub/main/Logos/WhatsAppLogo.png" onerror="this.onerror=null;this.src='https://upload.wikimedia.org/wikipedia/commons/5/5e/WhatsApp_icon.png';"><span>WhatsApp</span></a>`:""}
     </div>
     <div class="castigos-box">
@@ -3329,6 +3399,26 @@ function openMemberModal(id){
     </div>
     ${entregasDelMiembroHTML_(m.id)}`;
   openModal("memberModal"); bindAvatarFallbacks();
+  // Smule / WhatsApp: un clic abre el enlace (con una pausita para distinguirlo del doble clic);
+  // doble clic NO abre nada, solo copia el usuario / número.
+  document.querySelectorAll("#memberModalContent [data-dbl-copy]").forEach(a=>{
+    let t=null;
+    a.onclick=ev=>{
+      ev.preventDefault();
+      if(t) return; // segundo clic de un doble clic: lo resuelve ondblclick
+      t=setTimeout(()=>{
+        t=null;
+        if(a.dataset.track) trackUI(a.dataset.track);
+        if(!window.open(a.href,"_blank","noopener")) location.href=a.href;
+      }, 280);
+    };
+    a.ondblclick=ev=>{
+      ev.preventDefault();
+      clearTimeout(t); t=null;
+      const msg=a.dataset.dblMsg||"Copiado";
+      navigator.clipboard.writeText(a.dataset.dblCopy).then(()=>toast(msg+" ✅")).catch(()=>toast("No se pudo copiar, hazlo manualmente"));
+    };
+  });
   const copyBtn=document.querySelector("[data-copy-discord]"); if(copyBtn) copyBtn.onclick=()=>{navigator.clipboard.writeText(copyBtn.dataset.copyDiscord); toast("Discord copiado ✅"); trackUI("copiarDiscord");};
   const faltaBtn=document.querySelector("[data-falta]"); if(faltaBtn) faltaBtn.onclick=()=>registrarFalta(m.id);
   const strikeBtn=document.querySelector("[data-strike]"); if(strikeBtn) strikeBtn.onclick=()=>registrarStrike(m.id);
@@ -3371,8 +3461,15 @@ function miembrosDeEntrega_(e){
 // ver/editar con ✏️; solo cambia lo que se muestra. Sin asignación, se muestra el texto tal cual.
 function personaEntregaHTML_(e){
   const ms=miembrosDeEntrega_(e);
-  if(!ms.length) return escHtml(e.nombreUsuario||"");
-  return ms.map(m=>`<span class="persona-link" role="link" tabindex="0" data-open-member="${escAttr(m.id)}">${escHtml(m.nombre)}</span>`).join(", ");
+  if(ms.length){
+    return ms.map((m,i)=>`<span class="persona-nw"><span class="persona-link" role="link" tabindex="0" data-open-member="${escAttr(m.id)}">${escHtml(m.nombre)}</span>${i<ms.length-1?",":""}</span>`).join(" ");
+  }
+  // Sin asignar: se parte el texto por comas; cada pedazo (con su coma pegada) no se corta por dentro.
+  // Si no hay comas, o algún pedazo es larguísimo, se deja el texto normal para que nunca desborde.
+  const txt=String(e.nombreUsuario||"");
+  const partes=txt.split(",").map(x=>x.trim()).filter(Boolean);
+  if(partes.length<2 || partes.some(x=>x.length>40)) return escHtml(txt);
+  return partes.map((x,i)=>`<span class="persona-nw">${escHtml(x)}${i<partes.length-1?",":""}</span>`).join(" ");
 }
 
 // Sección "🎶 Entregas" del perfil de un miembro: separadas por categoría, más reciente primero,
@@ -6428,6 +6525,8 @@ function resaltarIndicacion(descripcionEscapada){
   #btnInstalarApp{display:none;position:fixed;left:14px;bottom:14px;z-index:61;height:38px;min-width:38px;padding:0;margin:0;border:none;border-radius:999px;background:rgba(239,8,112,0.35);color:#fff;font-weight:700;font-size:13.5px;box-shadow:0 4px 14px rgba(0,0,0,.4);cursor:pointer;align-items:center;justify-content:flex-start;overflow:hidden;white-space:nowrap;transition:bottom .4s ease;}
   /* Cuando el badge de miembro ya existe (abajo a la izquierda), el botón sube para quedar encima de él */
   #btnInstalarApp.sobre-badge{bottom:60px;}
+  #btnInstalarApp.sobre-notrack{bottom:60px;}
+  #btnInstalarApp.sobre-badge.sobre-notrack{bottom:106px;}
   #btnInstalarApp .ia-emoji{width:38px;height:38px;display:flex;align-items:center;justify-content:center;font-size:18px;line-height:1;flex:0 0 38px;padding:0;}
   #btnInstalarApp .ia-txt{line-height:38px;max-width:0;opacity:0;transition:max-width .6s ease,opacity .5s ease,padding .6s ease;padding-right:0;}
   #btnInstalarApp.con-texto .ia-txt{max-width:120px;opacity:1;padding-right:14px;}
@@ -6584,11 +6683,15 @@ function resaltarIndicacion(descripcionEscapada){
 
   // Mientras el badge de miembro no exista (tarda en cargar), el botón va pegado abajo; cuando aparece, sube.
   const badgeMiembro = document.getElementById("memberStatusBadge");
+  const badgeNoTrack = document.getElementById("noTrackBadge");
   function acomodarBoton(){
     const visible = !!badgeMiembro && getComputedStyle(badgeMiembro).display !== "none";
+    const visibleNT = !!badgeNoTrack && getComputedStyle(badgeNoTrack).display !== "none";
     btn.classList.toggle("sobre-badge", visible);
+    btn.classList.toggle("sobre-notrack", visibleNT);
   }
   if (badgeMiembro) new MutationObserver(acomodarBoton).observe(badgeMiembro, {attributes:true, attributeFilter:["style","class"]});
+  if (badgeNoTrack) new MutationObserver(acomodarBoton).observe(badgeNoTrack, {attributes:true, attributeFilter:["style","class"]});
   acomodarBoton();
 
   window.addEventListener("beforeinstallprompt", e=>{
