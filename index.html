@@ -711,6 +711,7 @@
 
   /* ---------- Importar entregas pegando una tabla tipo Excel (modo staff) ---------- */
   #importPegarModal .modal-box{overflow-x:hidden;}
+  #importPegarModal .modal-box.modal-box-wide{max-width:min(1100px,96vw);}
   .paste-ayuda{font-size:12.5px;color:var(--text-dim);margin:0 0 12px;line-height:1.45;}
   table.paste-table{width:100%;table-layout:fixed;border-collapse:collapse;}
   table.paste-table th{text-align:left;vertical-align:bottom;padding:4px 4px 8px;font-size:12px;line-height:1.25;color:var(--peach-2);font-weight:800;white-space:normal;overflow-wrap:break-word;word-break:normal;}
@@ -1988,7 +1989,7 @@ const ANALITICA_LABELS = {
   fetchSmulePhoto:"📸 Foto de Smule obtenida", actualizarTodasLasFotos:"🔄 Fotos actualizadas (lote)",
   testRecordatorio:"🔔 Prueba de Recordatorio", testCumpleanos:"🎂 Prueba de Cumpleaños", testSeguridad:"🔒 Prueba de Seguridad",
   addQueja:"📮 Buzón: queja/recomendación enviada", addReporte:"🐞 Reporte de error enviado",
-  obtenerEnlacesStaff:"🔗 Enlaces de Staff consultados", guardarEnlacesStaff:"⚙️ Enlaces de Staff guardados",
+  obtenerEnlacesStaff:"🔗 Enlaces de Staff consultados", obtenerClaveMiembro:"🍑 Clave de Miembro entregada a Staff", guardarEnlacesStaff:"⚙️ Enlaces de Staff guardados",
   agregarPeriodo:"🏆 Periodo de Chambeadores agregado", eliminarPeriodo:"🗑️ Periodo de Chambeadores borrado"
 };
 // Agrupa cada acción bajo una categoría, solo para que la tabla de analítica se lea más rápido.
@@ -2012,7 +2013,7 @@ const ANALITICA_CATEGORIA_DE = {
   uploadImage:"Multimedia", uploadScript:"Multimedia", uploadAdjunto:"Multimedia", fetchSmulePhoto:"Multimedia", actualizarTodasLasFotos:"Multimedia",
   addQueja:"Buzón y reportes", addReporte:"Buzón y reportes",
   testRecordatorio:"Pruebas del sistema", testCumpleanos:"Pruebas del sistema", testSeguridad:"Pruebas del sistema",
-  obtenerEnlacesStaff:"Enlaces de Staff", guardarEnlacesStaff:"Enlaces de Staff",
+  obtenerEnlacesStaff:"Enlaces de Staff", obtenerClaveMiembro:"Enlaces de Staff", guardarEnlacesStaff:"Enlaces de Staff",
   agregarPeriodo:"Actividades y entregas", eliminarPeriodo:"Actividades y entregas"
 };
 async function abrirAnalitica(){
@@ -2436,7 +2437,7 @@ function aplicarDatosCargados_(datos, esCache, sinRepintar){
 function aplicarUIRol_(nivelUI){
   const esStaff = nivelUI==="staff", esMiembro = nivelUI==="miembro";
   const bS = document.getElementById("staffStatusBadge"), bM = document.getElementById("memberStatusBadge");
-  const dS = esStaff ? "flex" : "none", dM = esMiembro ? "flex" : "none";
+  const dS = esStaff ? "flex" : "none", dM = (esMiembro || esStaff) ? "flex" : "none"; // Staff incluye Miembro
   if(bS.style.display !== dS) bS.style.display = dS;
   if(bM.style.display !== dM) bM.style.display = dM;
   ["addActBtn","assignImagesBtn","importEntregasBtn"].forEach(id=>document.getElementById(id).classList.toggle("hidden", !esStaff));
@@ -5630,7 +5631,8 @@ document.getElementById("importPegarConfirmar").onclick=async()=>{
   const actividad=DB.actividades.find(a=>String(a.id)===String(idActividad));
   const filas=[...document.querySelectorAll("#importPegarBody tr")].filter(tr=>!pegarFilaVacia_(tr)).map(tr=>{
     const c=tr.querySelectorAll(".paste-cell");
-    return {tr, usuario:c[0].value.trim(), detalle:c[1].value.trim(), enlace:c[2].value.trim()};
+    // se quitan todos los "@" del nombre de usuario, sin tocar nada más
+    return {tr, usuario:c[0].value.replace(/@/g,"").trim(), detalle:c[1].value.trim(), enlace:c[2].value.trim()};
   });
   if(!filas.length){ toast("No hay datos para importar"); return; }
   const sinNombre=filas.find(f=>!f.usuario);
@@ -6043,6 +6045,7 @@ async function manejarRespuestaGoogle(response){
     document.getElementById("googleLoginMsg").textContent = "";
     toast("Modo Staff activado 🛠️");
     document.getElementById("staffStatusBadge").style.display="flex";
+    document.getElementById("memberStatusBadge").style.display="flex"; // Staff incluye Miembro
     actualizarVisibilidadBackToTop();
     document.getElementById("addActBtn").classList.remove("hidden");
     document.getElementById("assignImagesBtn").classList.remove("hidden");
@@ -6050,37 +6053,51 @@ async function manejarRespuestaGoogle(response){
     switchTab("actividades");
     await cargarDatos(); // vuelve a pedir los datos, ahora con el token, para traer todo completo
     await cargarEnlacesStaff(true); // recién ahora, con la sesión ya validada, se piden los enlaces privados (en silencio, sin tapar la vista)
+    asegurarClaveMiembroDeStaff_();
   } else {
     document.getElementById("googleLoginMsg").textContent = r.error || "No se pudo iniciar sesión.";
   }
 }
-async function cerrarSesionActual(mensaje){
-  const tokenViejo = sessionToken;
-  sessionToken = null; staffPin = null;
-  localStorage.removeItem("tph_session_token"); localStorage.removeItem("tph_session_rol");
-  limpiarMemberClave_("logout manual (cerrarSesionActual)");
+// Staff y Miembro conviven: salir de uno NO cierra el otro.
+//  - "staff": cierra solo la sesión de Staff; la clave de Miembro (si hay) se conserva y se sigue como Miembro.
+//  - "miembro": quita solo la clave de Miembro (solo se llega acá si no hay Staff activo).
+// Pedir la clave de Miembro a Staff requiere la acción "obtenerClaveMiembro" en el backend (ver asegurarClaveMiembroDeStaff_).
+async function asegurarClaveMiembroDeStaff_(){
+  if(memberPin || !sessionToken) return;
+  try{
+    const r = await apiPost({action:"obtenerClaveMiembro"}, null, true);
+    if(r && r.ok && r.clave) setMemberClave_(r.clave);
+    else console.info("[TPH][clave] El servidor no entregó la clave de Miembro a Staff (¿falta la acción obtenerClaveMiembro en Code.gs?).");
+  }catch(e){ console.info("[TPH][clave] No se pudo pedir la clave de Miembro:", e); }
+}
+async function cerrarSesionActual(mensaje, cual){
+  cual = cual || "staff";
+  const tokenViejo = cual==="staff" ? sessionToken : null;
+  if(cual==="staff"){
+    sessionToken = null; staffPin = null;
+    localStorage.removeItem("tph_session_token"); localStorage.removeItem("tph_session_rol");
+    enlacesStaff = null; // se borran de memoria: sin sesión activa, no deben quedar accesibles ni un momento más
+    document.getElementById("staffStatusBadge").style.display="none";
+    ["addActBtn","assignImagesBtn","importEntregasBtn","memberToolsRow1","memberToolsRow2","memberToolsRow3","memberToolsRow4"].forEach(id=>document.getElementById(id).classList.add("hidden"));
+    // Sin clave de Miembro guardada no queda ningún rol: se oculta también esa insignia.
+    if(!memberPin) document.getElementById("memberStatusBadge").style.display="none";
+    if (window.google && google.accounts && google.accounts.id) google.accounts.id.disableAutoSelect();
+  }else{
+    limpiarMemberClave_("logout manual (modo miembro)");
+    document.getElementById("memberStatusBadge").style.display="none";
+  }
   borrarCacheDatos(); // logout explícito: no dejar teléfonos/links privados cacheados en el navegador
-  enlacesStaff = null; // se borran de memoria: sin sesión activa, no deben quedar accesibles ni un momento más
-  document.getElementById("staffStatusBadge").style.display="none";
-  document.getElementById("memberStatusBadge").style.display="none";
   actualizarVisibilidadBackToTop();
-  document.getElementById("addActBtn").classList.add("hidden");
-  document.getElementById("assignImagesBtn").classList.add("hidden");
-  document.getElementById("importEntregasBtn").classList.add("hidden");
-  document.getElementById("memberToolsRow1").classList.add("hidden");
-  document.getElementById("memberToolsRow2").classList.add("hidden");
-  document.getElementById("memberToolsRow3").classList.add("hidden");
-  document.getElementById("memberToolsRow4").classList.add("hidden");
-  if (window.google && google.accounts && google.accounts.id) google.accounts.id.disableAutoSelect();
   if (tokenViejo) apiPost({action:"logout", token:tokenViejo}).catch(()=>{}); // fire-and-forget: invalida la sesión en el servidor
   toast(mensaje);
-  cargarDatos(); // vuelve a pedir los datos sin sesión, así el servidor manda la versión pública
+  cargarDatos(); // vuelve a pedir los datos con lo que quede (Miembro o público)
 }
 document.getElementById("staffStatusBadge").onclick=async()=>{
-  if(await confirmarAccion("¿Deseas salir del modo staff?")) cerrarSesionActual("Saliste del modo staff");
+  if(await confirmarAccion("¿Deseas salir del modo staff?")) cerrarSesionActual(memberPin?"Saliste del modo staff (sigues como miembro)":"Saliste del modo staff","staff");
 };
 document.getElementById("memberStatusBadge").onclick=async()=>{
-  if(await confirmarAccion("¿Deseas salir del modo miembro?")) cerrarSesionActual("Saliste del modo miembro");
+  if(staffPin){ toast("El modo miembro viene incluido con Staff. Sal de Staff primero 🍑"); return; }
+  if(await confirmarAccion("¿Deseas salir del modo miembro?")) cerrarSesionActual("Saliste del modo miembro","miembro");
 };
 
 // Saca los hashtags (#loQueSea) que ya estén escritos dentro de la Descripción. No hay columna
@@ -6147,6 +6164,7 @@ function resaltarIndicacion(descripcionEscapada){
   // 3) ENLACES AL FINAL, en segundo plano y sin pantalla de carga encima de la vista.
   if (nivel === "staff") {
     programarEnlacesStaff_();
+    asegurarClaveMiembroDeStaff_();
   } else if (nivel === "publico") {
     // nivel==="publico": nadie tiene sesión de Staff ni clave de Miembro activa -- probablemente
     // porque nunca se enteraron de que existe el Modo Miembro. Aviso pequeño, ver más arriba.
