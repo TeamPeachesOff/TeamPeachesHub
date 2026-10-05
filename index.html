@@ -626,6 +626,29 @@
   .js-check-entrega:checked{background:linear-gradient(90deg,var(--peach-2),var(--peach-1));border-color:var(--peach-2);}
   .js-check-entrega:checked::after{content:"✓";position:absolute;inset:0;display:flex;align-items:center;justify-content:center;color:#fff;font-weight:800;}
   .regalito-btn{display:block;width:100%;margin-bottom:8px;background:linear-gradient(90deg,rgba(239,8,112,0.55),rgba(255,143,177,0.55));color:#fff;border:1px solid rgba(239,8,112,0.5);}
+  /* Módulos (carpeta modulos/): botones arriba de "Enviar regalito". Solo existen si el staff activó el módulo. */
+  #modulosBar{display:flex;flex-direction:column;gap:8px;margin-bottom:8px;}
+  #modulosBar:empty{display:none;margin:0;}
+  .modulo-btn{display:flex;align-items:center;justify-content:center;gap:8px;width:100%;padding:12px;font-size:14px;font-weight:800;color:#fff;cursor:pointer;border:1px solid rgba(255,215,0,0.55);background:linear-gradient(90deg,#EF0870,#ff8fb1);box-shadow:0 0 0 1px rgba(255,255,255,0.08) inset,0 4px 18px rgba(239,8,112,0.35);position:relative;overflow:hidden;}
+  #viewActividades .modulo-btn{padding:12px;font-size:14px;}
+  .modulo-btn::after{content:"";position:absolute;top:0;left:-60%;width:40%;height:100%;background:linear-gradient(100deg,transparent,rgba(255,255,255,0.28),transparent);transform:skewX(-20deg);animation:moduloBrillo 4.5s ease-in-out infinite;}
+  @keyframes moduloBrillo{0%,60%{left:-60%}100%{left:130%}}
+  .modulo-btn:hover{filter:brightness(1.08);}
+  .modulo-btn .mb-tag{font-size:10px;font-weight:800;letter-spacing:.06em;padding:2px 8px;border-radius:99px;background:rgba(255,215,0,0.9);color:#3a0a1f;}
+  #moduloOverlay{position:fixed;inset:0;z-index:9500;background:#180E1D;display:none;}
+  #moduloOverlay.open{display:block;}
+  #moduloOverlay iframe{width:100%;height:100%;border:0;display:block;background:#180E1D;}
+  .hub-mod{display:flex;align-items:center;gap:10px;background:var(--card-bg-2);padding:10px 12px;border-radius:12px;margin-bottom:8px;text-align:left;}
+  .hub-mod .hm-ic{font-size:22px;flex:none;}
+  .hub-mod .hm-tx{flex:1;min-width:0;}
+  .hub-mod .hm-tx b{display:block;font-size:14px;}
+  .hub-mod .hm-tx small{display:block;color:var(--text-dim);font-size:11.5px;margin-top:2px;}
+  .hub-mod .hm-sw{flex:none;width:46px;height:26px;border-radius:99px;background:rgba(255,255,255,0.16);position:relative;border:none;cursor:pointer;transition:.2s;}
+  .hub-mod .hm-sw::after{content:"";position:absolute;top:3px;left:3px;width:20px;height:20px;border-radius:50%;background:#fff;transition:.2s;}
+  .hub-mod .hm-sw.on{background:var(--peach-2,#EF0870);}
+  .hub-mod .hm-sw.on::after{left:23px;}
+  .hub-mod .hm-sw[disabled]{opacity:.5;cursor:default;}
+  .hub-mod-vacio{font-size:12.5px;color:var(--text-dim);text-align:left;padding:4px 2px 10px;}
   .custom-btn-row{background:var(--card-bg-2);border:1px solid rgba(255,255,255,0.1);border-radius:12px;padding:10px;margin-bottom:8px;}
   .custom-btn-row input{width:100%;margin-bottom:6px;}
 
@@ -801,6 +824,7 @@
 <main>
   <section id="viewActividades">
     <button id="addActBtn" class="hidden">(+) Añadir Actividad</button>
+    <div id="modulosBar"></div>
     <a class="hidden pill-toggle regalito-btn" id="regalitoBtn" target="_blank" rel="noopener" href="https://forms.gle/FgSeqD33wE1R8Y8r6">🎁 Enviar regalito</a>
     <div class="filter-pills">
       <button class="pill-toggle on" id="filterCanto">🎤 Canto</button>
@@ -2526,6 +2550,7 @@ function aplicarDatosCargados_(datos, esCache, sinRepintar){
   aplicarUIRol_((esCache && nivel==="publico") ? rolGuardadoOptimista_() : nivel);
   if (DB.googleClientId && !googleSignInInicializado) inicializarGoogleSignIn(DB.googleClientId);
   aplicarEnlacesPublicos();
+  aplicarModulos();
   aplicarVisibilidadBuzon();
   aplicarVisibilidadMundo();
   // Mismos datos que ya están pintados y mismas credenciales: no hace falta repintar (se ve idéntico).
@@ -2561,6 +2586,91 @@ function aplicarEnlacesPublicos(){
   if(regalito) btnRegalito.href = regalito;
   // Oculto para visitantes sin clave; visible para Miembro y Staff.
   btnRegalito.classList.toggle("hidden", nivel==="publico");
+}
+
+// ============ MÓDULOS (carpeta modulos/) ============
+// Cada módulo es una carpeta del repo: modulos/<id>/index.html + modulo.json ({nombre, icono, descripcion, niveles, orden}).
+// Para agregar uno basta con subir su carpeta: NO hace falta tocar este index. El staff lo prende/apaga desde
+// 🛠️ Staff > 🧩 Módulos (el estado vive en el servidor: por defecto TODOS están desactivados).
+// El módulo se abre en una ventana a pantalla completa (iframe del MISMO sitio) y lee de acá nivel/sesión.
+const MODULOS_DIR = "modulos/";
+const MODULO_ID_RE = /^[a-z0-9_-]{1,40}$/;
+const _modInfoCache = {};
+async function infoModulo_(id){
+  if(id in _modInfoCache) return _modInfoCache[id];
+  let info = null;
+  try{
+    const r = await fetch(MODULOS_DIR+id+"/modulo.json",{cache:"no-cache"});
+    if(r.ok){ const j = await r.json(); if(j && typeof j==="object") info = j; }
+  }catch(e){}
+  _modInfoCache[id] = info;
+  return info;
+}
+async function aplicarModulos(){
+  const cont = document.getElementById("modulosBar");
+  if(!cont) return;
+  const activos = Object.keys(DB.modulos||{}).filter(k=>DB.modulos[k]===true && MODULO_ID_RE.test(k));
+  if(nivel==="publico" || !activos.length){ cont.innerHTML=""; return; }
+  const infos = await Promise.all(activos.map(async id=>Object.assign({id,nombre:id,icono:"🧩",niveles:["staff","miembro"],orden:99}, await infoModulo_(id)||{})));
+  const visibles = infos.filter(m=>(m.niveles||["staff","miembro"]).includes(nivel)).sort((a,b)=>(a.orden||99)-(b.orden||99));
+  cont.innerHTML = visibles.map(m=>`<button type="button" class="pill-toggle modulo-btn" data-mod="${escAttr(m.id)}"><span>${escAttr(m.icono||"🧩")}</span><span>${escAttr(m.nombre||m.id)}</span></button>`).join("");
+  cont.querySelectorAll(".modulo-btn").forEach(b=>{ b.onclick=()=>abrirModulo(b.dataset.mod); });
+}
+let _moduloBodyOverflow = "";
+async function abrirModulo(id){
+  if(!MODULO_ID_RE.test(id)) return;
+  const info = await infoModulo_(id);
+  const archivo = (info && typeof info.archivo==="string" && /^[A-Za-z0-9_.-]{1,60}\.html$/.test(info.archivo)) ? info.archivo : "index.html";
+  let ov = document.getElementById("moduloOverlay");
+  if(!ov){ ov = document.createElement("div"); ov.id="moduloOverlay"; document.body.appendChild(ov); }
+  ov.innerHTML = `<iframe src="${MODULOS_DIR}${id}/${archivo}" title="${escAttr(id)}" allow="clipboard-write"></iframe>`;
+  ov.classList.add("open");
+  _moduloBodyOverflow = document.body.style.overflow; document.body.style.overflow = "hidden";
+  try{ history.pushState({modulo:id},""); }catch(e){}
+}
+function cerrarModulo(desdePopstate){
+  const ov = document.getElementById("moduloOverlay");
+  if(!ov || !ov.classList.contains("open")) return;
+  ov.classList.remove("open"); ov.innerHTML = "";
+  document.body.style.overflow = _moduloBodyOverflow;
+  if(desdePopstate!==true){ try{ if(history.state && history.state.modulo) history.back(); }catch(e){} }
+}
+window.addEventListener("popstate",()=>cerrarModulo(true));
+
+// Sección "🧩 Módulos" del Panel de Staff: descubre las carpetas de modulos/ en GitHub y muestra un interruptor por módulo.
+async function listarModulosRepo_(){
+  try{
+    const r = await fetch("https://api.github.com/repos/TeamPeachesOff/TeamPeachesHub/contents/modulos?ref=main",{headers:{Accept:"application/vnd.github+json"}});
+    if(r.ok){ const j = await r.json(); const ids = (Array.isArray(j)?j:[]).filter(x=>x.type==="dir" && MODULO_ID_RE.test(x.name)).map(x=>x.name); if(ids.length) return ids; }
+  }catch(e){}
+  return ["competencia"]; // respaldo si GitHub no responde
+}
+async function cargarHubModulos(){
+  const box = document.getElementById("hubModulos");
+  if(!box) return;
+  const ids = await listarModulosRepo_();
+  const infos = (await Promise.all(ids.map(async id=>{ const i = await infoModulo_(id); return i ? Object.assign({id},i) : null; }))).filter(Boolean);
+  const r = await apiPost({action:"obtenerModulos"}, null, true);
+  if(!document.getElementById("hubModulos")) return; // el panel se cerró mientras cargaba
+  if(!(r && r.ok)){ box.innerHTML = `<div class="hub-mod-vacio">⚠️ No se pudo leer el estado de los módulos (¿ya publicaste la versión nueva de Code.gs?).</div>`; return; }
+  const estado = r.modulos || {};
+  if(!infos.length){ box.innerHTML = `<div class="hub-mod-vacio">No hay módulos en la carpeta <b>modulos/</b> del repositorio.</div>`; return; }
+  box.innerHTML = infos.sort((a,b)=>(a.orden||99)-(b.orden||99)).map(m=>`<div class="hub-mod"><span class="hm-ic">${escAttr(m.icono||"🧩")}</span><div class="hm-tx"><b>${escAttr(m.nombre||m.id)}</b><small data-est="${escAttr(m.id)}">${estado[m.id]===true?"Activado · lo ven staff y miembros":"Desactivado · nadie lo ve"}${m.descripcion?" — "+escAttr(m.descripcion):""}</small></div><button type="button" class="hm-sw ${estado[m.id]===true?"on":""}" data-id="${escAttr(m.id)}" role="switch" aria-checked="${estado[m.id]===true}" aria-label="Activar ${escAttr(m.nombre||m.id)}"></button></div>`).join("");
+  box.querySelectorAll(".hm-sw").forEach(sw=>{
+    sw.onclick = async ()=>{
+      const id = sw.dataset.id, nuevo = !sw.classList.contains("on");
+      sw.disabled = true;
+      const res = await apiPost({action:"guardarModulos", modulos:{[id]:nuevo}}, null, true);
+      sw.disabled = false;
+      if(res && res.ok){
+        sw.classList.toggle("on", nuevo); sw.setAttribute("aria-checked", String(nuevo));
+        const sm = box.querySelector('small[data-est="'+id+'"]'); if(sm) sm.textContent = nuevo ? "Activado · lo ven staff y miembros" : "Desactivado · nadie lo ve";
+        DB.modulos = Object.assign({}, DB.modulos, {[id]:nuevo});
+        aplicarModulos();
+        toast(nuevo ? "Módulo activado ✅" : "Módulo desactivado");
+      } else toast("Error: "+((res&&res.error)||"no se pudo guardar"));
+    };
+  });
 }
 
 // Buzón Anónimo y Reportar Error: ocultos solo para el público sin clave. Visibles para
@@ -6208,8 +6318,11 @@ function abrirStaffHub(){
       <button class="drawer-nav-btn" id="hubIntentosFallidos" style="text-align:left;">🕵️ Ver Intentos Fallidos</button>
       <button class="btn-small btn-family" id="hubLimpiar">🧹 Limpiar nombres BD (quitar @)</button>
     </div>
+    <div class="section-label" style="text-align:left;">🧩 Módulos</div>
+    <div id="hubModulos" style="margin-bottom:12px;"><div class="hub-mod-vacio">Buscando módulos…</div></div>
     <button class="btn-small btn-admin" id="hubEnlaces" style="width:100%;">⚙️ Editar Enlaces</button>`;
   openModal("memberModal");
+  cargarHubModulos();
   document.getElementById("hubCumple").onclick=()=>probarHub("testCumpleanos","Cumpleaños");
   document.getElementById("hubSeguridad").onclick=()=>probarHub("testSeguridad","Seguridad");
   document.getElementById("hubRecordatorio").onclick=()=>{ const a=DB.actividades[0]; if(!a){toast("No hay actividad para probar");return;} probarHub("testRecordatorio","Recordatorio",a.id); };

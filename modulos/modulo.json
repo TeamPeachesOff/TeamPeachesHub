@@ -1,0 +1,12 @@
+{
+  "id": "competencia",
+  "nombre": "Competencia",
+  "icono": "🏆",
+  "descripcion": "Torneo 1 vs 1: fase suiza y llave final",
+  "niveles": [
+    "staff",
+    "miembro"
+  ],
+  "orden": 10,
+  "archivo": "competencia.html"
+}
