@@ -228,6 +228,16 @@ tr.top1 td{background:rgba(255,215,0,.16)}
 .rolebar .rl{font-size:12px;color:#f1c40f;font-weight:800;margin-right:auto}
 .emb header .logo,.emb .tabs .tab-btn:not(#tabComp){display:none}
 #bClose{background:rgba(255,255,255,.08);color:var(--text)}
+.sync{margin-left:auto}
+.sync.error,.sync.session{color:#ff4d6d}
+#champ.show.nopop{animation:none}
+#phases .grow{align-items:center}
+.helpbtn{width:38px;height:38px;border-radius:50%;border:1px solid rgba(239,8,112,.55);background:linear-gradient(135deg,rgba(239,8,112,.4),rgba(255,143,177,.2));color:#fff;font-family:inherit;font-weight:800;font-size:17px;line-height:1;display:inline-flex;align-items:center;justify-content:center;box-shadow:0 0 14px rgba(239,8,112,.28);transition:.15s;flex:none;cursor:pointer}
+.helpbtn:hover{filter:brightness(1.2);transform:scale(1.07)}
+.help h4{margin:16px 0 6px;font-size:12px;letter-spacing:.1em;text-transform:uppercase;color:var(--peach-1)}
+.help ul{margin:0;padding-left:18px;font-size:13.5px;line-height:1.55;color:var(--text-dim)}
+.help li{margin-bottom:5px}.help p{margin:0}
+.help b{color:var(--text)}.help b.g{color:var(--rosa-comp)}.help b.r{color:#ff4d6d}.help b.pk{color:var(--peach-1)}
 </style>
 </head>
 <body>
@@ -257,9 +267,9 @@ tr.top1 td{background:rgba(255,215,0,.16)}
 <div class="rrow" id="rrow"></div>
 <div class="rhead" id="rhead"></div>
 <div id="matches"></div>
-<div class="legend">Los puntos <b>verdes</b> son victorias y los <b style="color:#ff4d6d">rojos</b> derrotas. Cada ronda se <b>sortea</b> entre quienes llevan el mismo récord, sin repetir rival. Si hay número impar, alguien descansa y cuenta como victoria (máximo una vez por persona).</div>
+
 </div>
-<div id="vBr" style="display:none"><div id="bracket"></div><div class="legend" id="brLeg"></div></div>
+<div id="vBr" style="display:none"><div id="bracket"></div></div>
 </div>
 <aside class="card stand" id="stand">
 <div class="sthead"><h4>📊 Estado del torneo</h4>
@@ -278,6 +288,7 @@ tr.top1 td{background:rgba(255,215,0,.16)}
 const APPS_SCRIPT_URL="https://script.google.com/macros/s/AKfycbwcnPM10DeRLE6ReNX_AqeViRfKkHjpflT-QCw05oW_L8n5ohrDhfR_iPuzTqYNrG8H4A/exec";
 const LOGO="https://raw.githubusercontent.com/TeamPeachesOff/TeamPeachesHub/main/Logos/PeachesLogo.jpeg";
 const AV="https://c-cf.cdn.smule.com/smule-gg-uw1-z-1/account/picture/";
+const PRUEBA_ROLES=false; // true = la barra "Simular staff / miembro" se ve siempre (si no, solo con el modo pruebas: mantener "Competencia" 5 s)
 const DRAFT="tph_comp_draft_v1",LOCAL="tph_comp_local_v1",CACHE="tph_comp_cache_v1",WIN=3,MAXLEN=45000;
 const $=id=>document.getElementById(id);
 const esTrue=v=>v===true||v==="TRUE"||v==="true"||v===1;
@@ -300,24 +311,25 @@ const isStaff=()=>role()==="staff"&&realRole()==="staff";
 
 /* ================= Estado ================= */
 let P=[],S=null,rev=0,creating=false,dev=false,denied=false,loaded=false;
-let deniedMsg="acceso",backend="remote",bannerMsg="",dirty=false,saving=false,champId=undefined,membersP=null;
+let baseStr="null",polling=false,dlgOpen=false,deniedMsg="acceso",backend="remote",bannerMsg="",dirty=false,saving=false,champId=undefined,membersP=null;
 
 /* ================= Base de datos (Apps Script / Sheets) ================= */
 async function call(payload){
   if(backend==="local")return localApi(payload);
-  const c=ctx();
+  const c=ctx();let res;
   try{
-    const ctl=new AbortController(),tm=setTimeout(()=>ctl.abort(),35000);
-    let r;
-    if(payload.action==="obtenerTorneo"){ // lectura: GET (staff con token, miembro con clave)
+    const ctl=new AbortController(),tm=setTimeout(()=>ctl.abort(),30000);
+    if(payload.action==="obtenerTorneo"){
       const q=new URLSearchParams({accion:"obtenerTorneo",token:c.token||"",clave:c.clave||"",desdeRev:payload.desdeRev||0});
-      r=await fetch(APPS_SCRIPT_URL+"?"+q.toString(),{signal:ctl.signal});
-    }else{ // escritura: POST (solo staff, el servidor exige sesión)
-      r=await fetch(APPS_SCRIPT_URL,{method:"POST",headers:{"Content-Type":"text/plain;charset=utf-8"},body:JSON.stringify(Object.assign({token:c.token||"",notrack:true},payload)),signal:ctl.signal});
+      res=await fetch(APPS_SCRIPT_URL+"?"+q.toString(),{signal:ctl.signal});
+    }else{
+      res=await fetch(APPS_SCRIPT_URL,{method:"POST",headers:{"Content-Type":"text/plain;charset=utf-8"},body:JSON.stringify(Object.assign({token:c.token||"",notrack:true},payload)),signal:ctl.signal});
     }
-    clearTimeout(tm);return await r.json();
+    clearTimeout(tm);
   }catch(e){return{ok:false,network:true,error:"Sin conexión con el servidor"}}
+  try{return await res.json()}catch(e){return{ok:false,error:"El servidor respondió con un error (se reintenta)"}}
 }
+const parentPre=()=>{try{const p=window.parent!==window&&window.parent.TPH_PRE;if(p&&Date.now()-p.t<45000){window.parent.TPH_PRE=null;return p.p}}catch(e){}return null};
 function localApi(p){
   try{
     const raw=JSON.parse(localStorage.getItem(LOCAL)||'{"rev":0,"estado":null}');
@@ -332,10 +344,10 @@ function localApi(p){
   }catch(e){}
   return{ok:false,error:"acción desconocida"};
 }
-function cacheSave(d){try{localStorage.setItem(CACHE,JSON.stringify({rev,estado:ser(S),dirty:!!d}))}catch(e){}}
+function cacheSave(d){try{localStorage.setItem(CACHE,JSON.stringify({rev,base:baseStr,estado:ser(S),dirty:!!d}))}catch(e){}}
 function readCache(){try{return JSON.parse(localStorage.getItem(CACHE))}catch(e){return null}}
+const uid=()=>Date.now().toString(36)+Math.random().toString(36).slice(2,8);
 
-/* serialización: los jugadores se guardan una vez (pl) y el resto los referencia por id */
 function ser(t){
   if(!t)return "null";
   const o={...t,pl:t.pl.map(p=>({id:p.id,nombre:p.n,foto:p.img,canto:p.canto,doblaje:p.doblaje,inactivo:p.inactivo}))};
@@ -349,9 +361,13 @@ function parseT(str){
     const pl=(raw.pl||[]).map(x=>({id:x.id,n:x.nombre,img:x.foto||LOGO,canto:!!x.canto,doblaje:!!x.doblaje,inactivo:!!x.inactivo}));
     const by=Object.fromEntries(pl.map(p=>[p.id,p]));
     const s=JSON.parse(str,(k,v)=>v&&v.$p!==undefined?by[v.$p]:(v&&v.$m?new Map(v.$m):v));
-    s.pl=pl;s.view=0;s.phase="swiss";
+    s.pl=pl;s.view=0;s.phase="swiss";if(!s.id)s.id="legacy-"+(s.name||"");
     return s.rounds&&s.rounds.length?s:null;
   }catch(e){return null}
+}
+function brClean(){
+  const b=S&&S.br;if(!b)return;
+  for(let k=1;k<b.rounds.length;k++)b.rounds[k].forEach((w,j)=>{if(w&&w!==brP(k,j,0)&&w!==brP(k,j,1))b.rounds[k][j]=null});
 }
 function applyRemote(str,newRev){
   const t=parseT(str),old=S;
@@ -362,15 +378,48 @@ function applyRemote(str,newRev){
       t.phase=(old.phase==="br"&&t.br)?"br":"swiss";
     }else t.view=t.rounds.length-1;
   }
-  S=t;rev=newRev;cacheSave(false);
+  S=t;rev=newRev;baseStr=str||"null";cacheSave(false);
 }
 
-/* guardado con revisión (evita que dos staff se pisen) */
-let flushT=null;
+/* Combina (3 vias) lo que hice yo con lo que guardo otro staff. Gana lo del servidor salvo los duelos que YO cambie. */
+function mergeStates(b,l,r){
+  try{
+    if(!b||b==="null"||!l||l==="null"||!r||r==="null")return null;
+    const B=JSON.parse(b),L=JSON.parse(l),R=JSON.parse(r);
+    if(!B.id||B.id!==L.id||L.id!==R.id)return null;
+    const w=x=>x==null?null:(x.$p!==undefined?x.$p:x);
+    const O=JSON.parse(r);
+    if(L.name!==B.name)O.name=L.name;
+    (L.rounds||[]).forEach((lr,i)=>{
+      const rr=O.rounds[i];
+      if(!rr){if(i===O.rounds.length)O.rounds.push(lr);return}
+      const br=B.rounds&&B.rounds[i];
+      lr.matches.forEach((lm,j)=>{
+        const rm=rr.matches[j];
+        if(!rm||w(rm.a)!==w(lm.a)||w(rm.b)!==w(lm.b))return;
+        const bm=br&&br.matches[j];
+        if(w(lm.w)!==(bm?w(bm.w):null))rm.w=lm.w;
+      });
+    });
+    if(L.br){
+      if(!O.br)O.br=L.br;
+      else if(O.br.B===L.br.B){
+        const bb=B.br?B.br.rounds:null;
+        L.br.rounds.forEach((lr,i)=>lr.forEach((lw,j)=>{
+          const bw=bb&&bb[i]?w(bb[i][j]):null;
+          if(w(lw)!==bw)O.br.rounds[i][j]=lw;
+        }));
+      }
+    }
+    return JSON.stringify(O);
+  }catch(e){return null}
+}
+
+let flushT=null,lastChange=Date.now(),lastErr="";
 function markDirty(){
   if(realRole()!=="staff")return;
-  dirty=true;setStatus("pending");cacheSave(true);
-  clearTimeout(flushT);flushT=setTimeout(flush,500);
+  dirty=true;lastChange=Date.now();setStatus("pending");cacheSave(true);
+  clearTimeout(flushT);flushT=setTimeout(flush,400);
 }
 async function flush(){
   if(saving||!dirty)return;
@@ -379,26 +428,54 @@ async function flush(){
   saving=true;dirty=false;
   const r=await call({action:"guardarTorneo",baseRev:rev,estado});
   saving=false;
-  if(r&&r.ok){rev=r.rev;if(dirty){flush()}else{cacheSave(false);setStatus("saved")}}
-  else if(r&&r.conflict){
-    dirty=false;applyRemote(r.estado,r.rev);setStatus("saved");refresh();
-    toast("🔄 Otro staff actualizó el torneo. Se cargó la última versión.");
-  }else{
-    dirty=true;setStatus("offline");
-    if(r&&!r.network)toast("⚠️ "+(r.error||"No se pudo guardar"));
-    if(r&&/sesi[oó]n/i.test(r.error||"")){toast("🔑 Tu sesión de staff venció. Vuelve a iniciar sesión: tus cambios quedan guardados en este navegador.",5000);return}
-    clearTimeout(flushT);flushT=setTimeout(flush,r&&r.network?7000:15000);
+  if(r&&r.ok){rev=r.rev;baseStr=estado;if(dirty)flush();else{cacheSave(false);setStatus("saved")}return}
+  dirty=true;
+  if(r&&r.conflict){await resolveConflict(r);return}
+  lastErr=(r&&r.error)||"";
+  if(/sesi[oó]n/i.test(lastErr)){setStatus("session");toast("🔑 Tu sesión de staff venció. Inicia sesión de nuevo en la app: tus cambios están guardados en este navegador y se subirán solos.",6500);return}
+  if(lastErr==="Módulo desactivado"){setStatus("error");toast("🧩 El módulo fue desactivado.");return}
+  setStatus(r&&r.network?"offline":"error");
+  clearTimeout(flushT);flushT=setTimeout(flush,r&&r.network?4000:8000);
+}
+async function resolveConflict(r){
+  const local=ser(S),remote=r.estado==null?"null":r.estado;
+  const merged=mergeStates(baseStr,local,remote);
+  if(merged!==null){
+    const same=merged===JSON.stringify(JSON.parse(remote));
+    applyRemote(remote,r.rev);
+    if(!same){
+      const t=parseT(merged);
+      if(t){t.view=S?S.view:0;t.phase=S?S.phase:"swiss";S=t;brClean();dirty=true;cacheSave(true);refresh();toast("🔄 Se combinaron tus cambios con los de otro staff");flush();return}
+    }
+    dirty=false;setStatus("saved");refresh();return;
   }
+  const keep=await dlg({title:"Otro staff cambió el torneo",msg:"Mientras trabajabas, otro staff reemplazó o eliminó este torneo. ¿Qué versión quieres conservar? La base de datos guarda el historial de ambas.",ok:"Mantener la mía",no:"Cargar la suya"});
+  if(keep){rev=r.rev;baseStr=remote;dirty=true;flush()}
+  else{applyRemote(remote,r.rev);dirty=false;setStatus("saved");refresh()}
 }
+
+let pollT=null;
 async function poll(){
-  if(dirty||saving||!loaded||denied)return;
-  const r=await call({action:"obtenerTorneo",desdeRev:rev});
-  if(r&&r.error==="Módulo desactivado"){denied=true;deniedMsg="off";refresh();return}
-  if(r&&r.ok&&!r.sinCambios&&r.rev!==rev&&!dirty&&!saving){applyRemote(r.estado,r.rev);setStatus("saved");refresh()}
-  else if(r&&r.ok&&sync==="offline"&&!dirty)setStatus("saved");
+  if(dirty||saving||!loaded||denied||polling)return;
+  polling=true;
+  try{
+    const r=await call({action:"obtenerTorneo",desdeRev:rev});
+    if(r&&r.error==="Módulo desactivado"){denied=true;deniedMsg="off";refresh()}
+    else if(r&&r.error==="Sin acceso"){if(realRole()==="staff")setStatus("session");else{denied=true;refresh()}}
+    else if(r&&r.ok){
+      if(!r.sinCambios&&r.rev>rev&&!dirty&&!saving){applyRemote(r.estado,r.rev);lastChange=Date.now();refresh()}
+      if((sync==="offline"||sync==="error")&&!dirty&&!saving)setStatus("saved");
+    }else if(r&&r.network&&!dirty&&!saving)setStatus("offline");
+  }finally{polling=false}
 }
-setInterval(poll,25000);
-document.addEventListener("visibilitychange",()=>{if(!document.hidden)poll()});
+function schedulePoll(){
+  clearTimeout(pollT);
+  const idle=Date.now()-lastChange>120000;
+  pollT=setTimeout(async()=>{await poll();schedulePoll()},document.hidden?30000:(idle?15000:5000));
+}
+document.addEventListener("visibilitychange",()=>{if(!document.hidden){poll();schedulePoll()}});
+window.addEventListener("focus",()=>poll());
+window.addEventListener("online",()=>{if(dirty)flush();else poll()});
 
 /* ================= Utilidades de UI ================= */
 function setHTML(el,h){if(el._h!==h){el._h=h;el.innerHTML=h}}
@@ -422,7 +499,8 @@ function setStatus(s){
   sync=s;const el=$("sync");if(!el)return;
   el.className="sync "+s;
   const saved=backend==="local"?"🧪 Guardado local":(isStaff()?"☁️ Guardado":"☁️ En vivo");
-  el.textContent=({loading:"⏳ Cargando…",pending:"✏️ Guardando…",saved,offline:"⚠️ Sin conexión · reintentando"})[s]||"";
+  el.textContent=({loading:"⏳ Cargando…",pending:"✏️ Guardando…",saved,offline:"⚠️ Sin conexión · reintentando",error:"⚠️ Error · reintentando",session:"🔑 Sesión vencida"})[s]||"";
+  el.title=(s==="error"||s==="offline")&&lastErr?lastErr:"";
 }
 function avatar(p){return `<img src="${esc(p.img)}" alt="" onerror="this.onerror=null;this.src='${LOGO}'">`}
 const key=(a,b)=>a.id<b.id?a.id+"|"+b.id:b.id+"|"+a.id;
@@ -431,16 +509,37 @@ const rname=n=>n==1?"Final":n==2?"Semifinales":n==4?"Cuartos de final":n==8?"Oct
 
 /* ---- diálogos propios ---- */
 function showModal(h){$("mbox").innerHTML=h;$("modal").style.display="flex"}
-function closeModal(){$("modal").style.display="none";$("mbox").innerHTML=""}
-$("modal").addEventListener("mousedown",e=>{if(e.target===$("modal"))closeModal()});
-function dlg({title,msg,ok="Aceptar",danger=false,typed=null,back=null}){
+function closeModal(){$("modal").style.display="none";$("mbox").innerHTML="";dlgOpen=false}
+$("modal").addEventListener("mousedown",e=>{if(e.target===$("modal")&&!dlgOpen)closeModal()});
+document.addEventListener("keydown",e=>{if(e.key==="Escape"&&!dlgOpen)closeModal()});
+function dlg({title,msg,ok="Aceptar",no="Cancelar",danger=false,typed=null,back=null}){
   return new Promise(res=>{
-    showModal(`<h3>${title}</h3><p>${msg}</p>${typed?`<input class="inp" id="dlgIn" placeholder="Escribe: ${esc(typed)}" autocomplete="off">`:""}<div class="mact"><button class="btn" id="dlgNo">Cancelar</button><button class="btn ${danger?"danger":"btn-primary"}" id="dlgOk" ${typed?"disabled":""}>${ok}</button></div>`);
+    showModal(`<h3>${title}</h3><p>${msg}</p>${typed?`<input class="inp" id="dlgIn" placeholder="Escribe: ${esc(typed)}" autocomplete="off">`:""}<div class="mact"><button class="btn" id="dlgNo">${no}</button><button class="btn ${danger?"danger":"btn-primary"}" id="dlgOk" ${typed?"disabled":""}>${ok}</button></div>`);
+    dlgOpen=true;
     const okb=$("dlgOk");
     if(typed)$("dlgIn").addEventListener("input",e=>{okb.disabled=e.target.value.trim()!==typed});
     $("dlgNo").onclick=()=>{closeModal();if(back)back();res(false)};
     okb.onclick=()=>{closeModal();res(true)};
   });
+}
+function openHelp(){
+  showModal(`<div class="help"><h3>❓ Cómo funciona</h3>
+  <h4>⚔️ Fase suiza</h4>
+  <ul>
+   <li>Cada duelo da <b class="g">1 victoria</b> a quien gana y <b class="r">1 derrota</b> a quien pierde. Los puntos <b class="g">verdes</b> son victorias y los <b class="r">rojos</b> son derrotas.</li>
+   <li><b>3 victorias</b> = clasificas a la llave final. <b>3 derrotas</b> = quedas eliminado.</li>
+   <li>Cada ronda se <b class="pk">sortea</b> entre quienes llevan el mismo récord, sin repetir rival.</li>
+   <li>Si hay número impar, alguien <b>descansa</b>: cuenta como victoria (máximo una vez por persona).</li>
+  </ul>
+  <h4>🏆 Llave final</h4>
+  <ul>
+   <li>Entran todos los clasificados, ordenados por récord (menos derrotas primero).</li>
+   <li>Si son menos de 16, los mejores sembrados <b>pasan directo</b> a la siguiente ronda sin jugar.</li>
+   <li>Eliminación directa: octavos, cuartos, semifinales y final.</li>
+  </ul>
+  <h4>⚖️ Desempate (Buchholz)</h4>
+  <p style="font-size:13.5px;line-height:1.55;color:var(--text-dim)">Si dos personas tienen el mismo récord, queda mejor la que enfrentó a rivales con más victorias. Se suman las victorias de todos tus rivales: así se premia haber jugado contra gente más fuerte.</p>
+  <div class="mact"><button class="btn btn-primary" onclick="closeModal()">Entendido</button></div></div>`);
 }
 
 /* ================= Vista general ================= */
@@ -470,7 +569,7 @@ function refresh(){
 function renderBanner(){const b=$("banner");b.style.display=bannerMsg?"":"none";b.textContent=bannerMsg}
 function renderRolebar(){
   const el=$("rolebar");
-  if(realRole()!=="staff"){el.style.display="none";return}
+  if(realRole()!=="staff"||!(dev||PRUEBA_ROLES)){el.style.display="none";return}
   el.style.display="";
   const r=role();
   setHTML(el,`<span class="rl">🧪 Pruebas de permisos · viendo como <b>${r==="staff"?"Staff":"Miembro"}</b></span>
@@ -533,7 +632,7 @@ async function startTournament(){
   newT(pl,name);
 }
 function newT(pl,name){
-  S={v:1,name,pl,rounds:[],view:0,phase:"swiss",rank:new Map(pl.map(p=>[p,Math.random()])),br:null};
+  S={v:1,id:uid(),name,pl,rounds:[],view:0,phase:"swiss",rank:new Map(pl.map(p=>[p,Math.random()])),br:null};
   genRound(true);creating=false;champId=null;clearDraft();
   $("champ").classList.remove("show");$("champ")._h=null;
   markDirty();refresh();
@@ -616,7 +715,7 @@ function brPick(r,i,s){
   const p=brP(r,i,s),b=S.br;if(!p)return;
   if(r==0&&(!brP(0,i,0)||!brP(0,i,1)))return;
   b.rounds[r][i]=b.rounds[r][i]===p?null:p;
-  for(let k=1;k<b.rounds.length;k++)b.rounds[k].forEach((w,j)=>{if(w&&w!==brP(k,j,0)&&w!==brP(k,j,1))b.rounds[k][j]=null});
+  brClean();
   markDirty();render();
 }
 function undo(){
@@ -705,7 +804,7 @@ function render(){
   setHTML($("phases"),`${staff?`<button class="rt" onclick="backToSetup()">🎲 Nuevo torneo</button>`:""}
    <button class="rt ${S.phase=="swiss"?"on":""}" onclick="S.phase='swiss';render()">⚔️ Fase suiza</button>
    <button class="rt ${S.phase=="br"?"on":""} ${S.br?"":"off"}" ${S.br?`onclick="S.phase='br';render()"`:""}>🏆 Llave final${S.br?"":" 🔒"}</button>
-   ${staff?`<span class="grow"><button class="rt" onclick="openAdmin()">⚙️ Administrar</button>${dev?`<button class="rt dev" onclick="sim()">⚡ Simular todo</button><button class="rt dev" onclick="undo()">↶ Deshacer</button>`:""}</span>`:""}`);
+   <span class="grow">${staff&&dev?`<button class="rt dev" onclick="sim()">⚡ Simular todo</button><button class="rt dev" onclick="undo()">↶ Deshacer</button>`:""}${staff?`<button class="rt" onclick="openAdmin()">⚙️ Administrar</button>`:""}<button class="helpbtn" onclick="openHelp()" aria-label="Cómo funciona" title="Cómo funciona">?</button></span>`);
   $("vSwiss").style.display=S.phase=="swiss"?"":"none";
   $("vBr").style.display=S.phase=="br"?"":"none";
 
@@ -742,12 +841,15 @@ function render(){
 
   const box=$("champ"),c=S.br&&S.br.rounds[S.br.rounds.length-1][0];
   if(c){
+    const ck=S.id+"|"+c.id,seen=celebGet(ck);
     setHTML(box,`<div class="crown">👑</div>${avatar(c)}<h2>${esc(c.n)}</h2><p>Campeón de la competencia</p>`);
-    box.classList.add("show");
-    if(champId!==undefined&&champId!==c.id)confetti();
+    box.classList.toggle("nopop",seen);box.classList.add("show");
+    if(!seen){if(champId!==undefined)confetti();celebSet(ck)}
     champId=c.id;
   }else{box.classList.remove("show");champId=null}
 }
+const celebGet=k=>{try{return(JSON.parse(localStorage.getItem("tph_comp_celeb"))||[]).includes(k)}catch(e){return false}};
+const celebSet=k=>{try{const a=JSON.parse(localStorage.getItem("tph_comp_celeb"))||[];if(!a.includes(k))a.push(k);localStorage.setItem("tph_comp_celeb",JSON.stringify(a.slice(-30)))}catch(e){}};
 function renderBr(){
   const b=S.br,el=$("bracket"),staff=isStaff();if(!b)return;
   const R=b.rounds.length,rows=b.rounds[0].length;
@@ -769,7 +871,6 @@ function renderBr(){
       return `<div class="mt"><div class="m${bye?" byem":""}">${last?'<div class="tag">GRAN FINAL</div>':""}${rw(a,0)}${rw(c,1)}</div></div>`;
     }));
   });
-  setHTML($("brLeg"),`<b>${b.Q}</b> clasificados → llave de ${b.B}. Los sembrados (#) salen del récord suizo: menos derrotas primero y luego Buchholz.${b.auto?` Los <b>${b.auto}</b> mejores sembrados pasan directo a la siguiente ronda sin jugar.`:""}`);
 }
 
 /* ================= Confeti de victoria (3× emojis, 3× duración, misma velocidad) ================= */
@@ -785,7 +886,7 @@ function confetti(){
 /* ================= Modo pruebas: mantener "Competencia" 5 s (solo staff) ================= */
 (function(){
   const b=$("tabComp");let tm=null;
-  const start=()=>{clearTimeout(tm);tm=setTimeout(()=>{if(!isStaff())return;dev=!dev;toast(dev?"🔧 Modo pruebas activado":"Modo pruebas desactivado");if(S)render()},5000)};
+  const start=()=>{clearTimeout(tm);tm=setTimeout(()=>{if(realRole()!=="staff")return;dev=!dev;if(!dev)viewAs=null;toast(dev?"🔧 Modo pruebas activado":"Modo pruebas desactivado");refresh()},5000)};
   const stop=()=>clearTimeout(tm);
   b.addEventListener("pointerdown",start);
   ["pointerup","pointerleave","pointercancel"].forEach(ev=>b.addEventListener(ev,stop));
@@ -801,11 +902,16 @@ async function init(){
   refresh();
   if(realRole()==="publico"){denied=true;loaded=true;refresh();return}
   setStatus("loading");
-  let r=await call({action:"obtenerTorneo"});
+  const c0=readCache(),staff=realRole()==="staff";
+  if(c0&&c0.estado&&c0.estado!=="null"){
+    const t=parseT(c0.estado);
+    if(t){S=t;S.view=S.rounds.length-1;rev=c0.rev||0;baseStr=c0.base||c0.estado;loaded=true;refresh()}
+  }
+  const pre=parentPre();let r=pre?await pre:null;
+  if(!r)r=await call({action:"obtenerTorneo"});
   if(r.ok&&typeof r.rev!=="number")r={ok:false,error:"El servidor no reconoce el módulo"};
   if(!r.ok&&r.network){
-    const c=readCache();
-    r=c?{ok:true,rev:c.rev,estado:c.estado,offline:true}:{ok:true,rev:0,estado:null,offline:true};
+    r={ok:true,rev:c0?c0.rev:0,estado:c0?c0.estado:null,offline:true};
     bannerMsg="⚠️ Sin conexión con el servidor. Se reintentará automáticamente.";
   }else if(!r.ok&&r.error==="Sin acceso"){denied=true}
   else if(!r.ok&&r.error==="Módulo desactivado"){denied=true;deniedMsg="off"}
@@ -815,15 +921,15 @@ async function init(){
     r=localApi({action:"obtenerTorneo"});
   }
   if(!denied){
-    applyRemote(r.estado,r.rev);
-    const c=readCache();
-    if(realRole()==="staff"&&c&&c.dirty&&(r.offline||c.rev===r.rev)){ // cambios sin subir de una sesión anterior
-      S=parseT(c.estado);if(S)S.view=S.rounds.length-1;rev=c.rev;markDirty();
-    }
+    if(staff&&c0&&c0.dirty){
+      S=parseT(c0.estado);if(S)S.view=S.rounds.length-1;
+      rev=c0.rev||0;baseStr=c0.base||"null";dirty=true;
+    }else applyRemote(r.estado,r.rev);
     setStatus(r.offline?"offline":(dirty?"pending":"saved"));
   }
   loaded=true;refresh();
-  if(r.offline)setTimeout(poll,7000);
+  if(dirty&&!r.offline)flush();
+  schedulePoll();
 }
 init();
 </script>
