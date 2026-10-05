@@ -2606,11 +2606,22 @@ async function infoModulo_(id){
   _modInfoCache[id] = info;
   return info;
 }
+// Precarga: apenas se sabe que Competencia está activa, se pide el torneo en segundo plano. Cuando alguien
+// abre el módulo la respuesta ya está lista (el módulo la consume desde window.TPH_PRE) y entra casi al instante.
+function precargarCompetencia_(){
+  try{
+    if(nivel!=="staff" && nivel!=="miembro") return;
+    if(window.TPH_PRE && Date.now()-window.TPH_PRE.t < 20000) return;
+    const q = new URLSearchParams({accion:"obtenerTorneo", token:sessionToken||"", clave:memberPin||"", desdeRev:0});
+    window.TPH_PRE = {t:Date.now(), p:fetch(APPS_SCRIPT_URL+"?"+q.toString()).then(r=>r.json()).catch(()=>null)};
+  }catch(e){}
+}
 async function aplicarModulos(){
   const cont = document.getElementById("modulosBar");
   if(!cont) return;
   const activos = Object.keys(DB.modulos||{}).filter(k=>DB.modulos[k]===true && MODULO_ID_RE.test(k));
   if(nivel==="publico" || !activos.length){ cont.innerHTML=""; return; }
+  if(activos.includes("competencia")) precargarCompetencia_();
   const infos = await Promise.all(activos.map(async id=>Object.assign({id,nombre:id,icono:"🧩",niveles:["staff","miembro"],orden:99}, await infoModulo_(id)||{})));
   const visibles = infos.filter(m=>(m.niveles||["staff","miembro"]).includes(nivel)).sort((a,b)=>(a.orden||99)-(b.orden||99));
   cont.innerHTML = visibles.map(m=>`<button type="button" class="pill-toggle modulo-btn" data-mod="${escAttr(m.id)}"><span>${escAttr(m.icono||"🧩")}</span><span>${escAttr(m.nombre||m.id)}</span></button>`).join("");
@@ -2619,6 +2630,7 @@ async function aplicarModulos(){
 let _moduloBodyOverflow = "";
 async function abrirModulo(id){
   if(!MODULO_ID_RE.test(id)) return;
+  if(id==="competencia") precargarCompetencia_();
   const info = await infoModulo_(id);
   const archivo = (info && typeof info.archivo==="string" && /^[A-Za-z0-9_.-]{1,60}\.html$/.test(info.archivo)) ? info.archivo : "index.html";
   let ov = document.getElementById("moduloOverlay");
