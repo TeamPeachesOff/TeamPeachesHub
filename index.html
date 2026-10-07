@@ -636,6 +636,9 @@
   .modulo-btn:hover{filter:brightness(1.08);}
   .modulo-btn .mb-tag{font-size:10px;font-weight:800;letter-spacing:.06em;padding:2px 8px;border-radius:99px;background:rgba(255,215,0,0.9);color:#3a0a1f;}
   #moduloOverlay{position:fixed;inset:0;z-index:9500;background:#180E1D;display:none;}
+  /* PERF: con el módulo abierto la app de atrás no se pinta ni anima (antes seguía gastando CPU/GPU debajo del iframe). */
+  body.modulo-abierto > *:not(#moduloOverlay){visibility:hidden !important;}
+  body.modulo-abierto *{animation-play-state:paused !important;}
   #moduloOverlay.open{display:block;}
   #moduloOverlay iframe{width:100%;height:100%;border:0;display:block;background:#180E1D;}
   .hub-mod{display:flex;align-items:center;gap:10px;background:var(--card-bg-2);padding:10px 12px;border-radius:12px;margin-bottom:8px;text-align:left;}
@@ -2621,13 +2624,19 @@ async function aplicarModulos(){
   if(!cont) return;
   const activos = Object.keys(DB.modulos||{}).filter(k=>DB.modulos[k]===true && MODULO_ID_RE.test(k));
   if(nivel==="publico" || !activos.length){ cont.innerHTML=""; return; }
-  if(activos.includes("competencia")) precargarCompetencia_();
+  // PERF: ya NO se precarga el torneo en cada carga de la app (era un pedido extra a Apps Script que casi nunca se usaba).
+  // Se precarga solo cuando la persona se acerca/toca el botón del módulo (ver abajo) o lo abre.
   const infos = await Promise.all(activos.map(async id=>Object.assign({id,nombre:id,icono:"🧩",niveles:["staff","miembro"],orden:99}, await infoModulo_(id)||{})));
   const visibles = infos.filter(m=>(m.niveles||["staff","miembro"]).includes(nivel)).sort((a,b)=>(a.orden||99)-(b.orden||99));
   cont.innerHTML = visibles.map(m=>`<button type="button" class="pill-toggle modulo-btn" data-mod="${escAttr(m.id)}"><span>${escAttr(m.icono||"🧩")}</span><span>${escAttr(m.nombre||m.id)}</span></button>`).join("");
-  cont.querySelectorAll(".modulo-btn").forEach(b=>{ b.onclick=()=>abrirModulo(b.dataset.mod); });
+  cont.querySelectorAll(".modulo-btn").forEach(b=>{
+    b.onclick=()=>abrirModulo(b.dataset.mod);
+    const pre=()=>{ if(b.dataset.mod==="competencia") precargarCompetencia_(); };
+    b.addEventListener("pointerenter",pre,{passive:true}); b.addEventListener("touchstart",pre,{passive:true});
+  });
 }
 let _moduloBodyOverflow = "";
+let _moduloScrollY = 0;
 async function abrirModulo(id){
   if(!MODULO_ID_RE.test(id)) return;
   if(id==="competencia") precargarCompetencia_();
@@ -2637,6 +2646,9 @@ async function abrirModulo(id){
   if(!ov){ ov = document.createElement("div"); ov.id="moduloOverlay"; document.body.appendChild(ov); }
   ov.innerHTML = `<iframe src="${MODULOS_DIR}${id}/${archivo}" title="${escAttr(id)}" allow="clipboard-write"></iframe>`;
   ov.classList.add("open");
+  _moduloScrollY = window.scrollY || document.body.scrollTop || 0;
+  document.body.classList.add("modulo-abierto");
+  try{ if(globoInstancia && globoInstancia.pauseAnimation) globoInstancia.pauseAnimation(); }catch(e){}
   _moduloBodyOverflow = document.body.style.overflow; document.body.style.overflow = "hidden";
   try{ history.pushState({modulo:id},""); }catch(e){}
 }
@@ -2644,6 +2656,8 @@ function cerrarModulo(desdePopstate){
   const ov = document.getElementById("moduloOverlay");
   if(!ov || !ov.classList.contains("open")) return;
   ov.classList.remove("open"); ov.innerHTML = "";
+  document.body.classList.remove("modulo-abierto");
+  try{ if(globoInstancia && globoInstancia.resumeAnimation) globoInstancia.resumeAnimation(); }catch(e){}
   document.body.style.overflow = _moduloBodyOverflow;
   if(desdePopstate!==true){ try{ if(history.state && history.state.modulo) history.back(); }catch(e){} }
 }
