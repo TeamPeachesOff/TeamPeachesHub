@@ -314,7 +314,7 @@ let P=[],S=null,rev=0,creating=false,dev=false,denied=false,loaded=false;
 let baseStr="null",polling=false,dlgOpen=false,deniedMsg="acceso",backend="remote",bannerMsg="",dirty=false,saving=false,champId=undefined,membersP=null;
 
 /* ================= Base de datos (Apps Script / Sheets) ================= */
-async function call(payload){
+async function call(payload,ka){
   if(backend==="local")return localApi(payload);
   const c=ctx();let res;
   try{
@@ -323,7 +323,7 @@ async function call(payload){
       const q=new URLSearchParams({accion:"obtenerTorneo",token:c.token||"",clave:c.clave||"",desdeRev:payload.desdeRev||0});
       res=await fetch(APPS_SCRIPT_URL+"?"+q.toString(),{signal:ctl.signal});
     }else{
-      res=await fetch(APPS_SCRIPT_URL,{method:"POST",headers:{"Content-Type":"text/plain;charset=utf-8"},body:JSON.stringify(Object.assign({token:c.token||"",notrack:true},payload)),signal:ctl.signal});
+      res=await fetch(APPS_SCRIPT_URL,{method:"POST",headers:{"Content-Type":"text/plain;charset=utf-8"},body:JSON.stringify(Object.assign({token:c.token||"",notrack:true},payload)),signal:ctl.signal,keepalive:!!ka}); /* keepalive: el guardado sobrevive aunque se cierre el módulo */
     }
     clearTimeout(tm);
   }catch(e){return{ok:false,network:true,error:"Sin conexión con el servidor"}}
@@ -421,18 +421,18 @@ function markDirty(){
   dirty=true;lastChange=Date.now();setStatus("pending");cacheSave(true);
   clearTimeout(flushT);flushT=setTimeout(flush,400);
 }
-async function flush(){
+async function flush(ka){
   if(saving||!dirty)return;
   const estado=ser(S);
   if(estado.length>MAXLEN){toast("⚠️ El torneo es demasiado grande para guardarse");return}
   saving=true;dirty=false;
-  const r=await call({action:"guardarTorneo",baseRev:rev,estado});
+  const r=await call({action:"guardarTorneo",baseRev:rev,estado},ka===true);
   saving=false;
   if(r&&r.ok){rev=r.rev;baseStr=estado;if(dirty)flush();else{cacheSave(false);setStatus("saved")}return}
   dirty=true;
   if(r&&r.conflict){await resolveConflict(r);return}
   lastErr=(r&&r.error)||"";
-  if(/sesi[oó]n/i.test(lastErr)){setStatus("session");toast("🔑 Tu sesión de staff venció. Inicia sesión de nuevo en la app: tus cambios están guardados en este navegador y se subirán solos.",6500);return}
+  if(/sesi[oó]n/i.test(lastErr)){setStatus("session");toast("🔑 Tu sesión de staff venció. Inicia sesión de nuevo en la app: tus cambios están guardados en este navegador y se subirán solos.",6500);clearTimeout(flushT);flushT=setTimeout(flush,15000);return}
   if(lastErr==="Módulo desactivado"){setStatus("error");toast("🧩 El módulo fue desactivado.");return}
   setStatus(r&&r.network?"offline":"error");
   clearTimeout(flushT);flushT=setTimeout(flush,r&&r.network?4000:8000);
@@ -482,6 +482,12 @@ function schedulePoll(){
   pollT=setTimeout(async()=>{await poll();schedulePoll()},ms);
 }
 document.addEventListener("visibilitychange",()=>{if(!document.hidden){poll();schedulePoll()}});
+/* Guardado al salir: antes, cerrar el módulo (o la pestaña) dentro de los 400 ms de espera o con un reintento pendiente
+   dejaba el último cambio SIN subir al servidor (solo quedaba en este navegador). Ahora se sube al instante al ocultarse/cerrarse. */
+function flushNow(){if(dirty&&!saving&&realRole()==="staff"){clearTimeout(flushT);flush(true)}}
+window.TPH_flushNow=flushNow;
+document.addEventListener("visibilitychange",()=>{if(document.hidden)flushNow()});
+window.addEventListener("pagehide",flushNow);
 window.addEventListener("focus",()=>poll());
 window.addEventListener("online",()=>{if(dirty)flush();else poll()});
 

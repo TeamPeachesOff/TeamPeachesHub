@@ -2619,10 +2619,15 @@ function precargarCompetencia_(){
     window.TPH_PRE = {t:Date.now(), p:fetch(APPS_SCRIPT_URL+"?"+q.toString()).then(r=>r.json()).catch(()=>null)};
   }catch(e){}
 }
+let _ultimaClaveMod_ = "";
 async function aplicarModulos(){
   const cont = document.getElementById("modulosBar");
   if(!cont) return;
   const activos = Object.keys(DB.modulos||{}).filter(k=>DB.modulos[k]===true && MODULO_ID_RE.test(k));
+  // PERF: aplicarModulos corre tras CADA recarga de datos (cada guardado). Si nada cambió, no se vuelve a pedir ni a dibujar nada.
+  const claveMod_ = nivel+"|"+activos.sort().join(",");
+  if(claveMod_===_ultimaClaveMod_ && (cont.children.length>0 || nivel==="publico" || !activos.length)) return; // si el menú se vació por fuera, se vuelve a dibujar
+  _ultimaClaveMod_ = claveMod_;
   if(nivel==="publico" || !activos.length){ cont.innerHTML=""; return; }
   // PERF: ya NO se precarga el torneo en cada carga de la app (era un pedido extra a Apps Script que casi nunca se usaba).
   // Se precarga solo cuando la persona se acerca/toca el botón del módulo (ver abajo) o lo abre.
@@ -2655,6 +2660,8 @@ async function abrirModulo(id){
 function cerrarModulo(desdePopstate){
   const ov = document.getElementById("moduloOverlay");
   if(!ov || !ov.classList.contains("open")) return;
+  // Antes de destruir el iframe, el módulo sube lo que tenga pendiente (si no, el último cambio podía perderse).
+  try{ const f = ov.querySelector("iframe"); if(f && f.contentWindow && f.contentWindow.TPH_flushNow) f.contentWindow.TPH_flushNow(); }catch(e){}
   ov.classList.remove("open"); ov.innerHTML = "";
   document.body.classList.remove("modulo-abierto");
   try{ if(globoInstancia && globoInstancia.resumeAnimation) globoInstancia.resumeAnimation(); }catch(e){}
