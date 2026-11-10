@@ -876,7 +876,8 @@
       <button class="btn-small btn-update" id="refreshMapBtn" style="flex:1;">🗺️ Actualizar Mapa</button>
     </div>
     <div class="hidden" id="memberToolsRow4" style="display:flex;gap:10px;margin-bottom:14px;">
-      <button class="btn-small btn-family" id="pasarListaBtn" style="flex:1;">🗒️ Pasar Lista</button>
+      <button class="btn-small btn-danger" id="pasarListaMultiBtn" style="flex:1;">✅ Pasar Lista</button>
+      <button class="btn-small btn-family" id="pasarListaBtn" style="flex:1;">🗒️ Asignar entregas</button>
       <button class="btn-small btn-cumple" id="chambeadoresBtn" style="flex:1;">🏆 Chambeadores</button>
     </div>
     <div class="section-label">👑 Reinas Peachy</div>
@@ -1243,6 +1244,19 @@
      se puede desmarcar a quien ya justificó (permiso, enfermedad, etc.) antes de confirmar. Así
      "Poner falta a los que faltan" nunca vuelve a sumar una falta de una sola pasada sin poder
      revisar primero a quién le toca de verdad. -->
+<!-- Pasar Lista multi-actividad: se eligen 1 o más actividades; quien aparezca en las entregas de
+     CUALQUIERA de ellas cuenta como presente. Los demás pasan al checklist de faltantes. -->
+<div class="modal-overlay" id="pasarListaMultiModal" style="z-index:265;">
+  <div class="modal-box modal-box-wide"><button class="modal-close" data-close="pasarListaMultiModal">✕</button>
+    <h3>✅ Pasar Lista</h3>
+    <div style="font-size:13px;color:var(--text-dim);margin-bottom:10px;">Elegí las actividades (normalmente 1 o 2). Quien tenga entrega en alguna de las elegidas cuenta como presente.</div>
+    <div id="pasarListaMultiLista" style="display:flex;flex-direction:column;gap:6px;max-height:50vh;overflow-y:auto;"></div>
+    <div class="modal-actions" style="display:flex;gap:8px;margin-top:14px;">
+      <button type="button" class="btn-small btn-danger" id="pasarListaMultiContinuarBtn" style="flex:1;">Continuar</button>
+    </div>
+  </div>
+</div>
+
 <div class="modal-overlay" id="faltantesModal" style="z-index:270;">
   <div class="modal-box modal-box-wide"><button class="modal-close" data-close="faltantesModal">✕</button>
     <h3>❌ Poner falta a los que faltan</h3>
@@ -3794,6 +3808,33 @@ function renderPasarLista(){
 let faltantesActividadActual_ = null;
 let faltantesSeleccionados_ = new Set();
 function ponerFaltaALosQueFaltan_(idActividad){
+  return ponerFaltaMulti_([idActividad]);
+}
+// Generaliza el flujo a 1..N actividades: presente = tiene entrega en CUALQUIERA de las elegidas.
+// Entra a la lista de faltantes quien tenga el rol (canto/doblaje) de al menos una actividad elegida
+// y no esté en ninguna; actividades sin categoría incluyen a todo el team.
+function ponerFaltaMulti_(idsActividades){
+  const acts = idsActividades.map(id=>DB.actividades.find(x=>String(x.id)===String(id))).filter(Boolean);
+  if(!acts.length) return;
+  const idSet = new Set(acts.map(a=>String(a.id)));
+  const asignadosIds = new Set();
+  DB.entregas.filter(e=>idSet.has(String(e.idActividad)))
+    .forEach(e=>idsDeEntrega_(e).forEach(id=>asignadosIds.add(String(id))));
+  const cats = acts.map(a=>a.categoria==="canto"||a.categoria==="doblaje"?a.categoria:null);
+  const titulos = acts.map(a=>a.titulo||"").join(" + ");
+  const faltantes = (DB.miembros||[]).filter(m=>{
+    if(!m.nombre || asignadosIds.has(String(m.id))) return false;
+    return cats.some(c=> c===null || (c==="canto"?esTrue(m.canto):esTrue(m.doblaje)));
+  }).slice().sort((a,b)=>(a.nombre||"").localeCompare(b.nombre||""));
+  if(!faltantes.length){ toast("Nadie falta: todos tienen una entrega asignada 🎉"); return; }
+  faltantesActividadActual_ = { idActividad: acts.map(a=>a.id).join(","), titulo: titulos };
+  faltantesSeleccionados_ = new Set(faltantes.map(m=>String(m.id)));
+  document.getElementById("faltantesInfo").textContent = `${faltantes.length} miembro(s) sin entrega en "${titulos}". Desmarcá a quien ya justificó antes de confirmar.`;
+  renderFaltantesLista_(faltantes);
+  document.getElementById("faltantesTodosBtn").textContent = "Desmarcar todos";
+  openModal("faltantesModal");
+}
+function _ponerFaltaLegacy_(idActividad){
   const a = DB.actividades.find(x=>String(x.id)===String(idActividad));
   if(!a) return;
   const entregas = DB.entregas.filter(e=>String(e.idActividad)===String(idActividad));
@@ -3839,6 +3880,33 @@ function renderFaltantesLista_(faltantes){
   });
   bindAvatarFallbacks();
 }
+let pasarListaMultiSel_ = new Set();
+document.getElementById("pasarListaMultiBtn").onclick=()=>{
+  pasarListaMultiSel_ = new Set();
+  const acts=(DB.actividades||[]).slice().sort((a,b)=>(new Date(b.fechaInicio)||0)-(new Date(a.fechaInicio)||0));
+  const cont=document.getElementById("pasarListaMultiLista");
+  if(!acts.length){ cont.innerHTML=`<div style="color:var(--text-dim);">No hay actividades.</div>`; }
+  else cont.innerHTML=acts.map(a=>{
+    const n=DB.entregas.filter(e=>String(e.idActividad)===String(a.id)).length;
+    const ic=a.categoria==="canto"?"🎤":a.categoria==="doblaje"?"🎙️":"📌";
+    return `<label class="member-row" style="cursor:pointer;">
+      <div class="m-info" style="flex:1;"><div class="m-name">${ic} ${escHtml(a.titulo||"")}</div>
+      <div style="font-size:12px;color:var(--text-dim);">${escHtml(a.categoria||"sin categoría")} · ${n} entrega(s)</div></div>
+      <input type="checkbox" data-pl-act="${escHtml(String(a.id))}" style="width:20px;height:20px;flex-shrink:0;accent-color:var(--peach-2);">
+    </label>`;
+  }).join("");
+  cont.querySelectorAll("[data-pl-act]").forEach(chk=>chk.onchange=()=>{
+    const id=String(chk.dataset.plAct);
+    if(chk.checked) pasarListaMultiSel_.add(id); else pasarListaMultiSel_.delete(id);
+  });
+  openModal("pasarListaMultiModal");
+};
+document.getElementById("pasarListaMultiContinuarBtn").onclick=()=>{
+  if(!pasarListaMultiSel_.size){ toast("Elegí al menos una actividad."); return; }
+  const ids=[...pasarListaMultiSel_];
+  closeModal("pasarListaMultiModal");
+  ponerFaltaMulti_(ids);
+};
 document.getElementById("faltantesTodosBtn").onclick=()=>{
   const checks=[...document.querySelectorAll("#faltantesLista [data-faltante]")];
   const marcarTodos = checks.some(chk=>!chk.checked); // si alguno está sin marcar, la próxima pasada marca todos; si ya estaban todos marcados, desmarca todos
