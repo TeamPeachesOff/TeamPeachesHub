@@ -1268,7 +1268,7 @@
   <div class="modal-box modal-box-wide"><button class="modal-close" data-close="historialCastigosModal">✕</button>
     <h3>📜 Historial de castigos</h3>
     <div id="hcNombre" style="font-size:13px;color:var(--text-dim);margin-bottom:8px;"></div>
-    <div id="hcDemo" class="hc-demo hidden">🧪 Vista previa: estos registros son de ejemplo y los cambios no se guardan todavía.</div>
+    <div id="hcDemo" class="hc-demo hidden">🧪 Vista previa: los cambios del historial no se guardan todavía. Los castigos anteriores aparecen como "Antes del cambio".</div>
     <div id="hcLista" class="hc-list"></div>
     <div class="modal-actions" style="display:flex;gap:8px;margin-top:14px;">
       <button type="button" class="btn-small" id="hcCancelarBtn" style="background:var(--card-bg-2);color:var(--text);flex:1;">Cancelar</button>
@@ -3570,13 +3570,13 @@ function openMemberModal(id){
       ${(m.generacionNum!==undefined && m.generacionNum!==null && m.generacionNum!=="")?`<tr><td>🌱 Generación</td><td>${fmtGeneracion(m.generacionNum)}</td></tr>`:""}
     </table>
     <div class="platform-row">
-      ${m.usuarioSmule?`<a class="platform-btn" target="_blank" data-track="irASmule" data-dbl-copy="${escAttr(m.usuarioSmule)}" data-dbl-msg="Usuario de Smule copiado" title="Clic: abrir Smule · Doble clic: copiar usuario" href="${escAttr(toSmuleUrl(m.usuarioSmule))}">
+      ${m.usuarioSmule?`<a class="platform-btn" target="_blank" data-track="irASmule" data-dbl-copy="${escAttr(m.usuarioSmule)}" data-dbl-msg="Usuario de Smule copiado" title="Clic: abrir Smule · Mantener presionado o doble clic: copiar usuario" href="${escAttr(toSmuleUrl(m.usuarioSmule))}">
         <img src="https://raw.githubusercontent.com/TeamPeachesOff/TeamPeachesHub/main/Logos/SmuleLogo.png" onerror="this.onerror=null;this.src='https://blog.smule.com/wp-content/uploads/smule-icon.png';"><span>Smule</span></a>`:""}
-      ${m.usuarioBandlab?`<a class="platform-btn" target="_blank" onclick="trackUI('irABandlab')" href="${escAttr(toBandlabUrl(m.usuarioBandlab))}">
+      ${m.usuarioBandlab?`<a class="platform-btn" target="_blank" data-track="irABandlab" data-dbl-copy="${escAttr(m.usuarioBandlab)}" data-dbl-msg="Usuario de BandLab copiado" title="Clic: abrir BandLab · Mantener presionado: copiar usuario" href="${escAttr(toBandlabUrl(m.usuarioBandlab))}">
         <img src="https://raw.githubusercontent.com/TeamPeachesOff/TeamPeachesHub/main/Logos/BandLabLogo.png" onerror="this.onerror=null;this.src='https://onbukei.com/wp-content/uploads/2021/10/bandlab-music-making-studio.png';"><span>BandLab</span></a>`:""}
       ${m.usuarioDiscord?`<button class="platform-btn" data-copy-discord="${escAttr(m.usuarioDiscord)}">
         <img src="https://raw.githubusercontent.com/TeamPeachesOff/TeamPeachesHub/main/Logos/DiscordLogo.webp" onerror="this.onerror=null;this.src='https://freelogopng.com/images/all_img/1691730767discord-logo-transparent.png';"><span>Copiar Discord</span></button>`:""}
-      ${m.telefono?`<a class="platform-btn" target="_blank" data-track="irAWhatsapp" data-dbl-copy="${escAttr(String(m.telefono).trim())}" data-dbl-msg="Número de WhatsApp copiado" title="Clic: abrir WhatsApp · Doble clic: copiar número" href="https://wa.me/${escAttr(limpiarTelefono(m.telefono))}">
+      ${m.telefono?`<a class="platform-btn" target="_blank" data-track="irAWhatsapp" data-dbl-copy="${escAttr(String(m.telefono).trim())}" data-dbl-msg="Número de WhatsApp copiado" title="Clic: abrir WhatsApp · Mantener presionado o doble clic: copiar número" href="https://wa.me/${escAttr(limpiarTelefono(m.telefono))}">
         <img src="https://raw.githubusercontent.com/TeamPeachesOff/TeamPeachesHub/main/Logos/WhatsAppLogo.png" onerror="this.onerror=null;this.src='https://upload.wikimedia.org/wikipedia/commons/5/5e/WhatsApp_icon.png';"><span>WhatsApp</span></a>`:""}
     </div>
     <div class="castigos-box">
@@ -3584,7 +3584,7 @@ function openMemberModal(id){
       <div class="ct-row"><span>☠️ Strike permanente</span><strong>${strikesPermanentes}</strong></div>
       <div class="ct-row"><span>⚠️ Strikes</span><strong>${strikes}</strong></div>
       <div class="ct-row"><span>📉 Faltas</span><strong>${faltas}</strong></div>
-      ${staffPin?`<div class="admin-strike-btns"><button class="btn-falta" data-falta="${m.id}">+ Falta</button><button class="btn-strike" data-strike="${m.id}">+ Strike</button><button class="btn-strike-permanente" data-strike-permanente="${m.id}">+ Strike Permanente</button></div>
+      ${staffPin?`<div class="admin-strike-btns"><button class="btn-falta" data-falta="${m.id}">+ Falta</button><button class="btn-strike" data-strike="${m.id}">+ Strike</button><button class="btn-strike-permanente" data-strike-permanente="${m.id}">+ Permanente</button></div>
       <button class="btn-reset-castigos" data-historial="${m.id}">📜 Historial de castigos</button>`:""}
     </div>
     ${entregasDelMiembroHTML_(m.id)}`;
@@ -3592,9 +3592,16 @@ function openMemberModal(id){
   // Smule / WhatsApp: un clic abre el enlace (con una pausita para distinguirlo del doble clic);
   // doble clic NO abre nada, solo copia el usuario / número.
   document.querySelectorAll("#memberModalContent [data-dbl-copy]").forEach(a=>{
-    let t=null;
+    let t=null, lp=null, largo=false;
+    // Mantener presionado (~0.5 s): copia en lugar de abrir el enlace.
+    const copiar=()=>{ const msg=a.dataset.dblMsg||"Copiado"; navigator.clipboard.writeText(a.dataset.dblCopy).then(()=>toast(msg+" ✅")).catch(()=>toast("No se pudo copiar, hazlo manualmente")); };
+    const cancelarLp=()=>{ clearTimeout(lp); lp=null; };
+    a.addEventListener("pointerdown",()=>{ largo=false; cancelarLp(); lp=setTimeout(()=>{ lp=null; largo=true; copiar(); if(navigator.vibrate) try{navigator.vibrate(30);}catch(_){} },500); });
+    ["pointerup","pointerleave","pointercancel"].forEach(ev=>a.addEventListener(ev,cancelarLp));
+    a.addEventListener("contextmenu",ev=>ev.preventDefault());
     a.onclick=ev=>{
       ev.preventDefault();
+      if(largo){ largo=false; return; }
       if(t) return; // segundo clic de un doble clic: lo resuelve ondblclick
       t=setTimeout(()=>{
         t=null;
@@ -3609,7 +3616,15 @@ function openMemberModal(id){
       navigator.clipboard.writeText(a.dataset.dblCopy).then(()=>toast(msg+" ✅")).catch(()=>toast("No se pudo copiar, hazlo manualmente"));
     };
   });
-  const copyBtn=document.querySelector("[data-copy-discord]"); if(copyBtn) copyBtn.onclick=()=>{navigator.clipboard.writeText(copyBtn.dataset.copyDiscord); toast("Discord copiado ✅"); trackUI("copiarDiscord");};
+  const copyBtn=document.querySelector("[data-copy-discord]"); if(copyBtn){
+    // Discord no tiene enlace directo: tanto el clic como mantener presionado copian el usuario.
+    let lp=null, largo=false;
+    const copiarDc=()=>{ navigator.clipboard.writeText(copyBtn.dataset.copyDiscord); toast("Discord copiado ✅"); trackUI("copiarDiscord"); };
+    copyBtn.addEventListener("pointerdown",()=>{ largo=false; clearTimeout(lp); lp=setTimeout(()=>{ lp=null; largo=true; copiarDc(); },500); });
+    ["pointerup","pointerleave","pointercancel"].forEach(ev=>copyBtn.addEventListener(ev,()=>{ clearTimeout(lp); lp=null; }));
+    copyBtn.addEventListener("contextmenu",ev=>ev.preventDefault());
+    copyBtn.onclick=()=>{ if(largo){ largo=false; return; } copiarDc(); };
+  }
   const faltaBtn=document.querySelector("[data-falta]"); if(faltaBtn) faltaBtn.onclick=()=>registrarFalta(m.id);
   const strikeBtn=document.querySelector("[data-strike]"); if(strikeBtn) strikeBtn.onclick=()=>registrarStrike(m.id);
   const strikePermBtn=document.querySelector("[data-strike-permanente]"); if(strikePermBtn) strikePermBtn.onclick=()=>registrarStrikePermanente(m.id);
@@ -3632,12 +3647,24 @@ function openMemberModal(id){
 const HC_TIPOS_ = {falta:"Falta", strike:"Strike", permanente:"Strike permanente"};
 let HC_LOCAL_ = {}, hcMiembro_ = null, hcBorrando_ = false, hcSel_ = new Set();
 function fmtFechaHC_(iso){
-  const d=new Date(iso); if(isNaN(d)) return "";
+  const d=new Date(iso); if(isNaN(d)) return String(iso||"");
   return `${d.getDate()} ${["ene","feb","mar","abr","may","jun","jul","ago","sep","oct","nov","dic"][d.getMonth()]} ${d.getFullYear()}`;
+}
+function hcAsegurar_(id){
+  const k=String(id);
+  if(HC_LOCAL_[k]) return;
+  const m=(DB.miembros||[]).find(x=>String(x.id)===k)||{};
+  // Migración: los castigos que ya existían (contadores del miembro) se muestran como registros
+  // "Antes del cambio" con fecha "Sepa la bola". No se borran ni se alteran los contadores.
+  const lg=[];
+  [["falta",Number(m.faltas)||0],["strike",Number(m.strikes)||0],["permanente",Number(m.strikesPermanentes)||0]].forEach(([tipo,n])=>{
+    for(let i=0;i<n;i++) lg.push({id:`legacy-${tipo}-${i}`,tipo,motivo:"Antes del cambio",auto:false,fecha:"Sepa la bola",legacy:true});
+  });
+  HC_LOCAL_[k]=lg;
 }
 function hcAgregar_(idMiembro, tipo, motivo, auto){
   const k=String(idMiembro);
-  if(!HC_LOCAL_[k]) HC_LOCAL_[k]=[];
+  hcAsegurar_(k);
   HC_LOCAL_[k].push({id:"hc-"+Date.now()+"-"+Math.random().toString(36).slice(2,6), tipo, motivo, auto:!!auto, fecha:new Date().toISOString()});
 }
 function pedirJustificacion_(titulo){
@@ -3661,14 +3688,7 @@ function pedirJustificacion_(titulo){
 function abrirHistorialCastigos_(idMiembro){
   const m=(DB.miembros||[]).find(x=>String(x.id)===String(idMiembro)); if(!m) return;
   hcMiembro_=String(idMiembro); hcBorrando_=false; hcSel_=new Set();
-  if(!HC_LOCAL_[hcMiembro_]){
-    const d=n=>new Date(Date.now()-n*86400000).toISOString();
-    HC_LOCAL_[hcMiembro_]=[
-      {id:"demo1",tipo:"falta",motivo:"Sin entrega en: Reto de Noviembre (ejemplo)",auto:false,fecha:d(20),demo:true},
-      {id:"demo2",tipo:"falta",motivo:"Faltó al ensayo sin avisar (ejemplo)",auto:false,fecha:d(9),demo:true},
-      {id:"demo3",tipo:"strike",motivo:"Se alcanzó 2 faltas (ejemplo)",auto:true,fecha:d(9),demo:true}
-    ];
-  }
+  hcAsegurar_(hcMiembro_);
   document.getElementById("hcNombre").textContent=m.nombre||"";
   renderHistorialCastigos_();
   openModal("historialCastigosModal");
@@ -3676,10 +3696,10 @@ function abrirHistorialCastigos_(idMiembro){
 function renderHistorialCastigos_(){
   const lista=HC_LOCAL_[hcMiembro_]||[];
   const cont=document.getElementById("hcLista");
-  document.getElementById("hcDemo").classList.toggle("hidden", !lista.some(x=>x.demo));
+  document.getElementById("hcDemo").classList.toggle("hidden", false);
   const num={}, numeros={};
-  lista.slice().sort((a,b)=>new Date(a.fecha)-new Date(b.fecha)).forEach(x=>{ num[x.tipo]=(num[x.tipo]||0)+1; numeros[x.id]=num[x.tipo]; });
-  const orden=lista.slice().sort((a,b)=>new Date(b.fecha)-new Date(a.fecha));
+  lista.slice().sort((a,b)=>(new Date(a.fecha).getTime()||0)-(new Date(b.fecha).getTime()||0)).forEach(x=>{ num[x.tipo]=(num[x.tipo]||0)+1; numeros[x.id]=num[x.tipo]; });
+  const orden=lista.slice().sort((a,b)=>(new Date(b.fecha).getTime()||0)-(new Date(a.fecha).getTime()||0));
   cont.innerHTML = orden.length ? orden.map(x=>`<div class="hc-item ${x.auto?"auto":""}">
     ${hcBorrando_?`<input type="checkbox" data-hc-sel="${escAttr(x.id)}" ${hcSel_.has(x.id)?"checked":""}>`:""}
     <div class="hc-main">
