@@ -1268,7 +1268,6 @@
   <div class="modal-box modal-box-wide"><button class="modal-close" data-close="historialCastigosModal">✕</button>
     <h3>📜 Historial de castigos</h3>
     <div id="hcNombre" style="font-size:13px;color:var(--text-dim);margin-bottom:8px;"></div>
-    <div id="hcDemo" class="hc-demo hidden">🧪 Vista previa: los cambios del historial no se guardan todavía. Los castigos anteriores aparecen como "Antes del cambio".</div>
     <div id="hcLista" class="hc-list"></div>
     <div class="modal-actions" style="display:flex;gap:8px;margin-top:14px;">
       <button type="button" class="btn-small" id="hcCancelarBtn" style="background:var(--card-bg-2);color:var(--text);flex:1;">Cancelar</button>
@@ -1517,7 +1516,7 @@ const MESES = ["ene","feb","mar","abr","may","jun","jul","ago","sep","oct","nov"
 const MESES_LARGOS = ["enero","febrero","marzo","abril","mayo","junio","julio","agosto","septiembre","octubre","noviembre","diciembre"];
 const MESES_LARGO = ["Enero","Febrero","Marzo","Abril","Mayo","Junio","Julio","Agosto","Septiembre","Octubre","Noviembre","Diciembre"];
 
-let DB = { actividades: [], entregas: [], miembros: [], anuario: [], periodos: [] };
+let DB = { actividades: [], entregas: [], miembros: [], anuario: [], periodos: [], historialCastigos: [] };
 
 // ---------- Ocultar de verdad para lectores accesibles (Ticket: fuga en Modo Lectura de Edge) ----------
 // El "Modo Lectura" de Edge (y lectores de pantalla similares) extraen el texto de TODO el DOM sin
@@ -2150,7 +2149,7 @@ const ANALITICA_LABELS = {
   addEntrega:"📥 Entrega registrada", deleteEntregas:"🗑️ Entregas borradas", importarEntregas:"📋 Entregas importadas",
   irAEntregar:"🎙️ Botón \"Entregar\" usado", irAUnirse:"🤝 Botón \"Unirse\" usado", irAScript:"📄 Botón \"Script\" usado", botonPersonalizado:"🔘 Botón personalizado usado",
   addMiembro:"➕ Miembro agregado", editMiembro:"✏️ Miembro editado", deleteMiembro:"🗑️ Miembro borrado",
-  addFalta:"⚠️ Falta registrada", addFaltasMultiples:"⚠️ Faltas registradas (lote, Pasar Lista)", addStrike:"⚡ Strike registrado", addStrikePermanente:"☠️ Strike Permanente registrado",
+  addFalta:"⚠️ Falta registrada", addFaltasMultiples:"⚠️ Faltas registradas (lote, Pasar Lista)", addStrike:"⚡ Strike registrado", addStrikePermanente:"☠️ Strike Permanente registrado", deleteHistorialCastigos:"🗑️ Registros del historial de castigos borrados",
   resetCastigos:"♻️ Castigos reiniciados (individual)", resetStrikesGlobal:"♻️ Strikes reiniciados (global)",
   limpiarNombresBD:"🧹 Limpieza de nombres BD",
   abrirTarjetaMiembro:"🪪 Tarjeta de Miembro abierta", irASmule:"🎤 Botón Smule usado", irABandlab:"🎧 Botón BandLab usado",
@@ -2183,7 +2182,7 @@ const ANALITICA_CATEGORIA_DE = {
   redSocial_web:"Redes sociales", redSocial_youtube:"Redes sociales", redSocial_instagram:"Redes sociales", redSocial_tiktok:"Redes sociales", redSocial_smuleGrupo:"Redes sociales",
   redSocial_minecraft:"Redes sociales", minecraft_bedrock:"Redes sociales", minecraft_java:"Redes sociales",
   addMiembro:"Gestión de Miembros (Staff)", editMiembro:"Gestión de Miembros (Staff)", deleteMiembro:"Gestión de Miembros (Staff)",
-  addFalta:"Gestión de Miembros (Staff)", addFaltasMultiples:"Gestión de Miembros (Staff)", addStrike:"Gestión de Miembros (Staff)", addStrikePermanente:"Gestión de Miembros (Staff)",
+  addFalta:"Gestión de Miembros (Staff)", addFaltasMultiples:"Gestión de Miembros (Staff)", addStrike:"Gestión de Miembros (Staff)", addStrikePermanente:"Gestión de Miembros (Staff)", deleteHistorialCastigos:"Gestión de Miembros (Staff)",
   resetCastigos:"Gestión de Miembros (Staff)", resetStrikesGlobal:"Gestión de Miembros (Staff)", limpiarNombresBD:"Gestión de Miembros (Staff)",
   uploadImage:"Multimedia", uploadScript:"Multimedia", uploadAdjunto:"Multimedia", fetchSmulePhoto:"Multimedia", actualizarTodasLasFotos:"Multimedia",
   addQueja:"Buzón y reportes", addReporte:"Buzón y reportes",
@@ -3640,32 +3639,21 @@ function openMemberModal(id){
     };
   });
 }
-/* ---------- Historial de castigos (VISTA PREVIA: sin guardado real hasta conectar Code.gs) ----------
-   Los registros viven solo en memoria del navegador. Los contadores (faltas/strikes) siguen
-   usando las acciones que ya existían; el motivo se envía como parámetro extra "motivo" para que
-   el backend lo guarde cuando se conecte. */
+/* ---------- Historial de castigos (conectado a Code.gs: hoja "HistorialCastigos") ----------
+   Los registros vienen del backend dentro de cargarDatos() como DB.historialCastigos (solo nivel staff).
+   Cada fila: {id, idMiembro, tipo (falta|strike|permanente), motivo, fecha (ISO o "Sepa la bola"), auto, registradoPor}.
+   Los castigos anteriores a este cambio los crea el backend con migrarCastigosExistentes() (motivo "Antes del cambio"). */
 const HC_TIPOS_ = {falta:"Falta", strike:"Strike", permanente:"Strike permanente"};
-let HC_LOCAL_ = {}, hcMiembro_ = null, hcBorrando_ = false, hcSel_ = new Set();
+let hcMiembro_ = null, hcBorrando_ = false, hcSel_ = new Set();
 function fmtFechaHC_(iso){
   const d=new Date(iso); if(isNaN(d)) return String(iso||"");
   return `${d.getDate()} ${["ene","feb","mar","abr","may","jun","jul","ago","sep","oct","nov","dic"][d.getMonth()]} ${d.getFullYear()}`;
 }
-function hcAsegurar_(id){
-  const k=String(id);
-  if(HC_LOCAL_[k]) return;
-  const m=(DB.miembros||[]).find(x=>String(x.id)===k)||{};
-  // Migración: los castigos que ya existían (contadores del miembro) se muestran como registros
-  // "Antes del cambio" con fecha "Sepa la bola". No se borran ni se alteran los contadores.
-  const lg=[];
-  [["falta",Number(m.faltas)||0],["strike",Number(m.strikes)||0],["permanente",Number(m.strikesPermanentes)||0]].forEach(([tipo,n])=>{
-    for(let i=0;i<n;i++) lg.push({id:`legacy-${tipo}-${i}`,tipo,motivo:"Antes del cambio",auto:false,fecha:"Sepa la bola",legacy:true});
-  });
-  HC_LOCAL_[k]=lg;
-}
-function hcAgregar_(idMiembro, tipo, motivo, auto){
+function hcLista_(idMiembro){
   const k=String(idMiembro);
-  hcAsegurar_(k);
-  HC_LOCAL_[k].push({id:"hc-"+Date.now()+"-"+Math.random().toString(36).slice(2,6), tipo, motivo, auto:!!auto, fecha:new Date().toISOString()});
+  return (DB.historialCastigos||[])
+    .filter(x=>String(x.idMiembro)===k)
+    .map(x=>({id:String(x.id), tipo:String(x.tipo||""), motivo:x.motivo, fecha:x.fecha, auto:(x.auto===true||String(x.auto).toUpperCase()==="TRUE"), registradoPor:x.registradoPor}));
 }
 function pedirJustificacion_(titulo){
   return new Promise(resolve=>{
@@ -3688,15 +3676,16 @@ function pedirJustificacion_(titulo){
 function abrirHistorialCastigos_(idMiembro){
   const m=(DB.miembros||[]).find(x=>String(x.id)===String(idMiembro)); if(!m) return;
   hcMiembro_=String(idMiembro); hcBorrando_=false; hcSel_=new Set();
-  hcAsegurar_(hcMiembro_);
   document.getElementById("hcNombre").textContent=m.nombre||"";
   renderHistorialCastigos_();
   openModal("historialCastigosModal");
+  // Refresca desde el backend al abrir (silencioso) y vuelve a pintar si sigue siendo el mismo miembro.
+  const k=hcMiembro_;
+  cargarDatos().then(()=>{ if(hcMiembro_===k) renderHistorialCastigos_(); }).catch(()=>{});
 }
 function renderHistorialCastigos_(){
-  const lista=HC_LOCAL_[hcMiembro_]||[];
+  const lista=hcLista_(hcMiembro_);
   const cont=document.getElementById("hcLista");
-  document.getElementById("hcDemo").classList.toggle("hidden", false);
   const num={}, numeros={};
   lista.slice().sort((a,b)=>(new Date(a.fecha).getTime()||0)-(new Date(b.fecha).getTime()||0)).forEach(x=>{ num[x.tipo]=(num[x.tipo]||0)+1; numeros[x.id]=num[x.tipo]; });
   const orden=lista.slice().sort((a,b)=>(new Date(b.fecha).getTime()||0)-(new Date(a.fecha).getTime()||0));
@@ -3724,27 +3713,29 @@ document.getElementById("hcBorrarBtn").onclick=async()=>{
   if(!hcBorrando_){ hcBorrando_=true; hcSel_=new Set(); renderHistorialCastigos_(); return; }
   if(!hcSel_.size){ toast("Marcá al menos un registro."); return; }
   if(!await confirmarAccion(`¿Eliminar ${hcSel_.size} registro(s) del historial?`)) return;
-  // TODO(Code.gs): llamar a la acción real de borrado; por ahora solo se quita de la vista previa.
-  HC_LOCAL_[hcMiembro_]=(HC_LOCAL_[hcMiembro_]||[]).filter(x=>!hcSel_.has(x.id));
+  const ids=[...hcSel_];
+  const r=await apiPost({action:"deleteHistorialCastigos", idMiembro:hcMiembro_, ids}, "Eliminando registros...");
+  if(!r.ok){ toast("Error: "+(r.error||"")); return; }
   hcBorrando_=false; hcSel_=new Set();
+  await cargarDatos();
   renderHistorialCastigos_();
-  toast("Eliminado (vista previa, sin guardado real)");
+  toast(`Eliminado (${r.eliminados!==undefined?r.eliminados:ids.length}) ✅`);
 };
 async function registrarFalta(idMiembro){
   const motivo=await pedirJustificacion_("Justificación de la falta"); if(motivo===null) return;
   const r=await apiPost({action:"addFalta", idMiembro, motivo});
-  if(r.ok){ hcAgregar_(idMiembro,"falta",motivo); toast("Falta registrada"); await cargarDatos(); openMemberModal(idMiembro);} else toast("Error: "+(r.error||""));
+  if(r.ok){ toast("Falta registrada"); await cargarDatos(); openMemberModal(idMiembro);} else toast("Error: "+(r.error||""));
 }
 async function registrarStrike(idMiembro){
   const motivo=await pedirJustificacion_("Justificación del strike"); if(motivo===null) return;
   const r=await apiPost({action:"addStrike", idMiembro, motivo});
-  if(r.ok){ hcAgregar_(idMiembro,"strike",motivo); toast("Strike registrado"); await cargarDatos(); openMemberModal(idMiembro);} else toast("Error: "+(r.error||""));
+  if(r.ok){ toast("Strike registrado"); await cargarDatos(); openMemberModal(idMiembro);} else toast("Error: "+(r.error||""));
 }
 async function registrarStrikePermanente(idMiembro){
   if(!await confirmarAccion("¿Registrar un Strike Permanente? El reinicio anual global NO lo toca.")) return;
   const motivo=await pedirJustificacion_("Justificación del strike permanente"); if(motivo===null) return;
   const r=await apiPost({action:"addStrikePermanente", idMiembro, motivo});
-  if(r.ok){ hcAgregar_(idMiembro,"permanente",motivo); toast("Strike Permanente registrado ☠️"); await cargarDatos(); openMemberModal(idMiembro);} else toast("Error: "+(r.error||""));
+  if(r.ok){ toast("Strike Permanente registrado ☠️"); await cargarDatos(); openMemberModal(idMiembro);} else toast("Error: "+(r.error||""));
 }
 async function borrarCastigos(idMiembro){ if(!await confirmarAccion("¿Poner faltas y strikes en 0? (Esto también borra los Strikes Permanentes de este miembro)")) return; const r=await apiPost({action:"resetCastigos", idMiembro}); if(r.ok){toast("Reiniciado ✅"); await cargarDatos(); openMemberModal(idMiembro);} else toast("Error: "+(r.error||"")); }
 
@@ -4066,7 +4057,7 @@ document.getElementById("faltantesConfirmarBtn").onclick=async()=>{
   if(!ids.length){ toast("No dejaste a nadie marcado."); return; }
   if(!await confirmarAccion(`Se le va a sumar UNA falta a ${ids.length} miembro(s) en "${faltantesActividadActual_.titulo}". ¿Continuar?`)) return;
   const r = await apiPost({action:"addFaltasMultiples", ids, motivo:`Sin entrega en: ${faltantesActividadActual_.titulo}`}, "Registrando faltas...");
-  if(r.ok){ ids.forEach(id=>hcAgregar_(id,"falta",`Sin entrega en: ${faltantesActividadActual_.titulo}`)); toast(`⚠️ Falta registrada a ${r.afectados!==undefined?r.afectados:ids.length} miembro(s)`); closeModal("faltantesModal"); await cargarDatos(); renderPasarLista(); }
+  if(r.ok){ toast(`⚠️ Falta registrada a ${r.afectados!==undefined?r.afectados:ids.length} miembro(s)`); closeModal("faltantesModal"); await cargarDatos(); renderPasarLista(); }
   else toast("Error: "+(r.error||""));
 };
 
