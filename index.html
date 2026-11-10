@@ -3719,7 +3719,7 @@ document.getElementById("hcBorrarBtn").onclick=async()=>{
   hcBorrando_=false; hcSel_=new Set();
   await cargarDatos();
   renderHistorialCastigos_();
-  toast(`Eliminado (${r.eliminados!==undefined?r.eliminados:ids.length}) ✅`);
+  toast(r.strikesRevertidos ? `Eliminado ✅ (también se revirtió ${r.strikesRevertidos} strike automático: faltas en 3)` : `Eliminado (${r.eliminados!==undefined?r.eliminados:ids.length}) ✅`);
 };
 async function registrarFalta(idMiembro){
   const motivo=await pedirJustificacion_("Justificación de la falta"); if(motivo===null) return;
