@@ -675,6 +675,15 @@
   .btn-falta{background:rgba(241,196,15,0.2);color:var(--yellow);}
   .btn-strike{background:rgba(231,76,60,0.2);color:var(--red);}
   .btn-strike-permanente{background:rgba(120,20,20,0.4);color:#ff6b6b;border:1px solid rgba(255,107,107,0.4);}
+  .hc-demo{font-size:12px;color:var(--text-dim);background:rgba(255,255,255,0.06);border-radius:10px;padding:8px 10px;margin-bottom:10px;}
+  .hc-list{display:flex;flex-direction:column;gap:10px;max-height:52vh;overflow-y:auto;}
+  .hc-item{display:flex;gap:10px;align-items:flex-start;}
+  .hc-item .hc-main{flex:1;min-width:0;}
+  .hc-head{display:flex;justify-content:space-between;align-items:baseline;gap:8px;font-weight:800;font-size:14px;}
+  .hc-head .hc-fecha{font-weight:600;font-size:12.5px;color:var(--text-dim);white-space:nowrap;}
+  .hc-motivo{margin-top:5px;background:var(--card-bg-2);border-radius:10px;padding:9px 11px;font-size:13px;line-height:1.4;word-break:break-word;}
+  .hc-item.auto .hc-motivo{border-left:3px solid var(--peach-2);}
+  .hc-item input[type=checkbox]{width:20px;height:20px;margin-top:2px;flex-shrink:0;accent-color:var(--peach-2);}
   .btn-reset-castigos{width:100%;margin-top:8px;padding:9px;border-radius:10px;font-weight:700;font-size:12.5px;background:rgba(255,255,255,0.08);color:var(--text-dim);}
 
   .winners-block{background:var(--card-bg-2);border-radius:12px;padding:14px;margin-top:10px;}
@@ -1251,6 +1260,31 @@
     <div id="pasarListaMultiLista" style="display:flex;flex-direction:column;gap:6px;max-height:50vh;overflow-y:auto;"></div>
     <div class="modal-actions" style="display:flex;gap:8px;margin-top:14px;">
       <button type="button" class="btn-small btn-danger" id="pasarListaMultiContinuarBtn" style="flex:1;">Continuar</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal-overlay" id="historialCastigosModal" style="z-index:275;">
+  <div class="modal-box modal-box-wide"><button class="modal-close" data-close="historialCastigosModal">✕</button>
+    <h3>📜 Historial de castigos</h3>
+    <div id="hcNombre" style="font-size:13px;color:var(--text-dim);margin-bottom:8px;"></div>
+    <div id="hcDemo" class="hc-demo hidden">🧪 Vista previa: estos registros son de ejemplo y los cambios no se guardan todavía.</div>
+    <div id="hcLista" class="hc-list"></div>
+    <div class="modal-actions" style="display:flex;gap:8px;margin-top:14px;">
+      <button type="button" class="btn-small" id="hcCancelarBtn" style="background:var(--card-bg-2);color:var(--text);flex:1;">Cancelar</button>
+      <button type="button" class="btn-small btn-danger" id="hcBorrarBtn" style="flex:1;">🗑️ Borrar castigos</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal-overlay" id="justificacionModal" style="z-index:300;">
+  <div class="modal-box"><button class="modal-close" data-close="justificacionModal">✕</button>
+    <h3 id="justTitulo">Justificación</h3>
+    <div style="font-size:13px;color:var(--text-dim);margin-bottom:8px;">Queda en el historial de castigos (solo lo ven los admins).</div>
+    <textarea id="justTexto" rows="4" maxlength="300" placeholder="¿Por qué se le pone?" style="width:100%;resize:vertical;"></textarea>
+    <div class="modal-actions" style="display:flex;gap:8px;margin-top:14px;">
+      <button type="button" class="btn-small" id="justCancelarBtn" style="background:var(--card-bg-2);color:var(--text);flex:1;">Cancelar</button>
+      <button type="button" class="btn-small btn-danger" id="justOkBtn" style="flex:1;">Guardar</button>
     </div>
   </div>
 </div>
@@ -3551,7 +3585,7 @@ function openMemberModal(id){
       <div class="ct-row"><span>⚠️ Strikes</span><strong>${strikes}</strong></div>
       <div class="ct-row"><span>📉 Faltas</span><strong>${faltas}</strong></div>
       ${staffPin?`<div class="admin-strike-btns"><button class="btn-falta" data-falta="${m.id}">+ Falta</button><button class="btn-strike" data-strike="${m.id}">+ Strike</button><button class="btn-strike-permanente" data-strike-permanente="${m.id}">+ Strike Permanente</button></div>
-      <button class="btn-reset-castigos" data-reset="${m.id}">🔄 Borrar Castigos</button>`:""}
+      <button class="btn-reset-castigos" data-historial="${m.id}">📜 Historial de castigos</button>`:""}
     </div>
     ${entregasDelMiembroHTML_(m.id)}`;
   openModal("memberModal"); bindAvatarFallbacks();
@@ -3579,7 +3613,7 @@ function openMemberModal(id){
   const faltaBtn=document.querySelector("[data-falta]"); if(faltaBtn) faltaBtn.onclick=()=>registrarFalta(m.id);
   const strikeBtn=document.querySelector("[data-strike]"); if(strikeBtn) strikeBtn.onclick=()=>registrarStrike(m.id);
   const strikePermBtn=document.querySelector("[data-strike-permanente]"); if(strikePermBtn) strikePermBtn.onclick=()=>registrarStrikePermanente(m.id);
-  const resetBtn=document.querySelector("[data-reset]"); if(resetBtn) resetBtn.onclick=()=>borrarCastigos(m.id);
+  const histBtn=document.querySelector("[data-historial]"); if(histBtn) histBtn.onclick=()=>abrirHistorialCastigos_(m.id);
   const editBtn=document.querySelector("[data-edit-member]"); if(editBtn) editBtn.onclick=()=>{ closeModal("memberModal"); openMemberEditForm(m.id); };
   // v23: filtro Canto/Doblaje de la sección de Entregas de esta tarjeta -- cada pill es
   // independiente (no exclusivo), así que pueden quedar ambas prendidas, solo una, o ninguna.
@@ -3591,12 +3625,106 @@ function openMemberModal(id){
     };
   });
 }
-async function registrarFalta(idMiembro){ const r=await apiPost({action:"addFalta", idMiembro}); if(r.ok){toast("Falta registrada"); await cargarDatos(); openMemberModal(idMiembro);} else toast("Error: "+(r.error||"")); }
-async function registrarStrike(idMiembro){ const r=await apiPost({action:"addStrike", idMiembro}); if(r.ok){toast("Strike registrado"); await cargarDatos(); openMemberModal(idMiembro);} else toast("Error: "+(r.error||"")); }
+/* ---------- Historial de castigos (VISTA PREVIA: sin guardado real hasta conectar Code.gs) ----------
+   Los registros viven solo en memoria del navegador. Los contadores (faltas/strikes) siguen
+   usando las acciones que ya existían; el motivo se envía como parámetro extra "motivo" para que
+   el backend lo guarde cuando se conecte. */
+const HC_TIPOS_ = {falta:"Falta", strike:"Strike", permanente:"Strike permanente"};
+let HC_LOCAL_ = {}, hcMiembro_ = null, hcBorrando_ = false, hcSel_ = new Set();
+function fmtFechaHC_(iso){
+  const d=new Date(iso); if(isNaN(d)) return "";
+  return `${d.getDate()} ${["ene","feb","mar","abr","may","jun","jul","ago","sep","oct","nov","dic"][d.getMonth()]} ${d.getFullYear()}`;
+}
+function hcAgregar_(idMiembro, tipo, motivo, auto){
+  const k=String(idMiembro);
+  if(!HC_LOCAL_[k]) HC_LOCAL_[k]=[];
+  HC_LOCAL_[k].push({id:"hc-"+Date.now()+"-"+Math.random().toString(36).slice(2,6), tipo, motivo, auto:!!auto, fecha:new Date().toISOString()});
+}
+function pedirJustificacion_(titulo){
+  return new Promise(resolve=>{
+    const txt=document.getElementById("justTexto");
+    document.getElementById("justTitulo").textContent=titulo;
+    txt.value="";
+    let hecho=false;
+    const fin=v=>{ if(hecho) return; hecho=true; closeModal("justificacionModal"); resolve(v); };
+    document.getElementById("justOkBtn").onclick=()=>{
+      const v=txt.value.trim();
+      if(!v){ toast("Escribí la justificación."); return; }
+      fin(v);
+    };
+    document.getElementById("justCancelarBtn").onclick=()=>fin(null);
+    document.querySelector('[data-close="justificacionModal"]').addEventListener("click",()=>fin(null),{once:true});
+    openModal("justificacionModal");
+    setTimeout(()=>txt.focus(),50);
+  });
+}
+function abrirHistorialCastigos_(idMiembro){
+  const m=(DB.miembros||[]).find(x=>String(x.id)===String(idMiembro)); if(!m) return;
+  hcMiembro_=String(idMiembro); hcBorrando_=false; hcSel_=new Set();
+  if(!HC_LOCAL_[hcMiembro_]){
+    const d=n=>new Date(Date.now()-n*86400000).toISOString();
+    HC_LOCAL_[hcMiembro_]=[
+      {id:"demo1",tipo:"falta",motivo:"Sin entrega en: Reto de Noviembre (ejemplo)",auto:false,fecha:d(20),demo:true},
+      {id:"demo2",tipo:"falta",motivo:"Faltó al ensayo sin avisar (ejemplo)",auto:false,fecha:d(9),demo:true},
+      {id:"demo3",tipo:"strike",motivo:"Se alcanzó 2 faltas (ejemplo)",auto:true,fecha:d(9),demo:true}
+    ];
+  }
+  document.getElementById("hcNombre").textContent=m.nombre||"";
+  renderHistorialCastigos_();
+  openModal("historialCastigosModal");
+}
+function renderHistorialCastigos_(){
+  const lista=HC_LOCAL_[hcMiembro_]||[];
+  const cont=document.getElementById("hcLista");
+  document.getElementById("hcDemo").classList.toggle("hidden", !lista.some(x=>x.demo));
+  const num={}, numeros={};
+  lista.slice().sort((a,b)=>new Date(a.fecha)-new Date(b.fecha)).forEach(x=>{ num[x.tipo]=(num[x.tipo]||0)+1; numeros[x.id]=num[x.tipo]; });
+  const orden=lista.slice().sort((a,b)=>new Date(b.fecha)-new Date(a.fecha));
+  cont.innerHTML = orden.length ? orden.map(x=>`<div class="hc-item ${x.auto?"auto":""}">
+    ${hcBorrando_?`<input type="checkbox" data-hc-sel="${escAttr(x.id)}" ${hcSel_.has(x.id)?"checked":""}>`:""}
+    <div class="hc-main">
+      <div class="hc-head"><span>${x.tipo==="falta"?"📉":x.tipo==="strike"?"⚠️":"☠️"} ${HC_TIPOS_[x.tipo]||x.tipo} ${numeros[x.id]}${x.auto?` <span style="font-weight:600;font-size:11.5px;color:var(--text-dim);">· automático</span>`:""}</span><span class="hc-fecha">${fmtFechaHC_(x.fecha)}</span></div>
+      <div class="hc-motivo">${escHtml(x.motivo||"Sin justificación")}</div>
+    </div></div>`).join("") : `<div style="color:var(--text-dim);font-size:13px;">Sin castigos registrados.</div>`;
+  cont.querySelectorAll("[data-hc-sel]").forEach(chk=>chk.onchange=()=>{
+    const id=chk.dataset.hcSel; if(chk.checked) hcSel_.add(id); else hcSel_.delete(id);
+    actualizarHcBotones_();
+  });
+  actualizarHcBotones_();
+}
+function actualizarHcBotones_(){
+  document.getElementById("hcCancelarBtn").textContent = hcBorrando_ ? "Cancelar" : "Cerrar";
+  document.getElementById("hcBorrarBtn").textContent = hcBorrando_ ? `Eliminar seleccionados (${hcSel_.size})` : "🗑️ Borrar castigos";
+}
+document.getElementById("hcCancelarBtn").onclick=()=>{
+  if(hcBorrando_){ hcBorrando_=false; hcSel_=new Set(); renderHistorialCastigos_(); }
+  else closeModal("historialCastigosModal");
+};
+document.getElementById("hcBorrarBtn").onclick=async()=>{
+  if(!hcBorrando_){ hcBorrando_=true; hcSel_=new Set(); renderHistorialCastigos_(); return; }
+  if(!hcSel_.size){ toast("Marcá al menos un registro."); return; }
+  if(!await confirmarAccion(`¿Eliminar ${hcSel_.size} registro(s) del historial?`)) return;
+  // TODO(Code.gs): llamar a la acción real de borrado; por ahora solo se quita de la vista previa.
+  HC_LOCAL_[hcMiembro_]=(HC_LOCAL_[hcMiembro_]||[]).filter(x=>!hcSel_.has(x.id));
+  hcBorrando_=false; hcSel_=new Set();
+  renderHistorialCastigos_();
+  toast("Eliminado (vista previa, sin guardado real)");
+};
+async function registrarFalta(idMiembro){
+  const motivo=await pedirJustificacion_("Justificación de la falta"); if(motivo===null) return;
+  const r=await apiPost({action:"addFalta", idMiembro, motivo});
+  if(r.ok){ hcAgregar_(idMiembro,"falta",motivo); toast("Falta registrada"); await cargarDatos(); openMemberModal(idMiembro);} else toast("Error: "+(r.error||""));
+}
+async function registrarStrike(idMiembro){
+  const motivo=await pedirJustificacion_("Justificación del strike"); if(motivo===null) return;
+  const r=await apiPost({action:"addStrike", idMiembro, motivo});
+  if(r.ok){ hcAgregar_(idMiembro,"strike",motivo); toast("Strike registrado"); await cargarDatos(); openMemberModal(idMiembro);} else toast("Error: "+(r.error||""));
+}
 async function registrarStrikePermanente(idMiembro){
-  if(!await confirmarAccion("¿Registrar un Strike Permanente? Solo se puede quitar con \"Borrar Castigos\" en la tarjeta del miembro (el reinicio anual global NO lo toca).")) return;
-  const r=await apiPost({action:"addStrikePermanente", idMiembro});
-  if(r.ok){toast("Strike Permanente registrado ☠️"); await cargarDatos(); openMemberModal(idMiembro);} else toast("Error: "+(r.error||""));
+  if(!await confirmarAccion("¿Registrar un Strike Permanente? El reinicio anual global NO lo toca.")) return;
+  const motivo=await pedirJustificacion_("Justificación del strike permanente"); if(motivo===null) return;
+  const r=await apiPost({action:"addStrikePermanente", idMiembro, motivo});
+  if(r.ok){ hcAgregar_(idMiembro,"permanente",motivo); toast("Strike Permanente registrado ☠️"); await cargarDatos(); openMemberModal(idMiembro);} else toast("Error: "+(r.error||""));
 }
 async function borrarCastigos(idMiembro){ if(!await confirmarAccion("¿Poner faltas y strikes en 0? (Esto también borra los Strikes Permanentes de este miembro)")) return; const r=await apiPost({action:"resetCastigos", idMiembro}); if(r.ok){toast("Reiniciado ✅"); await cargarDatos(); openMemberModal(idMiembro);} else toast("Error: "+(r.error||"")); }
 
@@ -3917,8 +4045,8 @@ document.getElementById("faltantesConfirmarBtn").onclick=async()=>{
   const ids=[...faltantesSeleccionados_];
   if(!ids.length){ toast("No dejaste a nadie marcado."); return; }
   if(!await confirmarAccion(`Se le va a sumar UNA falta a ${ids.length} miembro(s) en "${faltantesActividadActual_.titulo}". ¿Continuar?`)) return;
-  const r = await apiPost({action:"addFaltasMultiples", ids}, "Registrando faltas...");
-  if(r.ok){ toast(`⚠️ Falta registrada a ${r.afectados!==undefined?r.afectados:ids.length} miembro(s)`); closeModal("faltantesModal"); await cargarDatos(); renderPasarLista(); }
+  const r = await apiPost({action:"addFaltasMultiples", ids, motivo:`Sin entrega en: ${faltantesActividadActual_.titulo}`}, "Registrando faltas...");
+  if(r.ok){ ids.forEach(id=>hcAgregar_(id,"falta",`Sin entrega en: ${faltantesActividadActual_.titulo}`)); toast(`⚠️ Falta registrada a ${r.afectados!==undefined?r.afectados:ids.length} miembro(s)`); closeModal("faltantesModal"); await cargarDatos(); renderPasarLista(); }
   else toast("Error: "+(r.error||""));
 };
 
