@@ -617,6 +617,14 @@
       body.anu-lock .anu-idx,body.anu-lock .anu-detail{position:static;max-height:none;min-height:0;overflow-y:auto;overscroll-behavior:contain;}
       body.anu-lock .role-sw{flex:none;padding:10px 16px calc(10px + env(safe-area-inset-bottom));}
     }
+    /* Scrollbar orgánico: solo un rectángulo redondeado, sin pista, dentro de la tarjeta */
+    .anu-idx,.anu-detail,#anuModalBox,.md-list{scrollbar-width:thin;scrollbar-color:rgba(164,95,199,.55) transparent;}
+    .anu-idx::-webkit-scrollbar,.anu-detail::-webkit-scrollbar,#anuModalBox::-webkit-scrollbar,.md-list::-webkit-scrollbar{width:14px;height:14px;background:transparent;}
+    .anu-idx::-webkit-scrollbar-track,.anu-detail::-webkit-scrollbar-track,#anuModalBox::-webkit-scrollbar-track,.md-list::-webkit-scrollbar-track{background:transparent;margin:22px 0;}
+    .anu-idx::-webkit-scrollbar-button,.anu-detail::-webkit-scrollbar-button,#anuModalBox::-webkit-scrollbar-button,.md-list::-webkit-scrollbar-button,
+    .anu-idx::-webkit-scrollbar-corner,.anu-detail::-webkit-scrollbar-corner,#anuModalBox::-webkit-scrollbar-corner,.md-list::-webkit-scrollbar-corner{display:none;background:transparent;}
+    .anu-idx::-webkit-scrollbar-thumb,.anu-detail::-webkit-scrollbar-thumb,#anuModalBox::-webkit-scrollbar-thumb,.md-list::-webkit-scrollbar-thumb{background:linear-gradient(180deg,#b57be0,#f81e8e);border-radius:99px;border:4px solid transparent;background-clip:padding-box;min-height:48px;}
+    .anu-idx::-webkit-scrollbar-thumb:hover,.anu-detail::-webkit-scrollbar-thumb:hover,#anuModalBox::-webkit-scrollbar-thumb:hover,.md-list::-webkit-scrollbar-thumb:hover{background:linear-gradient(180deg,#9a5cc9,#d8137a);border:4px solid transparent;background-clip:padding-box;}
     .anu-add{display:none;} body.anu-staff .anu-add{display:inline-flex;align-items:center;}
     @media (max-width:899px){
       .anu-bar{display:grid;grid-template-columns:46px 1fr 46px;gap:10px;}
