@@ -6646,7 +6646,7 @@ document.getElementById("reporteDrawerBtn").onclick=()=>{ closeDrawer(); openRep
 /* ---------- navegación ---------- */
 const URL_ANUARIO_PUBLICO_DEFAULT="https://youtu.be/dQw4w9WgXcQ"; // solo se usa si el backend todavía no mandó el valor configurado
 document.querySelectorAll(".tab-btn").forEach(btn=>btn.onclick=()=>{
-  if(btn.dataset.tab==="anuario"){ trackUI("verAnuario"); switchTab("anuario"); document.body.scrollTo({top:0}); return; }
+  if(btn.dataset.tab==="anuario"){ trackUI("verAnuario"); window.open((DB.enlacesPublicos&&DB.enlacesPublicos.CFG_ANUARIO_PUBLICO_LINK)||URL_ANUARIO_PUBLICO_DEFAULT,"_blank","noopener"); return; }
   switchTab(btn.dataset.tab);
 });
 function switchTab(tab){
@@ -6787,7 +6787,7 @@ function abrirStaffHub(){
   document.getElementById("hubCumple").onclick=()=>probarHub("testCumpleanos","Cumpleaños");
   document.getElementById("hubSeguridad").onclick=()=>probarHub("testSeguridad","Seguridad");
   document.getElementById("hubRecordatorio").onclick=()=>{ const a=DB.actividades[0]; if(!a){toast("No hay actividad para probar");return;} probarHub("testRecordatorio","Recordatorio",a.id); };
-  document.getElementById("hubAnuario").onclick=()=>{ closeModal("memberModal"); switchTab("anuario"); };
+  document.getElementById("hubAnuario").onclick=()=>{ closeModal("memberModal"); switchTab("anuario"); document.body.scrollTo({top:0}); };
   document.getElementById("hubDiasSin").onclick=()=>{ closeModal("memberModal"); abrirDiasSinModal(); };
   document.getElementById("hubEntregaSemanalCanto").onclick=()=>abrirEnlacePrivado("CFG_ENTREGA_SEMANAL_CANTO_LINK");
   document.getElementById("hubEntregaSemanalDoblaje").onclick=()=>abrirEnlacePrivado("CFG_ENTREGA_SEMANAL_DOBLAJE_LINK");
