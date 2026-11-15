@@ -306,6 +306,28 @@
   .switch-pill button{flex:1;min-width:80px;padding:9px 6px;border-radius:999px;background:none;color:var(--text-dim);font-weight:700;font-size:12.5px;text-align:center;}
   .switch-pill button.sel{background:linear-gradient(90deg,var(--peach-2),var(--peach-1));color:#fff;}
 
+
+  /* ===== "Días sin…" (contador desde un suceso/actividad) ===== */
+  .diassin-card{display:flex;align-items:center;gap:14px;padding:14px;margin-bottom:16px;position:relative;}
+  .diassin-thumb{flex:0 0 72px;width:72px;aspect-ratio:1/1;border-radius:12px;overflow:hidden;background:var(--card-bg-2);}
+  .diassin-thumb img{width:100%;height:100%;object-fit:cover;display:block;}
+  .diassin-info{flex:1;min-width:0;display:flex;flex-direction:column;gap:3px;}
+  .diassin-prefijo{font-size:11.5px;font-weight:800;letter-spacing:.06em;text-transform:uppercase;color:var(--peach-1);}
+  .diassin-titulo{font-weight:800;font-size:15.5px;line-height:1.25;}
+  .diassin-frase{font-size:12.5px;color:var(--text-dim);font-style:italic;}
+  .diassin-stats{display:flex;gap:6px;flex:0 0 auto;}
+  .diassin-stat{min-width:52px;padding:7px 4px;border-radius:12px;background:var(--card-bg-2);text-align:center;}
+  .diassin-stat b{display:block;font-size:20px;line-height:1.1;font-variant-numeric:tabular-nums;}
+  .diassin-stat:last-child b{color:var(--peach-2);}
+  .diassin-stat span{font-size:9.5px;font-weight:700;letter-spacing:.06em;color:var(--text-dim);}
+  .diassin-edit{position:absolute;top:6px;right:6px;padding:4px 8px;border-radius:999px;background:var(--card-bg-2);color:var(--text-dim);font-size:12px;}
+  @media (max-width:560px){
+    .diassin-card{flex-wrap:wrap;}
+    .diassin-info{flex-basis:calc(100% - 90px);}
+    .diassin-stats{flex:1 0 100%;}
+    .diassin-stat{flex:1;}
+  }
+
   .card{background:var(--card-bg);border-radius:var(--radius);margin-bottom:18px;overflow:hidden;border:1px solid rgba(255,255,255,0.06);}
   .card-top{display:flex;gap:0;padding:14px;}
   @media (max-width:480px){.card-top{flex-direction:column;}}
@@ -837,6 +859,7 @@
   <section id="viewActividades">
     <button id="addActBtn" class="hidden">(+) Añadir Actividad</button>
     <div id="modulosBar"></div>
+    <div id="diasSinWrap"></div>
     <a class="hidden pill-toggle regalito-btn" id="regalitoBtn" target="_blank" rel="noopener" href="https://forms.gle/FgSeqD33wE1R8Y8r6">🎁 Enviar regalito</a>
     <div class="filter-pills">
       <button class="pill-toggle on" id="filterCanto">🎤 Canto</button>
@@ -969,6 +992,31 @@
       <button class="btn-small" id="confirmDialogNo" style="flex:1;padding:10px;background:rgba(255,255,255,0.1);color:var(--text);border-radius:12px;font-weight:700;">Cancelar</button>
       <button class="btn-small btn-danger" id="confirmDialogYes" style="flex:1;padding:10px;border-radius:12px;font-weight:700;">Sí, continuar</button>
     </div>
+  </div>
+</div>
+
+
+<div class="modal-overlay" id="diasSinModal">
+  <div class="modal-box"><button class="modal-close" data-close="diasSinModal">✕</button>
+    <h3>Panel de Staff: Configurar "Días sin…"</h3>
+    <form id="diasSinForm" autocomplete="off">
+      <div class="form-group"><label>Tipo de origen</label>
+        <div class="switch-pill" id="ds_modoSwitch"><button type="button" data-val="actividad">🔗 Vincular Actividad</button><button type="button" data-val="libre">✒️ Texto Libre</button></div>
+      </div>
+      <div class="form-group"><label>Prefijo del título</label><input type="text" id="ds_prefijo" placeholder="Días sin KAGURABACHI"></div>
+      <div class="form-group" id="ds_actWrap"><label>Seleccionar actividad</label><select id="ds_actividad"></select></div>
+      <div id="ds_libreWrap">
+        <div class="form-group"><label>Nombre de la actividad / suceso</label><input type="text" id="ds_nombre"></div>
+        <div class="form-group"><label>URL de imagen / miniatura (opcional)</label><input type="text" id="ds_imagenUrl" placeholder="https://..."></div>
+      </div>
+      <div class="form-group"><label>Fecha y hora de inicio del contador (hora GMT-6)</label><input type="datetime-local" id="ds_inicio" required></div>
+      <div class="form-group"><label>Frase o subtítulo (opcional)</label><input type="text" id="ds_frase"></div>
+      <div class="modal-actions">
+        <button type="button" class="btn-small btn-danger" id="ds_quitarBtn">Quitar</button>
+        <button type="button" class="btn-small" data-close="diasSinModal">Cancelar</button>
+        <button type="submit" class="btn-small btn-primary">Guardar Cambios ✨</button>
+      </div>
+    </form>
   </div>
 </div>
 
@@ -2602,6 +2650,7 @@ function aplicarDatosCargados_(datos, esCache, sinRepintar){
   aplicarModulos();
   aplicarVisibilidadBuzon();
   aplicarVisibilidadMundo();
+  renderDiasSin();
   // Mismos datos que ya están pintados y mismas credenciales: no hace falta repintar (se ve idéntico).
   if(sinRepintar && estadoAntes_[0]===sessionToken && estadoAntes_[1]===memberPin && estadoAntes_[2]===staffPin) return;
   renderTodoPreservandoScroll_();
@@ -5080,7 +5129,7 @@ document.getElementById("confirmDialog").addEventListener("click", e=>{
 /* ---------- modales genéricos ---------- */
 // Estos modales tienen formulario real (se puede perder info si se cierran sin querer):
 // no se cierran tocando afuera, y avisan si hay cambios sin guardar al presionar la X.
-const FORM_MODALS=["memberEditModal","activityFormModal","entregaFormModal","anuarioModal"];
+const FORM_MODALS=["diasSinModal","memberEditModal","activityFormModal","entregaFormModal","anuarioModal"];
 let modalSnapshots={};
 function serializeForm(form){
   const parts=[];
@@ -6823,6 +6872,112 @@ function resaltarIndicacion(descripcionEscapada){
     openModal("avisoMiembroModal");
   }
 })();
+
+// ============ "DÍAS SIN…" ============
+// Config: {modo:"actividad"|"libre", prefijo, actividadId, nombre, imagenUrl, inicio:"YYYY-MM-DDTHH:mm" (GMT-6), frase}.
+// Fuente compartida: DB.diasSin (si el backend lo manda). Respaldo por dispositivo: localStorage.
+// Guardar intenta apiPost({action:"guardarDiasSin",config}); si Code.gs aún no la conoce, queda solo en este dispositivo.
+let _diasSinTimer=null;
+function getDiasSinCfg_(){
+  if(DB && DB.diasSin && DB.diasSin.inicio) return DB.diasSin;
+  try{ const c=JSON.parse(localStorage.getItem("tph_diassin")||"null"); if(c&&c.inicio) return c; }catch(e){}
+  return null;
+}
+function diasSinInicioMs_(c){ const t=Date.parse(String(c.inicio).slice(0,16)+":00-06:00"); return isNaN(t)?null:t; }
+function renderDiasSin(){
+  const wrap=document.getElementById("diasSinWrap"); if(!wrap) return;
+  clearInterval(_diasSinTimer); _diasSinTimer=null;
+  const c=getDiasSinCfg_(), esStaff=nivel==="staff";
+  const ini=c?diasSinInicioMs_(c):null;
+  if(!c||ini===null){
+    wrap.innerHTML=esStaff?'<button class="btn-small btn-admin" id="diasSinAddBtn" style="width:100%;margin-bottom:14px;padding:10px;border-radius:12px;">⏱️ Configurar "Días sin…"</button>':"";
+    const b=document.getElementById("diasSinAddBtn"); if(b) b.onclick=abrirDiasSinModal;
+    return;
+  }
+  let titulo=c.nombre||"", img=c.imagenUrl||"";
+  if(c.modo==="actividad"){
+    const a=(DB.actividades||[]).find(x=>String(x.id)===String(c.actividadId));
+    if(a){ titulo=a.titulo||""; img=a.imagenUrl||""; } else titulo=c.nombre||"";
+  }
+  wrap.innerHTML=`<div class="card diassin-card">
+    <div class="diassin-thumb"><img src="${escAttr(img||LOGO_DEFAULT)}" alt="" loading="lazy" decoding="async"></div>
+    <div class="diassin-info">
+      ${c.prefijo?`<div class="diassin-prefijo">${escHtml(c.prefijo)}</div>`:""}
+      <div class="diassin-titulo">${escHtml(titulo)}</div>
+      ${c.frase?`<div class="diassin-frase">“${escHtml(c.frase)}”</div>`:""}
+    </div>
+    <div class="diassin-stats">
+      <div class="diassin-stat"><b id="dsD">0</b><span>DÍAS</span></div>
+      <div class="diassin-stat"><b id="dsH">0</b><span>HORAS</span></div>
+      <div class="diassin-stat"><b id="dsM">0</b><span>MIN</span></div>
+      <div class="diassin-stat"><b id="dsS">0</b><span>SEG</span></div>
+    </div>
+    ${esStaff?'<button class="diassin-edit" id="diasSinEditBtn" title="Editar">✏️</button>':""}
+  </div>`;
+  const eb=document.getElementById("diasSinEditBtn"); if(eb) eb.onclick=abrirDiasSinModal;
+  const ids=["dsD","dsH","dsM","dsS"].map(i=>document.getElementById(i));
+  const tick=()=>{
+    const v=document.getElementById("viewActividades");
+    if(document.body.classList.contains("modulo-abierto")||(v&&v.classList.contains("hidden"))||document.hidden) return;
+    let t=Math.max(0,Math.floor((Date.now()-ini)/1000));
+    const vals=[Math.floor(t/86400),Math.floor(t%86400/3600),Math.floor(t%3600/60),t%60];
+    vals.forEach((n,i)=>{ const s=String(n); if(ids[i].textContent!==s) ids[i].textContent=s; });
+  };
+  tick(); _diasSinTimer=setInterval(tick,1000);
+}
+function dsActualizarModo_(){
+  const m=getSwitchPillValue("ds_modoSwitch");
+  document.getElementById("ds_actWrap").classList.toggle("hidden",m!=="actividad");
+  document.getElementById("ds_libreWrap").classList.toggle("hidden",m!=="libre");
+}
+bindSwitchPill("ds_modoSwitch");
+document.querySelectorAll("#ds_modoSwitch button").forEach(b=>b.addEventListener("click",dsActualizarModo_));
+function abrirDiasSinModal(){
+  const c=getDiasSinCfg_()||{modo:"actividad"};
+  const sel=document.getElementById("ds_actividad");
+  const acts=(DB.actividades||[]).slice().sort((a,b)=>String(b.fechaInicio||"").localeCompare(String(a.fechaInicio||"")));
+  sel.innerHTML=acts.map(a=>`<option value="${escAttr(a.id)}">${escHtml(a.titulo||"(sin título)")}</option>`).join("");
+  if(c.actividadId) sel.value=String(c.actividadId);
+  setSwitchPill("ds_modoSwitch",c.modo||"actividad");
+  document.getElementById("ds_prefijo").value=c.prefijo||"";
+  document.getElementById("ds_nombre").value=c.nombre||"";
+  document.getElementById("ds_imagenUrl").value=c.imagenUrl||"";
+  document.getElementById("ds_inicio").value=c.inicio||"";
+  document.getElementById("ds_frase").value=c.frase||"";
+  document.getElementById("ds_quitarBtn").style.display=getDiasSinCfg_()?"":"none";
+  dsActualizarModo_();
+  openModal("diasSinModal");
+}
+async function guardarDiasSin_(cfg){
+  try{ if(cfg) localStorage.setItem("tph_diassin",JSON.stringify(cfg)); else localStorage.removeItem("tph_diassin"); }catch(e){}
+  DB.diasSin=cfg||null;
+  renderDiasSin();
+  closeModal("diasSinModal");
+  const r=await apiPost({action:"guardarDiasSin",config:cfg||{}},null,true);
+  toast(r&&r.ok?"✅ Contador guardado":"⚠️ Guardado solo en este dispositivo (el backend aún no tiene guardarDiasSin)",3500);
+}
+document.getElementById("diasSinForm").addEventListener("submit",e=>{
+  e.preventDefault();
+  const modo=getSwitchPillValue("ds_modoSwitch")||"actividad";
+  const cfg={modo,prefijo:document.getElementById("ds_prefijo").value.trim(),
+    inicio:document.getElementById("ds_inicio").value,frase:document.getElementById("ds_frase").value.trim(),
+    actividadId:"",nombre:"",imagenUrl:""};
+  if(!cfg.inicio){ toast("Falta la fecha y hora de inicio"); return; }
+  if(modo==="actividad"){
+    const sel=document.getElementById("ds_actividad");
+    if(!sel.value){ toast("Elige una actividad"); return; }
+    cfg.actividadId=sel.value; cfg.nombre=sel.options[sel.selectedIndex].text;
+  } else {
+    cfg.nombre=document.getElementById("ds_nombre").value.trim();
+    cfg.imagenUrl=document.getElementById("ds_imagenUrl").value.trim();
+    if(!cfg.nombre){ toast("Escribe el nombre del suceso"); return; }
+  }
+  guardarDiasSin_(cfg);
+});
+document.getElementById("ds_quitarBtn").onclick=async()=>{
+  if(await confirmarAccion("¿Quitar el contador \"Días sin…\"?")) guardarDiasSin_(null);
+};
+document.addEventListener("visibilitychange",()=>{ if(!document.hidden) renderDiasSin(); });
 </script>
 
 <style>
