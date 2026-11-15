@@ -589,7 +589,6 @@
     @media (min-width:560px){.anu-grid{grid-template-columns:repeat(3,1fr);gap:34px 22px;}}
     .anu-card{position:relative;display:block;width:100%;padding:9px 9px 0;text-align:left;background:#fff;color:#2a1745;border-radius:16px;box-shadow:0 10px 22px rgba(60,30,90,.16);transform:rotate(var(--r,0deg));transition:transform .25s cubic-bezier(.2,.8,.2,1),box-shadow .25s;animation:cardIn .5s cubic-bezier(.2,.8,.2,1) backwards;animation-delay:calc(var(--i,0)*60ms);}
     @keyframes cardIn{from{opacity:0;transform:translateY(16px) rotate(var(--r,0deg))}}
-    .anu-card::before{content:"";position:absolute;z-index:4;top:-11px;left:18px;width:58px;height:22px;border-radius:3px;background:rgba(255,205,120,.8);transform:rotate(-6deg);box-shadow:0 2px 4px rgba(0,0,0,.1);}
     .anu-card:hover{transform:rotate(0) translateY(-5px) scale(1.03);box-shadow:0 18px 30px rgba(60,30,90,.24);}
     .anu-card:active{transform:scale(.97);}
     .anu-pics{position:relative;display:block;aspect-ratio:1/1;border-radius:10px;background:#faf6fb;}
@@ -625,6 +624,45 @@
     .anu-idx::-webkit-scrollbar-corner,.anu-detail::-webkit-scrollbar-corner,#anuModalBox::-webkit-scrollbar-corner,.md-list::-webkit-scrollbar-corner{display:none;background:transparent;}
     .anu-idx::-webkit-scrollbar-thumb,.anu-detail::-webkit-scrollbar-thumb,#anuModalBox::-webkit-scrollbar-thumb,.md-list::-webkit-scrollbar-thumb{background:linear-gradient(180deg,#b57be0,#f81e8e);border-radius:99px;border:4px solid transparent;background-clip:padding-box;min-height:48px;}
     .anu-idx::-webkit-scrollbar-thumb:hover,.anu-detail::-webkit-scrollbar-thumb:hover,#anuModalBox::-webkit-scrollbar-thumb:hover,.md-list::-webkit-scrollbar-thumb:hover{background:linear-gradient(180deg,#9a5cc9,#d8137a);border:4px solid transparent;background-clip:padding-box;}
+    /* ---- Agregar al anuario: tarjetas seleccionables con borde resaltado ---- */
+    .md-opt{position:relative;transition:border-color .2s,box-shadow .25s,background .2s,transform .2s;}
+    .md-opt:hover{border-color:#d9c4f0;}
+    .md-opt.sel{border-color:#f81e8e;background:linear-gradient(135deg,#fff,#fff0f7);box-shadow:0 0 0 3px rgba(248,30,142,.16),0 8px 20px rgba(248,30,142,.22);transform:translateY(-1px);}
+    .md-opt.sel b{color:#c4106f;}
+    .md-hint{margin:2px 0 0;font-size:13.5px;color:#6b5683;}
+    .sg-name-l{display:block;margin:12px 0 6px;font-size:13px;font-weight:800;color:#6b5683;}
+    .sg-name{box-sizing:border-box;width:100%;padding:12px 14px;border-radius:14px;border:2px solid #eadff7;background:#fff;color:#2a1745;font:inherit;font-weight:800;font-size:15px;outline:none;transition:border-color .2s,box-shadow .2s;}
+    .sg-name:focus{border-color:#f81e8e;box-shadow:0 0 0 3px rgba(248,30,142,.14);}
+    .sg-grp{margin-top:18px;}
+    .sg-gt{display:flex;align-items:center;gap:10px;margin:0 0 10px;font:400 clamp(22px,5vw,26px)/1.05 var(--f-disp);color:#3f2168;}
+    .sg-gt img{width:44px;height:44px;border-radius:12px;object-fit:cover;flex:none;}
+    .sg-gt small{display:block;font:800 12px/1.2 inherit;font-family:inherit;color:#6b5683;margin-top:2px;}
+    .sg-card{display:grid;gap:10px;padding:12px;border-radius:18px;border:2px solid #eadff7;background:#fff;margin-bottom:10px;transition:border-color .2s,box-shadow .25s,background .2s;}
+    .sg-card b{display:block;font-size:14.5px;line-height:1.25;color:#2a1745;overflow-wrap:anywhere;}
+    .sg-card small{display:block;margin-top:2px;font-size:12.5px;color:#6b5683;}
+    .sg-card .sg-done{display:inline-block;margin-top:4px;padding:1px 8px;border-radius:999px;background:#e5f6e8;color:#1c7a36;font-weight:800;font-size:11.5px;}
+    .sg-card.on-mejor{border-color:#ffb300;background:linear-gradient(135deg,#fff,#fff8df);box-shadow:0 0 0 3px rgba(255,179,0,.2),0 8px 20px rgba(255,179,0,.25);}
+    .sg-card.on-mencion{border-color:#7b4bc4;background:linear-gradient(135deg,#fff,#f4ecfd);box-shadow:0 0 0 3px rgba(123,75,196,.16),0 8px 20px rgba(123,75,196,.2);}
+    .sg-btns{display:grid;grid-template-columns:1fr 1fr;gap:8px;}
+    .sg-btns button{min-height:42px;border-radius:999px;font-weight:800;font-size:14px;border:2px solid #eadff7;background:#faf6fe;color:#3f2168;cursor:pointer;transition:background .2s,border-color .2s,box-shadow .2s,color .2s;}
+    .sg-btns button:disabled{opacity:.45;cursor:default;}
+    .sg-btns button.on[data-k="mejor"]{background:linear-gradient(135deg,#ffd23f,#ffb300);border-color:#ffb300;color:#5a3a00;box-shadow:0 4px 12px rgba(255,179,0,.4);}
+    .sg-btns button.on[data-k="mencion"]{background:#3f2168;border-color:#3f2168;color:#fff;box-shadow:0 4px 12px rgba(63,33,104,.35);}
+    .sg-bar{position:sticky;bottom:-22px;margin:14px -22px -22px;padding:14px 22px 22px;background:linear-gradient(rgba(255,250,245,0),#fffaf5 28%);display:flex;gap:10px;}
+    .sg-bar .md-pri{flex:1;margin:0;}
+    /* Ventana "Añadir al Anuario" suelta: en modo claro cuando se abre dentro del Anuario */
+    #anuarioModal.anu-light{background:rgba(40,10,70,.6);}
+    #anuarioModal.anu-light .modal-box{background:#fffaf5;color:#2a1745;box-shadow:0 24px 60px rgba(40,10,70,.4);border-radius:28px;}
+    #anuarioModal.anu-light .modal-box h3{color:#3f2168;font:400 clamp(28px,7vw,34px)/1.05 var(--f-disp);}
+    #anuarioModal.anu-light #anuarioModalInfo{color:#6b5683;}
+    #anuarioModal.anu-light .modal-close{color:#3f2168;background:#ece3f8;}
+    #anuarioModal:not(.anu-light) .sg-card{background:rgba(255,255,255,.06);border-color:rgba(255,255,255,.14);}
+    #anuarioModal:not(.anu-light) .sg-card b{color:#fff;} #anuarioModal:not(.anu-light) .sg-card small{color:rgba(255,255,255,.65);}
+    #anuarioModal:not(.anu-light) .sg-btns button{background:rgba(255,255,255,.08);border-color:rgba(255,255,255,.16);color:#fff;}
+    #anuarioModal:not(.anu-light) .sg-btns button.on[data-k="mencion"]{background:#a45fc7;border-color:#a45fc7;}
+    .act-staff{flex-wrap:wrap;} .act-staff button{display:inline-flex;align-items:center;justify-content:center;gap:8px;min-width:130px;}
+    .act-staff .shr{background:linear-gradient(135deg,#f81e8e,#a45fc7);color:#fff;box-shadow:0 6px 16px rgba(248,30,142,.3);}
+    .act-staff .shr svg{flex:none;}
     .anu-add{display:none;} body.anu-staff .anu-add{display:inline-flex;align-items:center;}
     @media (max-width:899px){
       .anu-bar{display:grid;grid-template-columns:46px 1fr 46px;gap:10px;}
@@ -1767,11 +1805,7 @@
   <div class="modal-box"><button class="modal-close" data-close="anuarioModal">✕</button>
     <h3>👑 Añadir al Anuario</h3>
     <div id="anuarioModalInfo" style="font-size:13.5px;color:var(--text-dim);margin-bottom:10px;"></div>
-    <div class="anuario-dest-btns">
-      <button type="button" data-dest="cancion">🥇 Mejor Canción</button>
-      <button type="button" data-dest="doblaje">🎙️ Mejor Doblaje</button>
-      <button type="button" data-dest="mencion">✨ Mención Honorífica</button>
-    </div>
+    <div id="anuarioModalSong"></div>
   </div>
 </div>
 
@@ -3696,22 +3730,46 @@ async function borrarActividad(id){
   if(r.ok){ toast("Actividad borrada 🗑️"); await cargarDatos(); } else toast("Error: "+(r.error||""));
 }
 
-/* ---------- modal anuario ---------- */
+/* ---------- modal anuario (ventana suelta: una canción → Mejor / Mención) ---------- */
+const anuCatIc_=c=>c==="doblaje"?"🎙️":c==="canto"?"🎤":"🥇";
+/* Tarjeta de canción: título + usuario, y los botones «Mejor» (según canto/doblaje) y «Mención» */
+function anuSongCardHTML_(s,cat,key,pick,done){
+  const t=String(s.detalle||"").trim(), u=String(s.nombreUsuario||"").replace(/@/g,"");
+  return `<div class="sg-card${pick?" on-"+pick:""}" data-key="${escAttr(key)}"><div><b>${escHtml(t||u||"Entrega")}</b>${t?`<small>${escHtml(u)}</small>`:""}${done?`<span class="sg-done">✓ ya está en el anuario</span>`:""}</div>
+    <div class="sg-btns"><button type="button" data-k="mejor" class="${pick==="mejor"?"on":""}">${anuCatIc_(cat)} Mejor</button><button type="button" data-k="mencion" class="${pick==="mencion"?"on":""}">✨ Mención</button></div></div>`;
+}
+/* Líneas ya guardadas en el anuario, para avisar si una canción ya está */
+function anuYaSet_(){
+  const s=new Set(); (DB.anuario||[]).forEach(r=>["ganadorCanto","ganadorDoblaje","mencionesHonorificas"].forEach(k=>parseWinnerLines(r[k]).forEach(w=>s.add(String(w.nombre).trim()+"|"+String(w.detalle).trim()))));
+  return s;
+}
+/* Agrega una o varias canciones en UNA sola tarjeta (la de la primera actividad) y, si hace falta, le pone el nombre elegido */
+async function anuEnviar_(items,anchorId,nombre){
+  for(let i=0;i<items.length;i++){ const it=items[i];
+    const r=await apiPost({action:"addToAnuario",idActividad:anchorId,destino:it.destino,nombreUsuario:it.nombreUsuario,detalle:it.detalle,link:it.link},items.length>1?`Agregando al Anuario (${i+1}/${items.length})...`:"Agregando al Anuario...");
+    if(!r.ok){ toast("Error: "+(r.error||"")); await cargarDatos(); return false; } }
+  await cargarDatos();
+  const nm=String(nombre||"").trim();
+  if(nm){ const row=(DB.anuario||[]).find(x=>String(x.id)===String(anchorId));
+    if(row&&String(row.titulo||"").trim()!==nm){ const data=datosActividadParaGuardar(row,row.imagenUrl||""); data.titulo=nm;
+      const r=await apiPost({action:"editAnuario",data},"Guardando el nombre..."); if(r.ok) await cargarDatos(); else toast("Error al guardar el nombre: "+(r.error||"")); } }
+  return true;
+}
 function abrirModalAnuario(idActividad,titulo,nombreUsuario,detalle,link){
   anuarioCtx={idActividad,nombreUsuario,detalle,link};
-  document.getElementById("anuarioModalInfo").innerHTML=`Actividad: <strong>${escHtml(titulo)}</strong><br>Entrega: <strong>${escHtml(nombreUsuario)}</strong> — ${escHtml(detalle)}`;
-  document.querySelectorAll("#anuarioModal [data-dest]").forEach(b=>b.disabled=false);
+  const act=(DB.actividades||[]).find(a=>String(a.id)===String(idActividad)), cat=act&&act.categoria;
+  const ov=document.getElementById("anuarioModal"), v=document.getElementById("viewAnuario");
+  ov.classList.toggle("anu-light",!!v&&!v.classList.contains("hidden"));
+  document.getElementById("anuarioModalInfo").innerHTML=`Actividad: <strong>${escHtml(titulo)}</strong>`;
+  const box=document.getElementById("anuarioModalSong");
+  box.innerHTML=anuSongCardHTML_({nombreUsuario,detalle},cat,"x","",anuYaSet_().has(String(nombreUsuario).trim()+"|"+String(detalle).trim()));
+  box.querySelectorAll("[data-k]").forEach(b=>b.onclick=async()=>{
+    box.querySelectorAll("[data-k]").forEach(x=>x.disabled=true);
+    const ok=await anuEnviar_([{destino:b.dataset.k==="mencion"?"mencion":(cat==="doblaje"?"doblaje":"cancion"),nombreUsuario,detalle,link}],idActividad,"");
+    if(ok){ toast("Agregado al Anuario 👑"); closeModal("anuarioModal"); } else box.querySelectorAll("[data-k]").forEach(x=>x.disabled=false);
+  });
   openModal("anuarioModal");
 }
-document.querySelectorAll("[data-dest]").forEach(btn=>{
-  btn.onclick=async()=>{
-    if(!anuarioCtx) return;
-    document.querySelectorAll("#anuarioModal [data-dest]").forEach(b=>b.disabled=true);
-    const r=await apiPost({action:"addToAnuario", idActividad:anuarioCtx.idActividad, destino:btn.dataset.dest, nombreUsuario:anuarioCtx.nombreUsuario, detalle:anuarioCtx.detalle, link:anuarioCtx.link},"Agregando al Anuario...");
-    if(r.ok){ toast("Agregado al Anuario 👑"); closeModal("anuarioModal"); await cargarDatos(); }
-    else{ toast("Error: "+(r.error||"")); document.querySelectorAll("#anuarioModal [data-dest]").forEach(b=>b.disabled=false); }
-  };
-});
 
 /* ---------- anuario v6: portada, índice, administración y meses ---------- */
 /* Los fondos viven en la carpeta Anuario/ del repo (anuario-fondo-vertical.webp / anuario-fondo-horizontal.webp). */
@@ -3797,7 +3855,7 @@ function anuarioBlockHTML(x,i=0){
 const anuMem_=nm=>{ const k=String(nm||"").replace(/@/g,"").trim().toLowerCase(); return k?(DB.miembros||[]).find(m=>String(m.nombre||"").replace(/@/g,"").trim().toLowerCase()===k):null; };
 function anuRowW_(w){
   const m=anuMem_(w.nombre), nm=String(w.nombre||"").replace(/@/g,"");
-  return `<div class="act-row"><button type="button" class="act-who"${m?` data-miembro="${escAttr(m.id)}"`:""}><img src="${escAttr(m&&m.avatarUrl||"")}" alt=""><span><b>${escHtml(nm||"Miembro")}</b><small>${escHtml(w.detalle||"")}</small></span></button>${w.link?`<a class="act-play" href="${escAttr(w.link)}" target="_blank" rel="noopener" aria-label="Escuchar">▶</a>`:""}</div>`;
+  return `<div class="act-row"><button type="button" class="act-who"${m?` data-miembro="${escAttr(m.id)}"`:""}><img class="anu-fb" src="${escAttr(anuAv_(m))}" alt=""><span><b>${escHtml(nm||"Miembro")}</b><small>${escHtml(w.detalle||"")}</small></span></button>${w.link?`<a class="act-play" href="${escAttr(w.link)}" target="_blank" rel="noopener" aria-label="Escuchar">▶</a>`:""}</div>`;
 }
 function anuActHTML_(id){
   const e=(DB.anuario||[]).find(x=>String(x.id)===String(id)); if(!e) return "";
@@ -3807,9 +3865,9 @@ function anuActHTML_(id){
   return `<div class="act-pg"><div class="act-h">${n.imgs.length?`<span class="act-ps"><img class="js-longpress" data-filename="${escAttr(n.titulo+".jpg")}" src="${escAttr(n.imgs[0])}" alt=""></span>`:""}<div><h2>${escHtml(n.titulo)}</h2><div class="md-meta"><span>${fechaTxt}</span>${n.tipos.map(anuTag_).join("")}</div></div></div>
     <h3 class="act-sec">👑 Lo mejor de la actividad</h3>
     ${best.length?`<div class="act-best">${best.map(x=>{ const m=anuMem_(x.w.nombre), nm=String(x.w.nombre||"").replace(/@/g,"");
-      return `<div class="bst"><span class="bst-l">${x.l}</span><button type="button" class="bst-av"${m?` data-miembro="${escAttr(m.id)}"`:""} aria-label="${escAttr(nm)}">${ANU_CROWN}<img src="${escAttr(m&&m.avatarUrl||"")}" alt=""></button><b>${escHtml(nm||"Miembro")}</b><small>${escHtml(x.w.detalle||"")}</small>${x.w.link?`<a class="md-play" href="${escAttr(x.w.link)}" target="_blank" rel="noopener">Ver presentación</a>`:""}</div>`; }).join("")}</div>`:`<p class="md-empty" style="text-align:center">Todavía sin ganadores asignados.</p>`}
+      return `<div class="bst"><span class="bst-l">${x.l}</span><button type="button" class="bst-av"${m?` data-miembro="${escAttr(m.id)}"`:""} aria-label="${escAttr(nm)}">${ANU_CROWN}<img class="anu-fb" src="${escAttr(anuAv_(m))}" alt=""></button><b>${escHtml(nm||"Miembro")}</b><small>${escHtml(x.w.detalle||"")}</small>${x.w.link?`<a class="md-play" href="${escAttr(x.w.link)}" target="_blank" rel="noopener">Ver presentación</a>`:""}</div>`; }).join("")}</div>`:`<p class="md-empty" style="text-align:center">Todavía sin ganadores asignados.</p>`}
     ${mens.length?`<h3 class="act-sec">🎖️ Menciones honoríficas</h3><div class="act-list">${mens.map(anuRowW_).join("")}</div>`:""}
-    <div class="act-staff"><button type="button" data-edit-anuario="${escAttr(e.id)}">✏️ Editar</button><button type="button" class="del" data-delete-anuario="${escAttr(e.id)}">🗑️ Borrar tarjeta</button></div></div>`;
+    <div class="act-staff"><button type="button" class="shr" data-share-anuario="${escAttr(e.id)}">${ANU_SHARE_ICON}<span>Compartir</span></button><button type="button" data-edit-anuario="${escAttr(e.id)}">✏️ Editar</button><button type="button" class="del" data-delete-anuario="${escAttr(e.id)}">🗑️ Borrar tarjeta</button></div></div>`;
 }
 function anuOpenAct_(id){ anuS.act=id; anuView_(); $a("anuDet").scrollTop=0; document.body.scrollTo({top:0}); }
 
@@ -3818,36 +3876,140 @@ const mdHide_=()=>{ $a("anuModal").style.display="none"; };
 const anuModal_=html=>{ const bx=$a("anuModalBox"); bx.innerHTML=html; $a("anuModal").style.display="flex"; bx.querySelectorAll("[data-close]").forEach(x=>x.onclick=mdHide_); return bx; };
 
 /* ---------- Agregar al anuario (solo staff) ----------
-   1) Lista TODAS las actividades con fecha de envío (inicio) o de entrega (fin) en el mes/año elegido.
-   2) Al elegir una, lista sus entregas; elegir una abre el flujo de siempre (🥇 canción / 🎙️ doblaje / ✨ mención → addToAnuario). */
+   1) Elige UNA o VARIAS actividades del mes (tarjetas con borde resaltado, sin casillas).
+   2) Salen TODAS las canciones de esas actividades, separadas por actividad; en cada canción: «Mejor» (según sea canto o doblaje) o «Mención».
+   3) Todo se guarda en una sola tarjeta del anuario; el nombre por defecto es el de la primera actividad, y el staff puede cambiarlo. */
 function anuAgregar_(){
   if(!staffPin) return;
-  const hoy=new Date(); let [y,m]=/^\d+-\d+$/.test(anuS.key||"")?anuS.key.split("-").map(Number):[hoy.getFullYear(),hoy.getMonth()], act=null;
+  const hoy=new Date(); let [y,m]=/^\d+-\d+$/.test(anuS.key||"")?anuS.key.split("-").map(Number):[hoy.getFullYear(),hoy.getMonth()];
+  const sel=[], picks={}; let paso="acts", nombre="", tocado=false;
   const dm=f=>{ const d=anuFecha_(f); return isNaN(d)?"?":d.getDate()+" "+MESES_LARGO[d.getMonth()].slice(0,3).toLowerCase(); };
   const enMes=a=>[a.fechaInicio,a.fechaFin].some(f=>{ const d=anuFecha_(f); return !isNaN(d)&&d.getFullYear()===y&&d.getMonth()===m; });
-  const draw=()=>{
-    if(act){
-      const es=(DB.entregas||[]).filter(e=>String(e.idActividad)===String(act.id));
-      const b=anuModal_(`<div class="md-body"><button type="button" class="md-back" id="mdBack">← Actividades de ${MESES_LARGO[m]}</button><h3 class="md-t">${escHtml(act.titulo||"")}</h3>
-        <p class="md-empty" style="margin:0">Elige la entrega que quieres añadir al anuario.</p>
-        <div class="md-list">${es.length?es.map((e,i)=>`<button type="button" class="md-opt" data-e="${i}"><span><b>${escHtml(String(e.nombreUsuario||"").replace(/@/g,""))}</b><small>${escHtml(e.detalleEntrega||"")}</small></span></button>`).join(""):`<p class="md-empty">Esta actividad todavía no tiene entregas.</p>`}</div>
-        <div class="md-acts"><button type="button" class="md-sec" data-close>Cerrar</button></div></div>`);
-      $a("mdBack").onclick=()=>{ act=null; draw(); };
-      b.querySelectorAll("[data-e]").forEach(x=>x.onclick=()=>{ const e=es[+x.dataset.e]; mdHide_(); abrirModalAnuario(act.id,act.titulo||"",e.nombreUsuario||"",e.detalleEntrega||"",e.linkGrabacion||""); });
-      return;
-    }
+  const entregasDe=a=>(DB.entregas||[]).filter(e=>String(e.idActividad)===String(a.id));
+  const nSel=()=>Object.keys(picks).length;
+  const drawActs=()=>{
     const enAnu=new Set((DB.anuario||[]).map(r=>String(r.id)));
     const L=(DB.actividades||[]).filter(enMes).sort((a,c)=>anuFecha_(a.fechaInicio)-anuFecha_(c.fechaInicio)||rankCategoria(a.categoria)-rankCategoria(c.categoria));
     const b=anuModal_(`<div class="md-body"><h3 class="md-t">Agregar al anuario</h3>
       <div class="md-nav"><button type="button" data-nav="-1" aria-label="Mes anterior">${CH_L}</button><b>${MESES_LARGO[m]} ${y}</b><button type="button" data-nav="1" aria-label="Mes siguiente">${CH_R}</button></div>
-      <p class="md-empty" style="margin:0">Actividades con fecha de envío o de entrega en este mes. Elige una para ver sus entregas.</p>
+      <p class="md-hint">Toca una o varias actividades; después eliges sus canciones.</p>
       <div class="md-list">${L.length?L.map((a,i)=>{ const x=TIPO_[a.categoria]||{t:"Especial",e:"✨"};
-        return `<button type="button" class="md-opt" data-a="${i}">${a.imagenUrl?`<img src="${escAttr(a.imagenUrl)}" alt="">`:""}<span><b>${escHtml(a.titulo||"")}</b><small>${x.e} ${x.t} · ${dm(a.fechaInicio)} → ${dm(a.fechaFin)}${enAnu.has(String(a.id))?" · ya está en el anuario":""}</small></span></button>`; }).join(""):`<p class="md-empty">No hay actividades con fecha en este mes.</p>`}</div>
-      <div class="md-acts"><button type="button" class="md-sec" data-close>Cerrar</button></div></div>`);
-    b.querySelectorAll("[data-nav]").forEach(x=>x.onclick=()=>{ m+=+x.dataset.nav; if(m<0){m=11;y--;} if(m>11){m=0;y++;} draw(); });
-    b.querySelectorAll("[data-a]").forEach(x=>x.onclick=()=>{ act=L[+x.dataset.a]; draw(); });
+        return `<button type="button" class="md-opt${sel.some(s=>String(s.id)===String(a.id))?" sel":""}" data-a="${i}" aria-pressed="${sel.some(s=>String(s.id)===String(a.id))}">${a.imagenUrl?`<img src="${escAttr(a.imagenUrl)}" alt="">`:""}<span><b>${escHtml(a.titulo||"")}</b><small>${x.e} ${x.t} · ${dm(a.fechaInicio)} → ${dm(a.fechaFin)}${enAnu.has(String(a.id))?" · ya está en el anuario":""}</small></span></button>`; }).join(""):`<p class="md-empty">No hay actividades con fecha en este mes.</p>`}</div>
+      <div class="md-acts"><button type="button" class="md-sec" data-close>Cerrar</button><button type="button" class="md-pri" id="sgNext"${sel.length?"":" disabled"}>Continuar${sel.length?` (${sel.length})`:""}</button></div></div>`);
+    b.querySelectorAll("[data-nav]").forEach(x=>x.onclick=()=>{ m+=+x.dataset.nav; if(m<0){m=11;y--;} if(m>11){m=0;y++;} drawActs(); });
+    b.querySelectorAll("[data-a]").forEach(x=>x.onclick=()=>{ const a=L[+x.dataset.a], k=sel.findIndex(s=>String(s.id)===String(a.id));
+      if(k>=0) sel.splice(k,1); else sel.push(a);
+      x.classList.toggle("sel",k<0); x.setAttribute("aria-pressed",String(k<0));
+      const nx=$a("sgNext"); nx.disabled=!sel.length; nx.textContent="Continuar"+(sel.length?` (${sel.length})`:""); });
+    $a("sgNext").onclick=()=>{ if(!sel.length) return; for(const k of Object.keys(picks)) if(!sel.some(s=>k.startsWith(s.id+"|"))) delete picks[k];
+      if(!tocado) nombre=sel[0].titulo||""; paso="songs"; drawSongs(); };
   };
-  draw();
+  const drawSongs=()=>{
+    const ya=anuYaSet_();
+    const b=anuModal_(`<div class="md-body"><button type="button" class="md-back" id="mdBack">← Actividades de ${MESES_LARGO[m]}</button><h3 class="md-t">Elige las canciones</h3>
+      <label class="sg-name-l" for="sgName">Nombre de la tarjeta en el anuario</label><input class="sg-name" id="sgName" type="text" maxlength="120" value="${escAttr(nombre)}" placeholder="${escAttr(sel[0].titulo||"")}">
+      ${sel.map(a=>{ const es=entregasDe(a), x=TIPO_[a.categoria]||{t:"Especial",e:"✨"};
+        return `<section class="sg-grp"><h4 class="sg-gt">${a.imagenUrl?`<img src="${escAttr(a.imagenUrl)}" alt="">`:""}<span>${escHtml(a.titulo||"")}<small>${x.e} ${x.t}</small></span></h4>${es.length?es.map((e,i)=>{ const key=a.id+"|"+i;
+          return anuSongCardHTML_({nombreUsuario:e.nombreUsuario,detalle:e.detalleEntrega},a.categoria,key,picks[key]||"",ya.has(String(e.nombreUsuario||"").trim()+"|"+String(e.detalleEntrega||"").trim())); }).join(""):`<p class="md-empty">Esta actividad todavía no tiene entregas.</p>`}</section>`; }).join("")}
+      <div class="sg-bar"><button type="button" class="md-sec" data-close>Cerrar</button><button type="button" class="md-pri" id="sgGo" disabled>Añadir al anuario</button></div></div>`);
+    const upd=()=>{ const n=nSel(), g=$a("sgGo"); g.disabled=!n; g.textContent=n?`Añadir al anuario (${n})`:"Añadir al anuario"; };
+    $a("mdBack").onclick=()=>{ paso="acts"; drawActs(); };
+    $a("sgName").oninput=e=>{ nombre=e.target.value; tocado=true; };
+    b.querySelectorAll(".sg-card").forEach(card=>card.querySelectorAll("[data-k]").forEach(btn=>btn.onclick=()=>{
+      const key=card.dataset.key, k=btn.dataset.k;
+      if(picks[key]===k) delete picks[key]; else picks[key]=k;
+      card.classList.remove("on-mejor","on-mencion"); if(picks[key]) card.classList.add("on-"+picks[key]);
+      card.querySelectorAll("[data-k]").forEach(x=>x.classList.toggle("on",picks[key]===x.dataset.k)); upd(); }));
+    $a("sgGo").onclick=async()=>{
+      const items=[]; sel.forEach(a=>entregasDe(a).forEach((e,i)=>{ const p=picks[a.id+"|"+i]; if(!p) return;
+        items.push({destino:p==="mencion"?"mencion":(a.categoria==="doblaje"?"doblaje":"cancion"),nombreUsuario:e.nombreUsuario||"",detalle:e.detalleEntrega||"",link:e.linkGrabacion||""}); }));
+      if(!items.length) return;
+      b.querySelectorAll("button,input").forEach(x=>x.disabled=true);
+      const ok=await anuEnviar_(items,sel[0].id,tocado?nombre:"");
+      if(ok){ toast("Agregado al Anuario 👑"); mdHide_(); } else { b.querySelectorAll("button,input").forEach(x=>x.disabled=false); upd(); }
+    };
+    upd();
+  };
+  drawActs();
+}
+
+/* ---------- Imagen de respaldo y compartir (PNG) ---------- */
+const ANU_SHOW="https://raw.githubusercontent.com/TeamPeachesOff/TeamPeachesHub/main/Anuario/ShowPeaches.png";
+/* Foto del miembro; si no existe o no está vinculado → ShowPeaches (foto de todos) */
+const anuAv_=m=>(m&&m.avatarUrl)||ANU_SHOW;
+const ANU_SHARE_ICON='<svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3.2 20c.1-7 4.3-10.8 11.8-10.8"/><path d="M12.6 3.6 19.4 9.2l-6.8 5.6"/><path d="M20.6 16.2v.01M17.6 19.6v.01" stroke-width="3.2"/></svg>';
+const anuLoadImg_=(url,ms=9000)=>{ const one=u=>new Promise(res=>{ if(!u) return res(null); const im=new Image(); im.crossOrigin="anonymous"; let d=false; const f=v=>{ if(!d){ d=true; res(v); } }; im.onload=()=>f(im); im.onerror=()=>f(null); setTimeout(()=>f(null),ms); im.src=u; });
+  return one(url).then(r=>r||(/^data:/.test(url||"")||!url?null:one(url+(url.includes("?")?"&":"?")+"_cb="+Date.now()))); };
+/* Tarjeta cuadrada (1:1) si solo hay «mejor»; vertical (9:16) si además hay menciones honoríficas. Siempre 1080 px de ancho. */
+async function anuCompartir_(id){
+  const e=(DB.anuario||[]).find(x=>String(x.id)===String(id)); if(!e) return;
+  const n=anuNorm_(e), f=anuFecha_(n.f), mens=parseWinnerLines(e.mencionesHonorificas);
+  const best=[...parseWinnerLines(e.ganadorCanto).map(w=>({w,l:"MEJOR CANCIÓN"})),...parseWinnerLines(e.ganadorDoblaje).map(w=>({w,l:"MEJOR DOBLAJE"}))];
+  if(!best.length&&!mens.length){ toast("Esta tarjeta todavía no tiene ganadores 🍑"); return; }
+  toast("Creando tu imagen… 🎨");
+  const tall=mens.length>0, W=1080, H=tall?1920:1080;
+  try{ await document.fonts.load('80px "Caveat Brush"'); }catch(_){}
+  const FD='"Caveat Brush","Segoe Script","Brush Script MT",cursive', FB=(getComputedStyle(document.body).fontFamily||"system-ui")+',system-ui,sans-serif';
+  const clean=s=>String(s||"").replace(/@/g,"").trim();
+  const people=[...best.map(b=>b.w),...mens].map(w=>anuMem_(w.nombre));
+  const [bg,show,peach,...av]=await Promise.all([anuLoadImg_(ANU_BG),anuLoadImg_(ANU_SHOW),anuLoadImg_(ANU_DURAZNO),...people.map(m=>anuLoadImg_(m&&m.avatarUrl))]);
+  const cv=document.createElement("canvas"); cv.width=W; cv.height=H; const c=cv.getContext("2d");
+  const cover=(im,x,y,w,h)=>{ const r=Math.max(w/im.width,h/im.height), sw=w/r, sh=h/r; c.drawImage(im,(im.width-sw)/2,(im.height-sh)/2,sw,sh,x,y,w,h); };
+  const rr=(x,y,w,h,r)=>{ c.beginPath(); c.moveTo(x+r,y); c.arcTo(x+w,y,x+w,y+h,r); c.arcTo(x+w,y+h,x,y+h,r); c.arcTo(x,y+h,x,y,r); c.arcTo(x,y,x+w,y,r); c.closePath(); };
+  const fit=(t,maxW,size,font,wt)=>{ let s=size; for(;s>18;s-=2){ c.font=`${wt} ${s}px ${font}`; if(c.measureText(t).width<=maxW) break; } c.font=`${wt} ${s}px ${font}`; return s; };
+  const ell=(t,maxW)=>{ t=String(t); if(c.measureText(t).width<=maxW) return t; while(t.length>1&&c.measureText(t+"…").width>maxW) t=t.slice(0,-1); return t+"…"; };
+  const txt=(t,x,y,col,al="center")=>{ c.fillStyle=col; c.textAlign=al; c.textBaseline="alphabetic"; c.fillText(t,x,y); };
+  /* fondo */
+  const g=c.createLinearGradient(0,0,W,H); g.addColorStop(0,"#fff1e6"); g.addColorStop(1,"#ffd9ec"); c.fillStyle=g; c.fillRect(0,0,W,H);
+  if(bg){ cover(bg,0,0,W,H); c.fillStyle="rgba(255,248,242,.38)"; c.fillRect(0,0,W,H); }
+  c.save(); c.shadowColor="rgba(63,33,104,.22)"; c.shadowBlur=40; c.shadowOffsetY=14; c.fillStyle="rgba(255,255,255,.8)"; rr(44,44,W-88,H-88,64); c.fill(); c.restore();
+  c.strokeStyle="rgba(255,210,63,.9)"; c.lineWidth=5; rr(60,60,W-120,H-120,50); c.stroke();
+  /* cabecera */
+  let y=tall?150:132;
+  const yr=isNaN(f)?"":f.getFullYear();
+  c.font=`800 ${tall?30:26}px ${FB}`; c.textAlign="center"; if("letterSpacing" in c) c.letterSpacing="6px";
+  const kick=("TEAM PEACHES · ANUARIO "+yr).trim(); const kw=c.measureText(kick).width, pk=tall?64:54;
+  const kx=W/2-(kw+(peach?pk+16:0))/2; if(peach) c.drawImage(peach,kx,y-pk*.78,pk,pk*peach.height/peach.width);
+  txt(kick,kx+(peach?pk+16:0),y,"#f81e8e","left"); if("letterSpacing" in c) c.letterSpacing="0px";
+  y+=tall?36:26;
+  let ts=tall?132:104, lines; const words=clean(n.titulo).split(/\s+/);
+  for(;ts>52;ts-=4){ c.font=`400 ${ts}px ${FD}`; lines=[]; let cur=""; words.forEach(w=>{ const t=cur?cur+" "+w:w; if(c.measureText(t).width>W-240&&cur){ lines.push(cur); cur=w; } else cur=t; }); lines.push(cur); if(lines.length<=2&&Math.max(...lines.map(l=>c.measureText(l).width))<=W-240) break; }
+  lines.slice(0,2).forEach(l=>{ y+=ts*.92; txt(l,W/2,y,"#3f2168"); });
+  y+=tall?52:44;
+  if(!isNaN(f)){ c.font=`800 ${tall?36:30}px ${FB}`; txt(`${f.getDate()} de ${MESES_LARGO[f.getMonth()].toLowerCase()} ${f.getFullYear()}`,W/2,y,"#8a5fb8"); y+=tall?30:44; }
+  /* ganadores */
+  const footY=H-160, mensRows=tall?Math.ceil(Math.min(mens.length,12)/2):0, mensH=tall?100+mensRows*116:0;
+  const cols=best.length<=1?1:best.length<=4?2:3, colW=(W-160)/cols, rowsB=Math.ceil(best.length/cols);
+  const avail=footY-y-mensH-(tall?20:0);
+  let sz=tall?(cols===1?380:cols===2?300:230):(cols===1?340:cols===2?290:200);
+  while(sz>110&&rowsB*(sz+sz*.22+190)>avail) sz-=10;
+  y+=Math.min(110,Math.max(0,(avail-rowsB*(sz+sz*.22+190))/2));
+  const crown=(cx,cy,w)=>{ const h=w*.7; c.save(); c.translate(cx-w/2,cy); c.fillStyle="#ffc928"; c.strokeStyle="#c98a00"; c.lineWidth=4; c.lineJoin="round";
+    c.beginPath(); c.moveTo(0,h); c.lineTo(0,h*.28); c.lineTo(w*.25,h*.62); c.lineTo(w*.5,0); c.lineTo(w*.75,h*.62); c.lineTo(w,h*.28); c.lineTo(w,h); c.closePath(); c.fill(); c.stroke(); c.restore(); };
+  const face=(img,cx,cy,r,ring,rw,nm)=>{ c.save(); c.shadowColor="rgba(0,0,0,.2)"; c.shadowBlur=22; c.shadowOffsetY=8; c.fillStyle="#fff"; c.beginPath(); c.arc(cx,cy,r+rw,0,7); c.fill(); c.restore();
+    c.save(); c.beginPath(); c.arc(cx,cy,r,0,7); c.clip(); const im=img||show;
+    if(im) cover(im,cx-r,cy-r,2*r,2*r); else { c.fillStyle="#ffb48a"; c.fillRect(cx-r,cy-r,2*r,2*r); c.font=`800 ${r}px ${FB}`; txt((nm||"?").charAt(0).toUpperCase(),cx,cy+r*.34,"#fff"); } c.restore();
+    c.strokeStyle=ring; c.lineWidth=rw; c.beginPath(); c.arc(cx,cy,r+rw/2,0,7); c.stroke(); };
+  best.forEach((b,i)=>{ const r=Math.floor(i/cols), k=i%cols, inRow=Math.min(cols,best.length-r*cols), cx=W/2+(k-(inRow-1)/2)*colW, top=y+r*(sz+sz*.22+190)+(tall?10:0);
+    c.font=`800 ${tall?28:25}px ${FB}`; const lw=c.measureText(b.l).width+64; c.fillStyle="#ffd23f"; rr(cx-lw/2,top,lw,52,26); c.fill(); txt(b.l,cx,top+35,"#5a3a00");
+    const ch=sz*.22, cy=top+52+16+ch+sz/2+4; crown(cx,top+52+16,sz*.34);
+    face(av[i],cx,cy,sz/2,"#ffc928",10,clean(b.w.nombre));
+    const nm=clean(b.w.nombre)||"Miembro"; fit(nm,colW-30,tall?46:42,FB,"800"); txt(ell(nm,colW-30),cx,cy+sz/2+60,"#2a1745");
+    if(b.w.detalle){ fit(b.w.detalle,colW-30,tall?32:28,FB,"600"); txt(ell(clean(b.w.detalle),colW-30),cx,cy+sz/2+60+40,"#6b5683"); } });
+  /* menciones honoríficas */
+  if(tall){ const my=footY-mensH+6; c.font=`400 76px ${FD}`; txt("Menciones honoríficas",W/2,my+62,"#f81e8e");
+    const lim=mens.slice(0,12), extra=mens.length-lim.length, cw=(W-200)/2;
+    lim.forEach((w,i)=>{ const col=i%2, row=Math.floor(i/2), x=100+col*cw, yy=my+100+row*116, cx=x+46, cyy=yy+54; const idx=best.length+i;
+      c.fillStyle="#fff"; c.save(); c.shadowColor="rgba(63,33,104,.12)"; c.shadowBlur=14; c.shadowOffsetY=4; rr(x-6,yy,cw-14,104,52); c.fill(); c.restore();
+      face(av[idx],cx,cyy,40,"#a45fc7",5,clean(w.nombre));
+      const tx=cx+40+22, mw=cw-14-(tx-x)-24; const nm=clean(w.nombre)||"Miembro"; fit(nm,mw,34,FB,"800"); txt(ell(nm,mw),tx,cyy-2,"#2a1745","left");
+      if(w.detalle){ fit(w.detalle,mw,26,FB,"600"); txt(ell(clean(w.detalle),mw),tx,cyy+32,"#6b5683","left"); } });
+    if(extra>0){ c.font=`800 28px ${FB}`; txt(`+${extra} más en el anuario`,W/2,footY+4,"#8a5fb8"); } }
+  /* pie */
+  c.font=`400 54px ${FD}`; txt("Team Peaches",W/2+(peach?34:0),H-86,"#3f2168"); if(peach){ c.font=`400 54px ${FD}`; const tw=c.measureText("Team Peaches").width; c.drawImage(peach,W/2+34-tw/2-62,H-86-46,52,52*peach.height/peach.width); }
+  cv.toBlob(bl=>{ if(!bl){ toast("No se pudo crear la imagen ❌"); return; }
+    const u=URL.createObjectURL(bl), a=document.createElement("a"); a.href=u; a.download="anuario-"+(clean(n.titulo).toLowerCase().replace(/[^a-z0-9áéíóúñ]+/gi,"-").replace(/^-|-$/g,"")||"actividad")+".png";
+    document.body.appendChild(a); a.click(); a.remove(); setTimeout(()=>URL.revokeObjectURL(u),4000); toast("Imagen lista ✅"); },"image/png");
 }
 
 /* ---------- Vista Miembro / Staff (interruptor temporal al final de la página) ---------- */
@@ -3864,7 +4026,7 @@ document.addEventListener("anuario:miembro",e=>openMemberModal(e.detail.id));
 function anuIdx_(){
   const p=anuP_(), rows=anuRows_(p), el=$a("anuIdx");
   el.className=`anu-idx t-${p.tema}`;
-  el.innerHTML=`<div class="idx-h"><img class="idx-peach" src="${ANU_DURAZNO}" alt=""><h3>Índice ${p.titulo}</h3></div><p class="anu-help">${p.n||p.admin?"Elige un mes para ver sus actividades. El número es el del mes.":"Aún no hay actividades en este año."}</p>
+  el.innerHTML=`<div class="idx-h"><img class="idx-peach" src="${ANU_DURAZNO}" alt=""><h3>Índice ${p.titulo}</h3></div>${p.n||p.admin?"":`<p class="anu-help">Aún no hay actividades en este año.</p>`}
     <ol class="anu-il">${rows.map(r=>`<li><button type="button" class="anu-row${r.k===anuS.key?" on":""}" data-k="${r.k}"${r.n?"":" disabled"}${r.k===anuS.key?' aria-current="true"':""}><b>${r.b}</b><i></i><span>${r.t}</span></button></li>`).join("")}</ol>`;
   el.querySelectorAll("[data-k]").forEach(b=>b.onclick=()=>anuPick_(b.dataset.k));
 }
@@ -3879,6 +4041,8 @@ function anuDet_(){
   d.querySelectorAll("[data-anuario]").forEach(t=>t.onclick=()=>anuOpenAct_(t.dataset.anuario));
   d.querySelectorAll("[data-miembro]").forEach(t=>t.onclick=()=>anuAbrirMiembro_(t.dataset.miembro));
   d.querySelectorAll(".act-pg img.js-longpress").forEach(img=>enableLongPress(img,img.dataset.filename));
+  d.querySelectorAll("img.anu-fb").forEach(im=>{ const fb=()=>{ if(im.dataset.fb) return; im.dataset.fb="1"; im.src=ANU_SHOW; }; im.addEventListener("error",fb); if(im.complete&&im.naturalWidth===0) fb(); });
+  d.querySelectorAll("[data-share-anuario]").forEach(bt=>bt.onclick=()=>anuCompartir_(bt.dataset.shareAnuario));
   d.querySelectorAll("[data-edit-anuario]").forEach(bt=>bt.onclick=()=>openActivityForm(bt.dataset.editAnuario,true));
   d.querySelectorAll("[data-delete-anuario]").forEach(bt=>bt.onclick=async()=>{
     if(!await confirmarAccion("¿Seguro que quieres borrar esta tarjeta completa del Anuario?")) return;
