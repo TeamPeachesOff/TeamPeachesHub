@@ -505,6 +505,8 @@
   .orden-opcion.sel{background:linear-gradient(90deg,var(--peach-2),var(--peach-1));color:#fff;}
   .conteo-fila{display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid rgba(255,255,255,0.07);font-size:14px;}
   .conteo-fila strong{color:var(--peach-1);}
+  .conteo-click{cursor:pointer;transition:background .15s;}
+  .conteo-click:active,.conteo-click:hover{background:rgba(255,255,255,0.06);}
   /* v23: botón "Chambeadores" a la izquierda de la barra de búsqueda de Miembros -- mismo
      tamaño/comportamiento que #mundoPeachesBtn (a la derecha) para que ambos se vean parejos,
      pero con su propia identidad dorada (trofeo) en vez de reusar el rosa de la familia. */
@@ -3600,6 +3602,25 @@ document.getElementById("refreshMapBtn").onclick=async()=>{
 // como se pidió: "solo strike no faltas"). Cualquier otra cosa escrita sigue funcionando como
 // buscador de texto normal (nombre, rol, rango vocal, generación, mes de cumpleaños).
 let miembrosOrden="normal"; // normal | rango | mes | categoria | generacion
+// Palabras que vienen del contador (Staff, Miembros, Canto, Doblaje, Inactivo y cada rango vocal):
+// al escribirlas en el buscador se filtra EXACTO por esa categoría (así "Soprano" no trae a las
+// Mezzosoprano). Devuelve true/false si la palabra es una categoría, o null si es texto libre.
+function filtroExactoMiembro_(m,f){
+  if(f==="staff") return esTrue(m.staff);
+  if(f==="miembros") return !esTrue(m.staff);
+  if(f==="canto") return esTrue(m.canto);
+  if(f==="doblaje") return esTrue(m.doblaje);
+  if(f==="inactivo") return esTrue(m.inactivo);
+  if(rangosConocidos_().has(f)) return rangosDe_(m).some(r=>normalizar(r)===f);
+  return null;
+}
+let _rangosCache_=null, _rangosCacheN_=-1;
+function rangosConocidos_(){
+  if(_rangosCache_ && _rangosCacheN_===DB.miembros.length) return _rangosCache_;
+  _rangosCache_=new Set(); _rangosCacheN_=DB.miembros.length;
+  DB.miembros.forEach(m=>rangosDe_(m).forEach(r=>_rangosCache_.add(normalizar(r))));
+  return _rangosCache_;
+}
 function renderMiembros(filtro=""){
   const textoFiltro = filtro.trim();
   const matchStrikes = textoFiltro.match(/^(\d+)\s*strikes?$/i);
@@ -3607,12 +3628,12 @@ function renderMiembros(filtro=""){
   const conNombre=m=>m.nombre && String(m.nombre).trim()!=="";
   const filtrar = matchStrikes
     ? (m=>conNombre(m) && (Number(m.strikes)||0)===Number(matchStrikes[1]))
-    : (m=>conNombre(m) && (!f || normalizar([
+    : (m=>conNombre(m) && (!f || (()=>{ const x=filtroExactoMiembro_(m,f); return x!==null ? x : normalizar([
         m.nombre, m.rangoVocal,
-        esTrue(m.staff)?"staff":"", esTrue(m.canto)?"canto":"", esTrue(m.doblaje)?"doblaje":"",
+        esTrue(m.staff)?"staff":"", esTrue(m.canto)?"canto":"", esTrue(m.doblaje)?"doblaje":"", esTrue(m.inactivo)?"inactivo":"",
         m.generacionNum||"", palabraGeneracion(m.generacionNum),
         mesDeCumple(m.cumpleanos)
-      ].join(" ")).includes(f)));
+      ].join(" ")).includes(f); })()));
 
   if(miembrosOrden!=="normal"){ renderMiembrosOrdenado_(filtrar); return; }
   document.getElementById("miembrosFijas").classList.remove("hidden");
@@ -7144,11 +7165,24 @@ document.getElementById("miembrosContarBtn").onclick=()=>{
   const rangos=new Map();
   ms.forEach(m=>rangosDe_(m).forEach(r=>{ const k=normalizar(r); if(!rangos.has(k)) rangos.set(k,{t:capitalizar_(r),n:0}); rangos.get(k).n++; }));
   const idx=k=>{ const i=RANGOS_ORDEN_.indexOf(k); return i<0?100:i; };
-  const filas=(a)=>a.map(([t,n])=>`<div class="conteo-fila"><span>${escHtml(t)}</span><strong>${n}</strong></div>`).join("");
+  const filas=(a)=>a.map(([t,n,buscar])=>buscar
+    ?`<div class="conteo-fila conteo-click" role="button" tabindex="0" data-buscar="${escHtml(buscar)}"><span>${escHtml(t)}</span><strong>${n}</strong></div>`
+    :`<div class="conteo-fila"><span>${escHtml(t)}</span><strong>${n}</strong></div>`).join("");
   document.getElementById("miembrosConteoContenido").innerHTML=
-    filas([["Integrantes totales",ms.length],["Staff",staff],["Miembros",ms.length-staff],["Canto",ms.filter(m=>esTrue(m.canto)).length],["Doblaje",ms.filter(m=>esTrue(m.doblaje)).length]])+
+    filas([["Integrantes totales",ms.length],["Staff",staff,"Staff"],["Miembros",ms.length-staff,"Miembros"],["Canto",ms.filter(m=>esTrue(m.canto)).length,"Canto"],["Doblaje",ms.filter(m=>esTrue(m.doblaje)).length,"Doblaje"],["Inactivo",ms.filter(m=>esTrue(m.inactivo)).length,"Inactivo"]])+
     `<div class="section-label" style="text-align:left;">🎵 Rangos vocales</div>`+
-    (rangos.size?filas([...rangos.entries()].sort((a,b)=>idx(a[0])-idx(b[0])||a[0].localeCompare(b[0])).map(([k,v])=>[v.t,v.n])):`<div class="empty-state">Sin rangos registrados.</div>`);
+    (rangos.size?filas([...rangos.entries()].sort((a,b)=>idx(a[0])-idx(b[0])||a[0].localeCompare(b[0])).map(([k,v])=>[v.t,v.n,v.t])):`<div class="empty-state">Sin rangos registrados.</div>`);
+  document.querySelectorAll("#miembrosConteoContenido [data-buscar]").forEach(el=>{
+    const ir=()=>{
+      const inp=document.getElementById("searchMiembros");
+      inp.value=el.dataset.buscar;
+      closeModal("miembrosConteoModal");
+      inp.dispatchEvent(new Event("input",{bubbles:true}));
+      document.body.scrollTo({top:0});
+    };
+    el.onclick=ir;
+    el.onkeydown=e=>{ if(e.key==="Enter"||e.key===" "){ e.preventDefault(); ir(); } };
+  });
   openModal("miembrosConteoModal");
 };
 </script>
