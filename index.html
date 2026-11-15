@@ -730,6 +730,24 @@
     .act-staff button{flex:1;min-height:46px;border-radius:999px;font-weight:800;font-size:14px;background:#ece3f8;color:#3f2168;} .act-staff .del{background:#fde3e8;color:#a3173a;}
     button.md-opt{width:100%;text-align:left;font:inherit;color:inherit;}
 
+
+    /* ===== v8: portada sin scroll, tarjeta de miembro clara, marco ===== */
+    .anu-cover{gap:clamp(4px,1.4vh,16px);padding:4px 0 12px;}
+    .cv-logo{width:clamp(84px,min(26vw,12vh),150px);margin:0 auto;}
+    .cv-t{font-size:clamp(44px,min(13vw,10vh),104px);}
+    .cv-peach{width:clamp(120px,min(40vw,24vh),270px);}
+    .cv-go{min-height:50px;}
+    @media (max-height:600px){ .cv-logo{display:none;} }
+    #memberModal.anu-light{--card-bg:#fffaf5;--card-bg-2:#f3ecfb;--text:#2a1745;--text-dim:#6b5683;}
+    #memberModal.anu-light .modal-box{background:#fffaf5;color:#2a1745;border-radius:28px;box-shadow:0 24px 60px rgba(40,10,70,.4);}
+    #memberModal.anu-light .modal-close{color:#3f2168;background:#ece3f8;}
+    #memberModal.anu-light .info-table td{border-bottom-color:rgba(63,33,104,.12);}
+    #memberModal.anu-light .castigos-box .ct-title,#memberModal.anu-light .ct-title{color:#c4106f;}
+    #memberModal.anu-light .platform-btn{color:#3f2168;}
+    .mm-frame{--mw:130px;position:relative;width:var(--mw);margin:34px auto 12px;}
+    .mm-frame.f{--mw:150px;margin-top:84px;}
+    .mm-frame .anu-av{margin:0 8%;}
+    .member-modal-header .mm-frame img.js-avatar{margin:0;width:100%;height:100%;border:1.5px solid #2a1745;}
     /* ===== Anuario: ajustes v7 ===== */
     .anu-wrap{transition:opacity .25s ease;max-width:100%;} .anu-wrap.fw{opacity:0;}
     .anu-cols,#anuDet,.anu-detail,.anu-book{min-width:0;max-width:100%;}
@@ -742,7 +760,7 @@
     .anu-win{display:flex;flex-wrap:wrap;gap:4px;margin:6px 0 8px;}
     .anu-win i{font-style:normal;font-size:11.5px;font-weight:800;padding:2px 8px;border-radius:999px;white-space:nowrap;}
     .anu-win .w1{background:linear-gradient(135deg,#ffe27a,#ffb300);color:#5a3a00;} .anu-win .w2{background:#efe5fb;color:#3f2168;}
-    .cv-logo{display:block;width:clamp(150px,44vw,260px);height:auto;margin:0 auto 4px;filter:drop-shadow(0 6px 10px rgba(80,20,60,.18));}
+    .cv-logo{display:block;height:auto;filter:drop-shadow(0 6px 10px rgba(80,20,60,.18));}
     .md-acts,.sg-bar{position:sticky;bottom:-22px;z-index:5;}
     .md-acts{margin:14px -22px -22px;padding:12px 22px 22px;background:linear-gradient(rgba(255,250,245,0),#fffaf5 30%);}
     .md-acts button,.sg-bar button,.md-opt{touch-action:manipulation;-webkit-tap-highlight-color:transparent;}
@@ -3845,10 +3863,18 @@ function anuWreath_(c){
 const anuSprout_=()=>{ const h=(rot,L,W)=>`<g transform="translate(18 18) rotate(${rot})"><path d="M0 0C${W} ${-L*.25} ${W} ${-L*.75} 0 ${-L}C${-W} ${-L*.75} ${-W} ${-L*.25} 0 0Z" fill="url(#anuLg)"/><path d="M0 -2V${-L*.78}" stroke="#dcf1b8" stroke-width=".9" stroke-linecap="round" fill="none"/></g>`;
   return `<svg class="anu-sp" viewBox="0 0 100 100" aria-hidden="true">${h(-80,30,10)}${h(24,36,12)}</svg>`; };
 const anuArc_=(id,t)=>`<svg class="anu-arc" viewBox="0 0 100 100" aria-hidden="true"><path id="arc${escAttr(id)}" d="M2.2 45.8A48 48 0 0 1 97.8 45.8" fill="none"/><text class="t1" textLength="${(t.length*14.5).toFixed(0)}" lengthAdjust="spacing"><textPath href="#arc${escAttr(id)}" startOffset="50%" text-anchor="middle">${t}</textPath></text><text class="t2" textLength="${(t.length*14.5).toFixed(0)}" lengthAdjust="spacing"><textPath href="#arc${escAttr(id)}" startOffset="50%" text-anchor="middle">${t}</textPath></text></svg>`;
-function anuMiembro_(m,rol,i){
+const anuIsF_=m=>esTrue(m.fundadora)||esTrue(m.fundador);
+const anuRolDe_=m=>anuIsF_(m)?"f":esTrue(m.lider)?"a":esTrue(m.staff)?"s":null;
+function anuStaffIdx_(m){ const ok=x=>x.nombre&&String(x.nombre).trim()!=="", L=(DB.miembros||[]).filter(ok);
+  const o=[...L.filter(anuIsF_),...L.filter(x=>esTrue(x.lider)&&!anuIsF_(x)),...L.filter(x=>esTrue(x.staff)&&!anuIsF_(x)&&!esTrue(x.lider))]; return Math.max(0,o.findIndex(x=>String(x.id)===String(m.id))); }
+function anuFrame_(m,rol,i){
   const c=m.color||(rol==="f"?"#d6277f":ANU_COLORES[i%ANU_COLORES.length]);
   const et=rol==="f"?(esTrue(m.fundador)&&!esTrue(m.fundadora)?"Fundador":"Fundadora"):rol==="a"?"Admin":"Staff";
-  return `<button type="button" class="anu-m${rol==="f"?" f":""}" data-miembro="${escAttr(m.id)}" style="--pc:${c};--nl:${Math.max(6,[...String(m.nombre||"")].length)}" aria-label="${et}: ${escAttr(m.nombre||"")}"><span class="anu-av">${rol==="f"?"":anuSprout_()}${anuWreath_(c)}${avatarImgTag(m)}${rol==="f"?ANU_CROWN2+anuArc_(m.id,et.toUpperCase()):anuRol_(m.id,et)}</span><span class="anu-pn">${escHtml(m.nombre||"")}</span></button>`;
+  return {c,et,html:`<span class="anu-av">${rol==="f"?"":anuSprout_()}${anuWreath_(c)}${avatarImgTag(m)}${rol==="f"?ANU_CROWN2+anuArc_("m"+m.id,et.toUpperCase()):anuRol_("m"+m.id,et)}</span>`};
+}
+function anuMiembro_(m,rol,i){
+  const {c,et,html}=anuFrame_(m,rol,i);
+  return `<button type="button" class="anu-m${rol==="f"?" f":""}" data-miembro="${escAttr(m.id)}" style="--pc:${c};--nl:${Math.max(6,[...String(m.nombre||"")].length)}" aria-label="${et}: ${escAttr(m.nombre||"")}">${html}<span class="anu-pn">${escHtml(m.nombre||"")}</span></button>`;
 }
 function anuAdminHTML_(){
   const ok=m=>m.nombre&&String(m.nombre).trim()!=="", isF=m=>esTrue(m.fundadora)||esTrue(m.fundador);
@@ -3893,7 +3919,10 @@ function anuarioBlockHTML(x,i=0){
 
 
 /* ---------- Página de la actividad ---------- */
-const anuMem_=nm=>{ const k=String(nm||"").replace(/@/g,"").trim().toLowerCase(); return k?(DB.miembros||[]).find(m=>String(m.nombre||"").replace(/@/g,"").trim().toLowerCase()===k):null; };
+const anuKey_=v=>String(v||"").replace(/@/g,"").normalize("NFD").replace(/[\u0300-\u036f]/g,"").replace(/[^a-z0-9]/gi,"").toLowerCase();
+const anuMem_=nm=>{ const k=anuKey_(nm); if(!k) return null; const L=DB.miembros||[];
+  return L.find(m=>anuKey_(m.nombre)===k)||L.find(m=>["usuarioSmule","usuarioBandlab","usuarioDiscord"].some(f=>anuKey_(m[f])===k))
+    ||(k.length>=4?(()=>{ const c=L.filter(m=>{ const n=anuKey_(m.nombre); return n.length>=4&&(n.includes(k)||k.includes(n)); }); return c.length===1?c[0]:null; })():null)||null; };
 function anuRowW_(w){
   const m=anuMem_(w.nombre), nm=String(w.nombre||"").replace(/@/g,"");
   return `<div class="act-row"><button type="button" class="act-who"${m?` data-miembro="${escAttr(m.id)}"`:""}><img class="anu-fb" src="${escAttr(anuAv_(m))}" alt=""><span><b>${escHtml(nm||"Miembro")}</b><small>${escHtml(w.detalle||"")}</small></span></button>${w.link?`<a class="act-play" href="${escAttr(w.link)}" target="_blank" rel="noopener" aria-label="Escuchar">▶</a>`:""}</div>`;
@@ -3983,7 +4012,8 @@ const ANU_SHOW="https://raw.githubusercontent.com/TeamPeachesOff/TeamPeachesHub/
 const anuAv_=m=>(m&&m.avatarUrl)||ANU_SHOW;
 const ANU_SHARE_ICON='<svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3.2 20c.1-7 4.3-10.8 11.8-10.8"/><path d="M12.6 3.6 19.4 9.2l-6.8 5.6"/><path d="M20.6 16.2v.01M17.6 19.6v.01" stroke-width="3.2"/></svg>';
 const anuLoadImg_=(url,ms=5000)=>{ const one=(u,t)=>new Promise(res=>{ if(!u) return res(null); const im=new Image(); if(!/^data:/.test(u)) im.crossOrigin="anonymous"; let d=false; const f=v=>{ if(!d){ d=true; res(v); } }; im.onload=()=>f(im); im.onerror=()=>f(null); setTimeout(()=>f(null),t); im.src=u; });
-  return one(url,ms).then(r=>r||(/^data:/.test(url||"")||!url?null:one(url+(url.includes("?")?"&":"?")+"_cb="+Date.now(),3500))); };
+  return one(url,ms).then(r=>r||(/^data:/.test(url||"")||!url?null:one(url+(url.includes("?")?"&":"?")+"_cb="+Date.now(),3000)))
+    .then(r=>r||(/^data:/.test(url||"")||!url?null:one("https://wsrv.nl/?w=600&output=png&url="+encodeURIComponent(url),6000))); };
 /* Tarjeta cuadrada (1:1) si solo hay «mejor»; vertical (9:16) si además hay menciones honoríficas. Siempre 1080 px de ancho. */
 let _anuBusy=false;
 async function anuCompartir_(id){
@@ -4025,12 +4055,15 @@ async function anuCompartirImpl_(id){
   y+=tall?52:44;
   if(!isNaN(f)){ c.font=`800 ${tall?36:30}px ${FB}`; txt(`${f.getDate()} de ${MESES_LARGO[f.getMonth()].toLowerCase()} ${f.getFullYear()}`,W/2,y,"#8a5fb8"); y+=tall?30:44; }
   /* ganadores */
-  const footY=H-(tall?198:186), mensRows=tall?Math.ceil(Math.min(mens.length,12)/2):0, mensH=tall?100+mensRows*116:0;
+  const footY=H-(tall?198:186);
   const cols=best.length<=1?1:best.length<=4?2:3, colW=(W-160)/cols, rowsB=Math.ceil(best.length/cols);
-  const avail=footY-y-mensH-(tall?20:0);
+  const bH=z=>z+z*.22+190;
+  let nM=tall?Math.min(mens.length,12):0, rowH=128; const mH=()=>nM?132+nM*rowH:0;
+  const availAll=footY-y-(tall?10:0), szMin=cols===1?300:cols===2?230:170;
+  if(tall){ for(;;){ if(availAll-mH()>=rowsB*bH(szMin)) break; if(rowH>88) rowH-=8; else if(nM>1) nM--; else break; } }
   let sz=tall?(cols===1?380:cols===2?300:230):(cols===1?340:cols===2?290:200);
-  while(sz>110&&rowsB*(sz+sz*.22+190)>avail) sz-=10;
-  y+=Math.min(110,Math.max(0,(avail-rowsB*(sz+sz*.22+190))/2));
+  while(sz>110&&rowsB*bH(sz)>availAll-mH()) sz-=10;
+  y+=Math.max(0,Math.min(110,(availAll-(rowsB*bH(sz)+mH()))/2));
   const crown=(cx,cy,w)=>{ const h=w*.7; c.save(); c.translate(cx-w/2,cy); c.fillStyle="#ffc928"; c.strokeStyle="#c98a00"; c.lineWidth=4; c.lineJoin="round";
     c.beginPath(); c.moveTo(0,h); c.lineTo(0,h*.28); c.lineTo(w*.25,h*.62); c.lineTo(w*.5,0); c.lineTo(w*.75,h*.62); c.lineTo(w,h*.28); c.lineTo(w,h); c.closePath(); c.fill(); c.stroke(); c.restore(); };
   const face=(img,cx,cy,r,ring,rw,nm)=>{ c.save(); c.shadowColor="rgba(0,0,0,.2)"; c.shadowBlur=22; c.shadowOffsetY=8; c.fillStyle="#fff"; c.beginPath(); c.arc(cx,cy,r+rw,0,7); c.fill(); c.restore();
@@ -4044,14 +4077,15 @@ async function anuCompartirImpl_(id){
     const nm=clean(b.w.nombre)||"Miembro"; fit(nm,colW-30,tall?46:42,FB,"800"); txt(ell(nm,colW-30),cx,cy+sz/2+60,"#2a1745");
     if(b.w.detalle){ fit(b.w.detalle,colW-30,tall?32:28,FB,"600"); txt(ell(clean(b.w.detalle),colW-30),cx,cy+sz/2+60+40,"#6b5683"); } });
   /* menciones honoríficas */
-  if(tall){ const my=footY-mensH+6; c.font=`400 76px ${FD}`; txt("Menciones honoríficas",W/2,my+62,"#f81e8e");
-    const lim=mens.slice(0,12), extra=mens.length-lim.length, cw=(W-200)/2;
-    lim.forEach((w,i)=>{ const col=i%2, row=Math.floor(i/2), x=100+col*cw, yy=my+100+row*116, cx=x+46, cyy=yy+54; const idx=best.length+i;
-      c.fillStyle="#fff"; c.save(); c.shadowColor="rgba(63,33,104,.12)"; c.shadowBlur=14; c.shadowOffsetY=4; rr(x-6,yy,cw-14,104,52); c.fill(); c.restore();
-      face(av[idx],cx,cyy,40,"#a45fc7",5,clean(w.nombre));
-      const tx=cx+40+22, mw=cw-14-(tx-x)-24; const nm=clean(w.nombre)||"Miembro"; fit(nm,mw,34,FB,"800"); txt(ell(nm,mw),tx,cyy-2,"#2a1745","left");
-      if(w.detalle){ fit(w.detalle,mw,26,FB,"600"); txt(ell(clean(w.detalle),mw),tx,cyy+32,"#6b5683","left"); } });
-    if(extra>0){ c.font=`800 28px ${FB}`; txt(`+${extra} más en el anuario`,W/2,footY+4,"#8a5fb8"); } }
+  if(tall&&nM){ const my=y+rowsB*bH(sz)+32; c.font=`400 80px ${FD}`; txt("Menciones honoríficas",W/2,my+62,"#f81e8e");
+    const lim=mens.slice(0,nM), extra=mens.length-lim.length, pw=W-240, px=120, ph=rowH-16, r0=Math.min(54,ph/2-9);
+    lim.forEach((w,i)=>{ const yy=my+96+i*rowH, cyy=yy+ph/2, idx=best.length+i;
+      c.fillStyle="#fff"; c.save(); c.shadowColor="rgba(63,33,104,.14)"; c.shadowBlur=16; c.shadowOffsetY=5; rr(px,yy,pw,ph,ph/2); c.fill(); c.restore();
+      face(av[idx],px+ph/2,cyy,r0,"#a45fc7",6,clean(w.nombre));
+      const tx=px+ph+10, mw=pw-ph-10-44, nm=clean(w.nombre)||"Miembro";
+      const hasD=!!w.detalle; fit(nm,mw,hasD?42:46,FB,"800"); txt(ell(nm,mw),tx,hasD?cyy-2:cyy+14,"#2a1745","left");
+      if(hasD){ fit(w.detalle,mw,30,FB,"600"); txt(ell(clean(w.detalle),mw),tx,cyy+36,"#6b5683","left"); } });
+    if(extra>0){ c.font=`800 28px ${FB}`; txt(`+${extra} más en el anuario`,W/2,my+96+lim.length*rowH+8,"#8a5fb8"); } }
   /* pie */
   if(logo){ const lh=tall?96:84, lw=lh*logo.width/logo.height; c.drawImage(logo,W/2-lw/2,H-80-lh,lw,lh); }
   else { c.font=`400 54px ${FD}`; txt("Peaches",W/2,H-86,"#3f2168"); }
@@ -4075,7 +4109,7 @@ function anuVistaPng_(u){
 /* ---------- Vista Miembro / Staff (interruptor temporal al final de la página) ---------- */
 function anuAplicarVista_(){ document.body.classList.toggle("anu-staff",!!staffPin); }
 /* Tarjeta del miembro: al tocar un miembro se abre la ficha normal de la app */
-document.addEventListener("anuario:miembro",e=>openMemberModal(e.detail.id));
+document.addEventListener("anuario:miembro",e=>openMemberModal(e.detail.id,true));
 
 /* ---------- Pantallas: portada, índice, detalle ---------- */
 function anuIdx_(){
@@ -4264,15 +4298,17 @@ function renderMiembros(filtro=""){
   bindAvatarFallbacks();
 }
 
-function openMemberModal(id){
+function openMemberModal(id,desdeAnuario){
   const m=DB.miembros.find(x=>String(x.id)===String(id));
   if(!m) return;
+  document.getElementById("memberModal").classList.toggle("anu-light",!!desdeAnuario); // modo claro SOLO si se abre desde el Anuario
+  const rolMk=desdeAnuario?anuRolDe_(m):null;
   document.getElementById("memberModal").classList.remove("sobre-chambeadores"); // (se vuelve a poner solo si se abrió desde Chambeadores)
   trackUI("abrirTarjetaMiembro");
   const strikes=Number(m.strikes)||0, faltas=Number(m.faltas)||0, strikesPermanentes=Number(m.strikesPermanentes)||0;
   document.getElementById("memberModalContent").innerHTML=`
     <div class="member-modal-header">
-      <img id="memberDetailAvatar" class="js-avatar" data-filename="${escAttr((m.nombre||'miembro')+'.jpg')}" src="${escAttr(m.avatarUrl||LOGO_DEFAULT)}">
+      ${rolMk?`<div class="mm-frame${rolMk==="f"?" f":""}" style="--pc:${anuFrame_(m,rolMk,anuStaffIdx_(m)).c}">${anuFrame_(m,rolMk,anuStaffIdx_(m)).html}</div>`:`<img id="memberDetailAvatar" class="js-avatar" data-filename="${escAttr((m.nombre||'miembro')+'.jpg')}" src="${escAttr(m.avatarUrl||LOGO_DEFAULT)}">`}
       <div class="mm-name-row">
         <div style="font-weight:800;font-size:17px;">${escHtml(m.nombre||"")}</div>
         ${staffPin?`<button class="edit-pencil" data-edit-member="${m.id}">✏️</button>`:""}
@@ -5838,7 +5874,7 @@ function openModal(id){
 }
 function closeModal(id){
   document.getElementById(id).classList.remove("open");
-  if(id==="memberModal") document.getElementById(id).classList.remove("sobre-chambeadores");
+  if(id==="memberModal"){ document.getElementById(id).classList.remove("sobre-chambeadores"); setTimeout(()=>{ if(!document.getElementById(id).classList.contains("open")) document.getElementById(id).classList.remove("anu-light"); },300); }
   // El carrusel de Minecraft corre timers propios (y puede haber un <video> reproduciéndose con
   // su audio); si no se frena acá, seguiría corriendo en segundo plano con el modal ya cerrado.
   if(id==="minecraftModal"){ mcStopCarousel(); mcMusicDetener(); }
@@ -6343,7 +6379,7 @@ document.getElementById("addActBtn").onclick=()=>openActivityForm(null, false);
 
 function openActivityForm(id, esAnuarioItem){
   const a=id?(esAnuarioItem?DB.anuario:DB.actividades).find(x=>String(x.id)===String(id)):null;
-  document.getElementById("activityFormTitle").textContent=a?"Editar actividad":"Nueva actividad";
+  document.getElementById("activityFormTitle").textContent=a?(esAnuarioItem?"Editar tarjeta del Anuario":"Editar actividad"):"Nueva actividad";
   document.getElementById("af_id").value=a?a.id:"";
   document.getElementById("af_titulo").value=a?a.titulo||"":"";
   document.getElementById("af_imagenUrl").value=a?a.imagenUrl||"":"";
