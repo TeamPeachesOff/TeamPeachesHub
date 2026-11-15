@@ -312,16 +312,16 @@
      solo cambia la info; vive en #diasSinWrap, aparte del feed, y copia las reglas de #actividadesFeed. */
   .diassin-prefijo{font-size:12px;font-weight:800;letter-spacing:.07em;text-transform:uppercase;color:var(--peach-1);}
   .diassin-frase{font-size:13px;color:var(--text-dim);font-style:italic;}
-  .diassin-stats{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:6px;margin-top:4px;}
-  .diassin-stat{padding:8px 2px;border-radius:12px;background:var(--card-bg-2);text-align:center;min-width:0;}
-  .diassin-stat b{display:block;font-size:clamp(20px,5.5vw,28px);line-height:1.05;font-weight:800;font-variant-numeric:tabular-nums;}
-  .diassin-stat:last-child b{color:var(--peach-2);}
-  .diassin-stat span{font-size:9.5px;font-weight:700;letter-spacing:.07em;color:var(--text-dim);}
+  .diassin-stats{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));margin-top:6px;}
+  .diassin-stat{padding:2px 4px;text-align:center;min-width:0;position:relative;}
+  .diassin-stat + .diassin-stat::before{content:"";position:absolute;left:0;top:14%;bottom:14%;width:1px;background:linear-gradient(transparent,rgba(255,255,255,.18),transparent);}
+  .diassin-stat b{display:block;font-size:clamp(26px,8vw,38px);line-height:1;font-weight:800;font-variant-numeric:tabular-nums;letter-spacing:-.02em;background:linear-gradient(180deg,#fff 30%,var(--peach-1));-webkit-background-clip:text;background-clip:text;color:transparent;}
+  .diassin-stat:last-child b{background:linear-gradient(180deg,var(--peach-1),var(--peach-2));-webkit-background-clip:text;background-clip:text;color:transparent;}
+  .diassin-stat span{display:block;margin-top:5px;font-size:9.5px;font-weight:700;letter-spacing:.14em;color:var(--text-dim);}
   @media (max-width:480px){
     #diasSinWrap .card-top{padding:0;}
     #diasSinWrap .card-img-wrap{border-radius:0;}
     #diasSinWrap .card-info{padding:12px 14px 12px;}
-    .diassin-stat b{font-size:clamp(24px,8.5vw,34px);}
   }
   @media (min-width:900px), (orientation:landscape) and (max-height:600px) and (min-width:560px){
     #diasSinWrap{display:grid;grid-template-columns:minmax(0,1fr);gap:18px;align-items:start;width:100%;max-width:860px;margin:0 auto;container-type:inline-size;}
@@ -334,8 +334,7 @@
     #diasSinWrap .card-img-wrap img{object-fit:contain;}
     #diasSinWrap .card-info{grid-column:2;grid-row:1;padding:12px 16px;gap:6px;justify-content:center;}
     #diasSinWrap .card-title{font-size:17px;}
-    .diassin-stat b{font-size:clamp(32px,4.4cqw,48px);}
-    .diassin-stat{padding:12px 4px;}
+    .diassin-stat b{font-size:clamp(34px,5.2cqw,56px);}
     .diassin-stat span{font-size:10.5px;}
   }
   #diasSinWrap .card.doble{margin-bottom:18px;}
@@ -6893,7 +6892,7 @@ function resaltarIndicacion(descripcionEscapada){
 // Guardar intenta apiPost({action:"guardarDiasSin",config}); si Code.gs aún no la conoce, queda solo en este dispositivo.
 let _diasSinTimer=null;
 function getDiasSinCfg_(){
-  if(DB && DB.diasSin && DB.diasSin.inicio) return DB.diasSin;
+  if(DB && DB.diasSin!==undefined) return DB.diasSin.inicio ? DB.diasSin : null; // el servidor (v. nueva) manda la verdad, incluso {} = sin contador
   try{ const c=JSON.parse(localStorage.getItem("tph_diassin")||"null"); if(c&&c.inicio) return c; }catch(e){}
   return null;
 }
