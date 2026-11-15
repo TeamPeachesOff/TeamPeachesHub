@@ -9,7 +9,7 @@
 <link id="favicon" rel="shortcut icon" type="image/jpeg" href="https://raw.githubusercontent.com/TeamPeachesOff/TeamPeachesHub/main/Logos/PeachesLogo.jpeg">
 <!-- PWA: app instalable -->
 <link rel="manifest" href="manifest.json">
-<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin><link href="https://fonts.googleapis.com/css2?family=Caveat+Brush&family=Kaushan+Script&family=Lilita+One&display=swap" rel="stylesheet">
+<link rel="preload" as="style" href="https://fonts.googleapis.com/css2?family=Caveat+Brush&family=Kaushan+Script&family=Lilita+One&display=swap"><link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin><link href="https://fonts.googleapis.com/css2?family=Caveat+Brush&family=Kaushan+Script&family=Lilita+One&display=swap" rel="stylesheet">
 <meta name="theme-color" content="#180E1D">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-capable" content="yes">
@@ -729,6 +729,41 @@
     .act-staff{display:none;gap:10px;margin-top:26px;} body.anu-staff .act-staff{display:flex;}
     .act-staff button{flex:1;min-height:46px;border-radius:999px;font-weight:800;font-size:14px;background:#ece3f8;color:#3f2168;} .act-staff .del{background:#fde3e8;color:#a3173a;}
     button.md-opt{width:100%;text-align:left;font:inherit;color:inherit;}
+
+    /* ===== Anuario: ajustes v7 ===== */
+    .anu-wrap{transition:opacity .25s ease;max-width:100%;} .anu-wrap.fw{opacity:0;}
+    .anu-cols,#anuDet,.anu-detail,.anu-book{min-width:0;max-width:100%;}
+    .anu-grid{grid-template-columns:repeat(2,minmax(0,1fr)) !important;gap:26px 14px !important;}
+    @media (min-width:560px){.anu-grid{grid-template-columns:repeat(3,minmax(0,1fr)) !important;gap:34px 22px !important;}}
+    @media (max-width:330px){.anu-grid{grid-template-columns:minmax(0,1fr) !important;}}
+    .anu-card{min-width:0;max-width:100%;box-sizing:border-box;}
+    .anu-card .anu-cb{display:block;min-width:0;}
+    .anu-card .anu-tags{flex-wrap:wrap !important;min-width:0;overflow:hidden;}
+    .anu-win{display:flex;flex-wrap:wrap;gap:4px;margin:6px 0 8px;}
+    .anu-win i{font-style:normal;font-size:11.5px;font-weight:800;padding:2px 8px;border-radius:999px;white-space:nowrap;}
+    .anu-win .w1{background:linear-gradient(135deg,#ffe27a,#ffb300);color:#5a3a00;} .anu-win .w2{background:#efe5fb;color:#3f2168;}
+    .cv-logo{display:block;width:clamp(150px,44vw,260px);height:auto;margin:0 auto 4px;filter:drop-shadow(0 6px 10px rgba(80,20,60,.18));}
+    .md-acts,.sg-bar{position:sticky;bottom:-22px;z-index:5;}
+    .md-acts{margin:14px -22px -22px;padding:12px 22px 22px;background:linear-gradient(rgba(255,250,245,0),#fffaf5 30%);}
+    .md-acts button,.sg-bar button,.md-opt{touch-action:manipulation;-webkit-tap-highlight-color:transparent;}
+    .md-acts button,.sg-bar button{min-height:54px;min-width:120px;}
+    .md-acts .md-pri{flex:1;margin-top:0;}
+    .md-pri[aria-disabled="true"]{opacity:.45;}
+    /* Mejores: marco dorado con degradado, brillo y listón */
+    .bst{position:relative;overflow:hidden;gap:5px;padding:18px 12px 20px;border-radius:28px;border:3px solid transparent;
+      background:linear-gradient(180deg,#fffef9,#fff1cc) padding-box,linear-gradient(145deg,#ffe27a,#ffb300 48%,#f81e8e) border-box;
+      box-shadow:0 16px 32px rgba(248,130,30,.28),0 2px 0 rgba(255,255,255,.9) inset;}
+    .bst::before{content:"";position:absolute;inset:0;pointer-events:none;background:radial-gradient(circle at 50% -10%,rgba(255,214,70,.6),transparent 58%),radial-gradient(circle at 100% 100%,rgba(248,30,142,.10),transparent 45%);}
+    .bst::after{content:"✦";position:absolute;top:10px;right:14px;font-size:16px;color:#ffb300;opacity:.85;pointer-events:none;}
+    .bst>*{position:relative;z-index:1;}
+    .bst-l{padding:5px 16px;background:linear-gradient(135deg,#ffe27a,#ffb300);box-shadow:0 4px 10px rgba(255,179,0,.4),inset 0 1px 0 rgba(255,255,255,.7);letter-spacing:.03em;}
+    .bst-av img{border:4px solid #fff;box-shadow:0 0 0 4px #ffc928,0 0 0 7px rgba(248,30,142,.25),0 12px 22px rgba(160,90,0,.3);}
+    .bst b{font-size:17.5px;color:#2a1745;overflow-wrap:anywhere;} .bst small{overflow-wrap:anywhere;}
+    /* Confirmaciones dentro del Anuario: claras como el resto */
+    #confirmDialog.anu-light .modal-box{background:#fffaf5;color:#2a1745;border-radius:28px;box-shadow:0 24px 60px rgba(40,10,70,.4);}
+    #confirmDialog.anu-light #confirmDialogNo{background:#ece3f8 !important;color:#3f2168 !important;}
+    #confirmDialog.anu-light #confirmDialogYes{background:#fde3e8 !important;color:#a3173a !important;border:0;}
+    #confirmDialog.anu-light button{min-height:46px;}
     .md-back{background:none;color:#6b5683;font-weight:800;font-size:14px;padding:6px 0;}
   
 
@@ -1177,7 +1212,7 @@
   </section>
 
   <section id="viewAnuario" class="hidden"><div id="anuarioGrid"></div>
-    <div class="role-sw" id="roleSw"><span>Vista (temporal):</span><div class="seg"><button type="button" data-role="miembro">Miembro</button><button type="button" data-role="staff" class="on">Staff</button></div></div></section>
+    </section>
 
   <section id="viewMiembros" class="hidden">
     <div class="search-row">
@@ -3745,14 +3780,16 @@ function anuYaSet_(){
 }
 /* Agrega una o varias canciones en UNA sola tarjeta (la de la primera actividad) y, si hace falta, le pone el nombre elegido */
 async function anuEnviar_(items,anchorId,nombre){
-  for(let i=0;i<items.length;i++){ const it=items[i];
-    const r=await apiPost({action:"addToAnuario",idActividad:anchorId,destino:it.destino,nombreUsuario:it.nombreUsuario,detalle:it.detalle,link:it.link},items.length>1?`Agregando al Anuario (${i+1}/${items.length})...`:"Agregando al Anuario...");
-    if(!r.ok){ toast("Error: "+(r.error||"")); await cargarDatos(); return false; } }
-  await cargarDatos();
   const nm=String(nombre||"").trim();
-  if(nm){ const row=(DB.anuario||[]).find(x=>String(x.id)===String(anchorId));
-    if(row&&String(row.titulo||"").trim()!==nm){ const data=datosActividadParaGuardar(row,row.imagenUrl||""); data.titulo=nm;
-      const r=await apiPost({action:"editAnuario",data},"Guardando el nombre..."); if(r.ok) await cargarDatos(); else toast("Error al guardar el nombre: "+(r.error||"")); } }
+  let r=await apiPost({action:"addToAnuarioLote",idActividad:anchorId,items,nombre:nm},items.length>1?`Guardando ${items.length} canciones en el Anuario...`:"Agregando al Anuario...");
+  if(!r.ok&&/acci[oó]n|action|desconoc/i.test(String(r.error||""))){ // backend viejo sin «lote»: modo uno por uno
+    for(let i=0;i<items.length;i++){ const it=items[i];
+      r=await apiPost({action:"addToAnuario",idActividad:anchorId,destino:it.destino,nombreUsuario:it.nombreUsuario,detalle:it.detalle,link:it.link},`Agregando al Anuario (${i+1}/${items.length})...`);
+      if(!r.ok) break; }
+    if(r.ok&&nm){ await cargarDatos(); const row=(DB.anuario||[]).find(x=>String(x.id)===String(anchorId))||(DB.anuario||[])[(DB.anuario||[]).length-1];
+      if(row&&String(row.titulo||"").trim()!==nm){ const data=datosActividadParaGuardar(row,row.imagenUrl||""); data.titulo=nm; data.id=row.id; await apiPost({action:"editAnuario",data},"Guardando el nombre..."); } } }
+  if(!r.ok){ toast("Error: "+(r.error||"")); await cargarDatos(); return false; }
+  await cargarDatos();
   return true;
 }
 function abrirModalAnuario(idActividad,titulo,nombreUsuario,detalle,link){
@@ -3835,7 +3872,7 @@ function anuNorm_(e){
 function anuBuild_(){
   const it=[]; (DB.anuario||[]).forEach(e=>{ const n=anuNorm_(e); if(!n.f) return; const d=anuFecha_(n.f); if(isNaN(d)) return;
     it.push({n,anio:d.getFullYear(),mes:d.getMonth(),dia:d.getDate(),sem:["dom","lun","mar","mié","jue","vie","sáb"][d.getDay()],t:d.getTime()}); });
-  const anios=[...new Set([2026,2027,...it.map(x=>x.anio)])].sort((x,y)=>x-y);
+  const anios=[...new Set(it.map(x=>x.anio))].sort((x,y)=>x-y); if(!anios.length) anios.push(new Date().getFullYear());
   anuS.per=anios.map(y=>{
     const ms=y===2026?[...new Set([7,8,9,10,11,...it.filter(x=>x.anio===y).map(x=>x.mes)])].sort((a,b)=>a-b):Array.from({length:12},(_,i)=>i);
     const p={anio:y,titulo:String(y),tema:y===2026?"p":"o",admin:y===2026};
@@ -3844,10 +3881,14 @@ function anuBuild_(){
 const anuP_=()=>anuS.per[anuS.pi];
 const anuRows_=p=>[...(p.admin?[{k:"admin",b:"00",t:"Administradores",n:1}]:[]),...p.cuenta.map(c=>({k:p.anio+"-"+c.m,b:pad(c.m+1),t:MESES_LARGO[c.m],n:c.items.length}))];
 const anuFirst_=()=>(anuRows_(anuP_()).find(r=>r.n)||{}).k||null;
+function anuWinBadges_(e){
+  const b=parseWinnerLines(e.ganadorCanto).length+parseWinnerLines(e.ganadorDoblaje).length, m=parseWinnerLines(e.mencionesHonorificas).length;
+  return (b||m)?`<span class="anu-win">${b?`<i class="w1">👑 ${b} ${b===1?"Mejor":"Mejores"}</i>`:""}${m?`<i class="w2">🎖️ ${m} ${m===1?"Mención":"Menciones"}</i>`:""}</span>`:"";
+}
 function anuarioBlockHTML(x,i=0){
   const n=x.n, im=n.imgs, r=[-1.6,1.2,-0.8,1.8][i%4], img=(s,f)=>`<img${f?` class="js-longpress" data-filename="${escAttr(n.titulo+".jpg")}"`:""} src="${escAttr(s)}" alt="" loading="lazy" decoding="async">`;
   const pics=im.length>1?`<span class="anu-pics two">${img(im[1])}${img(im[0],1)}</span>`:`<span class="anu-pics">${im[0]?img(im[0],1):""}</span>`;
-  return `<button type="button" class="anu-card" data-anuario="${escAttr(n.e.id)}" style="--r:${r}deg;--i:${Math.min(i,10)}">${pics}<span class="anu-cb"><span class="anu-ct">${escHtml(n.titulo)}</span><span class="anu-tags">${n.tipos.map(anuTag_).join("")}<span class="anu-day">${x.dia} ${MESES_LARGO[x.mes].slice(0,3).toLowerCase()}</span></span></span></button>`;
+  return `<button type="button" class="anu-card" data-anuario="${escAttr(n.e.id)}" style="--r:${r}deg;--i:${Math.min(i,10)}">${pics}<span class="anu-cb"><span class="anu-ct">${escHtml(n.titulo)}</span>${anuWinBadges_(n.e)}<span class="anu-tags">${n.tipos.map(anuTag_).join("")}<span class="anu-day">${x.dia} ${MESES_LARGO[x.mes].slice(0,3).toLowerCase()}</span></span></span></button>`;
 }
 
 
@@ -3895,13 +3936,13 @@ function anuAgregar_(){
       <p class="md-hint">Toca una o varias actividades; después eliges sus canciones.</p>
       <div class="md-list">${L.length?L.map((a,i)=>{ const x=TIPO_[a.categoria]||{t:"Especial",e:"✨"};
         return `<button type="button" class="md-opt${sel.some(s=>String(s.id)===String(a.id))?" sel":""}" data-a="${i}" aria-pressed="${sel.some(s=>String(s.id)===String(a.id))}">${a.imagenUrl?`<img src="${escAttr(a.imagenUrl)}" alt="">`:""}<span><b>${escHtml(a.titulo||"")}</b><small>${x.e} ${x.t} · ${dm(a.fechaInicio)} → ${dm(a.fechaFin)}${enAnu.has(String(a.id))?" · ya está en el anuario":""}</small></span></button>`; }).join(""):`<p class="md-empty">No hay actividades con fecha en este mes.</p>`}</div>
-      <div class="md-acts"><button type="button" class="md-sec" data-close>Cerrar</button><button type="button" class="md-pri" id="sgNext"${sel.length?"":" disabled"}>Continuar${sel.length?` (${sel.length})`:""}</button></div></div>`);
+      <div class="md-acts"><button type="button" class="md-sec" data-close>Cerrar</button><button type="button" class="md-pri" id="sgNext" aria-disabled="${sel.length?"false":"true"}">Continuar${sel.length?` (${sel.length})`:""}</button></div></div>`);
     b.querySelectorAll("[data-nav]").forEach(x=>x.onclick=()=>{ m+=+x.dataset.nav; if(m<0){m=11;y--;} if(m>11){m=0;y++;} drawActs(); });
     b.querySelectorAll("[data-a]").forEach(x=>x.onclick=()=>{ const a=L[+x.dataset.a], k=sel.findIndex(s=>String(s.id)===String(a.id));
       if(k>=0) sel.splice(k,1); else sel.push(a);
       x.classList.toggle("sel",k<0); x.setAttribute("aria-pressed",String(k<0));
-      const nx=$a("sgNext"); nx.disabled=!sel.length; nx.textContent="Continuar"+(sel.length?` (${sel.length})`:""); });
-    $a("sgNext").onclick=()=>{ if(!sel.length) return; for(const k of Object.keys(picks)) if(!sel.some(s=>k.startsWith(s.id+"|"))) delete picks[k];
+      const nx=$a("sgNext"); nx.setAttribute("aria-disabled",String(!sel.length)); nx.textContent="Continuar"+(sel.length?` (${sel.length})`:""); });
+    $a("sgNext").onclick=()=>{ if(!sel.length){ toast("Toca al menos una actividad"); return; } for(const k of Object.keys(picks)) if(!sel.some(s=>k.startsWith(s.id+"|"))) delete picks[k];
       if(!tocado) nombre=sel[0].titulo||""; paso="songs"; drawSongs(); };
   };
   const drawSongs=()=>{
@@ -3911,8 +3952,8 @@ function anuAgregar_(){
       ${sel.map(a=>{ const es=entregasDe(a), x=TIPO_[a.categoria]||{t:"Especial",e:"✨"};
         return `<section class="sg-grp"><h4 class="sg-gt">${a.imagenUrl?`<img src="${escAttr(a.imagenUrl)}" alt="">`:""}<span>${escHtml(a.titulo||"")}<small>${x.e} ${x.t}</small></span></h4>${es.length?es.map((e,i)=>{ const key=a.id+"|"+i;
           return anuSongCardHTML_({nombreUsuario:e.nombreUsuario,detalle:e.detalleEntrega},a.categoria,key,picks[key]||"",ya.has(String(e.nombreUsuario||"").trim()+"|"+String(e.detalleEntrega||"").trim())); }).join(""):`<p class="md-empty">Esta actividad todavía no tiene entregas.</p>`}</section>`; }).join("")}
-      <div class="sg-bar"><button type="button" class="md-sec" data-close>Cerrar</button><button type="button" class="md-pri" id="sgGo" disabled>Añadir al anuario</button></div></div>`);
-    const upd=()=>{ const n=nSel(), g=$a("sgGo"); g.disabled=!n; g.textContent=n?`Añadir al anuario (${n})`:"Añadir al anuario"; };
+      <div class="sg-bar"><button type="button" class="md-sec" data-close>Cerrar</button><button type="button" class="md-pri" id="sgGo" aria-disabled="true">Añadir al anuario</button></div></div>`);
+    const upd=()=>{ const n=nSel(), g=$a("sgGo"); g.setAttribute("aria-disabled",String(!n)); g.textContent=n?`Añadir al anuario (${n})`:"Añadir al anuario"; };
     $a("mdBack").onclick=()=>{ paso="acts"; drawActs(); };
     $a("sgName").oninput=e=>{ nombre=e.target.value; tocado=true; };
     b.querySelectorAll(".sg-card").forEach(card=>card.querySelectorAll("[data-k]").forEach(btn=>btn.onclick=()=>{
@@ -3921,12 +3962,14 @@ function anuAgregar_(){
       card.classList.remove("on-mejor","on-mencion"); if(picks[key]) card.classList.add("on-"+picks[key]);
       card.querySelectorAll("[data-k]").forEach(x=>x.classList.toggle("on",picks[key]===x.dataset.k)); upd(); }));
     $a("sgGo").onclick=async()=>{
+      if(!nSel()){ toast("Elige «Mejor» o «Mención» en al menos una canción"); return; }
+      if(b.dataset.busy==="1") return;
       const items=[]; sel.forEach(a=>entregasDe(a).forEach((e,i)=>{ const p=picks[a.id+"|"+i]; if(!p) return;
         items.push({destino:p==="mencion"?"mencion":(a.categoria==="doblaje"?"doblaje":"cancion"),nombreUsuario:e.nombreUsuario||"",detalle:e.detalleEntrega||"",link:e.linkGrabacion||""}); }));
       if(!items.length) return;
-      b.querySelectorAll("button,input").forEach(x=>x.disabled=true);
+      b.dataset.busy="1"; b.querySelectorAll("button,input").forEach(x=>x.disabled=true);
       const ok=await anuEnviar_(items,sel[0].id,tocado?nombre:"");
-      if(ok){ toast("Agregado al Anuario 👑"); mdHide_(); } else { b.querySelectorAll("button,input").forEach(x=>x.disabled=false); upd(); }
+      if(ok){ toast("Agregado al Anuario 👑"); mdHide_(); } else { b.dataset.busy="0"; b.querySelectorAll("button,input").forEach(x=>x.disabled=false); upd(); }
     };
     upd();
   };
@@ -3934,25 +3977,32 @@ function anuAgregar_(){
 }
 
 /* ---------- Imagen de respaldo y compartir (PNG) ---------- */
+const ANU_LOGO="data:image/svg+xml;charset=utf-8,%3Csvg%20xmlns=%22http://www.w3.org/2000/svg%22%20width=%221736%22%20height=%22540%22%20viewBox=%22110%20132%201736%20540%22%20role=%22img%22%20aria-label=%22Peaches%22%3E%3Cpath%20fill=%22%23FB036C%22%20fill-rule=%22evenodd%22%20d=%22M125,154%20119,164%20115,176%20115,625%20121,643%20132,656%20143,662%20151,664%20661,664%20674,659%20686,649%20692,639%20696,624%20696,176%20692,163%20680,147%20668,140%20661,138%20152,138%20138,143Z%22/%3E%3Cpath%20fill=%22%23fff%22%20fill-rule=%22evenodd%22%20d=%22M485,221%20472,221%20453,225%20419,240%20406,250%20386,239%20366,234%20329,235%20311,241%20295,249%20272,265%20257,280%20244,298%20234,317%20229,330%20223,352%20223,358%20221,365%20221,376%20220,377%20221,405%20225,427%20231,446%20247,475%20254,484%20273,503%20300,523%20337,543%20367,555%20434,576%20438,576%20450,569%20485,544%20509,523%20538,492%20552,472%20569,441%20580,411%20584,393%20586,363%20582,331%20574,305%20562,280%20548,259%20529,240%20507,227ZM487,234%20503,239%20522,251%20537,266%20551,287%20563,314%20570,340%20572,355%20571,392%20567,409%20557,437%20543,463%20526,487%20506,509%20481,532%20458,550%20440,562%20435,563%20395,548%20352,525%20317,499%20293,474%20278,452%20271,438%20263,416%20257,383%20258,347%20262,327%20268,309%20274,296%20288,275%20305,259%20318,252%20336,247%20348,247%20360,250%20370,255%20381,263%20395,277%20400,284%20400,287%20392,289%20380,295%20372,301%20364,310%20356,324%20352,338%20350,355%20351,374%20354,392%20360,410%20378,441%20395,463%20417,487%20427,496%20430,496%20452,461%20470,422%20474,410%20478,390%20479,364%20477,357%20477,351%20470,328%20463,315%20455,305%20440,293%20426,287%20413,286%20411,283%20418,270%20427,258%20444,243%20463,235Z%22/%3E%3Cpath%20fill=%22%23EE157D%22%20fill-rule=%22evenodd%22%20d=%22M1178,298%201071,512%201072,513%201286,513%201287,511%201225,390%201180,299ZM1178,340%201181,343%201199,380%201218,415%201237,453%201237,456%201235,458%201223,458%201222,457%201160,458%201158,456%201167,441%201209,441%201210,440%201180,380%201178,379%201130,473%201130,476%201248,476%201257,492%201255,495%201103,495%201101,493%201109,474%201160,375%201162,369ZM953,297%20949,302%20949,505%20952,509%20955,510%201035,510%201039,509%201042,505%201043,500%201043,480%201040,473%201036,472%20992,472%20986,468%20986,420%20987,417%20991,414%201035,414%201037,413%201041,407%201040,380%201037,377%201010,377%201009,376%20993,377%20990,376%20986,372%20986,336%20992,332%201037,332%201039,331%201042,326%201041,299%201039,297ZM864,297%20824,297%20818,299%20816,304%20816,507%20817,511%20823,514%20840,514%20846,512%20849,509%20849,442%20852,438%20868,438%20878,436%20889,432%20899,426%20911,413%20916,403%20920,389%20920,379%20921,378%20920,361%20921,359%20918,341%20911,324%20905,316%20894,307%20884,302ZM853,332%20860,332%20868,334%20873,337%20879,343%20883,350%20886,365%20885,382%20880,394%20872,402%20862,406%20851,406%20849,404%20849,335ZM1802,296%201781,296%201771,299%201761,304%201754,309%201745,319%201735,339%201733,348%201733,364%201736,375%201740,383%201747,393%201769,415%201775,419%201795,438%201801,452%201801,460%201798,468%201790,476%201784,479%201771,480%201760,477%201745,468%201741,468%201738,470%201734,478%201730,498%201734,504%201754,512%201766,514%201782,514%201797,511%201811,505%201818,500%201828,489%201833,480%201837,467%201837,449%201833,435%201829,427%201815,408%201778,375%201772,368%201767,356%201767,349%201770,341%201776,334%201783,330%201795,329%201805,332%201810,335%201814,335%201816,333%201825,311%201824,306%201818,301ZM1613,297%201609,303%201609,504%201610,507%201616,510%201696,510%201699,509%201702,505%201703,499%201703,479%201700,473%201697,472%201653,472%201647,468%201646,464%201646,425%201647,418%201652,414%201695,414%201698,413%201702,404%201701,401%201702,389%201700,379%201695,376%201691,377%201684,376%201654,377%201650,376%201646,370%201646,340%201647,335%201652,332%201697,332%201699,331%201703,323%201703,307%201701,299%201696,296%201616,296ZM1463,297%201459,301%201458,304%201457,503%201459,509%201464,512%201487,512%201492,510%201495,506%201495,427%201496,425%201500,422%201535,422%201538,423%201541,427%201541,504%201544,510%201551,512%201569,512%201575,510%201578,506%201578,302%201577,300%201570,296%201551,296%201545,298%201541,305%201541,381%201538,384%201502,384%201499,383%201495,379%201495,302%201492,298%201487,296ZM1399,296%201380,300%201363,308%201349,318%201333,336%201324,353%201318,371%201314,396%201314,416%201317,439%201325,463%201335,480%201349,494%201367,504%201379,508%201398,511%201413,511%201424,509%201428,504%201428,476%201425,473%201409,476%201390,475%201377,470%201369,464%201361,454%201355,442%201351,427%201349,410%201350,389%201354,371%201363,353%201375,341%201383,336%201396,332%201417,332%201418,333%201428,332%201429,328%201428,301%201425,298Z%22/%3E%3C/svg%3E";
 const ANU_SHOW="https://raw.githubusercontent.com/TeamPeachesOff/TeamPeachesHub/main/Anuario/ShowPeaches.png";
 /* Foto del miembro; si no existe o no está vinculado → ShowPeaches (foto de todos) */
 const anuAv_=m=>(m&&m.avatarUrl)||ANU_SHOW;
 const ANU_SHARE_ICON='<svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3.2 20c.1-7 4.3-10.8 11.8-10.8"/><path d="M12.6 3.6 19.4 9.2l-6.8 5.6"/><path d="M20.6 16.2v.01M17.6 19.6v.01" stroke-width="3.2"/></svg>';
-const anuLoadImg_=(url,ms=9000)=>{ const one=u=>new Promise(res=>{ if(!u) return res(null); const im=new Image(); im.crossOrigin="anonymous"; let d=false; const f=v=>{ if(!d){ d=true; res(v); } }; im.onload=()=>f(im); im.onerror=()=>f(null); setTimeout(()=>f(null),ms); im.src=u; });
-  return one(url).then(r=>r||(/^data:/.test(url||"")||!url?null:one(url+(url.includes("?")?"&":"?")+"_cb="+Date.now()))); };
+const anuLoadImg_=(url,ms=5000)=>{ const one=(u,t)=>new Promise(res=>{ if(!u) return res(null); const im=new Image(); if(!/^data:/.test(u)) im.crossOrigin="anonymous"; let d=false; const f=v=>{ if(!d){ d=true; res(v); } }; im.onload=()=>f(im); im.onerror=()=>f(null); setTimeout(()=>f(null),t); im.src=u; });
+  return one(url,ms).then(r=>r||(/^data:/.test(url||"")||!url?null:one(url+(url.includes("?")?"&":"?")+"_cb="+Date.now(),3500))); };
 /* Tarjeta cuadrada (1:1) si solo hay «mejor»; vertical (9:16) si además hay menciones honoríficas. Siempre 1080 px de ancho. */
+let _anuBusy=false;
 async function anuCompartir_(id){
+  if(_anuBusy){ toast("Ya se está creando la imagen… ⏳"); return; }
+  _anuBusy=true; try{ await anuCompartirImpl_(id); } catch(err){ toast("No se pudo crear la imagen ❌"); console.error(err); } finally{ _anuBusy=false; }
+}
+async function anuCompartirImpl_(id){
   const e=(DB.anuario||[]).find(x=>String(x.id)===String(id)); if(!e) return;
   const n=anuNorm_(e), f=anuFecha_(n.f), mens=parseWinnerLines(e.mencionesHonorificas);
   const best=[...parseWinnerLines(e.ganadorCanto).map(w=>({w,l:"MEJOR CANCIÓN"})),...parseWinnerLines(e.ganadorDoblaje).map(w=>({w,l:"MEJOR DOBLAJE"}))];
   if(!best.length&&!mens.length){ toast("Esta tarjeta todavía no tiene ganadores 🍑"); return; }
   toast("Creando tu imagen… 🎨");
   const tall=mens.length>0, W=1080, H=tall?1920:1080;
-  try{ await document.fonts.load('80px "Caveat Brush"'); }catch(_){}
+  try{ await Promise.race([anuFonts_(),new Promise(r=>setTimeout(r,2500))]); }catch(_){}
   const FD='"Caveat Brush","Segoe Script","Brush Script MT",cursive', FB=(getComputedStyle(document.body).fontFamily||"system-ui")+',system-ui,sans-serif';
   const clean=s=>String(s||"").replace(/@/g,"").trim();
   const people=[...best.map(b=>b.w),...mens].map(w=>anuMem_(w.nombre));
-  const [bg,show,peach,...av]=await Promise.all([anuLoadImg_(ANU_BG),anuLoadImg_(ANU_SHOW),anuLoadImg_(ANU_DURAZNO),...people.map(m=>anuLoadImg_(m&&m.avatarUrl))]);
+  const urlsAv=people.map(m=>m&&m.avatarUrl), cache=new Map(); const ld=u=>{ if(!u) return Promise.resolve(null); if(!cache.has(u)) cache.set(u,anuLoadImg_(u)); return cache.get(u); };
+  const [bg,show,logo,...av]=await Promise.all([ld(ANU_BG),ld(ANU_SHOW),ld(ANU_LOGO),...urlsAv.map(ld)]);
   const cv=document.createElement("canvas"); cv.width=W; cv.height=H; const c=cv.getContext("2d");
   const cover=(im,x,y,w,h)=>{ const r=Math.max(w/im.width,h/im.height), sw=w/r, sh=h/r; c.drawImage(im,(im.width-sw)/2,(im.height-sh)/2,sw,sh,x,y,w,h); };
   const rr=(x,y,w,h,r)=>{ c.beginPath(); c.moveTo(x+r,y); c.arcTo(x+w,y,x+w,y+h,r); c.arcTo(x+w,y+h,x,y+h,r); c.arcTo(x,y+h,x,y,r); c.arcTo(x,y,x+w,y,r); c.closePath(); };
@@ -3967,18 +4017,15 @@ async function anuCompartir_(id){
   /* cabecera */
   let y=tall?150:132;
   const yr=isNaN(f)?"":f.getFullYear();
-  c.font=`800 ${tall?30:26}px ${FB}`; c.textAlign="center"; if("letterSpacing" in c) c.letterSpacing="6px";
-  const kick=("TEAM PEACHES · ANUARIO "+yr).trim(); const kw=c.measureText(kick).width, pk=tall?64:54;
-  const kx=W/2-(kw+(peach?pk+16:0))/2; if(peach) c.drawImage(peach,kx,y-pk*.78,pk,pk*peach.height/peach.width);
-  txt(kick,kx+(peach?pk+16:0),y,"#f81e8e","left"); if("letterSpacing" in c) c.letterSpacing="0px";
-  y+=tall?36:26;
+  c.font=`400 ${tall?92:78}px ${FD}`; c.textAlign="center"; txt(("Anuario "+yr).trim(),W/2,y+(tall?20:14),"#f81e8e");
+  y+=tall?58:46;
   let ts=tall?132:104, lines; const words=clean(n.titulo).split(/\s+/);
   for(;ts>52;ts-=4){ c.font=`400 ${ts}px ${FD}`; lines=[]; let cur=""; words.forEach(w=>{ const t=cur?cur+" "+w:w; if(c.measureText(t).width>W-240&&cur){ lines.push(cur); cur=w; } else cur=t; }); lines.push(cur); if(lines.length<=2&&Math.max(...lines.map(l=>c.measureText(l).width))<=W-240) break; }
   lines.slice(0,2).forEach(l=>{ y+=ts*.92; txt(l,W/2,y,"#3f2168"); });
   y+=tall?52:44;
   if(!isNaN(f)){ c.font=`800 ${tall?36:30}px ${FB}`; txt(`${f.getDate()} de ${MESES_LARGO[f.getMonth()].toLowerCase()} ${f.getFullYear()}`,W/2,y,"#8a5fb8"); y+=tall?30:44; }
   /* ganadores */
-  const footY=H-160, mensRows=tall?Math.ceil(Math.min(mens.length,12)/2):0, mensH=tall?100+mensRows*116:0;
+  const footY=H-(tall?198:186), mensRows=tall?Math.ceil(Math.min(mens.length,12)/2):0, mensH=tall?100+mensRows*116:0;
   const cols=best.length<=1?1:best.length<=4?2:3, colW=(W-160)/cols, rowsB=Math.ceil(best.length/cols);
   const avail=footY-y-mensH-(tall?20:0);
   let sz=tall?(cols===1?380:cols===2?300:230):(cols===1?340:cols===2?290:200);
@@ -4006,19 +4053,27 @@ async function anuCompartir_(id){
       if(w.detalle){ fit(w.detalle,mw,26,FB,"600"); txt(ell(clean(w.detalle),mw),tx,cyy+32,"#6b5683","left"); } });
     if(extra>0){ c.font=`800 28px ${FB}`; txt(`+${extra} más en el anuario`,W/2,footY+4,"#8a5fb8"); } }
   /* pie */
-  c.font=`400 54px ${FD}`; txt("Team Peaches",W/2+(peach?34:0),H-86,"#3f2168"); if(peach){ c.font=`400 54px ${FD}`; const tw=c.measureText("Team Peaches").width; c.drawImage(peach,W/2+34-tw/2-62,H-86-46,52,52*peach.height/peach.width); }
-  cv.toBlob(bl=>{ if(!bl){ toast("No se pudo crear la imagen ❌"); return; }
-    const u=URL.createObjectURL(bl), a=document.createElement("a"); a.href=u; a.download="anuario-"+(clean(n.titulo).toLowerCase().replace(/[^a-z0-9áéíóúñ]+/gi,"-").replace(/^-|-$/g,"")||"actividad")+".png";
-    document.body.appendChild(a); a.click(); a.remove(); setTimeout(()=>URL.revokeObjectURL(u),4000); toast("Imagen lista ✅"); },"image/png");
+  if(logo){ const lh=tall?96:84, lw=lh*logo.width/logo.height; c.drawImage(logo,W/2-lw/2,H-80-lh,lw,lh); }
+  else { c.font=`400 54px ${FD}`; txt("Peaches",W/2,H-86,"#3f2168"); }
+  const bl=await new Promise(res=>{ try{ cv.toBlob(res,"image/png"); }catch(_){ res(null); } });
+  if(!bl){ toast("No se pudo crear la imagen ❌ (alguna foto bloquea el lienzo)"); return; }
+  const nombreArch="anuario-"+(clean(n.titulo).toLowerCase().replace(/[^a-z0-9áéíóúñ]+/gi,"-").replace(/^-|-$/g,"")||"actividad")+".png";
+  const file=new File([bl],nombreArch,{type:"image/png"});
+  const touch=matchMedia("(pointer:coarse)").matches;
+  if(touch&&navigator.canShare&&navigator.canShare({files:[file]})){
+    try{ await navigator.share({files:[file],title:"Anuario "+yr}); toast("Imagen lista ✅"); return; }catch(err){ if(err&&err.name==="AbortError"){ return; } }
+  }
+  const u=URL.createObjectURL(bl), a=document.createElement("a"); a.href=u; a.download=nombreArch; a.rel="noopener"; a.style.display="none";
+  document.body.appendChild(a); a.click(); a.remove(); setTimeout(()=>URL.revokeObjectURL(u),60000);
+  toast("Imagen lista ✅");
+  if(touch) anuVistaPng_(u); // respaldo: si el navegador no descarga solo, se puede mantener presionada
+}
+function anuVistaPng_(u){
+  const bx=anuModal_(`<div class="md-body" style="text-align:center"><h3 class="md-t">Tu imagen</h3><p class="md-hint">Si no se descargó sola, mantén presionada la imagen y guárdala.</p><img src="${u}" alt="Imagen del anuario" style="max-width:100%;max-height:60vh;border-radius:14px;box-shadow:0 8px 24px rgba(0,0,0,.2)"><div class="md-acts"><button type="button" class="md-pri" data-close>Listo</button></div></div>`);
 }
 
 /* ---------- Vista Miembro / Staff (interruptor temporal al final de la página) ---------- */
-function anuAplicarVista_(){
-  const v=window.anuVista_||(staffPin?"staff":"miembro");
-  document.body.classList.toggle("anu-staff",!!staffPin&&v==="staff");
-  const sw=document.getElementById("roleSw"); if(sw){ sw.style.display=staffPin?"":"none"; sw.querySelectorAll("[data-role]").forEach(b=>b.classList.toggle("on",b.dataset.role===(staffPin?v:"miembro"))); }
-}
-document.querySelectorAll("#roleSw [data-role]").forEach(b=>b.onclick=()=>{ window.anuVista_=b.dataset.role; anuAplicarVista_(); });
+function anuAplicarVista_(){ document.body.classList.toggle("anu-staff",!!staffPin); }
 /* Tarjeta del miembro: al tocar un miembro se abre la ficha normal de la app */
 document.addEventListener("anuario:miembro",e=>openMemberModal(e.detail.id));
 
@@ -4085,7 +4140,7 @@ function renderAnuario(){
   if(prev&&prev.pi<anuS.per.length){ Object.assign(anuS,prev,{v:"libro"}); if(anuS.act&&!(DB.anuario||[]).some(x=>String(x.id)===String(anuS.act))) anuS.act=null; }
   anuAplicarVista_();
   $a("anuarioGrid").innerHTML=`<div class="anu-wrap" id="anuWrap" data-v="portada">${ANU_DEFS}
-    <section class="anu-cover" id="anuCover"><h1 class="cv-t"><span>Anuario</span><span>Peaches</span></h1>
+    <section class="anu-cover" id="anuCover"><img class="cv-logo" src="${ANU_LOGO}" alt="Peaches"><h1 class="cv-t"><span>Anuario</span><span>Peaches</span></h1>
       <div class="cv-peach" id="cvPeach"><img src="${ANU_DURAZNO}" alt="Durazno de Team Peaches"></div>
       <div class="cv-yr"><button type="button" class="cv-arr" id="yrPrev" aria-label="Año anterior">${CH_L}</button><div class="cv-yv" id="yrVal" aria-live="polite"></div><button type="button" class="cv-arr" id="yrNext" aria-label="Año siguiente">${CH_R}</button></div>
       <button type="button" class="cv-go" id="anuGo">Continuar</button></section>
@@ -4098,7 +4153,17 @@ function renderAnuario(){
     $a("anuModal").addEventListener("click",e=>{ if(e.target===e.currentTarget) mdHide_(); });
     addEventListener("keydown",e=>{ if(e.key==="Escape") mdHide_(); }); }
   medHeader_(); anuCover_(0); anuView_();
+  const _w=$a("anuWrap"); _w.classList.add("fw"); anuFonts_().then(()=>_w.classList.remove("fw"));
 }
+/* Fuentes del Anuario: se precargan al abrir la app y la portada espera (máx. 1.8 s) para que no haya «salto» de letra */
+let _anuFontsP=null;
+function anuFonts_(){
+  if(_anuFontsP) return _anuFontsP;
+  const f=["Caveat Brush","Lilita One","Kaushan Script"].map(n=>{ try{ return document.fonts.load('40px "'+n+'"'); }catch(_){ return Promise.resolve(); } });
+  _anuFontsP=Promise.race([Promise.all(f).catch(()=>{}),new Promise(r=>setTimeout(r,1800))]);
+  return _anuFontsP;
+}
+setTimeout(()=>anuFonts_(),300);
 
 
 /* ---------- miembros ---------- */
@@ -5722,6 +5787,8 @@ document.getElementById("me_deleteBtn").onclick=async()=>{
 function confirmarAccion(mensaje){
   return new Promise(resolve=>{
     document.getElementById("confirmDialogMsg").textContent=mensaje;
+    const _va=document.getElementById("viewAnuario");
+    document.getElementById("confirmDialog").classList.toggle("anu-light",!!_va&&!_va.classList.contains("hidden"));
     document.getElementById("confirmDialog").classList.add("open");
     const yes=document.getElementById("confirmDialogYes");
     const no=document.getElementById("confirmDialogNo");
@@ -7082,6 +7149,7 @@ document.getElementById("reporteDrawerBtn").onclick=()=>{ closeDrawer(); openRep
 /* ---------- navegación ---------- */
 const URL_ANUARIO_PUBLICO_DEFAULT="https://youtu.be/dQw4w9WgXcQ"; // solo se usa si el backend todavía no mandó el valor configurado
 document.querySelectorAll(".tab-btn").forEach(btn=>btn.onclick=()=>{
+  if(btn.dataset.tab==="anuario"&&DB.anuarioModo==="hub"){ trackUI("verAnuario"); switchTab("anuario"); return; }
   if(btn.dataset.tab==="anuario"){ trackUI("verAnuario"); window.open((DB.enlacesPublicos&&DB.enlacesPublicos.CFG_ANUARIO_PUBLICO_LINK)||URL_ANUARIO_PUBLICO_DEFAULT,"_blank","noopener"); return; }
   switchTab(btn.dataset.tab);
 });
@@ -7186,7 +7254,9 @@ function abrirStaffHub(){
         <img src="https://raw.githubusercontent.com/TeamPeachesOff/TeamPeachesHub/main/Logos/GithubLogo.png" style="width:24px;height:24px;border-radius:0;" alt="GitHub"><span>GitHub</span>
       </button>
     </div>
-    <button class="drawer-nav-btn" id="hubAnuario" style="justify-content:center;width:100%;margin-bottom:8px;">📖 AnuarioHub</button>
+    <div class="section-label" style="text-align:left;">📖 Botón principal de Anuario</div>
+    <div class="switch-pill" id="hubAnuModo" style="margin-bottom:8px;"><button type="button" data-val="enlace">🔗 Enlace</button><button type="button" data-val="hub">📖 AnuarioHub</button></div>
+    <button class="drawer-nav-btn" id="hubAnuario" style="justify-content:center;width:100%;margin-bottom:8px;">📖 Abrir AnuarioHub</button>
     <button class="drawer-nav-btn" id="hubDiasSin" style="justify-content:center;width:100%;margin-bottom:16px;">⏱️ Contador "Días sin…"</button>
     <div class="section-label" style="text-align:left;">🍑 Entregas</div>
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:16px;">
@@ -7223,6 +7293,13 @@ function abrirStaffHub(){
   document.getElementById("hubCumple").onclick=()=>probarHub("testCumpleanos","Cumpleaños");
   document.getElementById("hubSeguridad").onclick=()=>probarHub("testSeguridad","Seguridad");
   document.getElementById("hubRecordatorio").onclick=()=>{ const a=DB.actividades[0]; if(!a){toast("No hay actividad para probar");return;} probarHub("testRecordatorio","Recordatorio",a.id); };
+  setSwitchPill("hubAnuModo",DB.anuarioModo==="hub"?"hub":"enlace");
+  document.querySelectorAll("#hubAnuModo button").forEach(bt=>bt.onclick=async()=>{
+    const antes=DB.anuarioModo==="hub"?"hub":"enlace", v=bt.dataset.val; if(v===antes) return;
+    setSwitchPill("hubAnuModo",v);
+    const r=await apiPost({action:"guardarAnuarioModo",modo:v},"Guardando...");
+    if(r.ok){ DB.anuarioModo=r.anuarioModo; toast(v==="hub"?"El botón de Anuario abre el AnuarioHub 📖":"El botón de Anuario abre el enlace 🔗"); }
+    else{ setSwitchPill("hubAnuModo",antes); toast("Error: "+(r.error||"")); } });
   document.getElementById("hubAnuario").onclick=()=>{ closeModal("memberModal"); switchTab("anuario"); document.body.scrollTo({top:0}); };
   document.getElementById("hubDiasSin").onclick=()=>{ closeModal("memberModal"); abrirDiasSinModal(); };
   document.getElementById("hubEntregaSemanalCanto").onclick=()=>abrirEnlacePrivado("CFG_ENTREGA_SEMANAL_CANTO_LINK");
