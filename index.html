@@ -479,6 +479,72 @@
   .anuario-block img{width:100%;aspect-ratio:1/1;object-fit:contain;background:var(--card-bg-2);}
   .anuario-block .ab-cat{text-align:center;padding:8px 8px 0;}
   .anuario-block .ab-title{padding:10px;font-weight:800;font-size:13.5px;text-align:center;}
+  /* ===== ANUARIO: diseño tipo libro (portada, índices, administración, meses) ===== */
+  html{transition:background-color 1s ease;}
+  header{transition:background-color .9s ease,border-color .9s ease;}
+  #anuarioBg{position:fixed;inset:0;z-index:-1;opacity:0;pointer-events:none;transition:opacity 1s ease;
+    background:radial-gradient(900px 500px at 8% 0,#e4d9f4,transparent 62%),radial-gradient(800px 500px at 100% 25%,#ffd8c0,transparent 62%),linear-gradient(170deg,#fbeee6,#f8e3ee 55%,#efe6f7);}
+  body.anuario-mode #anuarioBg{opacity:1;}
+  html:has(body.anuario-mode){background:#fbeee6;}
+  body.anuario-mode header{background:#fff3ea;border-bottom-color:rgba(63,33,104,.18);}
+  body.anuario-mode .logo{background:linear-gradient(90deg,#3f2168,#EF0870);-webkit-background-clip:text;background-clip:text;}
+  body.anuario-mode #hamburgerBtn{color:#3f2168;}
+  body.anuario-mode #hamburgerBtn:hover{background:rgba(63,33,104,.1);}
+  body.anuario-mode .tabs{background:rgba(63,33,104,.09);}
+  body.anuario-mode .tab-btn:not(.active){color:#5b3d86;}
+  body.anuario-mode .header-inner{max-width:1000px;}
+  main:has(> #viewAnuario:not(.hidden)){max-width:1000px;}
+  #viewAnuario:not(.hidden){animation:anuReveal 1s cubic-bezier(.2,.7,.2,1) backwards;}
+  @keyframes anuReveal{from{clip-path:circle(0% at 82% 0);opacity:.2}to{clip-path:circle(150% at 82% 0);opacity:1}}
+  .anu-page{position:relative;overflow:hidden;border-radius:22px;margin:0 0 18px;box-shadow:0 10px 30px rgba(70,35,100,.16);color:#2a1745;scroll-margin-top:70px;}
+  .anu-page *{box-sizing:border-box;}
+  .t-p{--sp1:#d4c7e8;--sp2:#8f89ad;--c1:#17213f;--c2:#17213f;}
+  .t-o{--sp1:#faebc0;--sp2:#f5c48e;--c1:#f4a05a;--c2:#ff7a1a;}
+  .anu-spl{position:absolute;width:58%;max-width:520px;pointer-events:none;}
+  .anu-spl.tr{top:0;right:0;} .anu-spl.bl{bottom:0;left:0;transform:rotate(180deg);}
+  .anu-cover{min-height:min(140vw,900px);display:flex;flex-direction:column;align-items:center;justify-content:space-between;padding:8% 5% 6%;text-align:center;
+    background:radial-gradient(60% 40% at 8% 14%,#8f6fd0cc,transparent 70%),radial-gradient(55% 35% at 92% 6%,#f6a58acc,transparent 70%),radial-gradient(45% 35% at 98% 52%,#f7a7c8cc,transparent 70%),radial-gradient(45% 30% at 0% 62%,#ffc07acc,transparent 70%),radial-gradient(55% 30% at 100% 96%,#b7cf9dcc,transparent 70%),radial-gradient(60% 30% at 10% 100%,#f3849bcc,transparent 70%),#fbf3ee;}
+  .anu-gold{position:absolute;inset:0 0 auto 0;width:100%;pointer-events:none;}
+  .anu-c1,.anu-c2{margin:0;position:relative;font-family:'PeachesSans',sans-serif;font-weight:900;font-style:italic;text-transform:uppercase;color:#3f2168;line-height:.95;letter-spacing:.02em;}
+  .anu-c1{font-size:clamp(44px,12vw,110px);transform:rotate(-3deg);} .anu-c2{font-size:clamp(60px,18vw,170px);}
+  .anu-peach{width:min(50%,360px);position:relative;} .anu-peach svg{width:100%;display:block;filter:drop-shadow(0 10px 18px rgba(240,140,40,.35));}
+  .anu-yr{position:relative;width:min(80%,640px);border-top:3px solid;border-bottom:3px solid;border-image:linear-gradient(90deg,transparent,#d9a93a,transparent) 1;padding:10px 0;font:900 italic clamp(30px,8vw,68px)/1 'PeachesSans',sans-serif;color:#3f2168;}
+  .anu-btns{position:relative;display:flex;gap:8px;flex-wrap:wrap;justify-content:center;margin-top:10px;}
+  .anu-btns button{background:rgba(255,255,255,.78);color:#3f2168;font-weight:800;padding:9px 16px;border-radius:999px;font-size:13px;border:1px solid rgba(63,33,104,.2);}
+  .anu-index{background:#fff;min-height:min(150vw,820px);padding:6vw 5% 14%;display:flex;gap:4%;align-items:center;}
+  .anu-it{position:relative;z-index:1;writing-mode:vertical-rl;transform:rotate(180deg);margin:0;text-transform:uppercase;letter-spacing:.03em;color:var(--c1);font:400 clamp(44px,11vw,96px)/1 'Oswald','Bebas Neue','Arial Narrow',sans-serif-condensed,sans-serif;}
+  .anu-il{position:relative;z-index:1;flex:1;list-style:none;margin:0;padding:0;}
+  .anu-il li{margin:0 0 clamp(12px,3vw,28px);}
+  .anu-il a,.anu-il .off{display:flex;align-items:baseline;gap:.35em;font-family:Georgia,'Playfair Display',serif;color:var(--c2);text-decoration:none;}
+  .anu-il b{font-size:clamp(26px,7vw,46px);font-weight:700;} .anu-il em{font-style:normal;font-size:clamp(18px,4.6vw,32px);letter-spacing:1px;}
+  .anu-il span{font-size:clamp(15px,3.8vw,24px);text-decoration:underline;text-transform:uppercase;}
+  .anu-il .off{opacity:.45;} .anu-il .off span{text-decoration:none;}
+  .anu-nota{position:absolute;left:0;right:0;bottom:3%;z-index:1;padding:0 5%;text-align:center;font:700 clamp(11px,2.8vw,16px) 'PeachesSans',sans-serif;color:var(--c1);}
+  .anu-month{background:#fff;padding:5% 4% 4%;}
+  .anu-mh{position:relative;z-index:1;display:flex;align-items:center;gap:12px;margin:0 0 14px;}
+  .anu-mh h3{margin:0;flex:1;font:900 clamp(26px,6vw,44px)/1 'PeachesSans',sans-serif;color:var(--c1);text-transform:uppercase;letter-spacing:.03em;}
+  .anu-n{background:var(--sp1);color:var(--c2);font-weight:800;font-size:13px;padding:4px 12px;border-radius:999px;}
+  .anu-back{display:flex;padding:6px;border-radius:10px;background:var(--sp1);color:var(--c2);}
+  .anu-grid{position:relative;z-index:1;display:grid;grid-template-columns:repeat(auto-fill,minmax(min(100%,150px),1fr));gap:12px;}
+  @media (min-width:700px){.anu-grid{grid-template-columns:repeat(auto-fill,minmax(190px,1fr));gap:16px;}}
+  .anu-card{position:relative;background:#fff;border-radius:16px;overflow:hidden;border:2px solid var(--sp1);box-shadow:0 6px 16px rgba(60,30,90,.12);cursor:pointer;transition:transform .15s;}
+  .anu-card:active{transform:scale(.97);}
+  .anu-card img{display:block;width:100%;aspect-ratio:1/1;object-fit:contain;background:#faf6fb;}
+  .anu-ct{padding:8px 8px 10px;text-align:center;font-weight:800;font-size:13px;color:#2a1745;}
+  .anu-day{position:absolute;top:8px;left:8px;z-index:2;min-width:28px;padding:3px 8px;border-radius:999px;background:var(--c2);color:#fff;font-weight:800;font-size:12px;text-align:center;}
+  .anu-admin{padding:7% 4% 6%;background:radial-gradient(60% 25% at 20% 8%,#cdb8d8aa,transparent 70%),radial-gradient(70% 25% at 90% 38%,#ff9b6faa,transparent 70%),radial-gradient(70% 25% at 0 55%,#ff9a8caa,transparent 70%),radial-gradient(80% 25% at 60% 82%,#e4a2a8aa,transparent 70%),linear-gradient(180deg,#e7d3e2,#f7cdb4 40%,#f4a98a 62%,#d8a6b4 82%,#a98bbd);}
+  .anu-at{margin:0 0 5%;text-align:center;font:900 clamp(30px,9vw,76px)/1.12 'PeachesSans',sans-serif;color:#3f2168;text-transform:uppercase;letter-spacing:.04em;}
+  .anu-fl{display:flex;justify-content:center;padding-top:12%;margin-bottom:3%;}
+  .anu-row{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:5%;} .anu-row.c{justify-content:center;gap:4%;}
+  .anu-p{width:clamp(100px,27%,210px);text-align:center;position:relative;} .anu-p.f{width:clamp(120px,32%,250px);}
+  .anu-av{position:relative;aspect-ratio:1/1;margin-bottom:8%;}
+  .anu-av img.js-avatar{width:100%;height:100%;border-radius:50%;object-fit:cover;border:3px solid #fff;box-shadow:0 6px 14px rgba(60,30,90,.25);background:#fff;}
+  .anu-leaf{position:absolute;top:-17%;left:6%;width:34%;}
+  .anu-rib{position:absolute;top:4%;right:-8%;transform:rotate(28deg);font:900 clamp(15px,4.6vw,32px)/1 'PeachesSans',sans-serif;color:#fff;-webkit-text-stroke:6px #ff1f8f;paint-order:stroke fill;}
+  .anu-pn{font:700 clamp(16px,4.6vw,34px)/1.1 'Segoe Script','Brush Script MT','Lucida Handwriting','Apple Chancery',cursive;color:var(--pc);text-decoration:underline;text-shadow:0 0 4px #fff,0 0 4px #fff,2px 2px 0 #fff,-2px -2px 0 #fff;word-break:break-word;}
+  .anu-crown{position:absolute;left:50%;top:-40%;width:52%;transform:translateX(-50%);z-index:2;}
+  .anu-arc{position:absolute;left:-10%;top:-10%;width:120%;overflow:visible;pointer-events:none;z-index:2;}
+  .anu-arc text{font:900 27px 'PeachesSans',sans-serif;fill:#fff;stroke:#ff1f8f;stroke-width:7px;paint-order:stroke fill;stroke-linejoin:round;}
 
   #searchMiembros{width:100%;padding:12px 14px;border-radius:12px;border:1px solid rgba(255,255,255,0.1);background:var(--card-bg-2);color:var(--text);font-size:14px;display:block;}
   .search-row{display:flex;align-items:center;gap:10px;margin-bottom:14px;}
@@ -846,6 +912,7 @@
 
 <div id="loadingOverlay"><div class="peach-loader"><span>🍑</span><span>🍑</span><span>🍑</span></div><div class="loading-text">Cargando...</div></div>
 
+<div id="anuarioBg"></div>
 <header>
   <div id="topProgressBar"></div>
   <div class="header-inner">
@@ -3496,46 +3563,80 @@ document.querySelectorAll("[data-dest]").forEach(btn=>{
   };
 });
 
-/* ---------- anuario: años > meses > fechas ---------- */
+/* ---------- anuario: portada, índices, administración y meses ---------- */
+const ANU_COLORES=["#f37021","#4a7bf7","#e8363d","#3e2468","#2e9e4f","#d6277f"];
+const ANU_LISTA='<svg viewBox="0 0 24 24" width="24" height="24" aria-hidden="true"><g fill="currentColor"><rect x="3" y="4" width="4" height="4" rx="1.3"/><rect x="9" y="4.5" width="12" height="3" rx="1.5"/><rect x="3" y="10" width="4" height="4" rx="1.3"/><rect x="9" y="10.5" width="12" height="3" rx="1.5"/><rect x="3" y="16" width="4" height="4" rx="1.3"/><rect x="9" y="16.5" width="12" height="3" rx="1.5"/></g></svg>';
+const ANU_DURAZNO='<svg viewBox="0 0 220 210" aria-hidden="true"><defs><radialGradient id="anuPg" cx="35%" cy="30%" r="80%"><stop offset="0" stop-color="#fffaa8"/><stop offset=".55" stop-color="#ffc83d"/><stop offset="1" stop-color="#ff9a2e"/></radialGradient></defs><path d="M110 60C60 20 8 60 10 120c2 55 60 80 100 75 40 5 98-20 100-75 2-60-50-100-100-60z" fill="url(#anuPg)"/><path d="M110 62c-22 38-20 88 2 133" stroke="#f08a1d" stroke-width="5" fill="none" opacity=".7"/><path d="M108 62c-4-22 4-38 16-46" stroke="#c4691f" stroke-width="7" stroke-linecap="round" fill="none"/><path d="M126 36c16-28 62-24 70-2-20 20-56 22-70 2z" fill="#74d680"/></svg>';
+const ANU_CORONA='<svg class="anu-crown" viewBox="0 0 120 90" aria-hidden="true"><path d="M20 78L12 28l30 24 18-38 18 38 30-24-8 50z" fill="#ffc928" stroke="#e0a300" stroke-width="3" stroke-linejoin="round"/><g fill="#fff3a0" stroke="#e0a300" stroke-width="2.5"><circle cx="12" cy="26" r="6"/><circle cx="60" cy="12" r="6"/><circle cx="108" cy="26" r="6"/></g></svg>';
+const ANU_HOJA='<svg class="anu-leaf" viewBox="0 0 60 60" aria-hidden="true"><path d="M30 56C10 44 8 22 22 6c8 10 8 28 8 50z" fill="#8fc66a"/><path d="M30 56c2-20 12-34 30-40-2 22-12 36-30 40z" fill="#a9d97c"/></svg>';
+function anuSimbolo_(){
+  let s=7; const r=()=>{ s=(s*16807)%2147483647; return s/2147483647; };
+  let d=""; for(let i=0;i<46;i++){ const x=40+r()*350, y=70+r()*r()*190; d+=`<circle cx="${x.toFixed(0)}" cy="${y.toFixed(0)}" r="${(.8+r()*r()*6).toFixed(1)}" fill="var(--${i%3?"sp2":"sp1"})"/>`; }
+  return `<svg width="0" height="0" style="position:absolute" aria-hidden="true"><symbol id="anuSplash" viewBox="0 0 400 270"><path d="M30 110L120 70l130-8 80-32 70-22v167l-40 25-110-10-100-12-60-28z" fill="var(--sp1)"/><path d="M250 120q30-20 60-4-10 24-40 28z" fill="var(--sp2)" opacity=".7"/>${d}</symbol></svg>`;
+}
+const anuSpl_=()=>`<svg class="anu-spl tr" viewBox="0 0 400 270" aria-hidden="true"><use href="#anuSplash"/></svg><svg class="anu-spl bl" viewBox="0 0 400 270" aria-hidden="true"><use href="#anuSplash"/></svg>`;
+function anuPersona_(m,rol,i){
+  const arco=`<svg class="anu-arc" viewBox="0 0 240 240" aria-hidden="true"><path id="anuArc${i}" d="M12 120A108 108 0 0 1 228 120" fill="none"/><text><textPath href="#anuArc${i}" startOffset="50%" text-anchor="middle">FUNDADORA</textPath></text></svg>`;
+  return `<div class="anu-p${rol==="f"?" f":""}" style="--pc:${rol==="f"?"#d6277f":ANU_COLORES[i%ANU_COLORES.length]}"><div class="anu-av">${avatarImgTag(m)}${rol==="f"?ANU_CORONA+arco:ANU_HOJA+`<span class="anu-rib">${rol==="a"?"Admin":"Staff"}</span>`}</div><div class="anu-pn">${escHtml(m.nombre||"")}</div></div>`;
+}
+function anuAdminHTML_(){
+  const ok=m=>m.nombre&&String(m.nombre).trim()!=="";
+  const fund=DB.miembros.filter(m=>ok(m)&&esTrue(m.fundadora));
+  const adm=DB.miembros.filter(m=>ok(m)&&esTrue(m.lider)&&!esTrue(m.fundadora));
+  const stf=DB.miembros.filter(m=>ok(m)&&esTrue(m.staff)&&!esTrue(m.fundadora)&&!esTrue(m.lider));
+  let i=0; const P=(m,r)=>anuPersona_(m,r,i++);
+  const pares=[]; for(let k=0;k<stf.length;k+=2) pares.push(stf.slice(k,k+2));
+  const fila=(a)=>`<div class="anu-row">${a.map(m=>P(m,"s")).join("")}</div>`;
+  const filaAdm=adm.length?`<div class="anu-row c">${adm.map(m=>P(m,"a")).join("")}</div>`:"";
+  return `<section class="anu-page anu-admin" id="anu-admin"><h2 class="anu-at">Administración<br>y Staff</h2>
+    ${fund.length?`<div class="anu-fl">${fund.map(m=>P(m,"f")).join("")}</div>`:""}
+    ${pares.slice(0,1).map(fila).join("")}${filaAdm}${pares.slice(1).map(fila).join("")}
+    <div style="text-align:center;color:#3f2168"><a href="#" data-anu-go="anu-idx-first" aria-label="Volver al índice" style="color:inherit;display:inline-flex">${ANU_LISTA}</a></div></section>`;
+}
 function renderAnuario(){
   const grid=document.getElementById("anuarioGrid");
-  const items=DB.anuario.filter(a=>a.fechaInicio);
-  if(items.length===0){ grid.innerHTML=`<div class="empty-state">Aún no hay ediciones en el Anuario.</div>`; return; }
-
-  const porAnio={};
-  items.forEach(a=>{
-    const d=new Date(a.fechaInicio); if(isNaN(d)) return;
-    const anio=d.getFullYear(), mes=d.getMonth(), key=d.toISOString().slice(0,10);
-    porAnio[anio]=porAnio[anio]||{};
-    porAnio[anio][mes]=porAnio[anio][mes]||{};
-    porAnio[anio][mes][key]=porAnio[anio][mes][key]||[];
-    porAnio[anio][mes][key].push(a);
+  const it=[]; DB.anuario.forEach(a=>{ if(!a.fechaInicio) return; const d=new Date(a.fechaInicio); if(isNaN(d)) return; it.push({a,anio:d.getFullYear(),mes:d.getMonth(),dia:d.getDate(),t:d.getTime()}); });
+  const anios=[...new Set([2026,2027,...it.map(x=>x.anio)])].sort((x,y)=>x-y);
+  const M=n=>Array.from({length:n},(_,i)=>i), per=[];
+  anios.forEach(y=>{
+    if(y===2026){
+      if(it.some(x=>x.anio===2026&&x.mes<7)) per.push({id:"2026-1",anio:2026,meses:M(7),titulo:"2026-1",tema:"o"});
+      per.push({id:"2026-2",anio:2026,meses:[7,8,9,10,11],titulo:"2026-2",tema:"p",admin:true});
+    } else per.push({id:String(y),anio:y,meses:M(12),titulo:String(y),tema:"o"});
   });
-
-  const anios=Object.keys(porAnio).map(Number).sort((a,b)=>b-a);
-  let html="";
-  anios.forEach(anio=>{
-    html+=`<div class="anuario-year-group"><div class="anuario-year-label">${anio}</div>`;
-    const meses=Object.keys(porAnio[anio]).map(Number).sort((a,b)=>b-a);
-    meses.forEach(mes=>{
-      html+=`<div class="anuario-month-label">${MESES_LARGO[mes]}</div>`;
-      const fechas=Object.keys(porAnio[anio][mes]).sort((a,b)=>b.localeCompare(a));
-      fechas.forEach(fecha=>{
-        const bloques=porAnio[anio][mes][fecha].slice().sort((a,b)=>rankCategoria(a.categoria)-rankCategoria(b.categoria));
-        html+=`<div class="anuario-date-row">${bloques.map(a=>anuarioBlockHTML(a)).join("")}</div>`;
-      });
+  const pad=n=>String(n).padStart(2,"0"), idxId=(p,i)=>i===0?"anu-idx-first":"anu-idx-"+p.id;
+  let html=anuSimbolo_();
+  html+=`<section class="anu-page anu-cover" id="anu-portada">
+    <svg class="anu-gold" viewBox="0 0 400 120" preserveAspectRatio="none" aria-hidden="true"><path d="M0 10C90 40 200 70 400 50" stroke="#d9a93a" stroke-width="1.6" fill="none" opacity=".7"/><path d="M60 0C140 50 260 60 400 20" stroke="#d9a93a" stroke-width="1.2" fill="none" opacity=".6"/></svg>
+    <div><h1 class="anu-c1">Anuario</h1><h1 class="anu-c2">Peaches</h1></div>
+    <div class="anu-peach">${ANU_DURAZNO}</div>
+    <div><div class="anu-yr">${per[0].titulo} / ${per[per.length-1].anio}</div>
+    <div class="anu-btns"><button type="button" data-anu-go="anu-idx-first">📖 Ir al índice</button><button type="button" id="anuPubBtn">📺 Anuario público</button></div></div></section>`;
+  per.forEach((p,pi)=>{
+    const cuenta=p.meses.map(m=>({m,items:it.filter(x=>x.anio===p.anio&&x.mes===m).sort((x,y)=>x.t-y.t||rankCategoria(x.a.categoria)-rankCategoria(y.a.categoria))}));
+    html+=`<section class="anu-page anu-index t-${p.tema}" id="${idxId(p,pi)}">${anuSpl_()}<h2 class="anu-it">Índice ${p.titulo}</h2><ol class="anu-il">
+      ${p.admin?`<li><a href="#" data-anu-go="anu-admin"><b>01</b><em>....</em><span>Administradores</span></a></li>`:""}
+      ${cuenta.map(c=>{ const n=c.items.length, t=MESES_LARGO[c.m];
+        return n?`<li><a href="#" data-anu-go="anu-m-${p.anio}-${c.m}"><b>${pad(n)}</b><em>....</em><span>${t}</span></a></li>`:`<li><div class="off"><b>00</b><em>....</em><span>${t}</span></div></li>`; }).join("")}
+    </ol><div class="anu-nota">(Puedes seleccionar directamente en el índice el mes al que quieres dirigirte)</div></section>`;
+    if(p.admin) html+=anuAdminHTML_();
+    cuenta.filter(c=>c.items.length).forEach(c=>{
+      html+=`<section class="anu-page anu-month t-${p.tema}" id="anu-m-${p.anio}-${c.m}">${anuSpl_()}
+        <div class="anu-mh"><h3>${MESES_LARGO[c.m]} ${p.anio}</h3><span class="anu-n">${c.items.length}</span><a href="#" class="anu-back" data-anu-go="${idxId(p,pi)}" aria-label="Volver al índice">${ANU_LISTA}</a></div>
+        <div class="anu-grid">${c.items.map(x=>anuarioBlockHTML(x.a,x.dia)).join("")}</div></section>`;
     });
-    html+=`</div>`;
   });
   grid.innerHTML=html;
-  document.querySelectorAll("[data-anuario]").forEach(tile=>tile.onclick=()=>openAnuarioDetail(tile.dataset.anuario));
-  document.querySelectorAll(".anuario-block img.js-longpress").forEach(img=>enableLongPress(img,img.dataset.filename));
+  grid.querySelectorAll("[data-anu-go]").forEach(el=>el.onclick=e=>{ e.preventDefault(); const t=document.getElementById(el.dataset.anuGo); if(t) t.scrollIntoView({behavior:"smooth",block:"start"}); });
+  const pub=document.getElementById("anuPubBtn"); if(pub) pub.onclick=()=>window.open((DB.enlacesPublicos&&DB.enlacesPublicos.CFG_ANUARIO_PUBLICO_LINK)||URL_ANUARIO_PUBLICO_DEFAULT,"_blank","noopener");
+  grid.querySelectorAll("[data-anuario]").forEach(tile=>tile.onclick=()=>openAnuarioDetail(tile.dataset.anuario));
+  grid.querySelectorAll(".anu-card img.js-longpress").forEach(img=>enableLongPress(img,img.dataset.filename));
+  bindAvatarFallbacks();
 }
-function anuarioBlockHTML(a){
-  return `<div class="anuario-block" data-anuario="${a.id}">
-    ${a.imagenUrl?`<img class="js-longpress" data-filename="${escAttr((a.titulo||'anuario')+'.jpg')}" src="${escAttr(a.imagenUrl)}" alt="" loading="lazy" decoding="async">`:`<div style="aspect-ratio:1/1;background:var(--card-bg-2);"></div>`}
-    <div class="ab-title">👑 ${escHtml(a.titulo||"")}</div>
-  </div>`;
+function anuarioBlockHTML(a,dia){
+  return `<div class="anu-card" data-anuario="${a.id}"><span class="anu-day">${dia}</span>
+    ${a.imagenUrl?`<img class="js-longpress" data-filename="${escAttr((a.titulo||'anuario')+'.jpg')}" src="${escAttr(a.imagenUrl)}" alt="" loading="lazy" decoding="async">`:`<div style="aspect-ratio:1/1;background:#faf6fb;"></div>`}
+    <div class="anu-ct">👑 ${escHtml(a.titulo||"")}</div></div>`;
 }
 function openAnuarioDetail(id){
   const a=DB.anuario.find(x=>String(x.id)===String(id));
@@ -6545,7 +6646,7 @@ document.getElementById("reporteDrawerBtn").onclick=()=>{ closeDrawer(); openRep
 /* ---------- navegación ---------- */
 const URL_ANUARIO_PUBLICO_DEFAULT="https://youtu.be/dQw4w9WgXcQ"; // solo se usa si el backend todavía no mandó el valor configurado
 document.querySelectorAll(".tab-btn").forEach(btn=>btn.onclick=()=>{
-  if(btn.dataset.tab==="anuario"){ trackUI("verAnuario"); window.open((DB.enlacesPublicos&&DB.enlacesPublicos.CFG_ANUARIO_PUBLICO_LINK)||URL_ANUARIO_PUBLICO_DEFAULT,"_blank","noopener"); return; }
+  if(btn.dataset.tab==="anuario"){ trackUI("verAnuario"); switchTab("anuario"); document.body.scrollTo({top:0}); return; }
   switchTab(btn.dataset.tab);
 });
 function switchTab(tab){
@@ -6558,6 +6659,7 @@ function switchTab(tab){
   document.getElementById("viewMemberPin").classList.add("hidden");
   actualizarVisibilidadBackToTop();
 }
+(function(){ const v=document.getElementById("viewAnuario"); const sync=()=>document.body.classList.toggle("anuario-mode",!v.classList.contains("hidden")); new MutationObserver(sync).observe(v,{attributes:true,attributeFilter:["class"]}); sync(); })();
 document.getElementById("hamburgerBtn").onclick=()=>{ document.getElementById("drawer").classList.add("open"); document.getElementById("drawerOverlay").style.display="block"; };
 document.getElementById("drawerOverlay").onclick=closeDrawer;
 function closeDrawer(){ document.getElementById("drawer").classList.remove("open"); document.getElementById("drawerOverlay").style.display="none"; }
@@ -7207,10 +7309,10 @@ document.getElementById("miembrosContarBtn").onclick=()=>{
    tono para que no se vea una raya más clara cortando la pantalla. */
 (function(){
   var meta=document.querySelector('meta[name="theme-color"]'); if(!meta) return;
-  var BASE=[24,14,29], q=false, vistos=[];
+  var BASE=[24,14,29], q=false, vistos=[]; var CLARO=[255,243,234];
   function hex(c){return "#"+c.map(function(v){v=Math.max(0,Math.min(255,Math.round(v)));return (v<16?"0":"")+v.toString(16);}).join("");}
   function sync(){
-    q=false; var c=BASE.slice();
+    q=false; var c=(document.body.classList.contains("anuario-mode")?CLARO:BASE).slice();
     function sobre(rgb,a){for(var i=0;i<3;i++)c[i]=c[i]*(1-a)+rgb[i]*a;}
     document.querySelectorAll(".modal-overlay.open").forEach(function(){sobre([0,0,0],0.6);});
     var d=document.getElementById("drawerOverlay"); if(d&&getComputedStyle(d).display!=="none") sobre([0,0,0],0.5);
@@ -7225,6 +7327,7 @@ document.getElementById("miembrosContarBtn").onclick=()=>{
     });
     pedir();
   }
+  mo.observe(document.body,{attributes:true,attributeFilter:["class"]});
   enganchar();
   new MutationObserver(enganchar).observe(document.body,{childList:true});
 })();
