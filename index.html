@@ -483,6 +483,28 @@
   #searchMiembros{width:100%;padding:12px 14px;border-radius:12px;border:1px solid rgba(255,255,255,0.1);background:var(--card-bg-2);color:var(--text);font-size:14px;display:block;}
   .search-row{display:flex;align-items:center;gap:10px;margin-bottom:14px;}
   .search-row #searchMiembros{flex:1;margin-bottom:0;}
+  /* Caja de búsqueda de Miembros: lupa personalizada (SVG) a la izquierda, filtro anclado a la derecha (mismo trazo). */
+  .miembros-searchbox{flex:1;min-width:0;display:flex;align-items:center;gap:8px;padding:0 6px 0 12px;border-radius:12px;border:1px solid rgba(255,255,255,0.1);background:var(--card-bg-2);}
+  .miembros-searchbox:focus-within{border-color:rgba(239,8,112,0.45);}
+  .miembros-searchbox #searchMiembros{flex:1;min-width:0;width:auto;padding:12px 0;border:none;background:none;border-radius:0;}
+  .miembros-searchbox #searchMiembros:focus{outline:none;}
+  .ms-icon{width:19px;height:19px;flex-shrink:0;fill:none;stroke:var(--peach-1);stroke-width:2;stroke-linecap:round;stroke-linejoin:round;filter:drop-shadow(0 0 4px rgba(255,143,177,.45));}
+  #miembrosFiltroBtn{position:relative;flex-shrink:0;width:34px;height:34px;border-radius:10px;background:none;display:flex;align-items:center;justify-content:center;}
+  #miembrosFiltroBtn:active{transform:scale(.9);}
+  #miembrosFiltroBtn.on{background:rgba(239,8,112,.18);}
+  #miembrosFiltroBtn.on::after{content:"";position:absolute;top:5px;right:5px;width:7px;height:7px;border-radius:50%;background:var(--peach-2);}
+  .orden-titulo{display:flex;align-items:center;justify-content:space-between;gap:10px;margin:18px 0 8px;font-weight:800;font-size:14px;color:var(--peach-2);}
+  .orden-titulo span{font-size:12px;font-weight:800;color:var(--text-dim);background:var(--card-bg-2);padding:2px 10px;border-radius:999px;}
+  .orden-grupo{display:flex;flex-direction:column;gap:8px;}
+  .mes-fila{display:flex;align-items:center;gap:10px;}
+  .mes-dia{flex:0 0 30px;text-align:right;font-weight:800;font-size:15px;color:var(--peach-1);font-variant-numeric:tabular-nums;}
+  .mes-fila .member-row{flex:1;min-width:0;}
+  .miembros-contar{margin-top:26px;padding-top:14px;border-top:1px solid rgba(255,255,255,0.12);text-align:center;}
+  .miembros-contar button{background:none;color:var(--peach-1);font-weight:800;font-size:14px;padding:8px 14px;}
+  .orden-opcion{display:flex;align-items:center;gap:10px;width:100%;text-align:left;padding:12px 14px;border-radius:12px;background:var(--card-bg-2);color:var(--text);font-weight:700;font-size:14px;margin-bottom:8px;}
+  .orden-opcion.sel{background:linear-gradient(90deg,var(--peach-2),var(--peach-1));color:#fff;}
+  .conteo-fila{display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid rgba(255,255,255,0.07);font-size:14px;}
+  .conteo-fila strong{color:var(--peach-1);}
   /* v23: botón "Chambeadores" a la izquierda de la barra de búsqueda de Miembros -- mismo
      tamaño/comportamiento que #mundoPeachesBtn (a la derecha) para que ambos se vean parejos,
      pero con su propia identidad dorada (trofeo) en vez de reusar el rosa de la familia. */
@@ -903,7 +925,13 @@
   <section id="viewMiembros" class="hidden">
     <div class="search-row">
       <button type="button" id="chambeadoresTrofeoBtn" class="hidden chambeadores-trofeo-btn" title="Chambeadores de la temporada 🏆">🏆</button>
-      <input autocomplete="off" type="text" id="searchMiembros" placeholder="🔍 Buscar por nombre, rol, rango vocal, generación, cumpleaños o &quot;2 strikes&quot;...">
+      <div class="miembros-searchbox">
+        <svg class="ms-icon" viewBox="0 0 24 24" aria-hidden="true"><circle cx="10.5" cy="10.5" r="6.5"/><path d="M15.5 15.5 21 21"/></svg>
+        <input autocomplete="off" type="text" id="searchMiembros" placeholder="Buscar por nombre, rol, rango vocal, generación, cumpleaños o &quot;2 strikes&quot;...">
+        <button type="button" id="miembrosFiltroBtn" aria-label="Ordenar y filtrar miembros" title="Ordenar miembros">
+          <svg class="ms-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M3.5 5h17l-6.5 7.8V19l-4 2v-8.2z"/></svg>
+        </button>
+      </div>
       <img id="mundoPeachesBtn" class="hidden" alt="Mundo Peaches" title="Mundo Peaches 🌍"
         src="https://raw.githubusercontent.com/TeamPeachesOff/TeamPeachesHub/main/Logos/MundoPeaches.png"
         onerror="this.onerror=null;this.style.display='none';">
@@ -921,12 +949,15 @@
     <div class="hidden" id="memberToolsRow4" style="display:flex;gap:10px;margin-bottom:14px;">
       <button class="btn-small btn-family" id="pasarListaBtn" style="flex:1;">🗒️ Participación</button>
     </div>
-    <div class="section-label">👑 Reinas Peachy</div>
-    <div class="avatar-row" id="reinasCarousel"></div>
-    <div class="section-label">💎 Staff</div>
-    <div class="avatar-row" id="staffCarousel"></div>
-    <div class="section-label">🍑 Miembros</div>
+    <div id="miembrosFijas">
+      <div class="section-label">👑 Reinas Peachy</div>
+      <div class="avatar-row" id="reinasCarousel"></div>
+      <div class="section-label">💎 Staff</div>
+      <div class="avatar-row" id="staffCarousel"></div>
+      <div class="section-label">🍑 Miembros</div>
+    </div>
     <div id="miembrosList"></div>
+    <div class="miembros-contar"><button type="button" id="miembrosContarBtn">Contar miembros</button></div>
   </section>
 
   <section id="viewMundo" class="hidden">
@@ -1030,6 +1061,15 @@
     </form>
   </div>
 </div>
+
+<div class="modal-overlay" id="miembrosOrdenModal"><div class="modal-box"><button class="modal-close" data-close="miembrosOrdenModal">✕</button>
+  <h3>Ordenar miembros</h3>
+  <div id="miembrosOrdenOpciones"></div>
+</div></div>
+<div class="modal-overlay" id="miembrosConteoModal"><div class="modal-box"><button class="modal-close" data-close="miembrosConteoModal">✕</button>
+  <h3>Contar miembros</h3>
+  <div id="miembrosConteoContenido"></div>
+</div></div>
 
 <div class="modal-overlay" id="memberModal"><div class="modal-box"><button class="modal-close" data-close="memberModal">✕</button><div id="memberModalContent"></div></div></div>
 
@@ -3559,6 +3599,7 @@ document.getElementById("refreshMapBtn").onclick=async()=>{
 // CANTIDAD EXACTA de strikes (columna "strikes" -- NO cuenta faltas ni strikesPermanentes, tal
 // como se pidió: "solo strike no faltas"). Cualquier otra cosa escrita sigue funcionando como
 // buscador de texto normal (nombre, rol, rango vocal, generación, mes de cumpleaños).
+let miembrosOrden="normal"; // normal | rango | mes | categoria | generacion
 function renderMiembros(filtro=""){
   const textoFiltro = filtro.trim();
   const matchStrikes = textoFiltro.match(/^(\d+)\s*strikes?$/i);
@@ -3573,6 +3614,8 @@ function renderMiembros(filtro=""){
         mesDeCumple(m.cumpleanos)
       ].join(" ")).includes(f)));
 
+  if(miembrosOrden!=="normal"){ renderMiembrosOrdenado_(filtrar); return; }
+  document.getElementById("miembrosFijas").classList.remove("hidden");
   const reinas=DB.miembros.filter(m=>(esTrue(m.fundadora)||esTrue(m.lider)) && filtrar(m));
   document.getElementById("reinasCarousel").innerHTML=reinas.length?reinas.map(m=>`<div class="member-avatar-item reina" data-member="${m.id}">${avatarImgTag(m)}<div class="m-name">${escHtml(m.nombre||"")}</div></div>`).join(""):`<div style="color:var(--text-dim);font-size:13px;">Sin resultados.</div>`;
 
@@ -6992,6 +7035,122 @@ document.getElementById("ds_quitarBtn").onclick=async()=>{
   if(await confirmarAccion("¿Quitar el contador \"Días sin…\"?")) guardarDiasSin_(null);
 };
 document.addEventListener("visibilitychange",()=>{ if(!document.hidden) renderDiasSin(); });
+
+// ============ MIEMBROS: ORDENAR / CONTAR ============
+const ORDEN_OPCIONES=[
+  ["normal","⭐","Orden normal (Reinas, Staff, Miembros)"],
+  ["rango","🎵","Por rango vocal"],
+  ["mes","🎂","Por mes de cumpleaños"],
+  ["categoria","🎤","Por categoría: Canto · Ambos · Doblaje"],
+  ["generacion","🌱","Por generación (fecha de ingreso)"]
+];
+const RANGOS_ORDEN_=["soprano","mezzosoprano","mezzo","contralto","alto","tenor","baritono","bajo"];
+function rangosDe_(m){ // "Soprano, Alto" cuenta como 2 rangos por separado
+  return String(m.rangoVocal||"").split(",").map(x=>x.trim()).filter(Boolean);
+}
+function capitalizar_(t){ return t.charAt(0).toUpperCase()+t.slice(1); }
+function filaMiembroOrdenHTML_(m){
+  return `<div class="member-row" data-member="${m.id}">
+    ${avatarImgTag(m)}
+    <div class="m-info">
+      <div class="m-name">${escHtml(m.nombre||"")}</div>
+      <div class="badges-row">
+        ${esTrue(m.fundadora)||esTrue(m.lider)?`<span class="badge badge-reina">👑</span>`:""}
+        ${esTrue(m.staff)?`<span class="badge badge-staff">💎 Staff</span>`:""}
+        ${esTrue(m.canto)?`<span class="badge badge-canto">🎤 Canto</span>`:""}
+        ${esTrue(m.doblaje)?`<span class="badge badge-doblaje">🎙️ Doblaje</span>`:""}
+        ${esTrue(m.conserje)?`<span class="badge badge-conserje">🧹 Conserje</span>`:""}
+        ${esTrue(m.inactivo)?`<span class="badge badge-inactivo">😴 Inactivo</span>`:""}
+      </div>
+    </div>
+  </div>`;
+}
+const porNombre_=(a,b)=>(a.nombre||"").localeCompare(b.nombre||"");
+function gruposMiembros_(lista){
+  // Devuelve [{titulo, miembros:[{m, dia?}]}] según miembrosOrden
+  const grupos=[];
+  if(miembrosOrden==="rango"){
+    const mapa=new Map();
+    lista.forEach(m=>{
+      const r=rangosDe_(m);
+      (r.length?r:[""]).forEach(x=>{
+        const k=normalizar(x);
+        if(!mapa.has(k)) mapa.set(k,{titulo:x?capitalizar_(x):"Sin rango vocal",k,miembros:[]});
+        mapa.get(k).miembros.push({m});
+      });
+    });
+    const idx=k=>{ const i=RANGOS_ORDEN_.indexOf(k); return i<0?100:i; };
+    [...mapa.values()].sort((a,b)=>(a.k===""?1:0)-(b.k===""?1:0)||idx(a.k)-idx(b.k)||a.k.localeCompare(b.k))
+      .forEach(g=>{ g.miembros.sort((a,b)=>porNombre_(a.m,b.m)); grupos.push(g); });
+  } else if(miembrosOrden==="mes"){
+    const meses=Array.from({length:12},(_,i)=>({titulo:MESES_LARGO[i],miembros:[]}));
+    const sin={titulo:"Sin fecha de cumpleaños",miembros:[]};
+    lista.forEach(m=>{
+      const f=toDateInputCumple(m.cumpleanos).match(/^\d{4}-(\d{2})-(\d{2})$/);
+      if(f){ meses[parseInt(f[1],10)-1].miembros.push({m,dia:parseInt(f[2],10)}); } else sin.miembros.push({m});
+    });
+    meses.forEach(g=>g.miembros.sort((a,b)=>a.dia-b.dia||porNombre_(a.m,b.m)));
+    sin.miembros.sort((a,b)=>porNombre_(a.m,b.m));
+    meses.concat([sin]).forEach(g=>{ if(g.miembros.length) grupos.push(g); });
+  } else if(miembrosOrden==="categoria"){
+    const g={canto:{titulo:"🎤 Canto",miembros:[]},ambos:{titulo:"🎤🎙️ Ambos",miembros:[]},doblaje:{titulo:"🎙️ Doblaje",miembros:[]},nada:{titulo:"Sin categoría",miembros:[]}};
+    lista.forEach(m=>{
+      const c=esTrue(m.canto), d=esTrue(m.doblaje);
+      g[c&&d?"ambos":c?"canto":d?"doblaje":"nada"].miembros.push({m});
+    });
+    ["canto","ambos","doblaje","nada"].forEach(k=>{ g[k].miembros.sort((a,b)=>porNombre_(a.m,b.m)); if(g[k].miembros.length) grupos.push(g[k]); });
+  } else if(miembrosOrden==="generacion"){
+    const mapa=new Map(), sin={titulo:"Sin generación",miembros:[]};
+    lista.forEach(m=>{
+      const n=parseInt(m.generacionNum,10);
+      if(isNaN(n)){ sin.miembros.push({m}); return; }
+      if(!mapa.has(n)) mapa.set(n,{titulo:fmtGeneracion(n),miembros:[]});
+      mapa.get(n).miembros.push({m});
+    });
+    const ord=(a,b)=>String(toDateInput(a.m.fechaIngreso)||"9999").localeCompare(String(toDateInput(b.m.fechaIngreso)||"9999"))||((Number(a.m.id)||0)-(Number(b.m.id)||0));
+    [...mapa.keys()].sort((a,b)=>a-b).forEach(n=>{ const x=mapa.get(n); x.miembros.sort(ord); grupos.push(x); });
+    if(sin.miembros.length){ sin.miembros.sort(ord); grupos.push(sin); }
+  }
+  return grupos;
+}
+function renderMiembrosOrdenado_(filtrar){
+  document.getElementById("miembrosFijas").classList.add("hidden");
+  const lista=DB.miembros.filter(m=>m.nombre && String(m.nombre).trim()!=="" && filtrar(m));
+  const grupos=gruposMiembros_(lista);
+  document.getElementById("miembrosList").innerHTML=grupos.length?grupos.map(g=>`
+    <div class="orden-titulo">${escHtml(g.titulo)}<span>${g.miembros.length}</span></div>
+    <div class="orden-grupo">${g.miembros.map(x=>miembrosOrden==="mes"
+      ?`<div class="mes-fila"><div class="mes-dia">${x.dia||""}</div>${filaMiembroOrdenHTML_(x.m)}</div>`
+      :filaMiembroOrdenHTML_(x.m)).join("")}</div>`).join(""):`<div class="empty-state">Sin resultados.</div>`;
+  document.querySelectorAll("[data-member]").forEach(el=>el.onclick=()=>openMemberModal(el.dataset.member));
+  bindAvatarFallbacks();
+}
+function actualizarBotonFiltroMiembros_(){
+  document.getElementById("miembrosFiltroBtn").classList.toggle("on",miembrosOrden!=="normal");
+}
+document.getElementById("miembrosFiltroBtn").onclick=()=>{
+  document.getElementById("miembrosOrdenOpciones").innerHTML=ORDEN_OPCIONES.map(([k,ic,t])=>
+    `<button type="button" class="orden-opcion${k===miembrosOrden?" sel":""}" data-orden="${k}"><span>${ic}</span>${t}</button>`).join("");
+  document.querySelectorAll("#miembrosOrdenOpciones [data-orden]").forEach(b=>b.onclick=()=>{
+    miembrosOrden=b.dataset.orden; actualizarBotonFiltroMiembros_(); closeModal("miembrosOrdenModal");
+    renderMiembros(document.getElementById("searchMiembros").value);
+    document.body.scrollTo({top:0});
+  });
+  openModal("miembrosOrdenModal");
+};
+document.getElementById("miembrosContarBtn").onclick=()=>{
+  const ms=DB.miembros.filter(m=>m.nombre && String(m.nombre).trim()!=="");
+  const staff=ms.filter(m=>esTrue(m.staff)).length;
+  const rangos=new Map();
+  ms.forEach(m=>rangosDe_(m).forEach(r=>{ const k=normalizar(r); if(!rangos.has(k)) rangos.set(k,{t:capitalizar_(r),n:0}); rangos.get(k).n++; }));
+  const idx=k=>{ const i=RANGOS_ORDEN_.indexOf(k); return i<0?100:i; };
+  const filas=(a)=>a.map(([t,n])=>`<div class="conteo-fila"><span>${escHtml(t)}</span><strong>${n}</strong></div>`).join("");
+  document.getElementById("miembrosConteoContenido").innerHTML=
+    filas([["Integrantes totales",ms.length],["Staff",staff],["Miembros",ms.length-staff],["Canto",ms.filter(m=>esTrue(m.canto)).length],["Doblaje",ms.filter(m=>esTrue(m.doblaje)).length]])+
+    `<div class="section-label" style="text-align:left;">🎵 Rangos vocales</div>`+
+    (rangos.size?filas([...rangos.entries()].sort((a,b)=>idx(a[0])-idx(b[0])||a[0].localeCompare(b[0])).map(([k,v])=>[v.t,v.n])):`<div class="empty-state">Sin rangos registrados.</div>`);
+  openModal("miembrosConteoModal");
+};
 </script>
 
 <style>
