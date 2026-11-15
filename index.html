@@ -308,25 +308,38 @@
 
 
   /* ===== "Días sin…" (contador desde un suceso/actividad) ===== */
-  .diassin-card{display:flex;align-items:stretch;gap:0;padding:14px;margin-bottom:18px;position:relative;}
-  .diassin-thumb{flex:0 0 46%;max-width:46%;aspect-ratio:1/1;border-radius:12px;overflow:hidden;}
-  .diassin-thumb img{width:100%;height:100%;object-fit:contain;display:block;}
-  .diassin-info{flex:1;min-width:0;padding-left:18px;display:flex;flex-direction:column;justify-content:center;gap:8px;}
-  .diassin-prefijo{font-size:12.5px;font-weight:800;letter-spacing:.07em;text-transform:uppercase;color:var(--peach-1);}
-  .diassin-titulo{font-weight:800;font-size:20px;line-height:1.2;}
-  .diassin-frase{font-size:13.5px;color:var(--text-dim);font-style:italic;}
-  .diassin-stats{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-top:6px;}
-  .diassin-stat{padding:12px 4px;border-radius:14px;background:var(--card-bg-2);text-align:center;min-width:0;}
-  .diassin-stat b{display:block;font-size:clamp(26px,5.2cqw,44px);line-height:1.05;font-weight:800;font-variant-numeric:tabular-nums;}
+  /* "Días sin…": misma tarjeta que una actividad de doble espacio (.card.doble > .card-top > .card-img-wrap + .card-info),
+     solo cambia la info; vive en #diasSinWrap, aparte del feed, y copia las reglas de #actividadesFeed. */
+  .diassin-prefijo{font-size:12px;font-weight:800;letter-spacing:.07em;text-transform:uppercase;color:var(--peach-1);}
+  .diassin-frase{font-size:13px;color:var(--text-dim);font-style:italic;}
+  .diassin-stats{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:6px;margin-top:4px;}
+  .diassin-stat{padding:8px 2px;border-radius:12px;background:var(--card-bg-2);text-align:center;min-width:0;}
+  .diassin-stat b{display:block;font-size:clamp(20px,5.5vw,28px);line-height:1.05;font-weight:800;font-variant-numeric:tabular-nums;}
   .diassin-stat:last-child b{color:var(--peach-2);}
-  .diassin-stat span{font-size:10.5px;font-weight:700;letter-spacing:.07em;color:var(--text-dim);}
-  .diassin-edit{position:absolute;top:8px;right:8px;padding:5px 9px;border-radius:999px;background:rgba(26,16,32,.75);color:var(--text);font-size:13px;}
+  .diassin-stat span{font-size:9.5px;font-weight:700;letter-spacing:.07em;color:var(--text-dim);}
   @media (max-width:480px){
-    .diassin-card{flex-direction:column;}
-    .diassin-thumb{flex-basis:auto;max-width:100%;width:100%;}
-    .diassin-info{padding-left:0;padding-top:12px;}
-    .diassin-stat b{font-size:clamp(24px,8vw,34px);}
+    #diasSinWrap .card-top{padding:0;}
+    #diasSinWrap .card-img-wrap{border-radius:0;}
+    #diasSinWrap .card-info{padding:12px 14px 12px;}
+    .diassin-stat b{font-size:clamp(24px,8.5vw,34px);}
   }
+  @media (min-width:900px), (orientation:landscape) and (max-height:600px) and (min-width:560px){
+    #diasSinWrap{display:grid;grid-template-columns:minmax(0,1fr);gap:18px;align-items:start;width:100%;max-width:860px;margin:0 auto;container-type:inline-size;}
+    @container vact (min-width:1138px){ #diasSinWrap{grid-template-columns:repeat(2,minmax(0,1fr));max-width:calc(860px * 2 + 18px);} }
+    @container vact (min-width:2294px){ #diasSinWrap{grid-template-columns:repeat(4,minmax(0,1fr));max-width:calc(860px * 4 + 18px * 3);} }
+    #diasSinWrap .card{margin-bottom:18px;overflow:clip;display:grid;grid-template-columns:220px minmax(0,1fr);grid-template-rows:minmax(0,1fr);min-height:220px;max-width:860px;width:100%;justify-self:center;border:0;box-shadow:0 0 0 1px rgba(255,255,255,0.07);}
+    @container (min-width:1138px){ #diasSinWrap .card.doble{grid-column:span 2;max-width:calc(860px * 2 + 18px);} }
+    #diasSinWrap .card-top{display:contents;}
+    #diasSinWrap .card-img-wrap{grid-column:1;grid-row:1;width:220px;height:220px;flex:none;border-radius:0;background:var(--card-bg-2);}
+    #diasSinWrap .card-img-wrap img{object-fit:contain;}
+    #diasSinWrap .card-info{grid-column:2;grid-row:1;padding:12px 16px;gap:6px;justify-content:center;}
+    #diasSinWrap .card-title{font-size:17px;}
+    .diassin-stat b{font-size:clamp(32px,4.4cqw,48px);}
+    .diassin-stat{padding:12px 4px;}
+    .diassin-stat span{font-size:10.5px;}
+  }
+  #diasSinWrap .card.doble{margin-bottom:18px;}
+
   .card{background:var(--card-bg);border-radius:var(--radius);margin-bottom:18px;overflow:hidden;border:1px solid rgba(255,255,255,0.06);}
   .card-top{display:flex;gap:0;padding:14px;}
   @media (max-width:480px){.card-top{flex-direction:column;}}
@@ -6887,7 +6900,6 @@ function getDiasSinCfg_(){
 function diasSinInicioMs_(c){ const t=Date.parse(String(c.inicio).slice(0,16)+":00-06:00"); return isNaN(t)?null:t; }
 function renderDiasSin(){
   const wrap=document.getElementById("diasSinWrap"); if(!wrap) return;
-  wrap.style.containerType="inline-size";
   clearInterval(_diasSinTimer); _diasSinTimer=null;
   const c=getDiasSinCfg_(), esStaff=nivel==="staff";
   const ini=c?diasSinInicioMs_(c):null;
@@ -6900,20 +6912,22 @@ function renderDiasSin(){
     const a=(DB.actividades||[]).find(x=>String(x.id)===String(c.actividadId));
     if(a){ titulo=a.titulo||""; img=a.imagenUrl||""; } else titulo=c.nombre||"";
   }
-  wrap.innerHTML=`<div class="card diassin-card">
-    <div class="diassin-thumb"><img src="${escAttr(img||LOGO_DEFAULT)}" alt="" loading="lazy" decoding="async"></div>
-    <div class="diassin-info">
-      ${c.prefijo?`<div class="diassin-prefijo">${escHtml(c.prefijo)}</div>`:""}
-      <div class="diassin-titulo">${escHtml(titulo)}</div>
-      ${c.frase?`<div class="diassin-frase">“${escHtml(c.frase)}”</div>`:""}
-    <div class="diassin-stats">
-      <div class="diassin-stat"><b id="dsD">0</b><span>DÍAS</span></div>
-      <div class="diassin-stat"><b id="dsH">0</b><span>HORAS</span></div>
-      <div class="diassin-stat"><b id="dsM">0</b><span>MIN</span></div>
-      <div class="diassin-stat"><b id="dsS">0</b><span>SEG</span></div>
+  wrap.innerHTML=`<div class="card doble diassin" data-diassin>
+    <div class="card-top">
+      <div class="card-img-wrap"><img src="${escAttr(img||LOGO_DEFAULT)}" alt="" loading="lazy" decoding="async"></div>
+      <div class="card-info">
+        ${c.prefijo?`<div class="diassin-prefijo">${escHtml(c.prefijo)}</div>`:""}
+        <div class="card-title">${escHtml(titulo)}</div>
+        ${c.frase?`<div class="diassin-frase">“${escHtml(c.frase)}”</div>`:""}
+        <div class="diassin-stats">
+          <div class="diassin-stat"><b id="dsD">0</b><span>DÍAS</span></div>
+          <div class="diassin-stat"><b id="dsH">0</b><span>HORAS</span></div>
+          <div class="diassin-stat"><b id="dsM">0</b><span>MIN</span></div>
+          <div class="diassin-stat"><b id="dsS">0</b><span>SEG</span></div>
+        </div>
+        ${esStaff?'<div class="card-actions"><button class="btn-small btn-admin" id="diasSinEditBtn">✏️ Editar</button></div>':""}
+      </div>
     </div>
-    </div>
-    ${esStaff?'<button class="diassin-edit" id="diasSinEditBtn" title="Editar">✏️</button>':""}
   </div>`;
   const eb=document.getElementById("diasSinEditBtn"); if(eb) eb.onclick=abrirDiasSinModal;
   const ids=["dsD","dsH","dsM","dsS"].map(i=>document.getElementById(i));
