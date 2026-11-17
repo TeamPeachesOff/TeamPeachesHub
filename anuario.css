@@ -561,3 +561,19 @@ body.anuario-mode #drawerOverlay{background:rgba(63,33,104,.28);}
 #anuLoad .al-p{display:inline-block;font-size:20px;animation:alSpin 1s linear infinite;}
 @keyframes alSpin{to{transform:rotate(360deg)}}
 ::view-transition-group(anuload),::view-transition-old(anuload),::view-transition-new(anuload){animation:none;}
+
+/* =====================================================================
+   ENTREGA 10 · Transiciones más suaves (portada <-> libro, app <-> Anuario)
+   ===================================================================== */
+/* app <-> Anuario: fundido más largo y con un leve acercamiento de lo que entra */
+::view-transition-old(root){animation:anuVtOut .7s cubic-bezier(.4,0,.2,1) both;}
+::view-transition-new(root){animation:anuVtIn .7s cubic-bezier(.4,0,.2,1) both;}
+@keyframes anuVtOut{to{opacity:0}}
+@keyframes anuVtIn{from{opacity:0;transform:scale(1.012)}}
+/* portada <-> libro: un poco más corto, sin acercamiento */
+html.anu-vt-s::view-transition-old(root){animation:anuVtOut .5s ease-in-out both;}
+html.anu-vt-s::view-transition-new(root){animation:anuVtInS .5s ease-in-out both;}
+@keyframes anuVtInS{from{opacity:0}}
+/* el encabezado cambia de flotante a barra: que no dé salto */
+html[data-anu-v] body.anuario-mode header{transition:background-color .5s ease,border-color .5s ease,backdrop-filter .5s ease;}
+@media (prefers-reduced-motion:reduce){::view-transition-old(root),::view-transition-new(root){animation:none !important;}}

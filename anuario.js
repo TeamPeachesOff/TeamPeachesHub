@@ -443,16 +443,26 @@ function anuCover_(d){
   $a("yrPrev").disabled=anuS.pi===0; $a("yrNext").disabled=anuS.pi===per.length-1;
 }
 function anuYear_(d){ const n=anuS.pi+d; if(n<0||n>=anuS.per.length) return; anuS.pi=n; anuS.key=null; anuS.act=null; anuCover_(d); }
+/* Cambio portada <-> libro con fundido suave de toda la pantalla (View Transitions); sin soporte, corte directo como antes */
+function anuVT_(fn){
+  if(anuReduce_()||!document.startViewTransition){ fn(); return; }
+  const H=document.documentElement; H.classList.add("anu-vt","anu-vt-s");
+  const end=()=>H.classList.remove("anu-vt","anu-vt-s");
+  let t; try{ t=document.startViewTransition(async()=>{ fn(); await new Promise(r=>requestAnimationFrame(()=>requestAnimationFrame(r))); }); }catch(_){ end(); fn(); return; }
+  t.finished.catch(()=>{}).then(end);
+}
 function anuEnter_(){
   const c=$a("anuCover"); if(anuS.v!=="portada"||c.classList.contains("out")) return;
   const go=()=>{ anuS.v="libro"; anuS.act=null; anuS.key=anuDesk_()?anuFirst_():null; c.classList.remove("out"); anuView_(); document.body.scrollTo({top:0}); };
   if(anuReduce_()) return go();
-  c.classList.add("out"); setTimeout(go,650);
+  c.classList.add("out"); setTimeout(()=>anuVT_(go),380);
 }
 function anuPick_(k){ anuS.key=k; anuS.act=null; anuView_(); $a("anuDet").scrollTop=0; document.body.scrollTo({top:0,behavior:anuReduce_()?"auto":"smooth"}); }
 function anuBack_(){
-  if(anuS.act){ anuS.act=null; } else if(!anuDesk_()&&anuS.key){ anuS.key=null; } else { anuS.v="portada"; anuS.key=null; }
-  anuView_(); document.body.scrollTo({top:0});
+  const toCover=!anuS.act&&!(!anuDesk_()&&anuS.key);
+  const run=()=>{ if(anuS.act){ anuS.act=null; } else if(!anuDesk_()&&anuS.key){ anuS.key=null; } else { anuS.v="portada"; anuS.key=null; }
+    anuView_(); document.body.scrollTo({top:0}); };
+  if(toCover) anuVT_(run); else run();
 }
 function renderAnuario(){
   (document.getElementById("anuBgCss")||document.head.appendChild(Object.assign(document.createElement("style"),{id:"anuBgCss"}))).textContent=anuS.bgCss||anuBgCss_(ANU_BG,ANU_BGH);
