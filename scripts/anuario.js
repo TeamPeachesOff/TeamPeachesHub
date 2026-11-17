@@ -113,7 +113,7 @@ function anuNorm_(e){
 function anuBuild_(){
   const it=[]; (DB.anuario||[]).forEach(e=>{ const n=anuNorm_(e); if(!n.f) return; const d=anuFecha_(n.f); if(isNaN(d)) return;
     it.push({n,anio:d.getFullYear(),mes:d.getMonth(),dia:d.getDate(),sem:["dom","lun","mar","mié","jue","vie","sáb"][d.getDay()],t:d.getTime()}); });
-  const anios=[...new Set(it.map(x=>x.anio))].sort((x,y)=>x-y); if(!anios.length) anios.push(new Date().getFullYear());
+  const anios=[...new Set([2025,...it.map(x=>x.anio)])]; if(!it.length&&!anios.includes(new Date().getFullYear())) anios.push(new Date().getFullYear()); anios.sort((x,y)=>x-y);
   anuS.per=anios.map(y=>{
     const ms=y===2026?[...new Set([7,8,9,10,11,...it.filter(x=>x.anio===y).map(x=>x.mes)])].sort((a,b)=>a-b):Array.from({length:12},(_,i)=>i);
     const p={anio:y,titulo:String(y),tema:y===2026?"p":"o",admin:y===2026};
