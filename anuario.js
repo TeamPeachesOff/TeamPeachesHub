@@ -500,7 +500,7 @@ function anuTema_(anio){
 /* ---------- Portada por CAPAS (tema.json → "capas"): cada elemento es una imagen suelta con su animación ---------- */
 function anuEscena_(){
   if($a("anuScene")) return; const sc=document.createElement("div"); sc.id="anuScene"; sc.setAttribute("aria-hidden","true");
-  sc.innerHTML='<div class="sc-in"><div class="sc-g sc-gl"><img class="sc-p sc-it" alt=""><img class="sc-p sc-ib" alt=""></div><div class="sc-g sc-gr"><img class="sc-p sc-dt" alt=""><img class="sc-p sc-db" alt=""></div><img class="sc-v sc-pt" alt=""><img class="sc-v sc-pb" alt=""></div>';
+  sc.innerHTML='<div class="sc-in"><div class="sc-g sc-gl"><img class="sc-p sc-it" alt=""><img class="sc-p sc-ib" alt=""></div><div class="sc-g sc-gr"><img class="sc-p sc-dt" alt=""><img class="sc-p sc-db" alt=""></div><img class="sc-v sc-pt" alt=""><img class="sc-v sc-pb" alt=""></div><img class="sc-f sc-fm" alt=""><img class="sc-f sc-fp" alt=""><img class="sc-f sc-fg" alt="">';
   document.body.appendChild(sc);
   const sm=document.createElement("div"); sm.id="anuSceneM"; sm.setAttribute("aria-hidden","true");
   sm.innerHTML='<div class="sm-dots"></div><div class="sm-in"><img class="sm-p sm-morado" alt=""><img class="sm-p sm-azul" alt=""><img class="sm-p sm-verde" alt=""></div>';
@@ -523,7 +523,7 @@ function anuCapas_(t,w){
   const B=t._b+(c.carpeta||"capas/"), M=c.piezas||{}, E=c.esquinas||{};
   if(!box.dataset.k||box.dataset.k!==B){ box.dataset.k=B;
     box.innerHTML=(c.orden||[]).map((n,i)=>{ const m=M[n]; if(!m) return ""; return `<img class="l25 l-${n}" src="${B}${n}.webp" alt="" draggable="false" style="--l:${m.l}%;--t:${m.t}%;--w:${m.w}%;--d:${(i*0.11).toFixed(2)}s">`; }).join(""); }
-  if(sc){ ["it","dt","ib","db","pt","pb"].forEach(k=>{ const im=sc.querySelector(".sc-"+k), e=E[k]; if(im&&e&&im.dataset.s!==B+k){ im.dataset.s=B+k; im.src=B+k+".webp"; im.style.setProperty("--pw",e.w); } });
+  if(sc){ ["it","dt","ib","db","pt","pb","fg","fp","fm"].forEach(k=>{ const im=sc.querySelector(".sc-"+k), e=E[k]; if(im&&e&&im.dataset.s!==B+k){ im.dataset.s=B+k; im.src=B+k+".webp"; im.style.setProperty("--pw",e.w); } });
     sc.style.setProperty("--paper",c.papel||"#f0dcda"); sc.classList.add("on"); }
 }
 const anuPre_=u=>new Promise(r=>{ const i=new Image(); i.onload=()=>r(true); i.onerror=()=>r(false); i.src=u; });
