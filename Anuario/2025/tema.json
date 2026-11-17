@@ -1,0 +1,6 @@
+{
+  "tipo": "hub",
+  "portada": "2025-Portada.webp",
+  "fondos": { "vertical": ["2025-Vertical-1.svg"], "horizontal": ["2025-Horizontal-1.svg"] },
+  "colores": { "acento": "#d0136b", "acento2": "#ff5fa2", "tinta": "#3a0f2e", "suave": "#7d5470", "tinte1": "#fde6ef", "tinte2": "#fbd9e8" }
+}

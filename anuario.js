@@ -432,6 +432,7 @@ function anuCover_(d){
   const per=anuS.per, y=$a("yrVal"), pe=$a("cvPeach");
   y.textContent=per[anuS.pi].titulo; y.className="cv-yv"; pe.classList.remove("wob"); void y.offsetWidth;
   if(d){ y.classList.add(d>0?"r":"l"); pe.classList.add("wob"); }
+  if(d) anuAplicarTema_(false);
   $a("yrPrev").disabled=anuS.pi===0; $a("yrNext").disabled=anuS.pi===per.length-1;
 }
 function anuYear_(d){ const n=anuS.pi+d; if(n<0||n>=anuS.per.length) return; anuS.pi=n; anuS.key=null; anuS.act=null; anuCover_(d); }
@@ -447,14 +448,14 @@ function anuBack_(){
   anuView_(); document.body.scrollTo({top:0});
 }
 function renderAnuario(){
-  (document.getElementById("anuBgCss")||document.head.appendChild(Object.assign(document.createElement("style"),{id:"anuBgCss"}))).textContent=`#anuarioBg{background-image:url("${ANU_BG}")}@media (min-width:900px){#anuarioBg{background-image:url("${ANU_BGH}")}}`;
+  (document.getElementById("anuBgCss")||document.head.appendChild(Object.assign(document.createElement("style"),{id:"anuBgCss"}))).textContent=anuS.bgCss||anuBgCss_(ANU_BG,ANU_BGH);
   const prev=anuS.v==="libro"?{pi:anuS.pi,key:anuS.key,act:anuS.act}:null;
   anuBuild_(); const d=anuS.per.map(p=>p.n>0).lastIndexOf(true);
   Object.assign(anuS,{pi:d<0?anuS.per.length-1:d,key:null,act:null,v:"portada"});
   if(prev&&prev.pi<anuS.per.length){ Object.assign(anuS,prev,{v:"libro"}); if(anuS.act&&!(DB.anuario||[]).some(x=>String(x.id)===String(anuS.act))) anuS.act=null; }
   anuAplicarVista_();
   $a("anuarioGrid").innerHTML=`<div class="anu-wrap" id="anuWrap" data-v="portada">${ANU_DEFS}
-    <section class="anu-cover" id="anuCover"><img class="cv-logo" src="${ANU_LOGO}" alt="Peaches"><h1 class="cv-t"><span>Anuario</span><span>Peaches</span></h1>
+    <section class="anu-cover" id="anuCover"><div class="cv-poster" id="cvPoster"><img alt="Portada del Anuario"></div><img class="cv-logo" src="${ANU_LOGO}" alt="Peaches"><h1 class="cv-t"><span>Anuario</span><span>Peaches</span></h1>
       <div class="cv-peach" id="cvPeach"><img src="${ANU_DURAZNO}" alt="Durazno de Team Peaches"></div>
       <div class="cv-yr"><button type="button" class="cv-arr" id="yrPrev" aria-label="Año anterior">${CH_L}</button><div class="cv-yv" id="yrVal" aria-live="polite"></div><button type="button" class="cv-arr" id="yrNext" aria-label="Año siguiente">${CH_R}</button></div>
       <button type="button" class="cv-go" id="anuGo">Continuar</button></section>
@@ -466,7 +467,7 @@ function renderAnuario(){
     matchMedia("(min-width:900px)").addEventListener("change",()=>{ if(anuS.v==="libro"){ if(anuDesk_()&&!anuS.key) anuS.key=anuFirst_(); anuView_(); } });
     $a("anuModal").addEventListener("click",e=>{ if(e.target===e.currentTarget) mdHide_(); });
     addEventListener("keydown",e=>{ if(e.key==="Escape") mdHide_(); }); }
-  medHeader_(); anuCover_(0); anuView_();
+  medHeader_(); anuCover_(0); anuView_(); anuS.th=undefined; anuAplicarTema_(true);
   const _w=$a("anuWrap"); _w.classList.add("fw"); anuFonts_().then(()=>_w.classList.remove("fw"));
 }
 /* Fuentes del Anuario: se precargan al abrir la app y la portada espera (máx. 1.8 s) para que no haya «salto» de letra */
@@ -479,3 +480,45 @@ function anuFonts_(){
 }
 setTimeout(()=>anuFonts_(),300);
 
+
+/* ---------- Temas por año: Anuario/<año>/tema.json (si falta algo, se usa el diseño de 2026) ---------- */
+const ANU_TH_VARS={acento:"--anu-acc",acento2:"--anu-acc2",tinta:"--anu-ink",suave:"--anu-mut",tinte1:"--anu-t1",tinte2:"--anu-t2"};
+const anuBgCss_=(v,h)=>`#anuarioBg{background-image:url("${v}")}@media (min-width:900px){#anuarioBg{background-image:url("${h}")}}`;
+const _anuTemas={};
+function anuTema_(anio){
+  return _anuTemas[anio]||(_anuTemas[anio]=fetch(`Anuario/${anio}/tema.json`).then(r=>r.ok?r.json():null)
+    .then(t=>t&&typeof t==="object"?Object.assign(t,{_b:`Anuario/${anio}/`}):null).catch(()=>null));
+}
+const anuPre_=u=>new Promise(r=>{ const i=new Image(); i.onload=()=>r(true); i.onerror=()=>r(false); i.src=u; });
+const anuWait_=ms=>new Promise(r=>setTimeout(r,ms));
+let _anuThSeq=0;
+async function anuFondo_(v,h,instant){
+  const css=anuBgCss_(v,h); if(anuS.bgCss===css||(!anuS.bgCss&&v===ANU_BG)) { anuS.bgCss=css; return; }
+  const st=$a("anuBgCss"), b1=$a("anuarioBg");
+  if(instant||anuReduce_()||!b1){ anuS.bgCss=css; if(st) st.textContent=css; return; }
+  await Promise.race([Promise.all([anuPre_(v),anuPre_(h)]),anuWait_(2500)]);
+  let b2=$a("anuarioBg2"); if(!b2){ b2=document.createElement("div"); b2.id="anuarioBg2"; b1.after(b2); }
+  b2.style.setProperty("--bgv",`url("${v}")`); b2.style.setProperty("--bgh",`url("${h}")`); void b2.offsetWidth; b2.classList.add("on");
+  anuS.bgCss=css;
+  setTimeout(()=>{ if(anuS.bgCss!==css) return; if(st) st.textContent=css; b2.style.transition="none"; b2.classList.remove("on"); void b2.offsetWidth; b2.style.transition=""; },950);
+}
+async function anuAplicarTema_(instant){
+  const seq=++_anuThSeq, p=anuS.per[anuS.pi]; if(!p) return;
+  let t=await anuTema_(p.anio); if(seq!==_anuThSeq) return;
+  const B=t&&t._b, pick=a=>Array.isArray(a)&&a.length?B+a[p.anio%a.length]:null;
+  let v=pick(t&&t.fondos&&t.fondos.vertical), h=pick(t&&t.fondos&&t.fondos.horizontal)||v; v=v||h;
+  let port=t&&t.portada?B+t.portada:null;
+  if(t&&(v||port)){ const ok=await Promise.all([v?anuPre_(v):1,h?anuPre_(h):1,port?anuPre_(port):1]); if(seq!==_anuThSeq) return; if(!ok[0]||!ok[1]) v=h=null; if(!ok[2]) port=null; }
+  const key=t?String(p.anio):"def";
+  if(!instant&&key===anuS.th) return;
+  const first=instant||anuS.th===undefined; anuS.th=key;
+  anuFondo_(v||ANU_BG,h||ANU_BGH,first);
+  const w=$a("anuWrap"), c=$a("anuCover"); if(!w||!c) return;
+  if(!first){ c.classList.add("sw"); await anuWait_(300); if(seq!==_anuThSeq) return; }
+  const R=document.documentElement, col=(t&&t.colores)||{};
+  Object.keys(ANU_TH_VARS).forEach(k=>{ if(col[k]) R.style.setProperty(ANU_TH_VARS[k],col[k]); else R.style.removeProperty(ANU_TH_VARS[k]); });
+  if(t) R.setAttribute("data-anu-th",String(p.anio)); else R.removeAttribute("data-anu-th");
+  const img=$a("cvPoster").querySelector("img");
+  if(t&&port){ img.src=port; w.classList.add("poster"); } else { w.classList.remove("poster"); img.removeAttribute("src"); }
+  if(!first) setTimeout(()=>c.classList.remove("sw"),320);
+}
