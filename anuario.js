@@ -566,13 +566,25 @@ async function anuAplicarTema_(instant){
 
 /* ---------- Cambio de tema oscuro (app) <-> claro (Anuario): fundido suave de TODA la pantalla ---------- */
 (function(){
+  /* Aviso de carga al abrir/cerrar el Anuario (cosas que tardan: que se note que SÍ está pasando algo) */
+  let _ld=null, _ldT=0, _ldSince=0;
+  const ldEl=()=>{ if(_ld) return _ld; _ld=document.createElement("div"); _ld.id="anuLoad"; _ld.setAttribute("role","status"); _ld.setAttribute("aria-live","polite");
+    _ld.innerHTML='<span class="al-p">🍑</span><span class="al-t"></span>'; document.body.appendChild(_ld); return _ld; };
+  const ldShow=txt=>{ const e=ldEl(); clearTimeout(_ldT); e.querySelector(".al-t").textContent=txt; _ldSince=Date.now(); e.classList.add("on"); _ldT=setTimeout(ldHide,9000); };
+  const ldHide=()=>{ clearTimeout(_ldT); if(!_ld) return; const w=Math.max(0,450-(Date.now()-_ldSince)); setTimeout(()=>{ if(_ld) _ld.classList.remove("on"); },w); };
+  const ldDone=toA=>{ if(!toA){ setTimeout(ldHide,150); return; } const t0=Date.now(); (function p(){ const sc=document.getElementById("anuScene"); if((sc&&sc.classList.contains("on"))||Date.now()-t0>3000) ldHide(); else setTimeout(p,120); })(); };
   const wrap=()=>{ const o=window.switchTab; if(typeof o!=="function"||o._anuVT) return;
     const n=function(tab){
-      const toA=tab==="anuario", inA=document.body.classList.contains("anuario-mode"), args=arguments;
-      if(toA===inA||!document.startViewTransition||matchMedia("(prefers-reduced-motion:reduce)").matches) return o.apply(this,args);
-      const H=document.documentElement; H.classList.add("anu-vt");
-      let t; try{ t=document.startViewTransition(async()=>{ o.apply(null,args); await new Promise(r=>requestAnimationFrame(()=>requestAnimationFrame(r))); }); }catch(_){ H.classList.remove("anu-vt"); return o.apply(this,args); }
-      t.finished.catch(()=>{}).then(()=>H.classList.remove("anu-vt"));
+      const toA=tab==="anuario", inA=document.body.classList.contains("anuario-mode"), args=arguments, self=this;
+      if(toA===inA) return o.apply(self,args);
+      ldShow(toA?"Abriendo Anuario…":"Volviendo…");
+      const go=()=>{
+        if(!document.startViewTransition||matchMedia("(prefers-reduced-motion:reduce)").matches){ o.apply(self,args); requestAnimationFrame(()=>ldDone(toA)); return; }
+        const H=document.documentElement; H.classList.add("anu-vt");
+        let t; try{ t=document.startViewTransition(async()=>{ o.apply(null,args); await new Promise(r=>requestAnimationFrame(()=>requestAnimationFrame(r))); }); }catch(_){ H.classList.remove("anu-vt"); o.apply(self,args); ldDone(toA); return; }
+        t.finished.catch(()=>{}).then(()=>{ H.classList.remove("anu-vt"); ldDone(toA); });
+      };
+      requestAnimationFrame(()=>requestAnimationFrame(go)); /* deja pintar el aviso antes del trabajo pesado */
     };
     n._anuVT=1; window.switchTab=n; };
   addEventListener("load",()=>{ wrap(); setTimeout(wrap,800); }); setTimeout(wrap,2500);

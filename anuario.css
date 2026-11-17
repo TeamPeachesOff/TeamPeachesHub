@@ -550,3 +550,14 @@ body.anuario-mode #drawer .social-link:hover,body.anuario-mode #drawer .drawer-n
 body.anuario-mode #drawer .drawer-divider{background:rgba(63,33,104,.14);}
 body.anuario-mode #drawerOverlay{background:rgba(63,33,104,.28);}
 #drawer{transition:transform .25s ease,background-color .4s ease;}
+
+/* =====================================================================
+   ENTREGA 9 · Menú lateral más compacto + aviso de carga al abrir/cerrar el Anuario
+   ===================================================================== */
+#drawer{gap:12px;}
+#drawer .social-row,#drawer .drawer-nav-group,#drawer .staff-bottom-group{gap:4px;}
+#anuLoad{position:fixed;left:50%;bottom:calc(28px + env(safe-area-inset-bottom));z-index:900;display:flex;align-items:center;gap:10px;padding:11px 18px;border-radius:999px;background:rgba(36,18,56,.9);color:#fff;font:700 14px/1 inherit;font-family:inherit;box-shadow:0 8px 24px rgba(0,0,0,.35);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);pointer-events:none;opacity:0;transform:translate(-50%,16px);transition:opacity .18s ease,transform .18s ease;view-transition-name:anuload;}
+#anuLoad.on{opacity:1;transform:translate(-50%,0);}
+#anuLoad .al-p{display:inline-block;font-size:20px;animation:alSpin 1s linear infinite;}
+@keyframes alSpin{to{transform:rotate(360deg)}}
+::view-transition-group(anuload),::view-transition-old(anuload),::view-transition-new(anuload){animation:none;}
