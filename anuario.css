@@ -501,3 +501,13 @@ html.anu-vt #viewAnuario:not(.hidden){animation:none !important;clip-path:none !
 /* Sin View Transitions (p. ej. Firefox): se suaviza el color en lugar de cortarlo */
 body{transition:background-color .6s ease;}
 @media (prefers-reduced-motion:reduce){::view-transition-group(*),::view-transition-old(*),::view-transition-new(*){animation:none !important;}}
+
+/* =====================================================================
+   ENTREGA 5 · Portada 2025 VERTICAL (celular): dos franjas pegadas al borde de arriba y abajo
+   ===================================================================== */
+.sc-v{display:none;position:absolute;left:0;width:100%;height:auto;max-width:none;user-select:none;-webkit-user-drag:none;}
+.sc-pt{top:calc(var(--hh,64px) * -1);} .sc-pb{bottom:0;}
+@media (orientation:portrait){
+  .sc-v{display:block;} .sc-g{display:none;}
+  .sc-pt{width:calc(100% + 2px);left:-1px;} .sc-pb{width:calc(100% + 2px);left:-1px;bottom:-1px;}
+}
