@@ -519,7 +519,7 @@ function anuMes_(t){
 function anuCapas_(t,w){
   const c=t&&t.capas, box=$a("cv25"), sc=$a("anuScene"); if(!box) return;
   w.classList.toggle("c25",!!c);
-  if(!c){ box.innerHTML=""; if(sc) sc.classList.remove("on"); return; }
+  if(!c){ box.innerHTML=""; delete box.dataset.k; if(sc) sc.classList.remove("on"); return; }
   const B=t._b+(c.carpeta||"capas/"), M=c.piezas||{}, E=c.esquinas||{};
   if(!box.dataset.k||box.dataset.k!==B){ box.dataset.k=B;
     box.innerHTML=(c.orden||[]).map((n,i)=>{ const m=M[n]; if(!m) return ""; return `<img class="l25 l-${n}" src="${B}${n}.webp" alt="" draggable="false" style="--l:${m.l}%;--t:${m.t}%;--w:${m.w}%;--d:${(i*0.11).toFixed(2)}s">`; }).join(""); }

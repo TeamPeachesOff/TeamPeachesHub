@@ -408,7 +408,7 @@ body:not(.anuario-mode) #anuarioBg2{display:none;}
 .cv-main{display:contents;}
 .cv25{display:none;}
 #anuScene{position:fixed;inset:0;z-index:-1;pointer-events:none;overflow:hidden;background:var(--paper,#f0dcda);opacity:0;visibility:hidden;transition:opacity .6s ease,visibility 0s .6s;--bn:12px;}
-.sc-in{position:absolute;left:0;right:0;top:var(--hh,64px);bottom:var(--bn);
+.sc-in{position:absolute;left:0;right:0;top:var(--hh,64px);bottom:0;
   --k:1; --s:min(calc(100vw / 1456 * var(--k)),calc((100vh - var(--hh,64px) - var(--bn)) / 819));}
 @supports (height:100dvh){.sc-in{--s:min(calc(100vw / 1456 * var(--k)),calc((100dvh - var(--hh,64px) - var(--bn)) / 819));}}
 @media (orientation:portrait){.sc-in{--k:1.3;}}

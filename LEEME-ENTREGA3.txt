@@ -1,0 +1,5 @@
+ENTREGA 3 - Arreglo 2026>2025>2026>2025 + bordes
+Copia encima del repo (respeta rutas): anuario.js, anuario.css, sw.js (v2.120), Anuario/2025/capas/{it,dt,ib,db}.webp
+- anuario.js: al pasar a un año sin capas se olvidaba limpiar la marca de cache; al volver a 2025 no se redibujaban logo/anuario/doblaje/canto. Ahora se borra.
+- anuario.css: las esquinas llegan hasta el borde inferior (antes quedaba un hueco de 12px).
+- esquinas: las piezas ahora se pasan unos px del borde y se cortan en seco, sin huecos.
