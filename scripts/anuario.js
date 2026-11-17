@@ -582,13 +582,8 @@ async function anuAplicarTema_(instant){
       const toA=tab==="anuario", inA=document.body.classList.contains("anuario-mode"), args=arguments, self=this;
       if(toA===inA) return o.apply(self,args);
       ldShow(toA?"Abriendo el Anuario":"Volviendo",toA);
-      const go=()=>{
-        if(!document.startViewTransition||matchMedia("(prefers-reduced-motion:reduce)").matches){ o.apply(self,args); requestAnimationFrame(()=>ldDone(toA)); return; }
-        const H=document.documentElement; H.classList.add("anu-vt");
-        let t; try{ t=document.startViewTransition(async()=>{ o.apply(null,args); await new Promise(r=>requestAnimationFrame(()=>requestAnimationFrame(r))); }); }catch(_){ H.classList.remove("anu-vt"); o.apply(self,args); ldDone(toA); return; }
-        t.finished.catch(()=>{}).then(()=>{ H.classList.remove("anu-vt"); ldDone(toA); });
-      };
-      requestAnimationFrame(()=>requestAnimationFrame(go));
+      /* Pintamos el velo primero; la pestaña y el Anuario se actualizan detrás sin capturar toda la app. */
+      requestAnimationFrame(()=>requestAnimationFrame(()=>{ o.apply(self,args); requestAnimationFrame(()=>ldDone()); }));
     };
     n._anuVT=1; window.switchTab=n; };
   addEventListener("load",()=>{ wrap(); setTimeout(wrap,800); }); setTimeout(wrap,2500);
