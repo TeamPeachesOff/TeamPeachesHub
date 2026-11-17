@@ -1,0 +1,7 @@
+UNIFICADO (entregas 1+2+3). Copia estos archivos sobre el repo respetando las rutas:
+  anuario.js, anuario.css, sw.js (VERSION v2.117)
+  Anuario/2025/tema.json
+  Anuario/2025/capas/*.webp   (portada 2025 por capas)
+  Anuario/2025/fondo/*        (fondo de los meses 2025)
+Incluye: ventana "Añadir al Anuario" nueva, portada 2026 sin tinte y animada, portada 2025 por capas animadas, fondo adaptable de los meses 2025.
+Ya no se usan (puedes borrarlos): Anuario/2025/2025-Portada.webp, 2025-Vertical-1.svg, 2025-Horizontal-1.svg

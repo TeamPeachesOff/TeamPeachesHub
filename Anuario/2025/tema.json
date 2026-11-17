@@ -1,6 +1,76 @@
 {
   "tipo": "hub",
-  "portada": "2025-Portada.webp",
-  "fondos": { "vertical": ["2025-Vertical-1.svg"], "horizontal": ["2025-Horizontal-1.svg"] },
-  "colores": { "acento": "#d0136b", "acento2": "#ff5fa2", "tinta": "#3a0f2e", "suave": "#7d5470", "tinte1": "#fde6ef", "tinte2": "#fbd9e8" }
+  "capas": {
+    "carpeta": "capas/",
+    "papel": "#f0dcda",
+    "orden": [
+      "logo",
+      "anuario",
+      "doblaje",
+      "canto",
+      "amp"
+    ],
+    "piezas": {
+      "logo": {
+        "l": 16.88,
+        "t": 0,
+        "w": 55.42
+      },
+      "anuario": {
+        "l": 0.21,
+        "t": 15.62,
+        "w": 97.71
+      },
+      "doblaje": {
+        "l": 0,
+        "t": 37.66,
+        "w": 86.25
+      },
+      "amp": {
+        "l": 14.79,
+        "t": 50.95,
+        "w": 23.33
+      },
+      "canto": {
+        "l": 33.96,
+        "t": 56.06,
+        "w": 66.04
+      }
+    },
+    "esquinas": {
+      "it": {
+        "w": 738
+      },
+      "dt": {
+        "w": 752
+      },
+      "ib": {
+        "w": 736
+      },
+      "db": {
+        "w": 760
+      }
+    }
+  },
+  "anioImg": "capas/anio.webp",
+  "colores": {
+    "acento": "#d0136b",
+    "acento2": "#ff5fa2",
+    "tinta": "#3a0f2e",
+    "suave": "#7d5470",
+    "tinte1": "#fde6ef",
+    "tinte2": "#fbd9e8",
+    "flechaFondo": "rgba(255,255,255,.85)",
+    "flechaTexto": "#d0136b"
+  },
+  "mes": {
+    "carpeta": "fondo/",
+    "papel": "#f6f2db",
+    "puntos": "puntos.svg",
+    "piezas": [
+      "morado",
+      "azul",
+      "verde"
+    ]
+  }
 }

@@ -30,7 +30,7 @@ function abrirModalAnuario(idActividad,titulo,nombreUsuario,detalle,link){
   const act=(DB.actividades||[]).find(a=>String(a.id)===String(idActividad)), cat=act&&act.categoria;
   const ov=document.getElementById("anuarioModal"), v=document.getElementById("viewAnuario");
   ov.classList.toggle("anu-light",!!v&&!v.classList.contains("hidden"));
-  document.getElementById("anuarioModalInfo").innerHTML=`Actividad: <strong>${escHtml(titulo)}</strong>`;
+  document.getElementById("anuarioModalInfo").innerHTML=`<span class="am-lbl">Actividad</span><span class="am-act">${escHtml(titulo)}</span><span class="am-help">Elige cómo entra esta entrega al Anuario</span>`;
   const box=document.getElementById("anuarioModalSong");
   box.innerHTML=anuSongCardHTML_({nombreUsuario,detalle},cat,"x","",anuYaSet_().has(String(nombreUsuario).trim()+"|"+String(detalle).trim()));
   box.querySelectorAll("[data-k]").forEach(b=>b.onclick=async()=>{
@@ -421,16 +421,23 @@ function anuDet_(){
 }
 function anuLock_(){ document.body.classList.toggle("anu-lock",anuS.v==="libro"&&!!$a("viewAnuario")&&!$a("viewAnuario").classList.contains("hidden")); }
 function anuView_(){
-  anuLock_();
+  anuLock_(); document.documentElement.setAttribute("data-anu-v",anuS.v);
   const p=anuP_(), inDet=!anuDesk_()&&anuS.key;
   $a("anuWrap").dataset.v=anuS.v; $a("anuBook").dataset.s=anuS.key?"det":"idx";
   $a("anuBackT").textContent=anuS.act?MESES_LARGO[+anuS.key.split("-")[1]]:inDet?"Índice":"Portada";
   $a("anuBarT").textContent=anuS.act?"Actividad":inDet?(anuS.key==="admin"?"Administración":MESES_LARGO[+anuS.key.split("-")[1]]):"Anuario "+p.titulo;
   anuIdx_(); anuDet_();
 }
+/* El año de la portada: si el tema del año trae «anioImg» se muestra esa imagen (la letra exacta de ese año); si no, texto con la letra del tema */
+const _anuTV={};
+function anuYearSet_(){
+  const p=anuS.per[anuS.pi], y=$a("yrVal"); if(!p||!y) return; const t=_anuTV[p.anio];
+  if(t&&t.anioImg){ const src=t._b+t.anioImg; if(!(y.firstElementChild&&y.firstElementChild.getAttribute("src")===src)) y.innerHTML=`<img src="${src}" alt="${p.titulo}" draggable="false">`; }
+  else y.textContent=p.titulo;
+}
 function anuCover_(d){
   const per=anuS.per, y=$a("yrVal"), pe=$a("cvPeach");
-  y.textContent=per[anuS.pi].titulo; y.className="cv-yv"; pe.classList.remove("wob"); void y.offsetWidth;
+  anuYearSet_(); y.className="cv-yv"; pe.classList.remove("wob"); void y.offsetWidth;
   if(d){ y.classList.add(d>0?"r":"l"); pe.classList.add("wob"); }
   if(d) anuAplicarTema_(false);
   $a("yrPrev").disabled=anuS.pi===0; $a("yrNext").disabled=anuS.pi===per.length-1;
@@ -455,9 +462,10 @@ function renderAnuario(){
   if(prev&&prev.pi<anuS.per.length){ Object.assign(anuS,prev,{v:"libro"}); if(anuS.act&&!(DB.anuario||[]).some(x=>String(x.id)===String(anuS.act))) anuS.act=null; }
   anuAplicarVista_();
   $a("anuarioGrid").innerHTML=`<div class="anu-wrap" id="anuWrap" data-v="portada">${ANU_DEFS}
-    <section class="anu-cover" id="anuCover"><div class="cv-poster" id="cvPoster"><img alt="Portada del Anuario"></div><img class="cv-logo" src="${ANU_LOGO}" alt="Peaches"><h1 class="cv-t"><span>Anuario</span><span>Peaches</span></h1>
+    <section class="anu-cover" id="anuCover"><div class="cv-main" id="cvMain"><div class="cv-poster" id="cvPoster"><img alt="Portada del Anuario"></div><img class="cv-logo" src="${ANU_LOGO}" alt="Peaches"><h1 class="cv-t"><span>Anuario</span><span>Peaches</span></h1>
       <div class="cv-peach" id="cvPeach"><img src="${ANU_DURAZNO}" alt="Durazno de Team Peaches"></div>
-      <div class="cv-yr"><button type="button" class="cv-arr" id="yrPrev" aria-label="Año anterior">${CH_L}</button><div class="cv-yv" id="yrVal" aria-live="polite"></div><button type="button" class="cv-arr" id="yrNext" aria-label="Año siguiente">${CH_R}</button></div>
+      <div class="cv25" id="cv25" aria-hidden="true"></div>
+      <div class="cv-yr"><button type="button" class="cv-arr" id="yrPrev" aria-label="Año anterior">${CH_L}</button><div class="cv-yv" id="yrVal" aria-live="polite"></div><button type="button" class="cv-arr" id="yrNext" aria-label="Año siguiente">${CH_R}</button></div></div>
       <button type="button" class="cv-go" id="anuGo">Continuar</button></section>
     <section class="anu-book" id="anuBook"><div class="anu-bar"><button type="button" class="anu-bk" id="anuBack">${CH_L}<span id="anuBackT">Portada</span></button><div class="anu-bt" id="anuBarT"></div><button type="button" class="anu-add" id="anuAdd" aria-label="Agregar al anuario">＋<span class="lbl"> Agregar</span></button></div>
       <div class="anu-cols"><aside id="anuIdx" aria-label="Índice por meses"></aside><div id="anuDet" aria-live="polite"></div></div></section></div>`;
@@ -467,7 +475,7 @@ function renderAnuario(){
     matchMedia("(min-width:900px)").addEventListener("change",()=>{ if(anuS.v==="libro"){ if(anuDesk_()&&!anuS.key) anuS.key=anuFirst_(); anuView_(); } });
     $a("anuModal").addEventListener("click",e=>{ if(e.target===e.currentTarget) mdHide_(); });
     addEventListener("keydown",e=>{ if(e.key==="Escape") mdHide_(); }); }
-  medHeader_(); anuCover_(0); anuView_(); anuS.th=undefined; anuAplicarTema_(true);
+  anuEscena_(); medHeader_(); anuCover_(0); anuView_(); anuS.th=undefined; anuAplicarTema_(true);
   const _w=$a("anuWrap"); _w.classList.add("fw"); anuFonts_().then(()=>_w.classList.remove("fw"));
 }
 /* Fuentes del Anuario: se precargan al abrir la app y la portada espera (máx. 1.8 s) para que no haya «salto» de letra */
@@ -482,12 +490,41 @@ setTimeout(()=>anuFonts_(),300);
 
 
 /* ---------- Temas por año: Anuario/<año>/tema.json (si falta algo, se usa el diseño de 2026) ---------- */
-const ANU_TH_VARS={acento:"--anu-acc",acento2:"--anu-acc2",tinta:"--anu-ink",suave:"--anu-mut",tinte1:"--anu-t1",tinte2:"--anu-t2"};
+const ANU_TH_VARS={acento:"--anu-acc",acento2:"--anu-acc2",tinta:"--anu-ink",suave:"--anu-mut",tinte1:"--anu-t1",tinte2:"--anu-t2",titulo:"--anu-title",linea:"--anu-line",anioFuente:"--anu-yrfont",anioColor:"--anu-yrcolor",flechaFondo:"--anu-arrbg",flechaTexto:"--anu-arrfg"};
 const anuBgCss_=(v,h)=>`#anuarioBg{background-image:url("${v}")}@media (min-width:900px){#anuarioBg{background-image:url("${h}")}}`;
 const _anuTemas={};
 function anuTema_(anio){
   return _anuTemas[anio]||(_anuTemas[anio]=fetch(`Anuario/${anio}/tema.json`).then(r=>r.ok?r.json():null)
-    .then(t=>t&&typeof t==="object"?Object.assign(t,{_b:`Anuario/${anio}/`}):null).catch(()=>null));
+    .then(t=>t&&typeof t==="object"?Object.assign(t,{_b:`Anuario/${anio}/`}):null).catch(()=>null).then(t=>{ _anuTV[anio]=t; return t; }));
+}
+/* ---------- Portada por CAPAS (tema.json → "capas"): cada elemento es una imagen suelta con su animación ---------- */
+function anuEscena_(){
+  if($a("anuScene")) return; const sc=document.createElement("div"); sc.id="anuScene"; sc.setAttribute("aria-hidden","true");
+  sc.innerHTML='<div class="sc-in"><div class="sc-g sc-gl"><img class="sc-p sc-it" alt=""><img class="sc-p sc-ib" alt=""></div><div class="sc-g sc-gr"><img class="sc-p sc-dt" alt=""><img class="sc-p sc-db" alt=""></div></div>';
+  document.body.appendChild(sc);
+  const sm=document.createElement("div"); sm.id="anuSceneM"; sm.setAttribute("aria-hidden","true");
+  sm.innerHTML='<div class="sm-dots"></div><div class="sm-in"><img class="sm-p sm-morado" alt=""><img class="sm-p sm-azul" alt=""><img class="sm-p sm-verde" alt=""></div>';
+  document.body.appendChild(sm);
+}
+/* Fondo de los MESES por piezas: papel + puntos + formas ancladas a su borde (tema.json → "mes") */
+function anuMes_(t){
+  const sm=$a("anuSceneM"); if(!sm) return; const m=t&&t.mes;
+  if(!m){ sm.classList.remove("on"); return; }
+  const B=t._b+(m.carpeta||"fondo/");
+  (m.piezas||[]).forEach(n=>{ const im=sm.querySelector(".sm-"+n); if(im&&im.dataset.s!==B+n){ im.dataset.s=B+n; im.src=B+n+".svg"; } });
+  sm.style.setProperty("--paper-m",m.papel||"#f6f2db");
+  if(m.puntos) sm.style.setProperty("--dots-m",`url("${B}${m.puntos}")`);
+  sm.classList.add("on");
+}
+function anuCapas_(t,w){
+  const c=t&&t.capas, box=$a("cv25"), sc=$a("anuScene"); if(!box) return;
+  w.classList.toggle("c25",!!c);
+  if(!c){ box.innerHTML=""; if(sc) sc.classList.remove("on"); return; }
+  const B=t._b+(c.carpeta||"capas/"), M=c.piezas||{}, E=c.esquinas||{};
+  if(!box.dataset.k||box.dataset.k!==B){ box.dataset.k=B;
+    box.innerHTML=(c.orden||[]).map((n,i)=>{ const m=M[n]; if(!m) return ""; return `<img class="l25 l-${n}" src="${B}${n}.webp" alt="" draggable="false" style="--l:${m.l}%;--t:${m.t}%;--w:${m.w}%;--d:${(i*0.11).toFixed(2)}s">`; }).join(""); }
+  if(sc){ ["it","dt","ib","db"].forEach(k=>{ const im=sc.querySelector(".sc-"+k), e=E[k]; if(im&&e&&im.dataset.s!==B+k){ im.dataset.s=B+k; im.src=B+k+".webp"; im.style.setProperty("--pw",e.w); } });
+    sc.style.setProperty("--paper",c.papel||"#f0dcda"); sc.classList.add("on"); }
 }
 const anuPre_=u=>new Promise(r=>{ const i=new Image(); i.onload=()=>r(true); i.onerror=()=>r(false); i.src=u; });
 const anuWait_=ms=>new Promise(r=>setTimeout(r,ms));
@@ -520,5 +557,6 @@ async function anuAplicarTema_(instant){
   if(t) R.setAttribute("data-anu-th",String(p.anio)); else R.removeAttribute("data-anu-th");
   const img=$a("cvPoster").querySelector("img");
   if(t&&port){ img.src=port; w.classList.add("poster"); } else { w.classList.remove("poster"); img.removeAttribute("src"); }
+  anuCapas_(t,w); anuMes_(t); anuYearSet_();
   if(!first) setTimeout(()=>c.classList.remove("sw"),320);
 }
