@@ -577,3 +577,20 @@ html.anu-vt-s::view-transition-new(root){animation:anuVtInS .5s ease-in-out both
 /* el encabezado cambia de flotante a barra: que no dé salto */
 html[data-anu-v] body.anuario-mode header{transition:background-color .5s ease,border-color .5s ease,backdrop-filter .5s ease;}
 @media (prefers-reduced-motion:reduce){::view-transition-old(root),::view-transition-new(root){animation:none !important;}}
+
+/* =====================================================================
+   ENTREGA 11 · Rendimiento: menos trabajo al pulsar «Continuar» y al abrir/cerrar el Anuario
+   ===================================================================== */
+/* portada <-> libro ya NO usa captura de pantalla completa (era lo que pegaba): salida rápida + entrada con fundido ligero */
+.anu-cover.out .cv-peach{animation-duration:.3s;}
+.anu-cover.out .cv-t,.anu-cover.out .cv-logo,.anu-cover.out .cv-main,.anu-cover.out .cv-poster{animation-duration:.28s;}
+.anu-cover.out .l25,.anu-cover.out .cv-yv img,.anu-cover.out .cv-peach img{animation-play-state:paused;}
+.anu-book{animation-duration:.4s;}
+/* lo que no se ve no se anima: portada y meses no animan a la vez */
+html[data-anu-v="libro"] #anuScene *,html[data-anu-v="portada"] #anuSceneM *{animation:none !important;}
+html:not([data-anu-v]) #anuScene *,html:not([data-anu-v]) #anuSceneM *{animation:none !important;}
+/* capas animadas en su propia capa de la GPU */
+.l25,.sc-g,.sc-f,.sm-p{will-change:transform;}
+/* app <-> Anuario: fundido más corto y solo opacidad (el acercamiento obligaba a repintar toda la pantalla) */
+::view-transition-old(root){animation:anuVtOut .45s ease both;}
+::view-transition-new(root){animation:anuVtInS .45s ease both;}

@@ -455,14 +455,14 @@ function anuEnter_(){
   const c=$a("anuCover"); if(anuS.v!=="portada"||c.classList.contains("out")) return;
   const go=()=>{ anuS.v="libro"; anuS.act=null; anuS.key=anuDesk_()?anuFirst_():null; c.classList.remove("out"); anuView_(); document.body.scrollTo({top:0}); };
   if(anuReduce_()) return go();
-  c.classList.add("out"); setTimeout(()=>anuVT_(go),380);
+  c.classList.add("out"); setTimeout(go,300);
 }
 function anuPick_(k){ anuS.key=k; anuS.act=null; anuView_(); $a("anuDet").scrollTop=0; document.body.scrollTo({top:0,behavior:anuReduce_()?"auto":"smooth"}); }
 function anuBack_(){
   const toCover=!anuS.act&&!(!anuDesk_()&&anuS.key);
   const run=()=>{ if(anuS.act){ anuS.act=null; } else if(!anuDesk_()&&anuS.key){ anuS.key=null; } else { anuS.v="portada"; anuS.key=null; }
     anuView_(); document.body.scrollTo({top:0}); };
-  if(toCover) anuVT_(run); else run();
+  run();
 }
 function renderAnuario(){
   (document.getElementById("anuBgCss")||document.head.appendChild(Object.assign(document.createElement("style"),{id:"anuBgCss"}))).textContent=anuS.bgCss||anuBgCss_(ANU_BG,ANU_BGH);
