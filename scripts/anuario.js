@@ -43,7 +43,7 @@ function abrirModalAnuario(idActividad,titulo,nombreUsuario,detalle,link){
 
 /* ---------- anuario v6: portada, índice, administración y meses ---------- */
 /* Los fondos viven en la carpeta Anuario/ del repo (anuario-fondo-vertical.webp / anuario-fondo-horizontal.webp). */
-const ANU_BG="https://raw.githubusercontent.com/TeamPeachesOff/TeamPeachesHub/main/Anuario/anuario-fondo-vertical.webp", ANU_BGH="https://raw.githubusercontent.com/TeamPeachesOff/TeamPeachesHub/main/Anuario/anuario-fondo-horizontal.webp";
+const ANU_BG="Anuario/anuario-fondo-vertical.webp", ANU_BGH="Anuario/anuario-fondo-horizontal.webp";
 const ANU_COLORES=["#f37021","#4a7bf7","#e8363d","#3e2468","#2e9e4f","#d6277f"];
 const TIPO_={canto:{t:"Canto",e:"🎤"},doblaje:{t:"Doblaje",e:"🎙️"}};
 const CH_L='<svg viewBox="0 0 24 24" width="24" height="24" aria-hidden="true"><path d="M15 5l-7 7 7 7" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></svg>';
@@ -486,9 +486,9 @@ function renderAnuario(){
     $a("anuModal").addEventListener("click",e=>{ if(e.target===e.currentTarget) mdHide_(); });
     addEventListener("keydown",e=>{ if(e.key==="Escape") mdHide_(); }); }
   anuEscena_(); medHeader_(); anuCover_(0); anuView_(); anuS.th=undefined; anuAplicarTema_(true);
-  const _w=$a("anuWrap"); _w.classList.add("fw"); anuFonts_().then(()=>_w.classList.remove("fw"));
+  anuFonts_(); // La portada se muestra de inmediato; las fuentes con font-display:swap se aplican al terminar de cargar.
 }
-/* Fuentes del Anuario: se precargan al abrir la app y la portada espera (máx. 1.8 s) para que no haya «salto» de letra */
+/* Preload display fonts without blocking the cover; the typeface swaps in when ready. */
 let _anuFontsP=null;
 function anuFonts_(){
   if(_anuFontsP) return _anuFontsP;
@@ -538,63 +538,57 @@ function anuCapas_(t,w){
 }
 const anuPre_=u=>new Promise(r=>{ const i=new Image(); i.onload=()=>r(true); i.onerror=()=>r(false); i.src=u; });
 const anuWait_=ms=>new Promise(r=>setTimeout(r,ms));
-let _anuThSeq=0;
-async function anuFondo_(v,h,instant){
-  const css=anuBgCss_(v,h); if(anuS.bgCss===css||(!anuS.bgCss&&v===ANU_BG)) { anuS.bgCss=css; return; }
-  const st=$a("anuBgCss"), b1=$a("anuarioBg");
-  if(instant||anuReduce_()||!b1){ anuS.bgCss=css; if(st) st.textContent=css; return; }
-  await Promise.race([Promise.all([anuPre_(v),anuPre_(h)]),anuWait_(2500)]);
-  let b2=$a("anuarioBg2"); if(!b2){ b2=document.createElement("div"); b2.id="anuarioBg2"; b1.after(b2); }
-  b2.style.setProperty("--bgv",`url("${v}")`); b2.style.setProperty("--bgh",`url("${h}")`); void b2.offsetWidth; b2.classList.add("on");
-  anuS.bgCss=css;
-  setTimeout(()=>{ if(anuS.bgCss!==css) return; if(st) st.textContent=css; b2.style.transition="none"; b2.classList.remove("on"); void b2.offsetWidth; b2.style.transition=""; },950);
-}
+let _anuThSeq=0, _anuThSwapT=0;
 async function anuAplicarTema_(instant){
-  const seq=++_anuThSeq, p=anuS.per[anuS.pi]; if(!p) return;
+  const seq=++_anuThSeq, H=document.documentElement, w=$a("anuWrap"), c=$a("anuCover");
+  clearTimeout(_anuThSwapT); H.classList.remove("anu-swapping"); if(c) c.classList.remove("sw");
+  const p=anuS.per[anuS.pi]; if(!p) return;
   let t=await anuTema_(p.anio); if(seq!==_anuThSeq) return;
   const B=t&&t._b, pick=a=>Array.isArray(a)&&a.length?B+a[p.anio%a.length]:null;
   let v=pick(t&&t.fondos&&t.fondos.vertical), h=pick(t&&t.fondos&&t.fondos.horizontal)||v; v=v||h;
   let port=t&&t.portada?B+t.portada:null;
-  if(t&&(v||port)){ const ok=await Promise.all([v?anuPre_(v):1,h?anuPre_(h):1,port?anuPre_(port):1]); if(seq!==_anuThSeq) return; if(!ok[0]||!ok[1]) v=h=null; if(!ok[2]) port=null; }
-  const key=t?String(p.anio):"def";
-  if(!instant&&key===anuS.th){ anuYearSet_(); return; }
-  const first=instant||anuS.th===undefined; anuS.th=key;
-  anuFondo_(v||ANU_BG,h||ANU_BGH,first);
-  const w=$a("anuWrap"), c=$a("anuCover"); if(!w||!c) return;
-  const H=document.documentElement;
-  if(!first){ H.classList.add("anu-swapping"); c.classList.add("sw"); await anuWait_(320); if(seq!==_anuThSeq) return; }
-  const R=document.documentElement, col=(t&&t.colores)||{};
-  Object.keys(ANU_TH_VARS).forEach(k=>{ if(col[k]) R.style.setProperty(ANU_TH_VARS[k],col[k]); else R.style.removeProperty(ANU_TH_VARS[k]); });
-  if(t) R.setAttribute("data-anu-th",String(p.anio)); else R.removeAttribute("data-anu-th");
+  if(!instant&&t&&(v||port)){ const ok=await Promise.all([v?anuPre_(v):1,h?anuPre_(h):1,port?anuPre_(port):1]); if(seq!==_anuThSeq) return; if(!ok[0]||!ok[1]) v=h=null; if(!ok[2]) port=null; }
+  const key=t?String(p.anio):"def", first=instant||anuS.th===undefined;
+  if(!instant&&key===anuS.th){
+    H.classList.add("anu-swapping"); c.classList.add("sw"); await anuWait_(520);
+    if(seq!==_anuThSeq) return;
+    anuYearSet_(); H.classList.remove("anu-swapping");
+    _anuThSwapT=setTimeout(()=>{ if(seq===_anuThSeq) c.classList.remove("sw"); },520);
+    return;
+  }
+  anuS.th=key; anuFondo_(v||ANU_BG,h||ANU_BGH,first);
+  if(!w||!c) return;
+  if(!first){ H.classList.add("anu-swapping"); c.classList.add("sw"); await anuWait_(520); if(seq!==_anuThSeq) return; }
+  const col=(t&&t.colores)||{};
+  Object.keys(ANU_TH_VARS).forEach(k=>{ if(col[k]) H.style.setProperty(ANU_TH_VARS[k],col[k]); else H.style.removeProperty(ANU_TH_VARS[k]); });
+  if(t) H.setAttribute("data-anu-th",String(p.anio)); else H.removeAttribute("data-anu-th");
   const img=$a("cvPoster").querySelector("img");
   if(t&&port){ img.src=port; w.classList.add("poster"); } else { w.classList.remove("poster"); img.removeAttribute("src"); }
-  anuCapas_(t,w); anuMes_(t); anuYearSet_();
-  H.classList.remove("anu-swapping");
-  if(!first) setTimeout(()=>c.classList.remove("sw"),320);
+  anuCapas_(t,w); anuMes_(t); anuYearSet_(); H.classList.remove("anu-swapping");
+  if(!first) _anuThSwapT=setTimeout(()=>{ if(seq===_anuThSeq) c.classList.remove("sw"); },520);
 }
 
-
-/* ---------- Cambio de tema oscuro (app) <-> claro (Anuario): fundido suave de TODA la pantalla ---------- */
+/* ---------- Cambio de tema oscuro (app) <-> claro (Anuario): velo central de transición ---------- */
 (function(){
-  /* Aviso de carga al abrir/cerrar el Anuario (cosas que tardan: que se note que SÍ está pasando algo) */
-  let _ld=null, _ldT=0, _ldSince=0;
+  let _ld=null, _ldT=0, _ldMinT=0, _ldSince=0;
   const ldEl=()=>{ if(_ld) return _ld; _ld=document.createElement("div"); _ld.id="anuLoad"; _ld.setAttribute("role","status"); _ld.setAttribute("aria-live","polite");
-    _ld.innerHTML='<span class="al-p">🍑</span><span class="al-t"></span>'; document.body.appendChild(_ld); return _ld; };
-  const ldShow=txt=>{ const e=ldEl(); clearTimeout(_ldT); e.querySelector(".al-t").textContent=txt; _ldSince=Date.now(); e.classList.add("on"); _ldT=setTimeout(ldHide,9000); };
-  const ldHide=()=>{ clearTimeout(_ldT); if(!_ld) return; const w=Math.max(0,450-(Date.now()-_ldSince)); setTimeout(()=>{ if(_ld) _ld.classList.remove("on"); },w); };
-  const ldDone=toA=>{ if(!toA){ setTimeout(ldHide,150); return; } const t0=Date.now(); (function p(){ const sc=document.getElementById("anuScene"); if((sc&&sc.classList.contains("on"))||Date.now()-t0>3000) ldHide(); else setTimeout(p,120); })(); };
+    _ld.innerHTML=`<div class="al-card"><span class="al-spark al-spark-a" aria-hidden="true">✦</span><span class="al-spark al-spark-b" aria-hidden="true">✧</span><span class="al-peach-wrap"><span class="al-peach-ring"></span><img class="al-peach" src="${ANU_DURAZNO}" alt=""></span><span class="al-brand">TEAM PEACHES</span><strong class="al-t"></strong><span class="al-sub"></span><span class="al-track" aria-hidden="true"><i></i></span></div>`;
+    document.body.appendChild(_ld); return _ld; };
+  const ldShow=(txt,toA)=>{ const e=ldEl(); clearTimeout(_ldT); clearTimeout(_ldMinT); e.querySelector(".al-t").textContent=txt; e.querySelector(".al-sub").textContent=toA?"Preparando tu anuario de recuerdos":"Volviendo a la página principal"; _ldSince=Date.now(); e.classList.add("on"); _ldT=setTimeout(ldHide,9000); };
+  const ldHide=()=>{ clearTimeout(_ldT); clearTimeout(_ldMinT); if(!_ld) return; const min=matchMedia("(prefers-reduced-motion:reduce)").matches?300:650, wait=Math.max(0,min-(Date.now()-_ldSince)); _ldMinT=setTimeout(()=>{ if(_ld) _ld.classList.remove("on"); },wait); };
+  const ldDone=toA=>{ if(!toA){ ldHide(); return; } const t0=Date.now(); (function p(){ const sc=document.getElementById("anuScene"); if((sc&&sc.classList.contains("on"))||Date.now()-t0>3000) ldHide(); else setTimeout(p,100); })(); };
   const wrap=()=>{ const o=window.switchTab; if(typeof o!=="function"||o._anuVT) return;
     const n=function(tab){
       const toA=tab==="anuario", inA=document.body.classList.contains("anuario-mode"), args=arguments, self=this;
       if(toA===inA) return o.apply(self,args);
-      ldShow(toA?"Abriendo Anuario…":"Volviendo…");
+      ldShow(toA?"Abriendo el Anuario":"Volviendo",toA);
       const go=()=>{
         if(!document.startViewTransition||matchMedia("(prefers-reduced-motion:reduce)").matches){ o.apply(self,args); requestAnimationFrame(()=>ldDone(toA)); return; }
         const H=document.documentElement; H.classList.add("anu-vt");
         let t; try{ t=document.startViewTransition(async()=>{ o.apply(null,args); await new Promise(r=>requestAnimationFrame(()=>requestAnimationFrame(r))); }); }catch(_){ H.classList.remove("anu-vt"); o.apply(self,args); ldDone(toA); return; }
         t.finished.catch(()=>{}).then(()=>{ H.classList.remove("anu-vt"); ldDone(toA); });
       };
-      requestAnimationFrame(()=>requestAnimationFrame(go)); /* deja pintar el aviso antes del trabajo pesado */
+      requestAnimationFrame(()=>requestAnimationFrame(go));
     };
     n._anuVT=1; window.switchTab=n; };
   addEventListener("load",()=>{ wrap(); setTimeout(wrap,800); }); setTimeout(wrap,2500);
