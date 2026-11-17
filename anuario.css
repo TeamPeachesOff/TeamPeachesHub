@@ -536,3 +536,17 @@ html[data-anu-v="portada"] body.anuario-mode .tabs{pointer-events:auto;backgroun
 /* el contenido baja lo justo para no quedar bajo los botones */
 html[data-anu-v="portada"] body.anuario-mode .anu-cover{box-sizing:border-box;padding-top:56px;min-height:calc(100vh - 90px);min-height:calc(100dvh - 90px);}
 html[data-anu-v="portada"] body.anuario-mode .anu-wrap.c25 .cv-main{width:min(88vw,580px,calc((100vh - 206px) * .70));width:min(88vw,580px,calc((100dvh - 206px) * .70));}
+
+/* =====================================================================
+   ENTREGA 8 · Menú lateral: botones sin contorno/fondo (misma hitbox y separación) + modo claro en Anuario
+   ===================================================================== */
+#drawer .social-link,#drawer .drawer-nav-btn:not(#staffDrawerBtn){background:transparent;box-shadow:none;border:0;}
+#drawer .social-link:hover,#drawer .drawer-nav-btn:not(#staffDrawerBtn):hover{background:rgba(239,8,112,.12);}
+/* SOLO en Anuario: panel claro */
+body.anuario-mode #drawer{background:#fff6f0;box-shadow:4px 0 20px rgba(63,33,104,.18);scrollbar-color:rgba(63,33,104,.25) transparent;color:#2a1745;}
+body.anuario-mode #drawer .drawer-title{color:var(--anu-acc,#3f2168);}
+body.anuario-mode #drawer .social-link,body.anuario-mode #drawer .drawer-nav-btn:not(#staffDrawerBtn){color:#2a1745;}
+body.anuario-mode #drawer .social-link:hover,body.anuario-mode #drawer .drawer-nav-btn:not(#staffDrawerBtn):hover{background:rgba(63,33,104,.08);}
+body.anuario-mode #drawer .drawer-divider{background:rgba(63,33,104,.14);}
+body.anuario-mode #drawerOverlay{background:rgba(63,33,104,.28);}
+#drawer{transition:transform .25s ease,background-color .4s ease;}
