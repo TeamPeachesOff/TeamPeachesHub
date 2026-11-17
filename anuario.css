@@ -522,3 +522,17 @@ body{transition:background-color .6s ease;}
 .l-hojitas{transform-origin:73% 92%;animation:l25Pop .75s cubic-bezier(.3,1.5,.5,1) var(--d) backwards,l25Leaf 5s ease-in-out 1s infinite;filter:none;}
 @keyframes l25Leaf{0%,100%{transform:rotate(-2deg)}50%{transform:rotate(3deg)}}
 @media (prefers-reduced-motion:reduce){.sc-f,.l-hojitas{animation:none !important;}}
+
+/* =====================================================================
+   ENTREGA 7 · SOLO PORTADA: sin encabezado, botones flotantes en las esquinas, pantalla completa
+   (al entrar al libro / meses el encabezado vuelve a ser el de siempre)
+   ===================================================================== */
+html[data-anu-v="portada"]:has(body.anuario-mode){--hh:0px !important;}
+html[data-anu-v="portada"] body.anuario-mode header{position:fixed;top:0;left:0;right:0;background:transparent;border-bottom-color:transparent;backdrop-filter:none;-webkit-backdrop-filter:none;pointer-events:none;}
+html[data-anu-v="portada"] body.anuario-mode .header-inner{max-width:none;margin:0;padding:max(10px,env(safe-area-inset-top)) 12px 0;align-items:flex-start;}
+html[data-anu-v="portada"] body.anuario-mode .logo{display:none;}
+html[data-anu-v="portada"] body.anuario-mode #hamburgerBtn{pointer-events:auto;width:44px;height:44px;display:grid;place-items:center;border-radius:50%;background:rgba(255,246,240,.88);box-shadow:0 4px 14px rgba(63,33,104,.22);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);}
+html[data-anu-v="portada"] body.anuario-mode .tabs{pointer-events:auto;background:rgba(255,246,240,.88);box-shadow:0 4px 14px rgba(63,33,104,.22);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);}
+/* el contenido baja lo justo para no quedar bajo los botones */
+html[data-anu-v="portada"] body.anuario-mode .anu-cover{box-sizing:border-box;padding-top:56px;min-height:calc(100vh - 90px);min-height:calc(100dvh - 90px);}
+html[data-anu-v="portada"] body.anuario-mode .anu-wrap.c25 .cv-main{width:min(88vw,580px,calc((100vh - 206px) * .70));width:min(88vw,580px,calc((100dvh - 206px) * .70));}
