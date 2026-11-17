@@ -575,8 +575,8 @@ async function anuAplicarTema_(instant){
     _ld.innerHTML=`<div class="al-card"><span class="al-spark al-spark-a" aria-hidden="true">✦</span><span class="al-spark al-spark-b" aria-hidden="true">✧</span><span class="al-peach-wrap"><span class="al-peach-ring"></span><img class="al-peach" src="${ANU_DURAZNO}" alt=""></span><span class="al-brand">TEAM PEACHES</span><strong class="al-t"></strong><span class="al-sub"></span><span class="al-track" aria-hidden="true"><i></i></span></div>`;
     document.body.appendChild(_ld); return _ld; };
   const ldShow=(txt,toA)=>{ const e=ldEl(); clearTimeout(_ldT); clearTimeout(_ldMinT); e.querySelector(".al-t").textContent=txt; e.querySelector(".al-sub").textContent=toA?"Preparando tu anuario de recuerdos":"Volviendo a la página principal"; _ldSince=Date.now(); e.classList.add("on"); _ldT=setTimeout(ldHide,9000); };
-  const ldHide=()=>{ clearTimeout(_ldT); clearTimeout(_ldMinT); if(!_ld) return; const min=matchMedia("(prefers-reduced-motion:reduce)").matches?300:650, wait=Math.max(0,min-(Date.now()-_ldSince)); _ldMinT=setTimeout(()=>{ if(_ld) _ld.classList.remove("on"); },wait); };
-  const ldDone=toA=>{ if(!toA){ ldHide(); return; } const t0=Date.now(); (function p(){ const sc=document.getElementById("anuScene"); if((sc&&sc.classList.contains("on"))||Date.now()-t0>3000) ldHide(); else setTimeout(p,100); })(); };
+  const ldHide=()=>{ clearTimeout(_ldT); clearTimeout(_ldMinT); if(!_ld) return; const min=matchMedia("(prefers-reduced-motion:reduce)").matches?180:350, wait=Math.max(0,min-(Date.now()-_ldSince)); _ldMinT=setTimeout(()=>{ if(_ld) _ld.classList.remove("on"); },wait); };
+  const ldDone=()=>ldHide();
   const wrap=()=>{ const o=window.switchTab; if(typeof o!=="function"||o._anuVT) return;
     const n=function(tab){
       const toA=tab==="anuario", inA=document.body.classList.contains("anuario-mode"), args=arguments, self=this;
