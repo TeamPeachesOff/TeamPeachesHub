@@ -60,7 +60,7 @@
     "suave": "#7d5470",
     "tinte1": "#fde6ef",
     "tinte2": "#fbd9e8",
-    "flechaFondo": "rgba(255,255,255,.85)",
+    "flechaFondo": "transparent",
     "flechaTexto": "#d0136b"
   },
   "mes": {

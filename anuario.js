@@ -437,8 +437,8 @@ function anuYearSet_(){
 }
 function anuCover_(d){
   const per=anuS.per, y=$a("yrVal"), pe=$a("cvPeach");
-  anuYearSet_(); y.className="cv-yv"; pe.classList.remove("wob"); void y.offsetWidth;
-  if(d){ y.classList.add(d>0?"r":"l"); pe.classList.add("wob"); }
+  if(!d) anuYearSet_(); y.className="cv-yv"; pe.classList.remove("wob"); void y.offsetWidth;
+  if(d) pe.classList.add("wob");
   if(d) anuAplicarTema_(false);
   $a("yrPrev").disabled=anuS.pi===0; $a("yrNext").disabled=anuS.pi===per.length-1;
 }
@@ -547,16 +547,33 @@ async function anuAplicarTema_(instant){
   let port=t&&t.portada?B+t.portada:null;
   if(t&&(v||port)){ const ok=await Promise.all([v?anuPre_(v):1,h?anuPre_(h):1,port?anuPre_(port):1]); if(seq!==_anuThSeq) return; if(!ok[0]||!ok[1]) v=h=null; if(!ok[2]) port=null; }
   const key=t?String(p.anio):"def";
-  if(!instant&&key===anuS.th) return;
+  if(!instant&&key===anuS.th){ anuYearSet_(); return; }
   const first=instant||anuS.th===undefined; anuS.th=key;
   anuFondo_(v||ANU_BG,h||ANU_BGH,first);
   const w=$a("anuWrap"), c=$a("anuCover"); if(!w||!c) return;
-  if(!first){ c.classList.add("sw"); await anuWait_(300); if(seq!==_anuThSeq) return; }
+  const H=document.documentElement;
+  if(!first){ H.classList.add("anu-swapping"); c.classList.add("sw"); await anuWait_(320); if(seq!==_anuThSeq) return; }
   const R=document.documentElement, col=(t&&t.colores)||{};
   Object.keys(ANU_TH_VARS).forEach(k=>{ if(col[k]) R.style.setProperty(ANU_TH_VARS[k],col[k]); else R.style.removeProperty(ANU_TH_VARS[k]); });
   if(t) R.setAttribute("data-anu-th",String(p.anio)); else R.removeAttribute("data-anu-th");
   const img=$a("cvPoster").querySelector("img");
   if(t&&port){ img.src=port; w.classList.add("poster"); } else { w.classList.remove("poster"); img.removeAttribute("src"); }
   anuCapas_(t,w); anuMes_(t); anuYearSet_();
+  H.classList.remove("anu-swapping");
   if(!first) setTimeout(()=>c.classList.remove("sw"),320);
 }
+
+
+/* ---------- Cambio de tema oscuro (app) <-> claro (Anuario): fundido suave de TODA la pantalla ---------- */
+(function(){
+  const wrap=()=>{ const o=window.switchTab; if(typeof o!=="function"||o._anuVT) return;
+    const n=function(tab){
+      const toA=tab==="anuario", inA=document.body.classList.contains("anuario-mode"), args=arguments;
+      if(toA===inA||!document.startViewTransition||matchMedia("(prefers-reduced-motion:reduce)").matches) return o.apply(this,args);
+      const H=document.documentElement; H.classList.add("anu-vt");
+      let t; try{ t=document.startViewTransition(async()=>{ o.apply(null,args); await new Promise(r=>requestAnimationFrame(()=>requestAnimationFrame(r))); }); }catch(_){ H.classList.remove("anu-vt"); return o.apply(this,args); }
+      t.finished.catch(()=>{}).then(()=>H.classList.remove("anu-vt"));
+    };
+    n._anuVT=1; window.switchTab=n; };
+  addEventListener("load",()=>{ wrap(); setTimeout(wrap,800); }); setTimeout(wrap,2500);
+})();

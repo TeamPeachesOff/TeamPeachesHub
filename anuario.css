@@ -472,3 +472,32 @@ html[data-anu-v="libro"] body.anuario-mode #anuSceneM.on{opacity:1;visibility:vi
 @keyframes smA{0%,100%{transform:scale(1)}50%{transform:scale(1.045)}}
 @keyframes smB{0%,100%{transform:scale(1) translateY(0)}50%{transform:scale(1.045) translateY(-1.5%)}}
 @media (prefers-reduced-motion:reduce){.sm-p{animation:none !important;}}
+
+
+/* =====================================================================
+   CORRECCIONES · flechas sin círculo, cambio de año suave, tema oscuro↔claro suave
+   ===================================================================== */
+/* Flechas < > sueltas, más gruesas, sin círculo blanco */
+.cv-arr,.anu-wrap.c25 .cv-arr{border:0 !important;background:none !important;box-shadow:none !important;backdrop-filter:none !important;border-radius:12px;
+  color:var(--anu-arrfg,#3b1d6e);filter:drop-shadow(0 1px 0 rgba(255,255,255,.85)) drop-shadow(0 2px 4px rgba(60,20,60,.25));}
+.cv-arr svg{width:34px;height:34px;overflow:visible;}
+.cv-arr svg path{stroke-width:4.6;}
+.cv-arr:hover:not(:disabled){transform:scale(1.15);}
+.cv-arr:active:not(:disabled){transform:scale(.9);}
+
+/* Cambio de año: portada, esquinas y fondo de meses salen y entran JUNTOS (sin elementos a medias) */
+html.anu-swapping #anuScene,html.anu-swapping #anuSceneM{opacity:0 !important;transition:opacity .3s ease !important;}
+#anuScene,#anuSceneM{transition:opacity .5s ease,visibility 0s .5s;}
+html[data-anu-v="portada"] body.anuario-mode #anuScene.on,html[data-anu-v="libro"] body.anuario-mode #anuSceneM.on{transition:opacity .5s ease,visibility 0s;}
+@keyframes anuSw{0%{opacity:1}45%,58%{opacity:0}100%{opacity:1}}
+.anu-cover.sw>*{animation:anuSw .64s ease both;}
+.anu-cover.sw .l25,.anu-cover.sw .cv-yv img{animation-play-state:paused;}
+.cv-yv{overflow:visible;}
+
+/* App oscura <-> Anuario claro: fundido de toda la pantalla (View Transitions) */
+::view-transition-old(root),::view-transition-new(root){animation-duration:.75s;animation-timing-function:cubic-bezier(.4,0,.2,1);}
+html.anu-vt,html.anu-vt *{transition:none !important;}
+html.anu-vt #viewAnuario:not(.hidden){animation:none !important;clip-path:none !important;}
+/* Sin View Transitions (p. ej. Firefox): se suaviza el color en lugar de cortarlo */
+body{transition:background-color .6s ease;}
+@media (prefers-reduced-motion:reduce){::view-transition-group(*),::view-transition-old(*),::view-transition-new(*){animation:none !important;}}
