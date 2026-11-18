@@ -231,7 +231,9 @@ function anuActHTML_(id){
   return `<div class="act-pg"><div class="act-h">${n.imgs.length?`<span class="act-ps"><img class="js-longpress" data-filename="${escAttr(n.titulo+".jpg")}" src="${escAttr(n.imgs[0])}" alt=""></span>`:""}<div><h2>${escHtml(n.titulo)}</h2><div class="md-meta"><span>${fechaTxt}</span>${n.tipos.map(anuTag_).join("")}</div></div></div>
     <h3 class="act-sec">👑 Lo mejor de la actividad</h3>
     ${best.length?`<div class="act-best">${best.map(x=>{ const m=anuMem_(x.w.nombre), nm=String(x.w.nombre||"").replace(/@/g,"");
-      return `<div class="bst"><span class="bst-l">${x.l}</span><button type="button" class="bst-av"${m?` data-miembro="${escAttr(m.id)}"`:""} aria-label="${escAttr(nm)}">${ANU_CROWN}<img class="anu-fb" src="${escAttr(anuAv_(m))}" alt=""></button><b>${escHtml(nm||"Miembro")}</b><small>${escHtml(x.w.detalle||"")}</small>${x.w.link?`<a class="md-play" href="${escAttr(x.w.link)}" target="_blank" rel="noopener">Ver presentación</a>`:""}</div>`; }).join("")}</div>`:`<p class="md-empty" style="text-align:center">Todavía sin ganadores asignados.</p>`}
+      const peachys=nm.split(/[,،]/).map(n=>n.trim()).filter(Boolean);
+      const nombreHTML=peachys.length>3?`<div class="bst-peachys"><span class="bst-count">${peachys.length} Peachys</span><span class="bst-full hidden">${escHtml(peachys.join(", "))}</span><button type="button" class="bst-expand" data-peachys-toggle aria-expanded="false" aria-label="Mostrar todos los Peachys">⌄</button></div>`:`<b>${escHtml(nm||"Miembro")}</b>`;
+      return `<div class="bst"><span class="bst-l">${x.l}</span><button type="button" class="bst-av"${m?` data-miembro="${escAttr(m.id)}"`:""} aria-label="${escAttr(nm)}">${ANU_CROWN}<img class="anu-fb" src="${escAttr(anuAv_(m))}" alt=""></button>${nombreHTML}<small>${escHtml(x.w.detalle||"")}</small>${x.w.link?`<a class="md-play" href="${escAttr(x.w.link)}" target="_blank" rel="noopener">Ver presentación</a>`:""}</div>`; }).join("")}</div>`:`<p class="md-empty" style="text-align:center">Todavía sin ganadores asignados.</p>`}
     ${mens.length?`<h3 class="act-sec">🎖️ Menciones honoríficas</h3><div class="act-list">${mens.map(w=>anuRowW_(w)).join("")}</div>`:""}
     ${anuEntregasHTML_(e,[...best.map(x=>x.w),...mens])}
     <div class="act-staff"><button type="button" class="shr" data-share-anuario="${escAttr(e.id)}">${ANU_SHARE_ICON}<span>Compartir</span></button><button type="button" data-edit-anuario="${escAttr(e.id)}">✏️ Editar</button><button type="button" class="del" data-delete-anuario="${escAttr(e.id)}">🗑️ Borrar tarjeta</button></div></div>`;
@@ -336,7 +338,7 @@ function anuEditarTarjeta_(id){
     const b=anuModal_(`<div class="md-body"><h3 class="md-t">Editar tarjeta del Anuario</h3><p class="md-hint">Aquí solo cambias esta tarjeta; la actividad original nunca se toca.</p>
       <label class="sg-name-l" for="edT">Nombre de la tarjeta</label><input class="sg-name" id="edT" type="text" maxlength="120" value="${escAttr(st.titulo)}">
       <label class="sg-name-l">Imagen</label><div class="ed-img">${st.imagenUrl?`<img src="${escAttr(st.imagenUrl)}" alt="">`:`<img alt="">`}<input class="sg-name" id="edI" type="text" placeholder="https://…" value="${escAttr(st.imagenUrl)}"><label class="ed-up">Subir<input type="file" id="edF" accept=".jpg,.jpeg,.png,image/jpeg,image/png" hidden></label></div>
-      <div class="ed-row"><div><label class="sg-name-l" for="edFi">Fecha inicio</label><input class="sg-name" id="edFi" type="date" value="${escAttr(st.fi)}"></div><div><label class="sg-name-l" for="edFf">Fecha fin</label><input class="sg-name" id="edFf" type="date" value="${escAttr(st.ff)}"></div></div>
+      <div class="ed-row"><div><label class="sg-name-l" for="edFi">Fecha inicio</label><input class="sg-name" id="edFi" type="date" value="${escAttr(st.fi)}"><button type="button" class="md-sec" id="edFixMonth" style="margin-top:8px">Corregir mes</button><div id="edMonthWrap" class="hidden" style="margin-top:8px"><label class="sg-name-l" for="edMonth">Mes correcto</label><input class="sg-name" id="edMonth" type="month" value="${escAttr(st.fi.slice(0,7))}"></div></div><div><label class="sg-name-l" for="edFf">Fecha fin</label><input class="sg-name" id="edFf" type="date" value="${escAttr(st.ff)}"></div></div>
       <h4 class="sg-gt" style="margin-top:20px"><span>Actividades incluidas (${gs.filter(x=>x.act).length||0})<small>${st.L.length} ${st.L.length===1?"canción":"canciones"} en total</small></span></h4>
       ${gs.length?gs.map(g=>{ const x=g.act?(TIPO_[g.act.categoria]||{t:"Especial",e:"✨"}):null;
         return `<section class="sg-grp" style="margin-top:12px"><h4 class="sg-gt" style="font-size:20px">${g.act&&g.act.imagenUrl?`<img src="${escAttr(g.act.imagenUrl)}" alt="">`:""}<span>${escHtml(g.act?g.act.titulo||"":"Otras canciones")}<small>${x?x.e+" "+x.t:"No se pudo ligar a una actividad"}</small></span></h4>${g.items.map(({it,i})=>`<div class="ed-line m-${it.tipo==="mencion"?"mencion":"mejor"}"><div><b>${escHtml(String(it.w.nombre||"").replace(/@/g,""))}</b>${it.w.detalle?`<small>${escHtml(it.w.detalle)}</small>`:""}</div><div class="ed-ctl"><button type="button" data-t="mejor" data-i="${i}" class="${it.tipo!=="mencion"?"on":""}">👑 Mejor</button><button type="button" data-t="mencion" data-i="${i}" class="${it.tipo==="mencion"?"on":""}">🎖️ Mención</button><button type="button" class="ed-x" data-x="${i}" aria-label="Quitar">🗑️</button></div></div>`).join("")}</section>`; }).join(""):`<p class="md-empty">Esta tarjeta todavía no tiene canciones.</p>`}
@@ -344,6 +346,15 @@ function anuEditarTarjeta_(id){
       <div class="md-acts"><button type="button" class="md-sec" data-close>Cerrar</button><button type="button" class="md-pri" id="edSave">Guardar</button></div></div>`);
     const val=(sel,f)=>{ const el=b.querySelector(sel); el.oninput=()=>{ f(el.value); st.dirty=true; }; };
     val("#edT",v=>st.titulo=v); val("#edFi",v=>st.fi=v); val("#edFf",v=>st.ff=v);
+    b.querySelector("#edFixMonth").onclick=()=>{ const wrap=b.querySelector("#edMonthWrap"); wrap.classList.toggle("hidden"); if(!wrap.classList.contains("hidden")) b.querySelector("#edMonth").focus(); };
+    b.querySelector("#edMonth").onchange=e=>{
+      const mes=e.target.value.match(/^(\d{4})-(\d{2})$/); if(!mes) return;
+      const actual=st.fi.match(/^(\d{4})-(\d{2})-(\d{2})$/), dia=actual?Number(actual[3]):1;
+      const maxDia=new Date(Number(mes[1]),Number(mes[2]),0).getDate();
+      st.fi=mes[1]+"-"+mes[2]+"-"+String(Math.min(dia,maxDia)).padStart(2,"0");
+      b.querySelector("#edFi").value=st.fi; st.dirty=true;
+      toast("Mes corregido; guarda la tarjeta para aplicar el cambio.");
+    };
     b.querySelector("#edI").oninput=e=>{ st.imagenUrl=e.target.value; st.dirty=true; };
     b.querySelector("#edI").onchange=e=>{ const im=b.querySelector(".ed-img img"); if(im) im.src=e.target.value; };
     b.querySelector("#edF").onchange=async e=>{ const f=e.target.files[0]; if(!f) return;
@@ -499,6 +510,14 @@ function anuDet_(){
   d.innerHTML=h;
   d.querySelectorAll("[data-anuario]").forEach(t=>t.onclick=()=>anuOpenAct_(t.dataset.anuario));
   d.querySelectorAll("[data-miembro]").forEach(t=>t.onclick=()=>anuAbrirMiembro_(t.dataset.miembro));
+  d.querySelectorAll("[data-peachys-toggle]").forEach(bt=>bt.onclick=()=>{
+    const card=bt.closest(".bst"), open=bt.getAttribute("aria-expanded")!=="true";
+    card.querySelector(".bst-count").classList.toggle("hidden",open);
+    card.querySelector(".bst-full").classList.toggle("hidden",!open);
+    bt.setAttribute("aria-expanded",String(open));
+    bt.setAttribute("aria-label",open?"Ocultar Peachys":"Mostrar todos los Peachys");
+    bt.textContent=open?"⌃":"⌄";
+  });
   d.querySelectorAll(".act-pg img.js-longpress").forEach(img=>enableLongPress(img,img.dataset.filename));
   d.querySelectorAll("img.anu-fb").forEach(im=>{ const fb=()=>{ if(im.dataset.fb) return; im.dataset.fb="1"; im.src=ANU_SHOW; }; im.addEventListener("error",fb); if(im.complete&&im.naturalWidth===0) fb(); });
   d.querySelectorAll("[data-share-anuario]").forEach(bt=>bt.onclick=()=>anuCompartir_(bt.dataset.shareAnuario));
