@@ -78,44 +78,53 @@ const anuSprout_=()=>{ const h=(rot,L,W)=>`<g transform="translate(18 18) rotate
   return `<svg class="anu-sp" viewBox="0 0 100 100" aria-hidden="true">${h(-80,30,10)}${h(24,36,12)}</svg>`; };
 const anuArc_=(id,t)=>`<svg class="anu-arc" viewBox="0 0 100 100" aria-hidden="true"><path id="arc${escAttr(id)}" d="M2.2 45.8A48 48 0 0 1 97.8 45.8" fill="none"/><text class="t1" textLength="${(t.length*14.5).toFixed(0)}" lengthAdjust="spacing"><textPath href="#arc${escAttr(id)}" startOffset="50%" text-anchor="middle">${t}</textPath></text><text class="t2" textLength="${(t.length*14.5).toFixed(0)}" lengthAdjust="spacing"><textPath href="#arc${escAttr(id)}" startOffset="50%" text-anchor="middle">${t}</textPath></text></svg>`;
 const anuIsF_=m=>esTrue(m.fundadora)||esTrue(m.fundador);
-const anuFundEt_=m=>(anuKey_(m.nombre).startsWith("eryck")||(esTrue(m.fundador)&&!esTrue(m.fundadora)))?"Fundador":"Fundadora";
+const anuFundEt_=m=>(anuKey_(m.nombre).includes("eryck")||(esTrue(m.fundador)&&!esTrue(m.fundadora)))?"Fundador":"Fundadora";
 const anuRolDe_=m=>anuIsF_(m)?"f":esTrue(m.lider)?"a":esTrue(m.staff)?"s":null;
-function anuStaffIdx_(m){ const ok=x=>x.nombre&&String(x.nombre).trim()!=="", L=(DB.miembros||[]).filter(ok);
-  const o=[...L.filter(anuIsF_),...L.filter(x=>esTrue(x.lider)&&!anuIsF_(x)),...L.filter(x=>esTrue(x.staff)&&!anuIsF_(x)&&!esTrue(x.lider))]; return Math.max(0,o.findIndex(x=>String(x.id)===String(m.id))); }
+function anuStaffIdx_(m){ const q=anuEquipo_((anuP_()||{}).anio), o=[...q.f,...q.s]; return Math.max(0,o.findIndex(x=>String(x.id)===String(m.id))); }
 function anuFrame_(m,rol,i){
   const c=m.color||(rol==="f"?"#d6277f":ANU_COLORES[i%ANU_COLORES.length]);
-  const et=rol==="f"?anuFundEt_(m):rol==="a"?"Admin":"Staff";
+  const et=rol==="f"?anuFundEt_(m):"Staff"; /* todos los que no son fundadores son Staff (ya no hay rótulo aparte de Admin) */
   return {c,et,html:`<span class="anu-av">${rol==="f"?"":anuSprout_()}${anuWreath_(c)}${avatarImgTag(m)}${rol==="f"?ANU_CROWN2+anuArc_("m"+m.id,et.toUpperCase()):anuRol_("m"+m.id,et)}</span>`};
 }
 function anuMiembro_(m,rol,i){
   const {c,et,html}=anuFrame_(m,rol,i);
   return `<button type="button" class="anu-m${rol==="f"?" f":""}" data-miembro="${escAttr(m.id)}" style="--pc:${c};--nl:${Math.max(6,[...String(m.nombre||"")].length)}" aria-label="${et}: ${escAttr(m.nombre||"")}">${html}<span class="anu-pn">${escHtml(m.nombre||"")}</span></button>`;
 }
+/* Equipo de la página 00 por año. 2025 se arma con esta lista (ese año no existía el rango de admin); los demás años salen de las marcas de DB.miembros.
+   Cada nombre se busca en DB.miembros para usar su foto y su ficha; si alguien no aparece ahí, igual se muestra (con la foto por defecto) para que nunca falte nadie. */
+const ANU_EQUIPO_={2025:{f:["AlixTKM","Itx_Eryck"],s:["demonnoirexd","anacoffee","RagnaBelzzerion","RcC39"]}};
+function anuBuscar_(nombre){
+  const L=(DB.miembros||[]).filter(x=>x.nombre&&String(x.nombre).trim()!==""), k=anuKey_(nombre); if(!k) return null;
+  const exacto=L.find(x=>anuKey_(x.nombre)===k); if(exacto) return exacto;
+  const toks=String(nombre).split(/[^A-Za-z0-9]+/).map(anuKey_).filter(t=>t.length>=5); /* «Itx_Eryck» → «eryck» */
+  return L.find(x=>{ const a=anuKey_(x.nombre); return a.length>=5&&(a.includes(k)||k.includes(a)||toks.some(t=>a.includes(t))); })||null;
+}
+function anuEquipo_(anio){
+  const L=(DB.miembros||[]).filter(m=>m.nombre&&String(m.nombre).trim()!==""), vistos=new Set();
+  const unicos=A=>A.filter(m=>{ const k=anuKey_(m.nombre); if(!k||vistos.has(k)) return false; vistos.add(k); return true; }); /* nadie aparece dos veces */
+  const fijo=ANU_EQUIPO_[anio];
+  if(fijo){
+    const arma=(n,esF)=>{ const m=anuBuscar_(n); return m?{...m,nombre:n}:{id:"anu"+anio+"-"+anuKey_(n),nombre:n,...(esF?{fundadora:true}:{})}; };
+    return {f:unicos(fijo.f.map(n=>arma(n,true))),s:unicos(fijo.s.map(n=>arma(n,false)))};
+  }
+  const f=unicos(L.filter(anuIsF_));
+  const s=unicos([...L.filter(m=>esTrue(m.lider)&&!anuIsF_(m)),...L.filter(m=>esTrue(m.staff)&&!anuIsF_(m)&&!esTrue(m.lider))]);
+  return {f,s};
+}
 function anuAdminHTML_(){
-  const ok=m=>m.nombre&&String(m.nombre).trim()!=="", isF=m=>esTrue(m.fundadora)||esTrue(m.fundador);
-  const fund=DB.miembros.filter(m=>ok(m)&&isF(m));
-  const adm=DB.miembros.filter(m=>ok(m)&&esTrue(m.lider)&&!isF(m));
-  const stf=DB.miembros.filter(m=>ok(m)&&esTrue(m.staff)&&!isF(m)&&!esTrue(m.lider));
-  let i=0;
-  /* Cada grupo va en su sección con su rótulo; todos los miembros quedan siempre a la vista (sin recortes ni scroll interno) */
+  const {f,s}=anuEquipo_(anuP_().anio); let i=0;
+  /* Fundadores arriba y todo el staff junto en un solo grupo; todos quedan siempre a la vista (sin recortes ni scroll interno) */
   const sec=(cls,rot,rotulo,L)=>L.length?`<section class="adm-sec ${cls}"><h3 class="adm-lb"><span>${rotulo}</span></h3><div class="adm-row ${cls}">${L.map(m=>anuMiembro_(m,rot,i++)).join("")}</div></section>`:"";
-  return `<div class="det-h sm adm-h"><h2>Administración y Staff</h2></div><div class="adm">${sec("f","f","Fundación",fund)}${sec("a","a","Administración",adm)}${sec("s","s","Staff",stf)}</div>`;
+  return `<div class="det-h sm adm-h"><h2>Fundadores y Staff</h2></div><div class="adm">${sec("f","f","Fundadores",f)}${sec("s","s","Staff",s)}</div>`;
 }
 
-/* Fondo propio de la página 00 (Anuario/<año>/staff-v.webp para vertical y staff-h.webp para horizontal).
-   Solo se muestra en esa página; en los meses y la portada cada año conserva su fondo de siempre. */
-let _anuStaffSeq=0;
-function anuStaff_(){
-  const H=document.documentElement, p=anuP_(), seq=++_anuStaffSeq, el=$a("anuStaffBg");
-  const on=!!(el&&p&&p.admin&&anuS.v==="libro"&&anuS.key==="admin"&&!anuS.act);
-  if(!on){ H.removeAttribute("data-anu-adm"); return; }
-  const b=`Anuario/${p.anio}/staff-`, v=b+"v.webp", h=b+"h.webp";
-  /* ruta absoluta respecto a la página: una url() guardada en una variable CSS se resolvería relativa a styles/ */
-  const abs=u=>new URL(u,document.baseURI).href;
-  el.style.setProperty("--staff-v",`url("${abs(v)}")`); el.style.setProperty("--staff-h",`url("${abs(h)}")`);
-  /* se enciende cuando las imágenes ya están listas, así no aparece el color liso antes que la imagen */
-  Promise.race([Promise.all([anuPre_(v),anuPre_(h)]),anuWait_(1500)]).then(r=>{
-    if(seq!==_anuStaffSeq) return; if(Array.isArray(r)&&!r.some(Boolean)) return; H.setAttribute("data-anu-adm","1"); });
+/* Fondo propio de la tarjeta de la página 00 (Anuario/<año>/staff-v.webp y staff-h.webp). Es solo el fondo de ESA tarjeta:
+   el resto del Anuario conserva su fondo de siempre. La ruta va absoluta porque una url() guardada en una variable CSS
+   se resolvería relativa a styles/ y no a la página. */
+function anuAdmBg_(d,anio){
+  if(!anio){ d.style.removeProperty("--adm-v"); d.style.removeProperty("--adm-h"); return; }
+  const abs=u=>`url("${new URL(u,document.baseURI).href}")`;
+  d.style.setProperty("--adm-v",abs(`Anuario/${anio}/staff-v.webp`)); d.style.setProperty("--adm-h",abs(`Anuario/${anio}/staff-h.webp`));
 }
 
 /* ---------- Actividades del anuario (datos reales: DB.anuario / DB.actividades / DB.entregas) ---------- */
@@ -440,7 +449,7 @@ function anuIdx_(){
   el.querySelectorAll("[data-k]").forEach(b=>b.onclick=()=>anuPick_(b.dataset.k));
 }
 function anuDet_(){
-  const p=anuP_(), d=$a("anuDet"); d.className=`anu-detail t-${p.tema}${anuS.key==="admin"&&!anuS.act?" adm-pg":""}`; let h="";
+  const p=anuP_(), d=$a("anuDet"), adm=anuS.key==="admin"&&!anuS.act; d.className=`anu-detail t-${p.tema}${adm?" adm-pg":""}`; anuAdmBg_(d,adm?p.anio:0); let h="";
   if(anuS.act) h=anuActHTML_(anuS.act);
   else if(anuS.key==="admin") h=anuAdminHTML_();
   else if(anuS.key){ const [y,m]=anuS.key.split("-").map(Number), c=p.cuenta.find(c=>c.m===m), n=c.items.length;
@@ -466,7 +475,7 @@ function anuView_(){
   $a("anuWrap").dataset.v=anuS.v; $a("anuBook").dataset.s=anuS.key?"det":"idx";
   $a("anuBackT").textContent=anuS.act?MESES_LARGO[+anuS.key.split("-")[1]]:inDet?"Índice":"Portada";
   $a("anuBarT").textContent=anuS.act?"Actividad":inDet?(anuS.key==="admin"?"Administración":MESES_LARGO[+anuS.key.split("-")[1]]):"Anuario "+p.titulo;
-  anuIdx_(); anuDet_(); anuStaff_();
+  anuIdx_(); anuDet_();
 }
 /* El año de la portada: si el tema del año trae «anioImg» se muestra esa imagen (la letra exacta de ese año); si no, texto con la letra del tema */
 const _anuTV={};
@@ -558,7 +567,6 @@ function anuEscena_(){
   const sm=document.createElement("div"); sm.id="anuSceneM"; sm.setAttribute("aria-hidden","true");
   sm.innerHTML='<div class="sm-dots"></div><div class="sm-in"><img class="sm-p sm-morado" alt=""><img class="sm-p sm-azul" alt=""><img class="sm-p sm-verde" alt=""></div>';
   document.body.appendChild(sm);
-  const sf=document.createElement("div"); sf.id="anuStaffBg"; sf.setAttribute("aria-hidden","true"); document.body.appendChild(sf);
 }
 /* Fondo de los MESES por piezas: papel + puntos + formas ancladas a su borde (tema.json → "mes") */
 function anuMes_(t){
