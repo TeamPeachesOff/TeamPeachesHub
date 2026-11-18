@@ -138,9 +138,30 @@ const anuKey_=v=>String(v||"").replace(/@/g,"").normalize("NFD").replace(/[\u030
 const anuMem_=nm=>{ const k=anuKey_(nm); if(!k) return null; const L=DB.miembros||[];
   return L.find(m=>anuKey_(m.nombre)===k)||L.find(m=>["usuarioSmule","usuarioBandlab","usuarioDiscord"].some(f=>anuKey_(m[f])===k))
     ||(k.length>=4?(()=>{ const c=L.filter(m=>{ const n=anuKey_(m.nombre); return n.length>=4&&(n.includes(k)||k.includes(n)); }); return c.length===1?c[0]:null; })():null)||null; };
-function anuRowW_(w){
-  const m=anuMem_(w.nombre), nm=String(w.nombre||"").replace(/@/g,"");
+function anuRowW_(w,mm){
+  const m=mm||anuMem_(w.nombre), nm=String(w.nombre||"").replace(/@/g,"");
   return `<div class="act-row"><button type="button" class="act-who"${m?` data-miembro="${escAttr(m.id)}"`:""}><img class="anu-fb" src="${escAttr(anuAv_(m))}" alt=""><span><b>${escHtml(nm||"Miembro")}</b><small>${escHtml(w.detalle||"")}</small></span></button>${w.link?`<a class="act-play" href="${escAttr(w.link)}" target="_blank" rel="noopener" aria-label="Escuchar">▶</a>`:""}</div>`;
+}
+/* Actividades a las que pertenece una tarjeta: se deducen de sus ganadores/menciones (la entrega que coincide en persona y canción)
+   y, además, de las actividades que se llaman igual que la tarjeta. Así salen aunque la tarjeta todavía no tenga ganadores. */
+const anuLinea_=(n,d)=>anuKey_(n)+"|"+String(d||"").trim().toLowerCase();
+function anuActsDe_(e,lineas){
+  const ids=new Set(), ent=DB.entregas||[];
+  lineas.forEach(w=>{ const k=anuLinea_(w.nombre,w.detalle); const x=ent.find(r=>anuLinea_(r.nombreUsuario,r.detalleEntrega)===k); if(x) ids.add(String(x.idActividad)); });
+  const tk=anuKey_(e.titulo); if(tk) (DB.actividades||[]).forEach(a=>{ if(anuKey_(a.titulo)===tk) ids.add(String(a.id)); });
+  return (DB.actividades||[]).filter(a=>ids.has(String(a.id))).sort((a,b)=>(anuFecha_(a.fechaInicio)-anuFecha_(b.fechaInicio))||0);
+}
+/* «Actividades entregadas»: TODAS las entregas de la(s) actividad(es) de la tarjeta, menos las que ya salen arriba (mejores y menciones).
+   Con más de una actividad se separan por actividad; con una sola no hace falta encabezado. */
+function anuEntregasHTML_(e,lineas){
+  const acts=anuActsDe_(e,lineas); if(!acts.length) return "";
+  const ya=new Set(lineas.map(w=>anuLinea_(w.nombre,w.detalle)));
+  const grupos=acts.map(a=>({a,es:(DB.entregas||[]).filter(r=>String(r.idActividad)===String(a.id)&&!ya.has(anuLinea_(r.nombreUsuario,r.detalleEntrega)))})).filter(g=>g.es.length);
+  if(!grupos.length) return "";
+  const total=grupos.reduce((n,g)=>n+g.es.length,0), varias=acts.length>1;
+  const fila=r=>{ let m=null; try{ m=(typeof miembrosDeEntrega_==="function"&&miembrosDeEntrega_(r)||[])[0]||null; }catch(_){} return anuRowW_({nombre:r.nombreUsuario,detalle:r.detalleEntrega,link:r.linkGrabacion},m); };
+  return `<h3 class="act-sec">📋 Actividades entregadas <small class="act-cnt">${total}</small></h3>`+grupos.map(g=>{ const x=TIPO_[g.a.categoria]||{t:"Especial",e:"✨"};
+    return `${varias?`<h4 class="act-sub"><span>${escHtml(g.a.titulo||"Actividad")}</span><small>${x.e} ${x.t} · ${g.es.length}</small></h4>`:""}<div class="act-list">${g.es.map(fila).join("")}</div>`; }).join("");
 }
 function anuActHTML_(id){
   const e=(DB.anuario||[]).find(x=>String(x.id)===String(id)); if(!e) return "";
@@ -151,7 +172,8 @@ function anuActHTML_(id){
     <h3 class="act-sec">👑 Lo mejor de la actividad</h3>
     ${best.length?`<div class="act-best">${best.map(x=>{ const m=anuMem_(x.w.nombre), nm=String(x.w.nombre||"").replace(/@/g,"");
       return `<div class="bst"><span class="bst-l">${x.l}</span><button type="button" class="bst-av"${m?` data-miembro="${escAttr(m.id)}"`:""} aria-label="${escAttr(nm)}">${ANU_CROWN}<img class="anu-fb" src="${escAttr(anuAv_(m))}" alt=""></button><b>${escHtml(nm||"Miembro")}</b><small>${escHtml(x.w.detalle||"")}</small>${x.w.link?`<a class="md-play" href="${escAttr(x.w.link)}" target="_blank" rel="noopener">Ver presentación</a>`:""}</div>`; }).join("")}</div>`:`<p class="md-empty" style="text-align:center">Todavía sin ganadores asignados.</p>`}
-    ${mens.length?`<h3 class="act-sec">🎖️ Menciones honoríficas</h3><div class="act-list">${mens.map(anuRowW_).join("")}</div>`:""}
+    ${mens.length?`<h3 class="act-sec">🎖️ Menciones honoríficas</h3><div class="act-list">${mens.map(w=>anuRowW_(w)).join("")}</div>`:""}
+    ${anuEntregasHTML_(e,[...best.map(x=>x.w),...mens])}
     <div class="act-staff"><button type="button" class="shr" data-share-anuario="${escAttr(e.id)}">${ANU_SHARE_ICON}<span>Compartir</span></button><button type="button" data-edit-anuario="${escAttr(e.id)}">✏️ Editar</button><button type="button" class="del" data-delete-anuario="${escAttr(e.id)}">🗑️ Borrar tarjeta</button></div></div>`;
 }
 function anuOpenAct_(id){ anuS.act=id; anuView_(); $a("anuDet").scrollTop=0; document.body.scrollTo({top:0}); }

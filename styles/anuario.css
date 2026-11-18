@@ -655,3 +655,9 @@ html.anu-x-hide #anuScene .sc-in,html.anu-x-hide #anuScene .sc-v,html.anu-x-hide
 #anuScene .sc-26{transition:opacity .85s ease;}
 html.anu-x-hide #anuScene .sc-26{opacity:0;transition:none;}
 @media (prefers-reduced-motion:reduce){.s26{animation:none !important;}}
+
+/* ---- «Actividades entregadas» (después de las menciones): mismo estilo, separadas por actividad cuando hay varias ---- */
+.act-cnt{display:inline-block;vertical-align:middle;margin-left:6px;padding:3px 10px;border-radius:999px;background:var(--ac2);color:var(--ac);font:800 13px/1.2 system-ui,sans-serif;}
+.act-sub{display:flex;align-items:baseline;justify-content:space-between;gap:10px;margin:18px 2px 8px;padding-bottom:6px;border-bottom:2px solid var(--ac2);color:var(--anu-ink,#2a1745);font-size:15.5px;font-weight:800;}
+.act-sub small{flex:none;font-size:12.5px;font-weight:700;color:var(--anu-mut,#6b5683);}
+.act-sub span{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
