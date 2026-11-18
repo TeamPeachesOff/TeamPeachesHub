@@ -8,18 +8,44 @@ function anuSongCardHTML_(s,cat,key,pick,done){
 }
 /* Guardado en segundo plano: las canciones que se mandan quedan en una cola (una a la vez, en orden, para que no se pisen)
    y mientras tanto se puede seguir añadiendo. _anuPend recuerda las que van en camino para marcarlas como «ya está». */
-const _anuPend=new Set(); let _anuCola=Promise.resolve();
+const _anuPend=new Map(); /* clave → cuántos envíos pendientes la incluyen */
+let _anuLotes=[], _anuCorriendo=false;
 const anuItemKey_=it=>String(it.nombreUsuario||"").trim()+"|"+String(it.detalle||"").trim();
+const anuPendMas_=(items,d)=>items.forEach(it=>{ const k=anuItemKey_(it), n=(_anuPend.get(k)||0)+d; if(n>0) _anuPend.set(k,n); else _anuPend.delete(k); });
 function anuEncolar_(items,anchorId,nombre){
-  items.forEach(it=>_anuPend.add(anuItemKey_(it)));
-  toast(`Guardando en segundo plano… puedes seguir añadiendo ⏳`);
-  _anuCola=_anuCola.then(async()=>{ let ok=false; try{ ok=await anuEnviar_(items,anchorId,nombre,"",true); }catch(_){ ok=false; }
-    items.forEach(it=>_anuPend.delete(anuItemKey_(it)));
-    if(ok) toast("Agregado al Anuario 👑"); });
+  anuPendMas_(items,1);
+  _anuLotes.push({items,anchorId,nombre:nombre||""});
+  toast(_anuCorriendo?`En cola (${_anuLotes.length}) — puedes seguir añadiendo ⏳`:`Guardando en segundo plano… puedes seguir añadiendo ⏳`);
+  if(!_anuCorriendo) anuProcesar_();
 }
-/* Líneas ya guardadas en el anuario, para avisar si una canción ya está */
-function anuYaSet_(){
-  const s=new Set(_anuPend); (DB.anuario||[]).forEach(r=>["ganadorCanto","ganadorDoblaje","mencionesHonorificas"].forEach(k=>parseWinnerLines(r[k]).forEach(w=>s.add(String(w.nombre).trim()+"|"+String(w.detalle).trim()))));
+/* Procesa los envíos UNO A LA VEZ. Si hay varios esperando para la MISMA actividad (la misma tarjeta), se juntan en un solo envío
+   (antes salían como varias peticiones seguidas a la misma tarjeta y podían pisarse). Si un envío falla, se vuelve a leer el anuario,
+   se reintenta SOLO lo que no quedó guardado y, si aun así no entra, el aviso se queda en pantalla varios segundos. */
+async function anuProcesar_(){
+  _anuCorriendo=true;
+  try{
+    while(_anuLotes.length){
+      const lote=_anuLotes.shift(), vistos=new Set(), items=[], aSoltar=[...lote.items];
+      const juntar=L=>L.forEach(it=>{ const k=anuItemKey_(it)+"|"+it.destino; if(!vistos.has(k)){ vistos.add(k); items.push(it); } });
+      juntar(lote.items); let nombre=lote.nombre;
+      for(let i=0;i<_anuLotes.length;){ const o=_anuLotes[i];
+        if(String(o.anchorId)===String(lote.anchorId)){ juntar(o.items); aSoltar.push(...o.items); if(o.nombre&&!nombre) nombre=o.nombre; _anuLotes.splice(i,1); } else i++; }
+      let ok=false; try{ ok=await anuEnviar_(items,lote.anchorId,nombre,"",true); }catch(_){ ok=false; }
+      let faltan=[];
+      if(!ok){
+        const ya=anuYaSet_(true); faltan=items.filter(it=>!ya.has(anuItemKey_(it))); /* anuEnviar_ ya recargó los datos */
+        if(!faltan.length) ok=true;
+        else{ toast("Reintentando guardar… ⏳"); try{ ok=await anuEnviar_(faltan,lote.anchorId,nombre,"",true); }catch(_){ ok=false; } if(ok) faltan=[]; }
+      }
+      anuPendMas_(aSoltar,-1);
+      if(ok) toast(_anuLotes.length?"Agregado 👑 · guardando el resto…":"Agregado al Anuario 👑");
+      else toast(`⚠️ No se guardaron ${faltan.length} canción(es): `+faltan.slice(0,3).map(it=>String(it.detalle||it.nombreUsuario||"").trim()||"entrega").join(", ")+(faltan.length>3?"…":"")+". Revisa tu conexión y vuelve a añadirlas.",8000);
+    }
+  } finally{ _anuCorriendo=false; }
+}
+/* Líneas ya guardadas en el anuario, para avisar si una canción ya está (sinPend=true: solo lo que ya está guardado de verdad) */
+function anuYaSet_(sinPend){
+  const s=new Set(sinPend?[]:_anuPend.keys()); (DB.anuario||[]).forEach(r=>["ganadorCanto","ganadorDoblaje","mencionesHonorificas"].forEach(k=>parseWinnerLines(r[k]).forEach(w=>s.add(String(w.nombre).trim()+"|"+String(w.detalle).trim()))));
   return s;
 }
 /* Agrega una o varias canciones en UNA sola tarjeta (la de la primera actividad) y, si hace falta, le pone el nombre elegido */
@@ -221,9 +247,10 @@ function anuAgregar_(target){
   if(target&&target.fecha){ const d=anuFecha_(target.fecha); if(!isNaN(d)){ y=d.getFullYear(); m=d.getMonth(); } }
   const sel=[], picks={}; let paso="acts", nombre="", tocado=false;
   const dm=f=>{ const d=anuFecha_(f); return isNaN(d)?"?":d.getDate()+" "+MESES_LARGO[d.getMonth()].slice(0,3).toLowerCase(); };
-  const enMes=a=>[a.fechaInicio,a.fechaFin].some(f=>{ const d=anuFecha_(f); return !isNaN(d)&&d.getFullYear()===y&&d.getMonth()===m; });
+  const enMes=a=>{ const d=anuFecha_(a.fechaInicio); return !isNaN(d)&&d.getFullYear()===y&&d.getMonth()===m; }; /* solo cuenta la fecha de ENVÍO; la de entrega (fechaFin) se ignora */
   const entregasDe=a=>(DB.entregas||[]).filter(e=>String(e.idActividad)===String(a.id));
   const nSel=()=>Object.keys(picks).length;
+  const eKey=(a,e,i)=>a.id+"|"+((e&&e.id!=null&&String(e.id)!=="")?e.id:"i"+i);
   const drawActs=()=>{
     const enAnu=new Set((DB.anuario||[]).map(r=>String(r.id)));
     const L=(DB.actividades||[]).filter(enMes).sort((a,c)=>anuFecha_(a.fechaInicio)-anuFecha_(c.fechaInicio)||rankCategoria(a.categoria)-rankCategoria(c.categoria));
@@ -231,7 +258,7 @@ function anuAgregar_(target){
       <div class="md-nav"><button type="button" data-nav="-1" aria-label="Mes anterior">${CH_L}</button><b>${MESES_LARGO[m]} ${y}</b><button type="button" data-nav="1" aria-label="Mes siguiente">${CH_R}</button></div>
       <p class="md-hint">Toca una o varias actividades; después eliges sus canciones.</p>
       <div class="md-list">${L.length?L.map((a,i)=>{ const x=TIPO_[a.categoria]||{t:"Especial",e:"✨"};
-        return `<button type="button" class="md-opt${sel.some(s=>String(s.id)===String(a.id))?" sel":""}" data-a="${i}" aria-pressed="${sel.some(s=>String(s.id)===String(a.id))}">${a.imagenUrl?`<img src="${escAttr(a.imagenUrl)}" alt="">`:""}<span><b>${escHtml(a.titulo||"")}</b><small>${x.e} ${x.t} · ${dm(a.fechaInicio)} → ${dm(a.fechaFin)}${enAnu.has(String(a.id))?" · ya está en el anuario":""}</small></span></button>`; }).join(""):`<p class="md-empty">No hay actividades con fecha en este mes.</p>`}</div>
+        return `<button type="button" class="md-opt${sel.some(s=>String(s.id)===String(a.id))?" sel":""}" data-a="${i}" aria-pressed="${sel.some(s=>String(s.id)===String(a.id))}">${a.imagenUrl?`<img src="${escAttr(a.imagenUrl)}" alt="">`:""}<span><b>${escHtml(a.titulo||"")}</b><small>${x.e} ${x.t} · enviada ${dm(a.fechaInicio)}${enAnu.has(String(a.id))?" · ya está en el anuario":""}</small></span></button>`; }).join(""):`<p class="md-empty">No hay actividades enviadas en este mes.</p>`}</div>
       <div class="md-acts"><button type="button" class="md-sec" data-close>Cerrar</button><button type="button" class="md-pri" id="sgNext" aria-disabled="${sel.length?"false":"true"}">Continuar${sel.length?` (${sel.length})`:""}</button></div></div>`);
     if(target) b.querySelectorAll("[data-close]").forEach(x=>{ x.textContent="← Volver"; x.onclick=target.volver; });
     b.querySelectorAll("[data-nav]").forEach(x=>x.onclick=()=>{ m+=+x.dataset.nav; if(m<0){m=11;y--;} if(m>11){m=0;y++;} drawActs(); });
@@ -247,7 +274,7 @@ function anuAgregar_(target){
     const b=anuModal_(`<div class="md-body"><button type="button" class="md-back" id="mdBack">← Actividades de ${MESES_LARGO[m]}</button><h3 class="md-t">Elige las canciones</h3>
       ${target?`<p class="md-hint">Se agregarán a la tarjeta «${escHtml(target.titulo||"")}».</p>`:`<label class="sg-name-l" for="sgName">Nombre de la tarjeta en el anuario</label><input class="sg-name" id="sgName" type="text" maxlength="120" value="${escAttr(nombre)}" placeholder="${escAttr(sel[0].titulo||"")}">`}
       ${sel.map(a=>{ const es=entregasDe(a), x=TIPO_[a.categoria]||{t:"Especial",e:"✨"};
-        return `<section class="sg-grp"><h4 class="sg-gt">${a.imagenUrl?`<img src="${escAttr(a.imagenUrl)}" alt="">`:""}<span>${escHtml(a.titulo||"")}<small>${x.e} ${x.t}</small></span></h4>${es.length?es.map((e,i)=>{ const key=a.id+"|"+i;
+        return `<section class="sg-grp"><h4 class="sg-gt">${a.imagenUrl?`<img src="${escAttr(a.imagenUrl)}" alt="">`:""}<span>${escHtml(a.titulo||"")}<small>${x.e} ${x.t}</small></span></h4>${es.length?es.map((e,i)=>{ const key=eKey(a,e,i);
           return anuSongCardHTML_({nombreUsuario:e.nombreUsuario,detalle:e.detalleEntrega},a.categoria,key,picks[key]||"",ya.has(String(e.nombreUsuario||"").trim()+"|"+String(e.detalleEntrega||"").trim())); }).join(""):`<p class="md-empty">Esta actividad todavía no tiene entregas.</p>`}</section>`; }).join("")}
       <div class="sg-bar"><button type="button" class="md-sec" data-close>Cerrar</button><button type="button" class="md-pri" id="sgGo" aria-disabled="true">Añadir al anuario</button></div></div>`);
     const upd=()=>{ const n=nSel(), g=$a("sgGo"); g.setAttribute("aria-disabled",String(!n)); g.textContent=n?`Añadir al anuario (${n})`:"Añadir al anuario"; };
@@ -262,7 +289,7 @@ function anuAgregar_(target){
     $a("sgGo").onclick=async()=>{
       if(!nSel()){ toast("Elige «Mejor» o «Mención» en al menos una canción"); return; }
       if(b.dataset.busy==="1") return;
-      const items=[]; sel.forEach(a=>entregasDe(a).forEach((e,i)=>{ const p=picks[a.id+"|"+i]; if(!p) return;
+      const items=[]; sel.forEach(a=>entregasDe(a).forEach((e,i)=>{ const p=picks[eKey(a,e,i)]; if(!p) return;
         items.push({destino:p==="mencion"?"mencion":(a.categoria==="doblaje"?"doblaje":"cancion"),nombreUsuario:e.nombreUsuario||"",detalle:e.detalleEntrega||"",link:e.linkGrabacion||""}); }));
       if(!items.length) return;
       if(!target){ /* en segundo plano: se guarda solo y la ventana vuelve a las actividades del mes para seguir añadiendo */
