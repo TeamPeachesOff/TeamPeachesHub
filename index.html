@@ -296,7 +296,33 @@
   }
   /* ===== FIN: TELÉFONO VERTICAL SIN MARCO ===== */
 
-  #addActBtn{display:block;width:100%;margin-bottom:14px;padding:12px;border-radius:14px;background:linear-gradient(90deg,var(--peach-2),#ffffff);color:#3d1f2a;font-weight:800;font-size:15px;}
+  /* Fila de botones de Staff sobre el feed: "Añadir Actividad" + "Agendar Stream" lado a lado (mitad y mitad).
+     Si solo hay uno visible ocupa todo el ancho; si ninguno (no es Staff), la fila no ocupa espacio. */
+  .add-act-row{display:flex;gap:10px;align-items:stretch;}
+  #addActBtn, #agendarStreamBtn{display:block;flex:1 1 0;min-width:0;margin-bottom:14px;padding:12px 8px;border-radius:14px;font-weight:800;font-size:clamp(13px,3.7vw,15px);line-height:1.2;}
+  #addActBtn{background:linear-gradient(90deg,var(--peach-2),#ffffff);color:#3d1f2a;}
+  #agendarStreamBtn{background:linear-gradient(90deg,#6a3d8f,#a45fc7);color:#fff;}
+
+  /* "Próximo stream": línea discreta bajo el buscador, visible para todos mientras haya un stream agendado. */
+  .proximo-stream{display:flex;align-items:center;justify-content:center;gap:7px;width:100%;margin:-2px 0 12px;padding:3px 8px;background:none;color:var(--text-dim);font-size:12.5px;font-weight:600;line-height:1.3;text-align:center;}
+  .proximo-stream b{color:var(--peach-1);font-weight:700;}
+  .proximo-stream .ps-punto{width:6px;height:6px;border-radius:50%;background:var(--peach-2);flex:none;box-shadow:0 0 6px rgba(239,8,112,0.7);}
+  .stream-info-fecha{font-weight:800;font-size:15px;color:var(--text);}
+  .stream-info-fecha::first-letter{text-transform:uppercase;}
+  .stream-info-tz{font-size:12px;color:var(--text-dim);opacity:0.8;margin:2px 0 14px;}
+  .stream-info-label{font-size:12.5px;font-weight:700;color:var(--peach-2);margin:0 0 8px;}
+  /* Lista de actividades (selector de Staff y vista de lectura): una fila por actividad. */
+  .stream-lista{display:flex;flex-direction:column;gap:6px;max-height:46vh;overflow-y:auto;-webkit-overflow-scrolling:touch;padding:2px;}
+  .stream-item{display:flex;align-items:center;gap:10px;padding:8px 10px;border-radius:12px;background:var(--card-bg-2);border:1px solid rgba(255,255,255,0.08);color:var(--text);cursor:pointer;text-align:left;}
+  .stream-item.sel{border-color:rgba(239,8,112,0.6);background:rgba(239,8,112,0.14);}
+  .stream-item.solo-lectura{cursor:default;}
+  .stream-item input[type=checkbox]{width:18px;height:18px;flex:none;accent-color:var(--peach-2);margin:0;}
+  .stream-item img{width:38px;height:38px;border-radius:8px;object-fit:cover;flex:none;background:var(--card-bg);}
+  .stream-item-txt{min-width:0;display:flex;flex-direction:column;gap:1px;}
+  .stream-item-tit{font-weight:700;font-size:13.5px;overflow:hidden;text-overflow:ellipsis;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;}
+  .stream-item-meta{font-size:11.5px;color:var(--text-dim);}
+  .stream-sel-head{display:flex;justify-content:space-between;align-items:baseline;gap:8px;margin:4px 0 8px;font-size:12.5px;font-weight:600;color:var(--text-dim);}
+  .stream-sel-head small{color:var(--peach-1);font-weight:700;}
 
   .filter-pills{display:flex;gap:8px;margin-bottom:16px;}
   .pill-toggle{flex:1;padding:9px;border-radius:999px;background:var(--card-bg-2);color:var(--text-dim);font-weight:700;font-size:13px;text-align:center;transition:background .15s,color .15s;}
@@ -888,7 +914,10 @@
 
 <main>
   <section id="viewActividades">
-    <button id="addActBtn" class="hidden">(+) Añadir Actividad</button>
+    <div class="add-act-row">
+      <button id="addActBtn" class="hidden">(+) Añadir Actividad</button>
+      <button id="agendarStreamBtn" class="hidden" type="button">📺 Agendar Stream</button>
+    </div>
     <div id="modulosBar"></div>
     <a class="hidden pill-toggle regalito-btn" id="regalitoBtn" target="_blank" rel="noopener" href="https://forms.gle/FgSeqD33wE1R8Y8r6">🎁 Enviar regalito</a>
     <div class="filter-pills">
@@ -910,6 +939,8 @@
       <button type="button" class="search-field-btn on" data-field="fecha">Fecha</button>
     </div>
     <div id="searchResultsInfo" class="search-results-info hidden"></div>
+    <!-- "Próximo stream": se llena/oculta solo desde renderProximoStream() (ver "STREAM AGENDADO" en el JS). -->
+    <button type="button" id="proximoStream" class="proximo-stream hidden"></button>
     <div id="diasSinWrap"></div>
     <div id="actividadesFeed"></div>
     <div class="assign-import-row">
@@ -1058,6 +1089,32 @@
         <button type="submit" class="btn-small btn-primary">Guardar Cambios ✨</button>
       </div>
     </form>
+  </div>
+</div>
+
+<!-- Agendar Stream (Staff): UN solo stream a la vez, con la fecha/hora y 1 o varias actividades del año actual
+     (de la más nueva a la más vieja). Lo llena abrirStreamAgendaModal() en el JS. -->
+<div class="modal-overlay" id="streamAgendaModal">
+  <div class="modal-box"><button class="modal-close" data-close="streamAgendaModal">✕</button>
+    <h3>Panel de Staff: Agendar Stream</h3>
+    <form id="streamAgendaForm" autocomplete="off">
+      <div class="form-group"><label>Fecha y hora del stream (hora GMT-6)</label><input type="datetime-local" id="sa_inicio" required></div>
+      <div class="stream-sel-head"><span>Actividades a presentar</span><small id="sa_contador"></small></div>
+      <div class="stream-lista" id="sa_lista"></div>
+      <div class="modal-actions">
+        <button type="button" class="btn-small btn-danger" id="sa_quitarBtn">Quitar</button>
+        <button type="button" class="btn-small" data-close="streamAgendaModal">Cancelar</button>
+        <button type="submit" class="btn-small btn-primary">Guardar ✨</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- Próximo stream (lectura, para todos): fecha en la hora de quien mira + actividades que se presentan. -->
+<div class="modal-overlay" id="streamInfoModal">
+  <div class="modal-box"><button class="modal-close" data-close="streamInfoModal">✕</button>
+    <h3>📺 Próximo stream</h3>
+    <div id="streamInfoBody"></div>
   </div>
 </div>
 
@@ -2710,6 +2767,7 @@ function aplicarDatosCargados_(datos, esCache, sinRepintar){
   aplicarVisibilidadBuzon();
   aplicarVisibilidadMundo();
   renderDiasSin();
+  renderProximoStream();
   // Mismos datos que ya están pintados y mismas credenciales: no hace falta repintar (se ve idéntico).
   if(sinRepintar && estadoAntes_[0]===sessionToken && estadoAntes_[1]===memberPin && estadoAntes_[2]===staffPin) return;
   renderTodoPreservandoScroll_();
@@ -2723,7 +2781,7 @@ function aplicarUIRol_(nivelUI){
   const dS = esStaff ? "flex" : "none", dM = (esMiembro || esStaff) ? "flex" : "none"; // Staff incluye Miembro
   if(bS.style.display !== dS) bS.style.display = dS;
   if(bM.style.display !== dM) bM.style.display = dM;
-  ["addActBtn","assignImagesBtn","importEntregasBtn"].forEach(id=>document.getElementById(id).classList.toggle("hidden", !esStaff));
+  ["addActBtn","agendarStreamBtn","assignImagesBtn","importEntregasBtn"].forEach(id=>document.getElementById(id).classList.toggle("hidden", !esStaff));
   actualizarVisibilidadBackToTop();
 }
 // Rol "optimista" a partir de lo guardado en este dispositivo (solo para mostrar la UI al instante; el servidor confirma después).
@@ -5130,7 +5188,7 @@ document.getElementById("confirmDialog").addEventListener("click", e=>{
 /* ---------- modales genéricos ---------- */
 // Estos modales tienen formulario real (se puede perder info si se cierran sin querer):
 // no se cierran tocando afuera, y avisan si hay cambios sin guardar al presionar la X.
-const FORM_MODALS=["diasSinModal","memberEditModal","activityFormModal","entregaFormModal","anuarioModal"];
+const FORM_MODALS=["diasSinModal","streamAgendaModal","memberEditModal","activityFormModal","entregaFormModal","anuarioModal"];
 let modalSnapshots={};
 function serializeForm(form){
   const parts=[];
@@ -6779,6 +6837,7 @@ async function manejarRespuestaGoogle(response){
     document.getElementById("memberStatusBadge").style.display="flex"; // Staff incluye Miembro
     actualizarVisibilidadBackToTop();
     document.getElementById("addActBtn").classList.remove("hidden");
+    document.getElementById("agendarStreamBtn").classList.remove("hidden");
     document.getElementById("assignImagesBtn").classList.remove("hidden");
     document.getElementById("importEntregasBtn").classList.remove("hidden");
     switchTab("actividades");
@@ -6809,7 +6868,7 @@ async function cerrarSesionActual(mensaje, cual){
     localStorage.removeItem("tph_session_token"); localStorage.removeItem("tph_session_rol");
     enlacesStaff = null; // se borran de memoria: sin sesión activa, no deben quedar accesibles ni un momento más
     document.getElementById("staffStatusBadge").style.display="none";
-    ["addActBtn","assignImagesBtn","importEntregasBtn","memberToolsRow1","memberToolsRow2","memberToolsRow3","memberToolsRow4"].forEach(id=>document.getElementById(id).classList.add("hidden"));
+    ["addActBtn","agendarStreamBtn","assignImagesBtn","importEntregasBtn","memberToolsRow1","memberToolsRow2","memberToolsRow3","memberToolsRow4"].forEach(id=>document.getElementById(id).classList.add("hidden"));
     // Sin clave de Miembro guardada no queda ningún rol: se oculta también esa insignia.
     if(!memberPin) document.getElementById("memberStatusBadge").style.display="none";
     if (window.google && google.accounts && google.accounts.id) google.accounts.id.disableAutoSelect();
@@ -7009,6 +7068,129 @@ document.getElementById("ds_quitarBtn").onclick=async()=>{
   if(await confirmarAccion("¿Quitar el contador \"Días sin…\"?")) guardarDiasSin_(null);
 };
 document.addEventListener("visibilitychange",()=>{ if(!document.hidden) renderDiasSin(); });
+
+// ============ STREAM AGENDADO ("Próximo stream") ============
+// UN solo stream a la vez: {inicio:"YYYY-MM-DDTHH:mm" (hora GMT-6), actividades:[id, id, ...]}.
+// No confundir con el stream opcional de cada actividad (streamNombre/Fecha/Hora): este agrupa varias actividades en un solo directo.
+// Misma mecánica que "Días sin…": fuente compartida DB.streamAgenda (si el backend la manda; {} = sin stream) y respaldo por
+// dispositivo en localStorage. Guardar intenta apiPost({action:"guardarStreamAgenda",config}); si Code.gs aún no la conoce,
+// queda solo en este dispositivo. Pasadas 4 h del inicio (misma duración por defecto que streamBlockHTML) deja de mostrarse sola.
+const STREAM_DURACION_MS = 4*60*60*1000;
+function streamInicioMs_(c){ const t=Date.parse(String(c.inicio).slice(0,16)+":00-06:00"); return isNaN(t)?null:t; }
+function getStreamAgenda_(){
+  let c=null;
+  if(DB && DB.streamAgenda!==undefined){ c=DB.streamAgenda; }
+  else { try{ c=JSON.parse(localStorage.getItem("tph_streamagenda")||"null"); }catch(e){} }
+  if(typeof c==="string"){ try{ c=JSON.parse(c); }catch(e){ c=null; } } // por si el backend lo guardó como texto
+  if(!c || !c.inicio) return null;
+  const ini=streamInicioMs_(c);
+  if(ini===null || Date.now()>ini+STREAM_DURACION_MS) return null;
+  return c;
+}
+// "hoy, 8:00 PM" / "mañana, 8:00 PM" / "sábado, 22 de noviembre, 8:00 PM" (siempre en la hora de quien mira, como streamBlockHTML).
+function streamEtiquetaFecha_(d){
+  const hoy=new Date(); hoy.setHours(0,0,0,0);
+  const dif=Math.round((new Date(d.getFullYear(),d.getMonth(),d.getDate())-hoy)/86400000);
+  let f;
+  if(dif===0) f="hoy"; else if(dif===1) f="mañana";
+  else { try{ f=d.toLocaleDateString("es-ES",{weekday:"long",day:"numeric",month:"long"}); }catch(e){ f=d.toDateString(); } }
+  return f+", "+fmt12Hora(d);
+}
+let _proximoStreamTxt="";
+function renderProximoStream(){
+  const el=document.getElementById("proximoStream"); if(!el) return;
+  const c=getStreamAgenda_();
+  if(!c){ el.classList.add("hidden"); el.innerHTML=""; _proximoStreamTxt=""; return; }
+  const txt=streamEtiquetaFecha_(new Date(streamInicioMs_(c)));
+  if(txt!==_proximoStreamTxt){
+    el.innerHTML=`<span class="ps-punto"></span><span>Próximo stream · <b>${escHtml(txt)}</b></span>`;
+    _proximoStreamTxt=txt;
+  }
+  el.classList.remove("hidden");
+}
+// Actividades guardadas en el stream que todavía existen (si Staff borró una después, simplemente se omite).
+function streamActividadesDe_(c){
+  const por=new Map((DB.actividades||[]).map(a=>[String(a.id),a]));
+  return (Array.isArray(c.actividades)?c.actividades:[]).map(id=>por.get(String(id))).filter(Boolean)
+    .sort((a,b)=>compararFechaCantoFirst(a,b,"fechaInicio"));
+}
+function streamItemHTML_(a, modo, marcada){
+  const emo=a.categoria==="canto"?"🎤":a.categoria==="doblaje"?"🎙️":"";
+  const meta=[emo, fmtFecha(a.fechaInicio)].filter(Boolean).join(" ");
+  const cuerpo=`<img src="${escAttr(a.imagenUrl||LOGO_DEFAULT)}" alt="" loading="lazy" decoding="async" onerror="this.onerror=null;this.src='${LOGO_DEFAULT}'"><span class="stream-item-txt"><span class="stream-item-tit">${escHtml(a.titulo||"(sin título)")}</span><span class="stream-item-meta">${escHtml(meta)}</span></span>`;
+  if(modo==="leer") return `<div class="stream-item solo-lectura">${cuerpo}</div>`;
+  return `<label class="stream-item${marcada?" sel":""}"><input type="checkbox" id="sa_chk_${escAttr(a.id)}" value="${escAttr(a.id)}"${marcada?" checked":""}>${cuerpo}</label>`;
+}
+// Lectura (todos): toque en la línea "Próximo stream".
+function abrirStreamInfoModal(){
+  const c=getStreamAgenda_(); if(!c) return;
+  const d=new Date(streamInicioMs_(c));
+  let larga; try{ larga=d.toLocaleDateString("es-ES",{weekday:"long",day:"numeric",month:"long"}); }catch(e){ larga=d.toDateString(); }
+  const tz=Intl.DateTimeFormat().resolvedOptions().timeZone;
+  const acts=streamActividadesDe_(c);
+  document.getElementById("streamInfoBody").innerHTML=
+    `<div class="stream-info-fecha">${escHtml(larga)}, ${escHtml(fmt12Hora(d))}</div>
+     <div class="stream-info-tz">(convertido a tu zona horaria: ${escHtml(tz)})</div>
+     ${acts.length?`<div class="stream-info-label">Actividades a presentar (${acts.length})</div><div class="stream-lista">${acts.map(a=>streamItemHTML_(a,"leer")).join("")}</div>`:""}
+     ${nivel==="staff"?`<div class="card-actions" style="margin-top:14px;"><button type="button" class="btn-small btn-admin" id="streamInfoEditBtn">✏️ Editar</button></div>`:""}`;
+  const eb=document.getElementById("streamInfoEditBtn");
+  if(eb) eb.onclick=()=>{ closeModal("streamInfoModal"); abrirStreamAgendaModal(); };
+  openModal("streamInfoModal");
+}
+// Staff: actividades del AÑO ACTUAL de la más nueva a la más vieja (por fecha de envío). Las ya elegidas se conservan aunque sean de otro año.
+function streamListaCandidatas_(seleccion){
+  const anio=new Date().getFullYear();
+  return (DB.actividades||[]).filter(a=>{
+    const y=anioDeFecha(a.fechaInicio)||anioDeFecha(a.fechaFin);
+    return y===anio || seleccion.has(String(a.id));
+  }).sort((a,b)=>compararFechaCantoFirst(a,b,"fechaInicio"));
+}
+function saActualizarContador_(){
+  const n=document.querySelectorAll("#sa_lista input:checked").length;
+  document.getElementById("sa_contador").textContent=n?(n===1?"1 seleccionada":n+" seleccionadas"):"Elige al menos una";
+}
+function abrirStreamAgendaModal(){
+  const c=getStreamAgenda_();
+  const sel=new Set(c&&Array.isArray(c.actividades)?c.actividades.map(String):[]);
+  document.getElementById("sa_inicio").value=c?String(c.inicio).slice(0,16):"";
+  document.getElementById("sa_lista").innerHTML=streamListaCandidatas_(sel).map(a=>streamItemHTML_(a,"elegir",sel.has(String(a.id)))).join("")
+    || `<div class="empty-state">Todavía no hay actividades de este año.</div>`;
+  document.getElementById("sa_quitarBtn").style.display=c?"":"none";
+  saActualizarContador_();
+  openModal("streamAgendaModal");
+}
+async function guardarStreamAgenda_(cfg){
+  try{ if(cfg) localStorage.setItem("tph_streamagenda",JSON.stringify(cfg)); else localStorage.removeItem("tph_streamagenda"); }catch(e){}
+  DB.streamAgenda=cfg||{};
+  renderProximoStream();
+  closeModal("streamAgendaModal");
+  const r=await apiPost({action:"guardarStreamAgenda",config:cfg||{}},null,true);
+  toast(r&&r.ok?(cfg?"✅ Stream agendado":"✅ Stream quitado"):"⚠️ Guardado solo en este dispositivo (el backend aún no tiene guardarStreamAgenda)",3500);
+}
+document.getElementById("agendarStreamBtn").onclick=abrirStreamAgendaModal;
+document.getElementById("proximoStream").onclick=abrirStreamInfoModal;
+document.getElementById("sa_lista").addEventListener("change",e=>{
+  const i=e.target;
+  if(!i || i.type!=="checkbox") return;
+  i.closest(".stream-item").classList.toggle("sel",i.checked);
+  saActualizarContador_();
+});
+document.getElementById("streamAgendaForm").addEventListener("submit",e=>{
+  e.preventDefault();
+  const inicio=document.getElementById("sa_inicio").value;
+  if(!inicio){ toast("Falta la fecha y hora del stream"); return; }
+  const ms=streamInicioMs_({inicio});
+  if(ms===null || Date.now()>ms+STREAM_DURACION_MS){ toast("Esa fecha ya pasó: elige una futura"); return; }
+  const ids=[...document.querySelectorAll("#sa_lista input:checked")].map(i=>i.value);
+  if(!ids.length){ toast("Elige al menos una actividad"); return; }
+  guardarStreamAgenda_({inicio:inicio.slice(0,16),actividades:ids});
+});
+document.getElementById("sa_quitarBtn").onclick=async()=>{
+  if(await confirmarAccion("¿Quitar el stream agendado?")) guardarStreamAgenda_(null);
+};
+// Para que "hoy/mañana" y el fin del stream se actualicen sin recargar la página.
+setInterval(renderProximoStream,60000);
+document.addEventListener("visibilitychange",()=>{ if(!document.hidden) renderProximoStream(); });
 
 // ============ MIEMBROS: ORDENAR / CONTAR ============
 const ORDEN_OPCIONES=[
