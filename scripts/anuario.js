@@ -6,21 +6,32 @@ function anuSongCardHTML_(s,cat,key,pick,done){
   return `<div class="sg-card${pick?" on-"+pick:""}" data-key="${escAttr(key)}"><div><b>${escHtml(t||u||"Entrega")}</b>${t?`<small>${escHtml(u)}</small>`:""}${done?`<span class="sg-done">✓ ya está en el anuario</span>`:""}</div>
     <div class="sg-btns"><button type="button" data-k="mejor" class="${pick==="mejor"?"on":""}">${anuCatIc_(cat)} Mejor</button><button type="button" data-k="mencion" class="${pick==="mencion"?"on":""}">✨ Mención</button></div></div>`;
 }
+/* Guardado en segundo plano: las canciones que se mandan quedan en una cola (una a la vez, en orden, para que no se pisen)
+   y mientras tanto se puede seguir añadiendo. _anuPend recuerda las que van en camino para marcarlas como «ya está». */
+const _anuPend=new Set(); let _anuCola=Promise.resolve();
+const anuItemKey_=it=>String(it.nombreUsuario||"").trim()+"|"+String(it.detalle||"").trim();
+function anuEncolar_(items,anchorId,nombre){
+  items.forEach(it=>_anuPend.add(anuItemKey_(it)));
+  toast(`Guardando en segundo plano… puedes seguir añadiendo ⏳`);
+  _anuCola=_anuCola.then(async()=>{ let ok=false; try{ ok=await anuEnviar_(items,anchorId,nombre,"",true); }catch(_){ ok=false; }
+    items.forEach(it=>_anuPend.delete(anuItemKey_(it)));
+    if(ok) toast("Agregado al Anuario 👑"); });
+}
 /* Líneas ya guardadas en el anuario, para avisar si una canción ya está */
 function anuYaSet_(){
-  const s=new Set(); (DB.anuario||[]).forEach(r=>["ganadorCanto","ganadorDoblaje","mencionesHonorificas"].forEach(k=>parseWinnerLines(r[k]).forEach(w=>s.add(String(w.nombre).trim()+"|"+String(w.detalle).trim()))));
+  const s=new Set(_anuPend); (DB.anuario||[]).forEach(r=>["ganadorCanto","ganadorDoblaje","mencionesHonorificas"].forEach(k=>parseWinnerLines(r[k]).forEach(w=>s.add(String(w.nombre).trim()+"|"+String(w.detalle).trim()))));
   return s;
 }
 /* Agrega una o varias canciones en UNA sola tarjeta (la de la primera actividad) y, si hace falta, le pone el nombre elegido */
-async function anuEnviar_(items,anchorId,nombre,idAnuario){
+async function anuEnviar_(items,anchorId,nombre,idAnuario,silencioso){
   const nm=String(nombre||"").trim();
-  let r=await apiPost({action:"addToAnuarioLote",idActividad:anchorId,items,nombre:nm,idAnuario:idAnuario||""},items.length>1?`Guardando ${items.length} canciones en el Anuario...`:"Agregando al Anuario...");
+  let r=await apiPost({action:"addToAnuarioLote",idActividad:anchorId,items,nombre:nm,idAnuario:idAnuario||""},items.length>1?`Guardando ${items.length} canciones en el Anuario...`:"Agregando al Anuario...",silencioso);
   if(!r.ok&&/acci[oó]n|action|desconoc/i.test(String(r.error||""))){ // backend viejo sin «lote»: modo uno por uno
     for(let i=0;i<items.length;i++){ const it=items[i];
-      r=await apiPost({action:"addToAnuario",idActividad:anchorId,destino:it.destino,nombreUsuario:it.nombreUsuario,detalle:it.detalle,link:it.link},`Agregando al Anuario (${i+1}/${items.length})...`);
+      r=await apiPost({action:"addToAnuario",idActividad:anchorId,destino:it.destino,nombreUsuario:it.nombreUsuario,detalle:it.detalle,link:it.link},`Agregando al Anuario (${i+1}/${items.length})...`,silencioso);
       if(!r.ok) break; }
     if(r.ok&&nm){ await cargarDatos(); const row=(DB.anuario||[]).find(x=>String(x.id)===String(anchorId))||(DB.anuario||[])[(DB.anuario||[]).length-1];
-      if(row&&String(row.titulo||"").trim()!==nm){ const data=datosActividadParaGuardar(row,row.imagenUrl||""); data.titulo=nm; data.id=row.id; await apiPost({action:"editAnuario",data},"Guardando el nombre..."); } } }
+      if(row&&String(row.titulo||"").trim()!==nm){ const data=datosActividadParaGuardar(row,row.imagenUrl||""); data.titulo=nm; data.id=row.id; await apiPost({action:"editAnuario",data},"Guardando el nombre...",silencioso); } } }
   if(!r.ok){ toast("Error: "+(r.error||"")); await cargarDatos(); return false; }
   await cargarDatos();
   return true;
@@ -33,10 +44,9 @@ function abrirModalAnuario(idActividad,titulo,nombreUsuario,detalle,link){
   document.getElementById("anuarioModalInfo").innerHTML=`<span class="am-lbl">Actividad</span><span class="am-act">${escHtml(titulo)}</span><span class="am-help">Elige cómo entra esta entrega al Anuario</span>`;
   const box=document.getElementById("anuarioModalSong");
   box.innerHTML=anuSongCardHTML_({nombreUsuario,detalle},cat,"x","",anuYaSet_().has(String(nombreUsuario).trim()+"|"+String(detalle).trim()));
-  box.querySelectorAll("[data-k]").forEach(b=>b.onclick=async()=>{
-    box.querySelectorAll("[data-k]").forEach(x=>x.disabled=true);
-    const ok=await anuEnviar_([{destino:b.dataset.k==="mencion"?"mencion":(cat==="doblaje"?"doblaje":"cancion"),nombreUsuario,detalle,link}],idActividad,"");
-    if(ok){ toast("Agregado al Anuario 👑"); closeModal("anuarioModal"); } else box.querySelectorAll("[data-k]").forEach(x=>x.disabled=false);
+  box.querySelectorAll("[data-k]").forEach(b=>b.onclick=()=>{
+    anuEncolar_([{destino:b.dataset.k==="mencion"?"mencion":(cat==="doblaje"?"doblaje":"cancion"),nombreUsuario,detalle,link}],idActividad,""); /* en segundo plano: se cierra y se puede seguir */
+    closeModal("anuarioModal");
   });
   openModal("anuarioModal");
 }
@@ -255,9 +265,12 @@ function anuAgregar_(target){
       const items=[]; sel.forEach(a=>entregasDe(a).forEach((e,i)=>{ const p=picks[a.id+"|"+i]; if(!p) return;
         items.push({destino:p==="mencion"?"mencion":(a.categoria==="doblaje"?"doblaje":"cancion"),nombreUsuario:e.nombreUsuario||"",detalle:e.detalleEntrega||"",link:e.linkGrabacion||""}); }));
       if(!items.length) return;
+      if(!target){ /* en segundo plano: se guarda solo y la ventana vuelve a las actividades del mes para seguir añadiendo */
+        anuEncolar_(items,sel[0].id,tocado?nombre:"");
+        sel.length=0; Object.keys(picks).forEach(k=>delete picks[k]); nombre=""; tocado=false; paso="acts"; drawActs(); return; }
       b.dataset.busy="1"; b.querySelectorAll("button,input").forEach(x=>x.disabled=true);
-      const ok=await anuEnviar_(items,sel[0].id,(!target&&tocado)?nombre:"",target&&target.id);
-      if(ok){ toast("Agregado al Anuario 👑"); if(target) target.volver(); else mdHide_(); } else { b.dataset.busy="0"; b.querySelectorAll("button,input").forEach(x=>x.disabled=false); upd(); }
+      const ok=await anuEnviar_(items,sel[0].id,"",target.id);
+      if(ok){ toast("Agregado al Anuario 👑"); target.volver(); } else { b.dataset.busy="0"; b.querySelectorAll("button,input").forEach(x=>x.disabled=false); upd(); }
     };
     upd();
   };

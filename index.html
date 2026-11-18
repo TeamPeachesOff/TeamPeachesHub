@@ -470,7 +470,7 @@
 
 </style>
 <link rel="stylesheet" href="styles/anuario-fonts.css?v=1">
-<link rel="stylesheet" href="styles/anuario.css?v=2.146">
+<link rel="stylesheet" href="styles/anuario.css?v=2.147">
 <style>
 
   #searchMiembros{width:100%;padding:12px 14px;border-radius:12px;border:1px solid rgba(255,255,255,0.1);background:var(--card-bg-2);color:var(--text);font-size:14px;display:block;}
@@ -1569,7 +1569,7 @@
 </div>
 
 <script src="scripts/anuario-assets.js?v=1"></script>
-<script src="scripts/anuario.js?v=2.146"></script>
+<script src="scripts/anuario.js?v=2.147"></script>
 <script>
 // Si el navegador restaura esta página desde su caché de "atrás/adelante" (bfcache), el DOM puede
 // quedar congelado a mitad de una actualización (ej. justo cuando un innerHTML se estaba
@@ -1921,6 +1921,17 @@ function compararFechaCantoFirst(a,b,campo){
   const dp=rankParticipacion(a.participacion)-rankParticipacion(b.participacion);
   if(dp!==0) return dp;
   return rankCategoria(a.categoria)-rankCategoria(b.categoria);
+}
+// Actividad vigente = aún no finalizó (incluye «Últimos Días»); mismo criterio que la etiqueta de la tarjeta.
+function actividadVigente_(a){ return estadoActividad(a.fechaFin).clase!=="status-red"; }
+// Orden del feed principal: primero las vigentes y luego las finalizadas; dentro de cada grupo, de la más
+// reciente a la más vieja según la FECHA DE ENVÍO (fechaInicio), no la de entrega (fechaFin).
+function ordenarFeedActividades_(lista){
+  return lista.slice().sort((a,b)=>{
+    const va=actividadVigente_(a), vb=actividadVigente_(b);
+    if(va!==vb) return va?-1:1;
+    return compararFechaCantoFirst(a,b,"fechaInicio");
+  });
 }
 function parseWinnerLines(text){
   if(!text) return [];
@@ -3183,8 +3194,8 @@ function renderActividades(){
     });
     activas = principales;
   }
-  activas=activas.slice().sort((a,b)=>compararFechaCantoFirst(a,b,"fechaFin"));
-  parecidas=parecidas.slice().sort((a,b)=>compararFechaCantoFirst(a,b,"fechaFin"));
+  activas=ordenarFeedActividades_(activas);
+  parecidas=ordenarFeedActividades_(parecidas);
   const infoBusqueda = document.getElementById("searchResultsInfo");
   if(infoBusqueda){
     infoBusqueda.classList.toggle("hidden", !buscando);
@@ -3212,7 +3223,7 @@ function renderActividades(){
     aplicarResaltadoBusqueda_(feed, [...activas, ...parecidas].map(a=>({actividad:a, info:evaluacionesBusqueda.get(String(a.id))})), tokensBusqueda);
     return;
   }
-  // El feed va del más reciente al más viejo (compararFechaCantoFirst arriba). El año en curso se
+  // El feed pone primero las vigentes y luego va del más reciente al más viejo por fecha de envío (ordenarFeedActividades_). El año en curso se
   // renderiza siempre de una; las actividades de años anteriores NO se meten al DOM todavía —
   // solo se agrupan en memoria (actividadesPorAnioCache, son solo referencias a lo que ya estaba
   // en DB.actividades, prácticamente gratis) y se muestra un separador tocable por año. El HTML
@@ -3223,8 +3234,8 @@ function renderActividades(){
   const actuales = [];
   const porAnio = new Map();
   activas.forEach(a=>{
-    const anio = anioDeFecha(a.fechaFin);
-    if(!anio || anio===anioActual){ actuales.push(a); return; }
+    const anio = anioDeFecha(a.fechaInicio) || anioDeFecha(a.fechaFin); // el año sigue a la fecha de envío, igual que el orden
+    if(actividadVigente_(a) || !anio || anio===anioActual){ actuales.push(a); return; }
     if(!porAnio.has(anio)) porAnio.set(anio, []);
     porAnio.get(anio).push(a);
   });
