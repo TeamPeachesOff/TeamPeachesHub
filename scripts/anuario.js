@@ -540,6 +540,17 @@ function anuCapas_(t,w){
 const anuPre_=u=>new Promise(r=>{ const i=new Image(); i.onload=()=>r(true); i.onerror=()=>r(false); i.src=u; });
 const anuWait_=ms=>new Promise(r=>setTimeout(r,ms));
 let _anuThSeq=0, _anuThSwapT=0;
+/* Cambia el fondo del Anuario (con fundido). Estaba referenciada pero se había borrado en la reorganización v3.1 */
+async function anuFondo_(v,h,instant){
+  const css=anuBgCss_(v,h); if(anuS.bgCss===css||(!anuS.bgCss&&v===ANU_BG)) { anuS.bgCss=css; return; }
+  const st=$a("anuBgCss"), b1=$a("anuarioBg");
+  if(instant||anuReduce_()||!b1){ anuS.bgCss=css; if(st) st.textContent=css; return; }
+  await Promise.race([Promise.all([anuPre_(v),anuPre_(h)]),anuWait_(2500)]);
+  let b2=$a("anuarioBg2"); if(!b2){ b2=document.createElement("div"); b2.id="anuarioBg2"; b1.after(b2); }
+  b2.style.setProperty("--bgv",`url("${v}")`); b2.style.setProperty("--bgh",`url("${h}")`); void b2.offsetWidth; b2.classList.add("on");
+  anuS.bgCss=css;
+  setTimeout(()=>{ if(anuS.bgCss!==css) return; if(st) st.textContent=css; b2.style.transition="none"; b2.classList.remove("on"); void b2.offsetWidth; b2.style.transition=""; },950);
+}
 async function anuAplicarTema_(instant){
   const seq=++_anuThSeq, H=document.documentElement, w=$a("anuWrap"), c=$a("anuCover");
   clearTimeout(_anuThSwapT); H.classList.remove("anu-swapping"); if(c) c.classList.remove("sw");
