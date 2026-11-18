@@ -97,7 +97,25 @@ function anuAdminHTML_(){
   const adm=DB.miembros.filter(m=>ok(m)&&esTrue(m.lider)&&!isF(m));
   const stf=DB.miembros.filter(m=>ok(m)&&esTrue(m.staff)&&!isF(m)&&!esTrue(m.lider));
   let i=0;
-  return `<div class="det-h sm"><h2>Administración y Staff</h2></div><div class="adm">${fund.length?`<div class="adm-row f">${fund.map(m=>anuMiembro_(m,"f",i++)).join("")}</div>`:""}<div class="adm-row">${adm.map(m=>anuMiembro_(m,"a",i++)).join("")}${stf.map(m=>anuMiembro_(m,"s",i++)).join("")}</div></div>`;
+  /* Cada grupo va en su sección con su rótulo; todos los miembros quedan siempre a la vista (sin recortes ni scroll interno) */
+  const sec=(cls,rot,rotulo,L)=>L.length?`<section class="adm-sec ${cls}"><h3 class="adm-lb"><span>${rotulo}</span></h3><div class="adm-row ${cls}">${L.map(m=>anuMiembro_(m,rot,i++)).join("")}</div></section>`:"";
+  return `<div class="det-h sm adm-h"><h2>Administración y Staff</h2></div><div class="adm">${sec("f","f","Fundación",fund)}${sec("a","a","Administración",adm)}${sec("s","s","Staff",stf)}</div>`;
+}
+
+/* Fondo propio de la página 00 (Anuario/<año>/staff-v.webp para vertical y staff-h.webp para horizontal).
+   Solo se muestra en esa página; en los meses y la portada cada año conserva su fondo de siempre. */
+let _anuStaffSeq=0;
+function anuStaff_(){
+  const H=document.documentElement, p=anuP_(), seq=++_anuStaffSeq, el=$a("anuStaffBg");
+  const on=!!(el&&p&&p.admin&&anuS.v==="libro"&&anuS.key==="admin"&&!anuS.act);
+  if(!on){ H.removeAttribute("data-anu-adm"); return; }
+  const b=`Anuario/${p.anio}/staff-`, v=b+"v.webp", h=b+"h.webp";
+  /* ruta absoluta respecto a la página: una url() guardada en una variable CSS se resolvería relativa a styles/ */
+  const abs=u=>new URL(u,document.baseURI).href;
+  el.style.setProperty("--staff-v",`url("${abs(v)}")`); el.style.setProperty("--staff-h",`url("${abs(h)}")`);
+  /* se enciende cuando las imágenes ya están listas, así no aparece el color liso antes que la imagen */
+  Promise.race([Promise.all([anuPre_(v),anuPre_(h)]),anuWait_(1500)]).then(r=>{
+    if(seq!==_anuStaffSeq) return; if(Array.isArray(r)&&!r.some(Boolean)) return; H.setAttribute("data-anu-adm","1"); });
 }
 
 /* ---------- Actividades del anuario (datos reales: DB.anuario / DB.actividades / DB.entregas) ---------- */
@@ -116,7 +134,7 @@ function anuBuild_(){
   const anios=[...new Set([2025,...it.map(x=>x.anio)])]; if(!it.length&&!anios.includes(new Date().getFullYear())) anios.push(new Date().getFullYear()); anios.sort((x,y)=>x-y);
   anuS.per=anios.map(y=>{
     const ms=y===2026?[...new Set([7,8,9,10,11,...it.filter(x=>x.anio===y).map(x=>x.mes)])].sort((a,b)=>a-b):Array.from({length:12},(_,i)=>i);
-    const p={anio:y,titulo:String(y),tema:y===2026?"p":"o",admin:y===2026};
+    const p={anio:y,titulo:String(y),tema:y===2026?"p":"o",admin:y===2025||y===2026};
     p.cuenta=ms.map(m=>({m,items:it.filter(x=>x.anio===y&&x.mes===m).sort((a,b)=>a.t-b.t||rankCategoria(a.n.e.categoria)-rankCategoria(b.n.e.categoria))})); p.n=p.cuenta.reduce((s,c)=>s+c.items.length,0); return p; });
 }
 const anuP_=()=>anuS.per[anuS.pi];
@@ -422,7 +440,7 @@ function anuIdx_(){
   el.querySelectorAll("[data-k]").forEach(b=>b.onclick=()=>anuPick_(b.dataset.k));
 }
 function anuDet_(){
-  const p=anuP_(), d=$a("anuDet"); d.className=`anu-detail t-${p.tema}`; let h="";
+  const p=anuP_(), d=$a("anuDet"); d.className=`anu-detail t-${p.tema}${anuS.key==="admin"&&!anuS.act?" adm-pg":""}`; let h="";
   if(anuS.act) h=anuActHTML_(anuS.act);
   else if(anuS.key==="admin") h=anuAdminHTML_();
   else if(anuS.key){ const [y,m]=anuS.key.split("-").map(Number), c=p.cuenta.find(c=>c.m===m), n=c.items.length;
@@ -448,7 +466,7 @@ function anuView_(){
   $a("anuWrap").dataset.v=anuS.v; $a("anuBook").dataset.s=anuS.key?"det":"idx";
   $a("anuBackT").textContent=anuS.act?MESES_LARGO[+anuS.key.split("-")[1]]:inDet?"Índice":"Portada";
   $a("anuBarT").textContent=anuS.act?"Actividad":inDet?(anuS.key==="admin"?"Administración":MESES_LARGO[+anuS.key.split("-")[1]]):"Anuario "+p.titulo;
-  anuIdx_(); anuDet_();
+  anuIdx_(); anuDet_(); anuStaff_();
 }
 /* El año de la portada: si el tema del año trae «anioImg» se muestra esa imagen (la letra exacta de ese año); si no, texto con la letra del tema */
 const _anuTV={};
@@ -540,6 +558,7 @@ function anuEscena_(){
   const sm=document.createElement("div"); sm.id="anuSceneM"; sm.setAttribute("aria-hidden","true");
   sm.innerHTML='<div class="sm-dots"></div><div class="sm-in"><img class="sm-p sm-morado" alt=""><img class="sm-p sm-azul" alt=""><img class="sm-p sm-verde" alt=""></div>';
   document.body.appendChild(sm);
+  const sf=document.createElement("div"); sf.id="anuStaffBg"; sf.setAttribute("aria-hidden","true"); document.body.appendChild(sf);
 }
 /* Fondo de los MESES por piezas: papel + puntos + formas ancladas a su borde (tema.json → "mes") */
 function anuMes_(t){
