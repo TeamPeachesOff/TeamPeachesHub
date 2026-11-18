@@ -323,6 +323,18 @@
   .stream-item-meta{font-size:11.5px;color:var(--text-dim);}
   .stream-sel-head{display:flex;justify-content:space-between;align-items:baseline;gap:8px;margin:4px 0 8px;font-size:12.5px;font-weight:600;color:var(--text-dim);}
   .stream-sel-head small{color:var(--peach-1);font-weight:700;}
+  /* Agendar Stream: fecha larga legible + hora/minutos separados + lista de streams ya agendados. */
+  .stream-fecha-larga{margin-top:7px;font-size:13px;font-weight:700;color:var(--peach-1);min-height:1.2em;}
+  .stream-hora-row{display:flex;align-items:center;gap:8px;}
+  .stream-hora-row select{flex:1;min-width:0;}
+  .stream-hora-row span{font-weight:800;color:var(--text-dim);}
+  .stream-aviso{margin-top:7px;font-size:12px;font-weight:600;color:#ffd666;}
+  .stream-edicion{margin-bottom:12px;padding:8px 10px;border-radius:12px;background:rgba(164,95,199,0.2);color:#d9b6f5;font-size:12.5px;font-weight:700;}
+  .stream-ag-lista{display:flex;flex-direction:column;gap:6px;}
+  .stream-ag-item{display:flex;align-items:center;gap:8px;padding:8px 10px;border-radius:12px;background:var(--card-bg-2);border:1px solid rgba(255,255,255,0.08);}
+  .stream-ag-item.pasado{opacity:0.6;}
+  .stream-ag-txt{flex:1;min-width:0;display:flex;flex-direction:column;gap:1px;font-size:13px;color:var(--text);}
+  .stream-ag-txt span{font-size:11.5px;color:var(--text-dim);}
 
   .filter-pills{display:flex;gap:8px;margin-bottom:16px;}
   .pill-toggle{flex:1;padding:9px;border-radius:999px;background:var(--card-bg-2);color:var(--text-dim);font-weight:700;font-size:13px;text-align:center;transition:background .15s,color .15s;}
@@ -1098,11 +1110,22 @@
   <div class="modal-box"><button class="modal-close" data-close="streamAgendaModal">✕</button>
     <h3>Panel de Staff: Agendar Stream</h3>
     <form id="streamAgendaForm" autocomplete="off">
-      <div class="form-group"><label>Fecha y hora del stream (hora GMT-6)</label><input type="datetime-local" id="sa_inicio" required></div>
+      <div class="stream-edicion hidden" id="sa_edicion"></div>
+      <div class="form-group"><label>Fecha del stream</label><input type="date" id="sa_fecha" required><div class="stream-fecha-larga" id="sa_fechaLarga"></div></div>
+      <div class="form-group"><label>Hora del stream (hora GMT-6)</label>
+        <div class="stream-hora-row">
+          <select id="sa_hora" aria-label="Hora"></select><span>:</span><select id="sa_min" aria-label="Minutos"></select>
+          <select id="sa_ampm" aria-label="AM o PM"><option value="AM">AM</option><option value="PM" selected>PM</option></select>
+        </div>
+        <div class="stream-aviso hidden" id="sa_aviso"></div>
+      </div>
       <div class="stream-sel-head"><span>Actividades a presentar</span><small id="sa_contador"></small></div>
       <div class="stream-lista" id="sa_lista"></div>
+      <div id="sa_agendadosWrap" class="hidden">
+        <div class="stream-sel-head" style="margin-top:18px;"><span>Streams agendados</span><small id="sa_agCuenta"></small></div>
+        <div class="stream-ag-lista" id="sa_agendados"></div>
+      </div>
       <div class="modal-actions">
-        <button type="button" class="btn-small btn-danger" id="sa_quitarBtn">Quitar</button>
         <button type="button" class="btn-small" data-close="streamAgendaModal">Cancelar</button>
         <button type="submit" class="btn-small btn-primary">Guardar ✨</button>
       </div>
@@ -2546,14 +2569,31 @@ function fmt12Hora(d){
   h=h%12; if(h===0) h=12;
   return h+":"+String(m).padStart(2,"0")+" "+ampm;
 }
+// Un stream puede venir de DOS lugares y la tarjeta muestra ambos con el mismo diseño de siempre:
+//  (1) el stream propio de la actividad (streamNombre/Fecha/Hora, se llena al editar la actividad), y
+//  (2) los streams agendados con "Agendar Stream" que incluyen a esta actividad (ver "STREAM AGENDADO").
+// Si los dos caen a la misma fecha y hora, se muestra solo el propio (conserva su nombre).
 function streamBlockHTML(a){
-  if(!a.streamNombre || !a.streamFecha || !a.streamHora) return "";
-  const fechaStr=toDateInput(a.streamFecha);
+  const bloques=[];
+  const propio=streamBloqueHTML_(a.streamNombre, a.streamFecha, a.streamHora, a.descripcion, false);
+  let propioMs=null;
+  if(propio){ bloques.push(propio); propioMs=Date.parse(toDateInput(a.streamFecha)+"T"+toTimeHHMM(a.streamHora)+":00-06:00"); }
+  streamsDeActividad_(a.id).forEach(st=>{
+    if(propioMs!==null && streamInicioMs_(st.inicio)===propioMs) return;
+    const b=streamBloqueHTML_(streamNombreAgenda_(st,a), st.inicio.slice(0,10), st.inicio.slice(11,16), a.descripcion, streamTerminado_(st));
+    if(b) bloques.push(b);
+  });
+  return bloques.join("");
+}
+function streamBloqueHTML_(nombre, fecha, hora, descripcion, pasado){
+  if(!nombre || !fecha || !hora) return "";
+  const fechaStr=toDateInput(fecha);
   if(!fechaStr) return "";
-  const horaStr=toTimeHHMM(a.streamHora);
+  const horaStr=toTimeHHMM(hora);
   if(!horaStr) return "";
   const d=new Date(fechaStr+"T"+horaStr+":00-06:00");
   if(isNaN(d)) return "";
+  const a={streamNombre:nombre, descripcion:descripcion};
   const endD=new Date(d.getTime()+4*60*60*1000); // los streams duran 4h por defecto
   const opcionesFecha={weekday:"long",day:"numeric",month:"long"};
   let fechaLarga; try{ fechaLarga=d.toLocaleDateString("es-ES",opcionesFecha); }catch(e){ fechaLarga=d.toDateString(); }
@@ -2568,7 +2608,7 @@ function streamBlockHTML(a){
     +"&details="+encodeURIComponent(quitarNegritasMd_(a.descripcion))
     +"&location="+encodeURIComponent("Server de Peaches");
   // Botón 2: descarga un archivo .ics (sirve para Apple Calendar, Outlook, Samsung, etc. — en celular normalmente se agrega con un tap)
-  return `<div class="stream-block"><div class="stream-title">📺 ${escHtml(a.streamNombre)}</div><div class="stream-time">🗓️ ${localStr}<br><span style="opacity:0.75;">(convertido a tu zona horaria: ${tz})</span></div><div class="stream-actions"><a class="btn-small btn-primary" target="_blank" href="${escAttr(gcalUrl)}">📅 Google Calendar</a><button class="btn-small btn-family" data-ics data-ics-nombre="${escAttr(a.streamNombre)}" data-ics-start="${isoStart}" data-ics-end="${isoEnd}" data-ics-desc="${escAttr(quitarNegritasMd_(a.descripcion))}">📅 Agregar a Calendario</button></div></div>`;
+  return `<div class="stream-block"${pasado?' style="opacity:0.65;"':""}><div class="stream-title">📺 ${escHtml(a.streamNombre)}</div><div class="stream-time">🗓️ ${localStr}<br><span style="opacity:0.75;">(convertido a tu zona horaria: ${tz})</span></div><div class="stream-actions"><a class="btn-small btn-primary" target="_blank" href="${escAttr(gcalUrl)}">📅 Google Calendar</a><button class="btn-small btn-family" data-ics data-ics-nombre="${escAttr(a.streamNombre)}" data-ics-start="${isoStart}" data-ics-end="${isoEnd}" data-ics-desc="${escAttr(quitarNegritasMd_(a.descripcion))}">📅 Agregar a Calendario</button></div></div>`;
 }
 function escIcs(s){ return String(s||"").replace(/\\/g,"\\\\").replace(/;/g,"\\;").replace(/,/g,"\\,").replace(/\n/g,"\\n"); }
 function descargarICS(nombre,isoStart,isoEnd,descripcion){
@@ -3433,7 +3473,7 @@ function cardHTML(a, entregasDeEsta){
         </div>`:""}
       </div>
     </div>
-    ${(a.descripcion||a.wishlist||a.streamNombre)?`
+    ${(a.descripcion||a.wishlist||a.streamNombre||streamsDeActividad_(a.id).length)?`
     <div class="accordion">
       <button class="accordion-toggle" data-toggle="info-${a.id}">▼ Más Info & Wishlist</button>
       ${extraerHashtags(a.descripcion).length?`<button type="button" class="btn-small btn-family card-copy-hashtags" data-copy-hashtags="${a.id}" title="Copiar hashtags">📋</button>`:""}
@@ -3486,8 +3526,7 @@ function attachCardEvents(){
         // muchas descripciones ya incluyen sus propios hashtags escritos a mano y se veían dos veces.
         if(a.wishlist) html+=`<div class="wishlist-block"><strong>🎵 Wishlist:</strong><br>${escHtml(a.wishlist)}</div>`;
         body.innerHTML=html; body.dataset.filled="1";
-        const icsBtn=body.querySelector("[data-ics]");
-        if(icsBtn) icsBtn.onclick=()=>descargarICS(icsBtn.dataset.icsNombre, icsBtn.dataset.icsStart, icsBtn.dataset.icsEnd, icsBtn.dataset.icsDesc);
+        body.querySelectorAll("[data-ics]").forEach(icsBtn=>{ icsBtn.onclick=()=>descargarICS(icsBtn.dataset.icsNombre, icsBtn.dataset.icsStart, icsBtn.dataset.icsEnd, icsBtn.dataset.icsDesc); });
       }
     };
   });
@@ -7070,22 +7109,47 @@ document.getElementById("ds_quitarBtn").onclick=async()=>{
 document.addEventListener("visibilitychange",()=>{ if(!document.hidden) renderDiasSin(); });
 
 // ============ STREAM AGENDADO ("Próximo stream") ============
-// UN solo stream a la vez: {inicio:"YYYY-MM-DDTHH:mm" (hora GMT-6), actividades:[id, id, ...]}.
-// No confundir con el stream opcional de cada actividad (streamNombre/Fecha/Hora): este agrupa varias actividades en un solo directo.
-// Misma mecánica que "Días sin…": fuente compartida DB.streamAgenda (si el backend la manda; {} = sin stream) y respaldo por
-// dispositivo en localStorage. Guardar intenta apiPost({action:"guardarStreamAgenda",config}); si Code.gs aún no la conoce,
-// queda solo en este dispositivo. Pasadas 4 h del inicio (misma duración por defecto que streamBlockHTML) deja de mostrarse sola.
+// Lista de streams: [{inicio:"YYYY-MM-DDTHH:mm" (hora GMT-6), actividades:[id, id, ...]}, ...]. Cada stream agrupa varias actividades.
+// Los que tienen la MISMA fecha y hora se UNIFICAN (se juntan sus actividades) y los pasados se conservan tal cual: nunca se borran solos.
+// No confundir con el stream opcional de cada actividad (streamNombre/Fecha/Hora).
+// Misma mecánica que "Días sin…": fuente compartida DB.streamAgenda (si el backend la manda; [] o {} = ninguno) y respaldo por
+// dispositivo en localStorage. Guardar intenta apiPost({action:"guardarStreamAgenda",config:lista}); si Code.gs aún no la conoce,
+// queda solo en este dispositivo. También se entiende el formato anterior (un solo objeto {inicio,actividades}).
+// El aviso "Próximo stream" muestra el más cercano que no haya terminado (4 h desde el inicio, igual que streamBlockHTML).
 const STREAM_DURACION_MS = 4*60*60*1000;
-function streamInicioMs_(c){ const t=Date.parse(String(c.inicio).slice(0,16)+":00-06:00"); return isNaN(t)?null:t; }
-function getStreamAgenda_(){
-  let c=null;
-  if(DB && DB.streamAgenda!==undefined){ c=DB.streamAgenda; }
-  else { try{ c=JSON.parse(localStorage.getItem("tph_streamagenda")||"null"); }catch(e){} }
-  if(typeof c==="string"){ try{ c=JSON.parse(c); }catch(e){ c=null; } } // por si el backend lo guardó como texto
-  if(!c || !c.inicio) return null;
-  const ini=streamInicioMs_(c);
-  if(ini===null || Date.now()>ini+STREAM_DURACION_MS) return null;
-  return c;
+function streamInicioMs_(inicio){ const t=Date.parse(String(inicio).slice(0,16)+":00-06:00"); return isNaN(t)?null:t; }
+function normalizarStreams_(raw){
+  if(typeof raw==="string"){ try{ raw=JSON.parse(raw); }catch(e){ raw=null; } }
+  const arr=Array.isArray(raw)?raw:(raw&&typeof raw==="object"?[raw]:[]);
+  const mapa=new Map();
+  arr.forEach(st=>{
+    if(!st || !st.inicio || streamInicioMs_(st.inicio)===null) return;
+    const k=String(st.inicio).slice(0,16);
+    if(!mapa.has(k)) mapa.set(k,[]);
+    const ids=mapa.get(k);
+    (Array.isArray(st.actividades)?st.actividades:[]).map(String).forEach(id=>{ if(id && !ids.includes(id)) ids.push(id); });
+  });
+  return [...mapa.entries()].sort((x,y)=>x[0]<y[0]?-1:x[0]>y[0]?1:0)
+    .map(([inicio,actividades])=>({inicio,actividades})).filter(st=>st.actividades.length);
+}
+function getStreams_(){
+  let raw=null;
+  if(DB && DB.streamAgenda!==undefined){ raw=DB.streamAgenda; }
+  else { try{ raw=JSON.parse(localStorage.getItem("tph_streamagenda")||"null"); }catch(e){} }
+  return normalizarStreams_(raw);
+}
+function streamTerminado_(st){ return Date.now()>streamInicioMs_(st.inicio)+STREAM_DURACION_MS; }
+function getProximoStream_(){ return getStreams_().find(st=>!streamTerminado_(st))||null; }
+// "2026-11-19..." -> "Jueves, 19 de noviembre de 2026" (se arma con año/mes/día tal cual, sin corrimientos de zona horaria).
+function streamFechaLarga_(ymd){
+  const m=String(ymd).match(/^(\d{4})-(\d{2})-(\d{2})/); if(!m) return "";
+  const d=new Date(+m[1],+m[2]-1,+m[3]);
+  let t; try{ t=d.toLocaleDateString("es-ES",{weekday:"long",day:"numeric",month:"long",year:"numeric"}); }catch(e){ t=d.toDateString(); }
+  return t.charAt(0).toUpperCase()+t.slice(1);
+}
+function streamHoraTexto_(hhmm){ // "20:05" -> "8:05 PM"
+  const h=parseInt(String(hhmm).slice(0,2),10), m=String(hhmm).slice(3,5);
+  return ((h%12)||12)+":"+m+" "+(h>=12?"PM":"AM");
 }
 // "hoy, 8:00 PM" / "mañana, 8:00 PM" / "sábado, 22 de noviembre, 8:00 PM" (siempre en la hora de quien mira, como streamBlockHTML).
 function streamEtiquetaFecha_(d){
@@ -7099,14 +7163,24 @@ function streamEtiquetaFecha_(d){
 let _proximoStreamTxt="";
 function renderProximoStream(){
   const el=document.getElementById("proximoStream"); if(!el) return;
-  const c=getStreamAgenda_();
+  const c=getProximoStream_();
   if(!c){ el.classList.add("hidden"); el.innerHTML=""; _proximoStreamTxt=""; return; }
-  const txt=streamEtiquetaFecha_(new Date(streamInicioMs_(c)));
+  const txt=streamEtiquetaFecha_(new Date(streamInicioMs_(c.inicio)));
   if(txt!==_proximoStreamTxt){
     el.innerHTML=`<span class="ps-punto"></span><span>Próximo stream · <b>${escHtml(txt)}</b></span>`;
     _proximoStreamTxt=txt;
   }
   el.classList.remove("hidden");
+}
+// Streams agendados que incluyen a una actividad (para mostrarlos en su tarjeta, como el stream propio de siempre).
+function streamsDeActividad_(id){
+  if(typeof getStreams_!=="function") return [];
+  return getStreams_().filter(st=>st.actividades.map(String).includes(String(id)));
+}
+// Nombre del stream agendado en la tarjeta: "Stream: Título" y, si comparte stream con otras, las menciona en el mismo nombre.
+function streamNombreAgenda_(st,a){
+  const otras=streamActividadesDe_(st).filter(x=>String(x.id)!==String(a.id)).map(x=>x.titulo).filter(Boolean);
+  return "Stream: "+(a.titulo||"Team Peaches")+(otras.length?" + "+otras.join(" + "):"");
 }
 // Actividades guardadas en el stream que todavía existen (si Staff borró una después, simplemente se omite).
 function streamActividadesDe_(c){
@@ -7123,8 +7197,8 @@ function streamItemHTML_(a, modo, marcada){
 }
 // Lectura (todos): toque en la línea "Próximo stream".
 function abrirStreamInfoModal(){
-  const c=getStreamAgenda_(); if(!c) return;
-  const d=new Date(streamInicioMs_(c));
+  const c=getProximoStream_(); if(!c) return;
+  const d=new Date(streamInicioMs_(c.inicio));
   let larga; try{ larga=d.toLocaleDateString("es-ES",{weekday:"long",day:"numeric",month:"long"}); }catch(e){ larga=d.toDateString(); }
   const tz=Intl.DateTimeFormat().resolvedOptions().timeZone;
   const acts=streamActividadesDe_(c);
@@ -7134,7 +7208,7 @@ function abrirStreamInfoModal(){
      ${acts.length?`<div class="stream-info-label">Actividades a presentar (${acts.length})</div><div class="stream-lista">${acts.map(a=>streamItemHTML_(a,"leer")).join("")}</div>`:""}
      ${nivel==="staff"?`<div class="card-actions" style="margin-top:14px;"><button type="button" class="btn-small btn-admin" id="streamInfoEditBtn">✏️ Editar</button></div>`:""}`;
   const eb=document.getElementById("streamInfoEditBtn");
-  if(eb) eb.onclick=()=>{ closeModal("streamInfoModal"); abrirStreamAgendaModal(); };
+  if(eb) eb.onclick=()=>{ closeModal("streamInfoModal"); abrirStreamAgendaModal(c.inicio); };
   openModal("streamInfoModal");
 }
 // Staff: actividades del AÑO ACTUAL de la más nueva a la más vieja (por fecha de envío). Las ya elegidas se conservan aunque sean de otro año.
@@ -7149,25 +7223,70 @@ function saActualizarContador_(){
   const n=document.querySelectorAll("#sa_lista input:checked").length;
   document.getElementById("sa_contador").textContent=n?(n===1?"1 seleccionada":n+" seleccionadas"):"Elige al menos una";
 }
-function abrirStreamAgendaModal(){
-  const c=getStreamAgenda_();
-  const sel=new Set(c&&Array.isArray(c.actividades)?c.actividades.map(String):[]);
-  document.getElementById("sa_inicio").value=c?String(c.inicio).slice(0,16):"";
+// ---- Formulario de Staff: fecha + hora / minutos / AM-PM por separado ----
+let _saEditando=null; // inicio del stream que se está editando (null = uno nuevo)
+(function(){
+  const h=document.getElementById("sa_hora"), m=document.getElementById("sa_min");
+  for(let i=1;i<=12;i++) h.insertAdjacentHTML("beforeend",`<option value="${i}">${i}</option>`);
+  for(let i=0;i<60;i++){ const v=String(i).padStart(2,"0"); m.insertAdjacentHTML("beforeend",`<option value="${v}">${v}</option>`); }
+})();
+function saPonerInicio_(inicio){
+  const ok=inicio && streamInicioMs_(inicio)!==null;
+  const H=ok?parseInt(inicio.slice(11,13),10):20;
+  document.getElementById("sa_fecha").value=ok?inicio.slice(0,10):"";
+  document.getElementById("sa_hora").value=String((H%12)||12);
+  document.getElementById("sa_min").value=ok?inicio.slice(14,16):"00";
+  document.getElementById("sa_ampm").value=H>=12?"PM":"AM";
+}
+function saLeerInicio_(){
+  const f=document.getElementById("sa_fecha").value; if(!f) return "";
+  const h12=parseInt(document.getElementById("sa_hora").value,10);
+  const H=(h12%12)+(document.getElementById("sa_ampm").value==="PM"?12:0);
+  return f+"T"+String(H).padStart(2,"0")+":"+document.getElementById("sa_min").value;
+}
+function saActualizarResumen_(){
+  const inicio=saLeerInicio_();
+  document.getElementById("sa_fechaLarga").textContent=inicio?streamFechaLarga_(inicio)+" · "+streamHoraTexto_(inicio.slice(11,16)):"";
+  const av=document.getElementById("sa_aviso");
+  const choca=!!inicio && getStreams_().some(st=>st.inicio===inicio && st.inicio!==_saEditando);
+  av.textContent=choca?"Ya hay un stream a esa fecha y hora: al guardar se unificarán sus actividades.":"";
+  av.classList.toggle("hidden",!choca);
+}
+function saRenderAgendados_(){
+  const todos=getStreams_();
+  const lista=todos.filter(st=>!streamTerminado_(st)).concat(todos.filter(streamTerminado_).reverse());
+  document.getElementById("sa_agendadosWrap").classList.toggle("hidden",!lista.length);
+  document.getElementById("sa_agCuenta").textContent=lista.length;
+  document.getElementById("sa_agendados").innerHTML=lista.map(st=>{
+    const pasado=streamTerminado_(st), n=st.actividades.length;
+    return `<div class="stream-ag-item${pasado?" pasado":""}"><div class="stream-ag-txt"><b>${escHtml(streamFechaLarga_(st.inicio))}</b><span>${escHtml(streamHoraTexto_(st.inicio.slice(11,16)))} · ${n} ${n===1?"actividad":"actividades"}${pasado?" · pasado":""}</span></div><button type="button" class="btn-small btn-admin" data-sa-edit="${escAttr(st.inicio)}" title="Editar">✏️</button><button type="button" class="btn-small btn-danger" data-sa-del="${escAttr(st.inicio)}" title="Quitar">🗑️</button></div>`;
+  }).join("");
+}
+// Llena el formulario: vacío (stream nuevo) o con los datos de un stream ya agendado (editar).
+function saCargar_(inicio){
+  const st=inicio?getStreams_().find(x=>x.inicio===inicio):null;
+  _saEditando=st?st.inicio:null;
+  const sel=new Set(st?st.actividades.map(String):[]);
+  saPonerInicio_(st?st.inicio:"");
   document.getElementById("sa_lista").innerHTML=streamListaCandidatas_(sel).map(a=>streamItemHTML_(a,"elegir",sel.has(String(a.id)))).join("")
     || `<div class="empty-state">Todavía no hay actividades de este año.</div>`;
-  document.getElementById("sa_quitarBtn").style.display=c?"":"none";
-  saActualizarContador_();
-  openModal("streamAgendaModal");
+  const ed=document.getElementById("sa_edicion");
+  ed.classList.toggle("hidden",!st);
+  ed.textContent=st?"✏️ Editando el stream del "+streamFechaLarga_(st.inicio)+", "+streamHoraTexto_(st.inicio.slice(11,16)):"";
+  saRenderAgendados_(); saActualizarContador_(); saActualizarResumen_();
+  snapshotModalForm("streamAgendaModal");
+  const box=document.querySelector("#streamAgendaModal .modal-box"); if(box) box.scrollTop=0;
 }
-async function guardarStreamAgenda_(cfg){
-  try{ if(cfg) localStorage.setItem("tph_streamagenda",JSON.stringify(cfg)); else localStorage.removeItem("tph_streamagenda"); }catch(e){}
-  DB.streamAgenda=cfg||{};
+function abrirStreamAgendaModal(inicio){ saCargar_(inicio||null); openModal("streamAgendaModal"); }
+async function guardarStreams_(lista, msgOk){
+  try{ if(lista.length) localStorage.setItem("tph_streamagenda",JSON.stringify(lista)); else localStorage.removeItem("tph_streamagenda"); }catch(e){}
+  DB.streamAgenda=lista;
   renderProximoStream();
-  closeModal("streamAgendaModal");
-  const r=await apiPost({action:"guardarStreamAgenda",config:cfg||{}},null,true);
-  toast(r&&r.ok?(cfg?"✅ Stream agendado":"✅ Stream quitado"):"⚠️ Guardado solo en este dispositivo (el backend aún no tiene guardarStreamAgenda)",3500);
+  renderTodoPreservandoScroll_(); // las tarjetas de las actividades incluidas muestran el stream igual que el propio
+  const r=await apiPost({action:"guardarStreamAgenda",config:lista},null,true);
+  toast(r&&r.ok?msgOk:"⚠️ Guardado solo en este dispositivo (el backend aún no tiene guardarStreamAgenda)",3500);
 }
-document.getElementById("agendarStreamBtn").onclick=abrirStreamAgendaModal;
+document.getElementById("agendarStreamBtn").onclick=()=>abrirStreamAgendaModal();
 document.getElementById("proximoStream").onclick=abrirStreamInfoModal;
 document.getElementById("sa_lista").addEventListener("change",e=>{
   const i=e.target;
@@ -7175,19 +7294,35 @@ document.getElementById("sa_lista").addEventListener("change",e=>{
   i.closest(".stream-item").classList.toggle("sel",i.checked);
   saActualizarContador_();
 });
+["sa_fecha","sa_hora","sa_min","sa_ampm"].forEach(id=>{
+  const el=document.getElementById(id);
+  el.addEventListener("input",saActualizarResumen_); el.addEventListener("change",saActualizarResumen_);
+});
+document.getElementById("sa_agendados").addEventListener("click",async e=>{
+  const b=e.target.closest("button"); if(!b) return;
+  if(b.dataset.saEdit){ saCargar_(b.dataset.saEdit); return; }
+  if(b.dataset.saDel){
+    const ini=b.dataset.saDel;
+    if(!await confirmarAccion("¿Quitar este stream agendado?")) return;
+    const lista=getStreams_().filter(st=>st.inicio!==ini);
+    guardarStreams_(lista,"✅ Stream quitado"); // la parte síncrona ya actualizó DB, se repinta de una
+    if(_saEditando===ini) saCargar_(null); else { saRenderAgendados_(); saActualizarResumen_(); }
+  }
+});
 document.getElementById("streamAgendaForm").addEventListener("submit",e=>{
   e.preventDefault();
-  const inicio=document.getElementById("sa_inicio").value;
-  if(!inicio){ toast("Falta la fecha y hora del stream"); return; }
-  const ms=streamInicioMs_({inicio});
-  if(ms===null || Date.now()>ms+STREAM_DURACION_MS){ toast("Esa fecha ya pasó: elige una futura"); return; }
+  const inicio=saLeerInicio_();
+  if(!inicio){ toast("Falta la fecha del stream"); return; }
   const ids=[...document.querySelectorAll("#sa_lista input:checked")].map(i=>i.value);
   if(!ids.length){ toast("Elige al menos una actividad"); return; }
-  guardarStreamAgenda_({inicio:inicio.slice(0,16),actividades:ids});
+  // Los pasados se aceptan y se conservan. Si se edita uno, se reemplaza; si otro tiene la misma fecha y hora, normalizarStreams_ los une.
+  let lista=getStreams_();
+  const existia=lista.some(st=>st.inicio===inicio && st.inicio!==_saEditando);
+  if(_saEditando) lista=lista.filter(st=>st.inicio!==_saEditando);
+  lista.push({inicio,actividades:ids});
+  closeModal("streamAgendaModal");
+  guardarStreams_(normalizarStreams_(lista), existia?"✅ Stream unificado con el de esa fecha y hora":(_saEditando?"✅ Stream actualizado":"✅ Stream agendado"));
 });
-document.getElementById("sa_quitarBtn").onclick=async()=>{
-  if(await confirmarAccion("¿Quitar el stream agendado?")) guardarStreamAgenda_(null);
-};
 // Para que "hoy/mañana" y el fin del stream se actualicen sin recargar la página.
 setInterval(renderProximoStream,60000);
 document.addEventListener("visibilitychange",()=>{ if(!document.hidden) renderProximoStream(); });
