@@ -307,6 +307,24 @@
   .proximo-stream{display:flex;align-items:center;justify-content:center;gap:7px;width:100%;margin:-2px 0 12px;padding:3px 8px;background:none;color:var(--text-dim);font-size:12.5px;font-weight:600;line-height:1.3;text-align:center;}
   .proximo-stream b{color:var(--peach-1);font-weight:700;}
   .proximo-stream .ps-punto{width:6px;height:6px;border-radius:50%;background:var(--peach-2);flex:none;box-shadow:0 0 6px rgba(239,8,112,0.7);}
+  /* Ventana "Próximo stream" (solo esta ventana): fecha grande, hora destacada y portadas sin marco. */
+  #streamInfoModal .modal-box{background:radial-gradient(120% 70% at 50% 0%,rgba(239,8,112,0.22),transparent 60%),var(--card-bg);overflow-x:hidden;}
+  .si-hero{text-align:center;padding:4px 0 2px;}
+  .si-cuenta{display:inline-block;padding:5px 13px;border-radius:999px;background:rgba(239,8,112,0.18);color:var(--peach-1);font-size:12.5px;font-weight:800;letter-spacing:.2px;}
+  .si-nombre{margin:12px auto 0;max-width:92%;font-size:14px;font-weight:700;line-height:1.3;color:var(--text);opacity:.92;}
+  .si-fecha{display:flex;flex-direction:column;align-items:center;margin-top:12px;line-height:1;}
+  .si-sem,.si-mes{font-size:15px;font-weight:700;color:var(--text-dim);text-transform:capitalize;letter-spacing:.4px;}
+  .si-dia{font-size:68px;font-weight:900;margin:4px 0 2px;background:linear-gradient(180deg,#fff,var(--peach-1) 60%,var(--peach-2));-webkit-background-clip:text;background-clip:text;color:transparent;-webkit-text-fill-color:transparent;text-shadow:none;filter:drop-shadow(0 4px 14px rgba(239,8,112,0.35));}
+  .si-hora{display:inline-block;margin-top:12px;padding:8px 20px;border-radius:14px;background:linear-gradient(90deg,var(--peach-2),#ff5c93);color:#fff;font-size:22px;font-weight:900;box-shadow:0 6px 18px rgba(239,8,112,0.35);}
+  .si-tz{margin-top:9px;font-size:11.5px;color:var(--text-dim);opacity:.8;}
+  .si-sep{display:flex;align-items:center;gap:10px;margin:20px 0 12px;color:var(--peach-1);font-size:12.5px;font-weight:800;text-transform:uppercase;letter-spacing:1px;}
+  .si-sep::before,.si-sep::after{content:"";flex:1;height:1px;background:linear-gradient(90deg,transparent,rgba(255,143,177,0.4),transparent);}
+  .si-portadas{display:grid;gap:10px;justify-content:center;}
+  .si-portadas.n1{grid-template-columns:minmax(0,170px);}
+  .si-portadas.n2{grid-template-columns:repeat(2,minmax(0,1fr));}
+  .si-portadas.n3,.si-portadas.n4,.si-portadas.n5,.si-portadas.n6{grid-template-columns:repeat(3,minmax(0,1fr));}
+  .si-portada{width:100%;aspect-ratio:1/1;object-fit:cover;border-radius:16px;border:0;background:var(--card-bg-2);box-shadow:0 8px 20px rgba(0,0,0,0.4);}
+  .si-acciones{display:flex;justify-content:center;margin-top:18px;}
   .stream-info-fecha{font-weight:800;font-size:15px;color:var(--text);}
   .stream-info-fecha::first-letter{text-transform:uppercase;}
   .stream-info-tz{font-size:12px;color:var(--text-dim);opacity:0.8;margin:2px 0 14px;}
@@ -7223,14 +7241,31 @@ function streamItemHTML_(a, modo, marcada, bloqueada){
 function abrirStreamInfoModal(){
   const c=getProximoStream_(); if(!c) return;
   const d=new Date(streamInicioMs_(c.inicio));
-  let larga; try{ larga=d.toLocaleDateString("es-ES",{weekday:"long",day:"numeric",month:"long"}); }catch(e){ larga=d.toDateString(); }
+  let dia,mes,sem;
+  try{ dia=d.getDate(); mes=d.toLocaleDateString("es-ES",{month:"long"}); sem=d.toLocaleDateString("es-ES",{weekday:"long"}); }catch(e){ dia=d.getDate(); mes=""; sem=""; }
   const tz=Intl.DateTimeFormat().resolvedOptions().timeZone;
+  // Cuenta regresiva simple: en curso / en X min / en X h / hoy / mañana / en X días
+  const ms=d.getTime()-Date.now(), ini=new Date(d.getFullYear(),d.getMonth(),d.getDate()), hoy=new Date(); hoy.setHours(0,0,0,0);
+  const dias=Math.round((ini-hoy)/86400000);
+  let cuenta;
+  if(ms<=0) cuenta="🔴 En vivo ahora";
+  else if(ms<3600000) cuenta="⏳ Empieza en "+Math.max(1,Math.round(ms/60000))+" min";
+  else if(dias===0) cuenta="✨ Es hoy";
+  else if(dias===1) cuenta="✨ Es mañana";
+  else cuenta="⏳ Faltan "+dias+" días";
   const acts=streamActividadesDe_(c);
+  const portadas=acts.map(a=>`<img class="si-portada" src="${escAttr(a.imagenUrl||LOGO_DEFAULT)}" alt="${escAttr(a.titulo||"")}" loading="lazy" decoding="async" onerror="this.onerror=null;this.src='${LOGO_DEFAULT}'">`).join("");
+  const n=acts.length;
   document.getElementById("streamInfoBody").innerHTML=
-    `${c.nombre?`<div class="stream-info-label" style="font-size:14px;">${escHtml(c.nombre)}</div>`:""}<div class="stream-info-fecha">${escHtml(larga)}, ${escHtml(fmt12Hora(d))}</div>
-     <div class="stream-info-tz">(convertido a tu zona horaria: ${escHtml(tz)})</div>
-     ${acts.length?`<div class="stream-info-label">Actividades a presentar (${acts.length})</div><div class="stream-lista">${acts.map(a=>streamItemHTML_(a,"leer")).join("")}</div>`:""}
-     ${nivel==="staff"?`<div class="card-actions" style="margin-top:14px;"><button type="button" class="btn-small btn-admin" id="streamInfoEditBtn">✏️ Editar</button></div>`:""}`;
+    `<div class="si-hero">
+       <div class="si-cuenta">${escHtml(cuenta)}</div>
+       ${c.nombre?`<div class="si-nombre">${escHtml(c.nombre)}</div>`:""}
+       <div class="si-fecha"><span class="si-sem">${escHtml(sem)}</span><span class="si-dia">${dia}</span><span class="si-mes">${escHtml(mes)}</span></div>
+       <div class="si-hora">${escHtml(fmt12Hora(d))}</div>
+       <div class="si-tz">Tu zona horaria · ${escHtml(tz)}</div>
+     </div>
+     ${n?`<div class="si-sep"><span>${n===1?"Se presenta":"Se presentan"}</span></div><div class="si-portadas n${n>6?"6":n}">${portadas}</div>`:""}
+     ${nivel==="staff"?`<div class="si-acciones"><button type="button" class="btn-small btn-admin" id="streamInfoEditBtn">✏️ Editar</button></div>`:""}`;
   const eb=document.getElementById("streamInfoEditBtn");
   if(eb) eb.onclick=()=>{ closeModal("streamInfoModal"); abrirStreamAgendaModal(c.inicio); };
   openModal("streamInfoModal");
