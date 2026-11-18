@@ -438,7 +438,7 @@ function anuYearSet_(){
 function anuCover_(d){
   const per=anuS.per, y=$a("yrVal"), pe=$a("cvPeach");
   // Actualiza el año inmediatamente; la carga del tema y sus imágenes continúa en paralelo.
-  anuYearSet_(); y.className="cv-yv"; pe.classList.remove("wob"); void y.offsetWidth;
+  if(!d) anuYearSet_(); y.className="cv-yv"; pe.classList.remove("wob"); void y.offsetWidth;
   if(d) pe.classList.add("wob");
   if(d) anuAplicarTema_(false);
   $a("yrPrev").disabled=anuS.pi===0; $a("yrNext").disabled=anuS.pi===per.length-1;
@@ -572,6 +572,12 @@ async function anuFondo_(v,h,instant){
   anuS.bgCss=css;
   setTimeout(()=>{ if(anuS.bgCss!==css) return; if(st) st.textContent=css; b2.style.transition="none"; b2.classList.remove("on"); void b2.offsetWidth; b2.style.transition=""; },950);
 }
+/* Color de fondo de cada año (para la cortina de transición). Sin tema = el color base del diseño 2026 */
+const anuColor_=t=>(t&&t.capas&&t.capas.papel)||(t&&t.mes&&t.mes.papel)||"#fcf5ef";
+function anuCortina_(){ let e=$a("anuCurtain"); if(!e){ e=document.createElement("div"); e.id="anuCurtain"; e.setAttribute("aria-hidden","true"); document.body.appendChild(e); } return e; }
+const anuW_=ms=>anuWait_(anuReduce_()?0:ms);
+/* Cambio de año en 4 tiempos: (1) sale lo viejo y entra una cortina de color  (2) la cortina pasa al color del año nuevo
+   (3) aparecen los BORDES  (4) aparece el CENTRO. Todo se prepara detrás de la cortina, así nada entra "a medias". */
 async function anuAplicarTema_(instant){
   const seq=++_anuThSeq, H=document.documentElement, w=$a("anuWrap"), c=$a("anuCover");
   clearTimeout(_anuThSwapT); H.classList.remove("anu-swapping"); if(c) c.classList.remove("sw");
@@ -583,25 +589,41 @@ async function anuAplicarTema_(instant){
   /* Nada se muestra hasta que TODAS las piezas estén listas: así entran juntas */
   await anuPreAll_(anuUrls_(t,p.anio)); if(seq!==_anuThSeq) return;
   if((v&&_anuBad.has(v))||(h&&_anuBad.has(h))) v=h=null; if(port&&_anuBad.has(port)) port=null;
-  const key=t?String(p.anio):"def", first=instant||anuS.th===undefined;
-  if(!instant&&key===anuS.th){
-    H.classList.add("anu-swapping"); c.classList.add("sw"); await anuWait_(520);
-    if(seq!==_anuThSeq) return;
-    anuYearSet_(); H.classList.remove("anu-swapping");
-    _anuThSwapT=setTimeout(()=>{ if(seq===_anuThSeq) c.classList.remove("sw"); },520);
-    return;
-  }
-  anuS.th=key; anuFondo_(v||ANU_BG,h||ANU_BGH,first);
   if(!w||!c) return;
-  if(!first){ H.classList.add("anu-swapping"); c.classList.add("sw"); await anuWait_(520); if(seq!==_anuThSeq) return; }
+  const key=t?String(p.anio):"def", first=instant||anuS.th===undefined, cur=anuCortina_();
+  if(instant){ cur.classList.remove("on"); H.classList.remove("anu-x-hide"); w.classList.remove("anu-leave"); }
+  if(!instant&&key===anuS.th){ /* mismo diseño: solo cambia el número del año */
+    w.classList.add("anu-leave"); await anuW_(380); if(seq!==_anuThSeq) return;
+    anuYearSet_(); w.classList.remove("anu-leave","anu-wait"); return;
+  }
+  const staged=first&&w.classList.contains("anu-wait");
+  if(!first){
+    /* 1) sale lo viejo y entra la cortina con el color del año actual */
+    if(!cur.classList.contains("on")){ cur.style.transition="none"; cur.style.backgroundColor=anuS.col||"#fcf5ef"; void cur.offsetWidth; cur.style.transition=""; }
+    w.classList.add("anu-leave"); cur.classList.add("on");
+    await anuW_(580); if(seq!==_anuThSeq) return;
+    cur.style.backgroundColor=anuColor_(t); /* 2) la cortina pasa al color del año nuevo (y detrás se cambia todo) */
+  }
+  anuS.th=key; anuS.col=anuColor_(t);
+  if(!first||staged) H.classList.add("anu-x-hide"); /* los bordes del año nuevo nacen ocultos */
+  anuFondo_(v||ANU_BG,h||ANU_BGH,first);
   const col=(t&&t.colores)||{};
   Object.keys(ANU_TH_VARS).forEach(k=>{ if(col[k]) H.style.setProperty(ANU_TH_VARS[k],col[k]); else H.style.removeProperty(ANU_TH_VARS[k]); });
   if(t) H.setAttribute("data-anu-th",String(p.anio)); else H.removeAttribute("data-anu-th");
   const img=$a("cvPoster").querySelector("img");
   if(t&&port){ img.src=port; w.classList.add("poster"); } else { w.classList.remove("poster"); img.removeAttribute("src"); }
-  anuCapas_(t,w); anuMes_(t); anuYearSet_(); H.classList.remove("anu-swapping");
-  w.classList.remove("anu-wait"); H.classList.add("anu-ready"); /* revelado conjunto: portada, esquinas y fondo con el mismo fundido */
-  if(!first) _anuThSwapT=setTimeout(()=>{ if(seq===_anuThSeq) c.classList.remove("sw"); },520);
+  anuCapas_(t,w); anuMes_(t); anuYearSet_();
+  if(!first){
+    await anuW_(1100); if(seq!==_anuThSeq) return;                                  /* se queda un momento en el color intermedio */
+    cur.classList.remove("on"); H.classList.remove("anu-x-hide"); H.classList.add("anu-ready"); /* 3) bordes */
+    await anuW_(560); if(seq!==_anuThSeq) return;
+    w.classList.remove("anu-leave","anu-wait");                                      /* 4) centro */
+  } else if(staged){
+    await anuW_(380); if(seq!==_anuThSeq) return;
+    H.classList.remove("anu-x-hide"); H.classList.add("anu-ready");                  /* bordes */
+    await anuW_(480); if(seq!==_anuThSeq) return;
+    w.classList.remove("anu-wait");                                                  /* centro */
+  } else { w.classList.remove("anu-wait"); H.classList.add("anu-ready"); }
 }
 
 /* ---------- Cambio de tema oscuro (app) <-> claro (Anuario): velo central de transición ---------- */
