@@ -470,7 +470,7 @@
 
 </style>
 <link rel="stylesheet" href="styles/anuario-fonts.css?v=1">
-<link rel="stylesheet" href="styles/anuario.css?v=2.147">
+<link rel="stylesheet" href="styles/anuario.css?v=2.148">
 <style>
 
   #searchMiembros{width:100%;padding:12px 14px;border-radius:12px;border:1px solid rgba(255,255,255,0.1);background:var(--card-bg-2);color:var(--text);font-size:14px;display:block;}
@@ -761,8 +761,9 @@
      las actividades de ese año bajo demanda — ver attachYearToggleEvents(). El año en curso nunca
      lleva rótulo (queda implícito arriba de todo, como ya era). */
   .year-divider{display:flex;align-items:center;gap:10px;width:100%;background:none;margin:26px 2px 16px;padding:0;color:inherit;}
-  .year-divider::before,.year-divider::after{content:"";flex:1;height:1px;background:linear-gradient(90deg,transparent,rgba(239,8,112,0.35));}
-  .year-divider::after{background:linear-gradient(90deg,rgba(239,8,112,0.35),transparent);}
+  /* 2px y no 1px: con el zoom del navegador distinto de 100% una línea de 1px cae entre dos píxeles y en algunos años desaparecía */
+  .year-divider::before,.year-divider::after{content:"";flex:1;height:2px;border-radius:2px;background:linear-gradient(90deg,transparent,rgba(239,8,112,0.3));}
+  .year-divider::after{background:linear-gradient(90deg,rgba(239,8,112,0.3),transparent);}
   .year-divider-pill{flex-shrink:0;display:flex;align-items:center;gap:7px;font-size:12px;font-weight:800;letter-spacing:.06em;color:var(--text-dim);background:var(--card-bg-2);padding:4px 14px;border-radius:999px;border:1px solid rgba(239,8,112,0.25);transition:background .15s,color .15s;}
   .year-divider:hover .year-divider-pill{background:rgba(239,8,112,0.18);color:var(--text);}
   .year-divider-arrow{font-size:9px;display:inline-block;transition:transform .2s;}
@@ -1569,7 +1570,7 @@
 </div>
 
 <script src="scripts/anuario-assets.js?v=1"></script>
-<script src="scripts/anuario.js?v=2.147"></script>
+<script src="scripts/anuario.js?v=2.148"></script>
 <script>
 // Si el navegador restaura esta página desde su caché de "atrás/adelante" (bfcache), el DOM puede
 // quedar congelado a mitad de una actualización (ej. justo cuando un innerHTML se estaba
