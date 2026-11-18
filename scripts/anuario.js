@@ -579,7 +579,7 @@ const anuW_=ms=>anuWait_(anuReduce_()?0:ms);
 /* Cambio de año en 4 tiempos: (1) sale lo viejo y entra una cortina de color  (2) la cortina pasa al color del año nuevo
    (3) aparecen los BORDES  (4) aparece el CENTRO. Todo se prepara detrás de la cortina, así nada entra "a medias". */
 async function anuAplicarTema_(instant){
-  const seq=++_anuThSeq, H=document.documentElement, w=$a("anuWrap"), c=$a("anuCover");
+  const seq=++_anuThSeq, H=document.documentElement, w=$a("anuWrap"), c=$a("anuCover"), tLoad0=Date.now();
   clearTimeout(_anuThSwapT); H.classList.remove("anu-swapping"); if(c) c.classList.remove("sw");
   const p=anuS.per[anuS.pi]; if(!p) return;
   let t=await anuTema_(p.anio); if(seq!==_anuThSeq) return;
@@ -590,6 +590,8 @@ async function anuAplicarTema_(instant){
   await anuPreAll_(anuUrls_(t,p.anio)); if(seq!==_anuThSeq) return;
   if((v&&_anuBad.has(v))||(h&&_anuBad.has(h))) v=h=null; if(port&&_anuBad.has(port)) port=null;
   if(!w||!c) return;
+  /* Si todo ya estaba cargado (casi no hubo espera) la transición dura solo lo necesario; si hubo que esperar descargas, conserva los tiempos largos de siempre */
+  const rapido=(Date.now()-tLoad0)<250, T=rapido?{leave:400,hold:480,edge:380,col:".5s"}:{leave:580,hold:1100,edge:560,col:"1s"};
   const key=t?String(p.anio):"def", first=instant||anuS.th===undefined, cur=anuCortina_();
   if(instant){ cur.classList.remove("on"); H.classList.remove("anu-x-hide"); w.classList.remove("anu-leave"); }
   if(!instant&&key===anuS.th){ /* mismo diseño: solo cambia el número del año */
@@ -600,8 +602,9 @@ async function anuAplicarTema_(instant){
   if(!first){
     /* 1) sale lo viejo y entra la cortina con el color del año actual */
     if(!cur.classList.contains("on")){ cur.style.transition="none"; cur.style.backgroundColor=anuS.col||"#fcf5ef"; void cur.offsetWidth; cur.style.transition=""; }
+    cur.style.transition="opacity .55s ease,background-color "+T.col+" ease";
     w.classList.add("anu-leave"); cur.classList.add("on");
-    await anuW_(580); if(seq!==_anuThSeq) return;
+    await anuW_(T.leave); if(seq!==_anuThSeq) return;
     cur.style.backgroundColor=anuColor_(t); /* 2) la cortina pasa al color del año nuevo (y detrás se cambia todo) */
   }
   anuS.th=key; anuS.col=anuColor_(t);
@@ -614,9 +617,10 @@ async function anuAplicarTema_(instant){
   if(t&&port){ img.src=port; w.classList.add("poster"); } else { w.classList.remove("poster"); img.removeAttribute("src"); }
   anuCapas_(t,w); anuMes_(t); anuYearSet_();
   if(!first){
-    await anuW_(1100); if(seq!==_anuThSeq) return;                                  /* se queda un momento en el color intermedio */
+    await anuW_(T.hold); if(seq!==_anuThSeq) return;                                /* se queda un momento en el color intermedio */
     cur.classList.remove("on"); H.classList.remove("anu-x-hide"); H.classList.add("anu-ready"); /* 3) bordes */
-    await anuW_(560); if(seq!==_anuThSeq) return;
+    await anuW_(T.edge); if(seq!==_anuThSeq) return;
+    cur.style.transition="";
     w.classList.remove("anu-leave","anu-wait");                                      /* 4) centro */
   } else if(staged){
     await anuW_(380); if(seq!==_anuThSeq) return;
