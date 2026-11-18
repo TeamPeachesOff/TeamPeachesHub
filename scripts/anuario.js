@@ -513,7 +513,7 @@ function anuTema_(anio){
 /* ---------- Portada por CAPAS (tema.json → "capas"): cada elemento es una imagen suelta con su animación ---------- */
 function anuEscena_(){
   if($a("anuScene")) return; const sc=document.createElement("div"); sc.id="anuScene"; sc.setAttribute("aria-hidden","true");
-  sc.innerHTML='<div class="sc-in"><div class="sc-g sc-gl"><img class="sc-p sc-it" alt=""><img class="sc-p sc-ib" alt=""></div><div class="sc-g sc-gr"><img class="sc-p sc-dt" alt=""><img class="sc-p sc-db" alt=""></div><img class="sc-v sc-pt" alt=""><img class="sc-v sc-pb" alt=""></div><img class="sc-f sc-fm" alt=""><img class="sc-f sc-fp" alt=""><img class="sc-f sc-fg" alt="">';
+  sc.innerHTML='<div class="sc-in"><div class="sc-g sc-gl"><img class="sc-p sc-it" alt=""><img class="sc-p sc-ib" alt=""></div><div class="sc-g sc-gr"><img class="sc-p sc-dt" alt=""><img class="sc-p sc-db" alt=""></div><img class="sc-v sc-pt" alt=""><img class="sc-v sc-pb" alt=""></div><img class="sc-f sc-fm" alt=""><img class="sc-f sc-fp" alt=""><img class="sc-f sc-fg" alt=""><div class="sc-26"></div>';
   document.body.appendChild(sc);
   const sm=document.createElement("div"); sm.id="anuSceneM"; sm.setAttribute("aria-hidden","true");
   sm.innerHTML='<div class="sm-dots"></div><div class="sm-in"><img class="sm-p sm-morado" alt=""><img class="sm-p sm-azul" alt=""><img class="sm-p sm-verde" alt=""></div>';
@@ -529,9 +529,35 @@ function anuMes_(t){
   if(m.puntos) sm.style.setProperty("--dots-m",`url("${B}${m.puntos}")`);
   sm.classList.add("on");
 }
+/* Escena por piezas sueltas (tema.json → "escena"): papel limpio + piezas ancladas a los bordes, cada una con su respiración.
+   Las posiciones vienen en unidades de un lienzo de referencia (ancho×alto) para horizontal ("h") y vertical ("v"). */
+function anuEsc26_(t,sc){
+  const e=t&&t.escena, box=sc&&sc.querySelector(".sc-26"); if(!box) return;
+  sc.classList.toggle("esc",!!e);
+  let st=document.getElementById("anuEsc26Css");
+  if(!e){ box.innerHTML=""; delete box.dataset.k; if(st) st.textContent=""; return; }
+  const B=t._b+(e.carpeta||"escena/"); if(box.dataset.k===B) return; box.dataset.k=B;
+  const ord=(e.orden||[]).filter(n=>(e.h&&e.h.piezas&&e.h.piezas[n])||(e.v&&e.v.piezas&&e.v.piezas[n]));
+  box.innerHTML=ord.map((n,i)=>`<img class="s26 s26-${n}" src="${B}${n}.webp" alt="" draggable="false" style="--d:${(8+(i*1.7)%5).toFixed(1)}s;--dl:${(-i*2.3).toFixed(1)}s">`).join("");
+  const k=v=>`calc(var(--u26)*${v})`;
+  const bloque=(o,mq)=>{ const g=e[o]; if(!g||!g.piezas) return "";
+    const W=g.ancho||100, H=g.alto||100;
+    return `@media ${mq}{#anuScene{--u26:min(calc(100vw / ${W}),calc(100vh / ${H}))}@supports (height:100dvh){#anuScene{--u26:min(calc(100vw / ${W}),calc(100dvh / ${H}))}}`+
+      ord.map(n=>{ const p=g.piezas[n]; if(!p) return `#anuScene .s26-${n}{display:none}`;
+        let r=`display:block;width:${k(p.w)};`;
+        if(p.l!=null) r+=`left:${k(p.l)};`; if(p.r!=null) r+=`right:${k(p.r)};`;
+        if(p.t!=null) r+=`top:${k(p.t)};`; if(p.b!=null) r+=`bottom:${k(p.b)};`;
+        if(p.m!=null) r+=`top:calc(50% + ${k(p.m)});`;
+        r+=`transform-origin:${p.r!=null&&p.l==null?"100%":"0"} ${p.t!=null?"0":p.b!=null?"100%":"50%"};`;
+        return `#anuScene .s26-${n}{${r}}`; }).join("")+`}`; };
+  if(!st){ st=document.createElement("style"); st.id="anuEsc26Css"; document.head.appendChild(st); }
+  st.textContent=bloque("h","(orientation:landscape)")+bloque("v","(orientation:portrait)");
+}
 function anuCapas_(t,w){
-  const c=t&&t.capas, box=$a("cv25"), sc=$a("anuScene"); if(!box) return;
+  const c=t&&t.capas, e=t&&t.escena, box=$a("cv25"), sc=$a("anuScene"); if(!box) return;
   w.classList.toggle("c25",!!c);
+  anuEsc26_(t,sc);
+  if(!c&&e){ box.innerHTML=""; delete box.dataset.k; if(sc){ sc.style.setProperty("--paper",e.papel||"#f8f8f7"); sc.classList.add("on"); } return; }
   if(!c){ box.innerHTML=""; delete box.dataset.k; if(sc) sc.classList.remove("on"); return; }
   const B=t._b+(c.carpeta||"capas/"), M=c.piezas||{}, E=c.esquinas||{};
   if(!box.dataset.k||box.dataset.k!==B){ box.dataset.k=B;
@@ -550,6 +576,8 @@ function anuUrls_(t,anio){
   if(!t) return [ANU_BG,ANU_BGH,ANU_DURAZNO];
   const B=t._b, u=[], pick=a=>Array.isArray(a)&&a.length?B+a[anio%a.length]:null;
   const fv=pick(t.fondos&&t.fondos.vertical), fh=pick(t.fondos&&t.fondos.horizontal)||fv; if(fv||fh) u.push(fv||fh,fh||fv);
+  if(!(fv||fh)) u.push(ANU_BG,ANU_BGH,ANU_DURAZNO); /* sin «fondos» propios: los meses usan el fondo de siempre */
+  const es=t.escena; if(es){ const eb=B+(es.carpeta||"escena/"); (es.orden||[]).forEach(n=>u.push(eb+n+".webp")); }
   if(t.portada) u.push(B+t.portada);
   if(t.anioImg) u.push(B+t.anioImg);
   const c=t.capas; if(c){ const cb=B+(c.carpeta||"capas/"); (c.orden||[]).forEach(n=>{ if((c.piezas||{})[n]) u.push(cb+n+".webp"); }); Object.keys(c.esquinas||{}).forEach(k=>u.push(cb+k+".webp")); }
@@ -573,7 +601,7 @@ async function anuFondo_(v,h,instant){
   setTimeout(()=>{ if(anuS.bgCss!==css) return; if(st) st.textContent=css; b2.style.transition="none"; b2.classList.remove("on"); void b2.offsetWidth; b2.style.transition=""; },950);
 }
 /* Color de fondo de cada año (para la cortina de transición). Sin tema = el color base del diseño 2026 */
-const anuColor_=t=>(t&&t.capas&&t.capas.papel)||(t&&t.mes&&t.mes.papel)||"#fcf5ef";
+const anuColor_=t=>(t&&t.capas&&t.capas.papel)||(t&&t.escena&&t.escena.papel)||(t&&t.mes&&t.mes.papel)||"#fcf5ef";
 function anuCortina_(){ let e=$a("anuCurtain"); if(!e){ e=document.createElement("div"); e.id="anuCurtain"; e.setAttribute("aria-hidden","true"); document.body.appendChild(e); } return e; }
 const anuW_=ms=>anuWait_(anuReduce_()?0:ms);
 /* Cambio de año en 4 tiempos: (1) sale lo viejo y entra una cortina de color  (2) la cortina pasa al color del año nuevo
@@ -612,7 +640,7 @@ async function anuAplicarTema_(instant){
   anuFondo_(v||ANU_BG,h||ANU_BGH,first);
   const col=(t&&t.colores)||{};
   Object.keys(ANU_TH_VARS).forEach(k=>{ if(col[k]) H.style.setProperty(ANU_TH_VARS[k],col[k]); else H.style.removeProperty(ANU_TH_VARS[k]); });
-  if(t) H.setAttribute("data-anu-th",String(p.anio)); else H.removeAttribute("data-anu-th");
+  if(t&&(t.capas||t.mes||t.colores||t.fondos||t.portada)) H.setAttribute("data-anu-th",String(p.anio)); else H.removeAttribute("data-anu-th");
   const img=$a("cvPoster").querySelector("img");
   if(t&&port){ img.src=port; w.classList.add("poster"); } else { w.classList.remove("poster"); img.removeAttribute("src"); }
   anuCapas_(t,w); anuMes_(t); anuYearSet_();

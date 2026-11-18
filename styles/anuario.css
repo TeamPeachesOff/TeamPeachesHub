@@ -642,3 +642,16 @@ body:not(.anuario-mode) #anuCurtain{display:none;}
 #anuScene .sc-in,#anuScene .sc-v,#anuScene .sc-f{transition:opacity .85s ease;}
 html.anu-x-hide #anuScene .sc-in,html.anu-x-hide #anuScene .sc-v,html.anu-x-hide #anuScene .sc-f{opacity:0;transition:none;}
 @media (prefers-reduced-motion:reduce){#anuCurtain{transition-duration:.2s !important;}}
+
+/* =====================================================================
+   Portada por PIEZAS SUELTAS (tema.json → "escena"): hoy la usa 2026.
+   Papel limpio + piezas ancladas a los bordes (posiciones en anuEsc26_, anuario.js). 2025 no usa nada de esto.
+   ===================================================================== */
+.sc-26{display:none;position:absolute;inset:0;overflow:hidden;}
+#anuScene.esc .sc-26{display:block;}
+#anuScene.esc .sc-in,#anuScene.esc .sc-v,#anuScene.esc .sc-f{display:none !important;}
+.s26{position:absolute;display:none;height:auto;max-width:none;user-select:none;-webkit-user-drag:none;pointer-events:none;will-change:transform;animation:s26Br var(--d,9s) ease-in-out var(--dl,0s) infinite;}
+@keyframes s26Br{0%,100%{transform:scale(1)}50%{transform:scale(1.025)}}
+#anuScene .sc-26{transition:opacity .85s ease;}
+html.anu-x-hide #anuScene .sc-26{opacity:0;transition:none;}
+@media (prefers-reduced-motion:reduce){.s26{animation:none !important;}}
