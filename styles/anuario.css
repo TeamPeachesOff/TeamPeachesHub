@@ -119,13 +119,10 @@
     .det-h.sm.adm-h h2{font:400 clamp(38px,7vw,64px)/1 var(--f-disp);letter-spacing:0;}
     .adm{gap:4px;padding-top:6px;}
     .adm-sec{width:100%;display:grid;justify-items:center;}
-    .adm-lb{margin:0;width:100%;display:flex;align-items:center;gap:14px;font:400 clamp(26px,5vw,34px)/1 var(--f-disp);letter-spacing:.03em;text-transform:uppercase;text-align:center;color:var(--ac);}
-    .adm-lb::before,.adm-lb::after{content:"";flex:1;border-top:3px dotted currentColor;opacity:.3;}
     .adm .adm-row{gap:46px 8px;padding:10px 0 34px;}
     @media (min-width:560px){.adm .adm-row{column-gap:20px;}}
     .adm .adm-row.f{margin:66px 0 0;gap:50px 46px;padding-bottom:28px;}
-    .adm .adm-sec.s .adm-lb{margin-top:6px;}
-    .adm .adm-row.s{margin-top:22px;padding-top:12px;} /* aire para las etiquetas «Staff» que sobresalen por arriba de cada foto */
+    .adm .adm-row.s{margin-top:8px;padding-top:12px;} /* aire para las etiquetas «Staff» que sobresalen por arriba de cada foto */
     /* escalonado: los pares bajan un poco y todos se inclinan apenas, para que no se vea plano (translate/rotate no cambian el espacio que ocupa cada uno) */
     .adm .anu-m:nth-child(odd){rotate:-1.6deg;}
     .adm .anu-m:nth-child(even){rotate:1.6deg;translate:0 26px;}
@@ -133,13 +130,6 @@
     .adm .anu-pn{font-family:var(--f-disp);font-size:min(clamp(19px,5.4vw,26px),calc(var(--mw)*2.4/var(--nl,10)));line-height:1.15;letter-spacing:.01em;}
     .adm .anu-rol text{font-family:var(--f-disp);font-size:36px;}
     .adm .anu-arc text{font-family:var(--f-disp);font-size:29px;}
-    /* la tarjeta de la derecha queda tal cual (forma, tamaño, sombra); solo su fondo es la imagen del año (Anuario/<año>/staff-v.webp y staff-h.webp).
-       Los textos llevan contorno blanco, como los nombres, para leerse sobre cualquier parte de la imagen. */
-    .anu-detail.adm-pg{background-color:#e6d6e6;background-image:var(--adm-v);background-size:cover;background-position:center;background-repeat:no-repeat;}
-    @media (max-width:899px) and (orientation:landscape){.anu-detail.adm-pg{background-image:var(--adm-h);}} /* celular acostado: tarjeta ancha → imagen horizontal */
-    .adm-pg .adm-h h2,.adm-pg .adm-lb{-webkit-text-stroke:7px #fff;paint-order:stroke fill;filter:drop-shadow(0 1px 1px rgba(40,10,60,.22));}
-    .adm-pg .adm-lb{-webkit-text-stroke-width:6px;}
-    .adm-pg .adm-lb::before,.adm-pg .adm-lb::after{border-top-color:#fff;opacity:.85;filter:drop-shadow(0 0 1px rgba(40,10,60,.45));}
     /* ---- Actividades (estilo recuerdo pegado) ---- */
     .anu-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:30px 18px;margin-top:24px;}
     @media (min-width:560px){.anu-grid{grid-template-columns:repeat(3,1fr);gap:34px 22px;}}

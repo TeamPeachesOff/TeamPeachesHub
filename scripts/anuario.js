@@ -92,10 +92,10 @@ function anuMiembro_(m,rol,i){
 }
 /* Equipo de la página 00 por año. 2025 se arma con esta lista (ese año no existía el rango de admin); los demás años salen de las marcas de DB.miembros.
    Cada nombre se busca en DB.miembros para usar su foto y su ficha; si alguien no aparece ahí, igual se muestra (con la foto por defecto) para que nunca falte nadie. */
-const ANU_EQUIPO_={2025:{f:["AlixTKM","Itx_Eryck"],s:["demonnoirexd","anacoffee","RagnaBelzzerion","RcC39"]}};
-function anuBuscar_(nombre){
+const ANU_EQUIPO_={2025:{f:[["AlixTKM","alix"],"Itx_Eryck"],s:["demonnoirexd","anacoffee","RagnaBelzzerion",["RcC39","rec"]]}}; /* [nombre que se muestra, nombre con el que aparece en DB.miembros] */
+function anuBuscar_(nombre,alias){
   const L=(DB.miembros||[]).filter(x=>x.nombre&&String(x.nombre).trim()!==""), k=anuKey_(nombre); if(!k) return null;
-  const exacto=L.find(x=>anuKey_(x.nombre)===k); if(exacto) return exacto;
+  const ka=anuKey_(alias||""), exacto=L.find(x=>anuKey_(x.nombre)===k)||(ka&&L.find(x=>anuKey_(x.nombre)===ka)); if(exacto) return exacto;
   const toks=String(nombre).split(/[^A-Za-z0-9]+/).map(anuKey_).filter(t=>t.length>=5); /* «Itx_Eryck» → «eryck» */
   return L.find(x=>{ const a=anuKey_(x.nombre); return a.length>=5&&(a.includes(k)||k.includes(a)||toks.some(t=>a.includes(t))); })||null;
 }
@@ -104,7 +104,7 @@ function anuEquipo_(anio){
   const unicos=A=>A.filter(m=>{ const k=anuKey_(m.nombre); if(!k||vistos.has(k)) return false; vistos.add(k); return true; }); /* nadie aparece dos veces */
   const fijo=ANU_EQUIPO_[anio];
   if(fijo){
-    const arma=(n,esF)=>{ const m=anuBuscar_(n); return m?{...m,nombre:n}:{id:"anu"+anio+"-"+anuKey_(n),nombre:n,...(esF?{fundadora:true}:{})}; };
+    const arma=(e,esF)=>{ const n=Array.isArray(e)?e[0]:e, m=anuBuscar_(n,Array.isArray(e)?e[1]:""); return m?{...m,nombre:n}:{id:"anu"+anio+"-"+anuKey_(n),nombre:n,...(esF?{fundadora:true}:{})}; };
     return {f:unicos(fijo.f.map(n=>arma(n,true))),s:unicos(fijo.s.map(n=>arma(n,false)))};
   }
   const f=unicos(L.filter(anuIsF_));
@@ -114,17 +114,8 @@ function anuEquipo_(anio){
 function anuAdminHTML_(){
   const {f,s}=anuEquipo_(anuP_().anio); let i=0;
   /* Fundadores arriba y todo el staff junto en un solo grupo; todos quedan siempre a la vista (sin recortes ni scroll interno) */
-  const sec=(cls,rot,rotulo,L)=>L.length?`<section class="adm-sec ${cls}"><h3 class="adm-lb"><span>${rotulo}</span></h3><div class="adm-row ${cls}">${L.map(m=>anuMiembro_(m,rot,i++)).join("")}</div></section>`:"";
-  return `<div class="det-h sm adm-h"><h2>Fundadores y Staff</h2></div><div class="adm">${sec("f","f","Fundadores",f)}${sec("s","s","Staff",s)}</div>`;
-}
-
-/* Fondo propio de la tarjeta de la página 00 (Anuario/<año>/staff-v.webp y staff-h.webp). Es solo el fondo de ESA tarjeta:
-   el resto del Anuario conserva su fondo de siempre. La ruta va absoluta porque una url() guardada en una variable CSS
-   se resolvería relativa a styles/ y no a la página. */
-function anuAdmBg_(d,anio){
-  if(!anio){ d.style.removeProperty("--adm-v"); d.style.removeProperty("--adm-h"); return; }
-  const abs=u=>`url("${new URL(u,document.baseURI).href}")`;
-  d.style.setProperty("--adm-v",abs(`Anuario/${anio}/staff-v.webp`)); d.style.setProperty("--adm-h",abs(`Anuario/${anio}/staff-h.webp`));
+  const sec=(cls,rot,L)=>L.length?`<section class="adm-sec ${cls}"><div class="adm-row ${cls}">${L.map(m=>anuMiembro_(m,rot,i++)).join("")}</div></section>`:"";
+  return `<div class="det-h sm adm-h"><h2>Fundadores y Staff</h2></div><div class="adm">${sec("f","f",f)}${sec("s","s",s)}</div>`;
 }
 
 /* ---------- Actividades del anuario (datos reales: DB.anuario / DB.actividades / DB.entregas) ---------- */
@@ -449,7 +440,7 @@ function anuIdx_(){
   el.querySelectorAll("[data-k]").forEach(b=>b.onclick=()=>anuPick_(b.dataset.k));
 }
 function anuDet_(){
-  const p=anuP_(), d=$a("anuDet"), adm=anuS.key==="admin"&&!anuS.act; d.className=`anu-detail t-${p.tema}${adm?" adm-pg":""}`; anuAdmBg_(d,adm?p.anio:0); let h="";
+  const p=anuP_(), d=$a("anuDet"); d.className=`anu-detail t-${p.tema}`; let h="";
   if(anuS.act) h=anuActHTML_(anuS.act);
   else if(anuS.key==="admin") h=anuAdminHTML_();
   else if(anuS.key){ const [y,m]=anuS.key.split("-").map(Number), c=p.cuenta.find(c=>c.m===m), n=c.items.length;
