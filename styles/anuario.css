@@ -661,3 +661,14 @@ html.anu-x-hide #anuScene .sc-26{opacity:0;transition:none;}
 .act-sub{display:flex;align-items:baseline;justify-content:space-between;gap:10px;margin:18px 2px 8px;padding-bottom:6px;border-bottom:2px solid var(--ac2);color:var(--anu-ink,#2a1745);font-size:15.5px;font-weight:800;}
 .act-sub small{flex:none;font-size:12.5px;font-weight:700;color:var(--anu-mut,#6b5683);}
 .act-sub span{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+
+/* «Actividades entregadas» contraída por defecto: se abre tocando el encabezado */
+.act-ent>summary{list-style:none;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;-webkit-tap-highlight-color:transparent;user-select:none;}
+.act-ent>summary::-webkit-details-marker{display:none;}
+.act-ent>summary .act-cnt{margin-left:0;}
+.act-chev{flex:none;width:11px;height:11px;margin-left:2px;border-right:3px solid var(--ac);border-bottom:3px solid var(--ac);border-radius:2px;transform:translateY(-3px) rotate(45deg);transition:transform .25s ease;}
+.act-ent[open]>summary .act-chev{transform:translateY(2px) rotate(-135deg);}
+.act-ent>summary:focus-visible{outline:3px solid var(--ac);outline-offset:4px;border-radius:12px;}
+.act-ent[open]>.act-list,.act-ent[open]>.act-sub{animation:actEnt .3s ease;}
+@keyframes actEnt{from{opacity:0;transform:translateY(-6px)}}
+@media (prefers-reduced-motion:reduce){.act-ent[open]>.act-list,.act-ent[open]>.act-sub,.act-chev{animation:none;transition:none;}}

@@ -160,8 +160,8 @@ function anuEntregasHTML_(e,lineas){
   if(!grupos.length) return "";
   const total=grupos.reduce((n,g)=>n+g.es.length,0), varias=acts.length>1;
   const fila=r=>{ let m=null; try{ m=(typeof miembrosDeEntrega_==="function"&&miembrosDeEntrega_(r)||[])[0]||null; }catch(_){} return anuRowW_({nombre:r.nombreUsuario,detalle:r.detalleEntrega,link:r.linkGrabacion},m); };
-  return `<h3 class="act-sec">📋 Actividades entregadas <small class="act-cnt">${total}</small></h3>`+grupos.map(g=>{ const x=TIPO_[g.a.categoria]||{t:"Especial",e:"✨"};
-    return `${varias?`<h4 class="act-sub"><span>${escHtml(g.a.titulo||"Actividad")}</span><small>${x.e} ${x.t} · ${g.es.length}</small></h4>`:""}<div class="act-list">${g.es.map(fila).join("")}</div>`; }).join("");
+  return `<details class="act-ent"><summary class="act-sec act-tg"><span>📋 Actividades entregadas</span><small class="act-cnt">${total}</small><i class="act-chev" aria-hidden="true"></i></summary>`+grupos.map(g=>{ const x=TIPO_[g.a.categoria]||{t:"Especial",e:"✨"};
+    return `${varias?`<h4 class="act-sub"><span>${escHtml(g.a.titulo||"Actividad")}</span><small>${x.e} ${x.t} · ${g.es.length}</small></h4>`:""}<div class="act-list">${g.es.map(fila).join("")}</div>`; }).join("")+`</details>`;
 }
 function anuActHTML_(id){
   const e=(DB.anuario||[]).find(x=>String(x.id)===String(id)); if(!e) return "";
