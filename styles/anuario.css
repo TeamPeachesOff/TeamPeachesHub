@@ -42,7 +42,7 @@
     .cv-t span{display:block;}
     .cv-peach{width:clamp(170px,min(46vw,34vh),300px);}
     .cv-peach img{display:block;width:100%;height:auto;filter:none;animation:cvPop .9s cubic-bezier(.3,1.5,.5,1) .15s backwards,cvFloat 4.4s ease-in-out 1.1s infinite;transform-origin:50% 90%;}
-    @keyframes cvPop{from{transform:scale(.4) rotate(-24deg);opacity:0}}
+    @keyframes cvPop{from{transform:scale(.8) rotate(-6deg);opacity:0}}
     .cv-peach.wob{animation:cvWob .6s ease;}
     @keyframes cvWob{30%{transform:rotate(-10deg) scale(1.07)}65%{transform:rotate(6deg) scale(1.03)}}
     .cv-yr{display:flex;align-items:center;gap:6px;padding:6px;border-radius:999px;background:rgba(255,255,255,.78);backdrop-filter:blur(8px);box-shadow:0 8px 22px rgba(80,40,100,.14);}
@@ -428,13 +428,13 @@ html[data-anu-v="portada"] body.anuario-mode #anuScene.on{opacity:1;visibility:v
 .anu-wrap.c25 .cv25{display:block;position:absolute;inset:0;}
 .l25{position:absolute;display:block;left:var(--l);top:var(--t);width:var(--w);height:auto;max-width:none;user-select:none;-webkit-user-drag:none;
   filter:drop-shadow(0 6px 10px rgba(90,20,60,.12));
-  animation:l25Pop .75s cubic-bezier(.3,1.5,.5,1) var(--d,0s) backwards;}
-.l-logo{transform-origin:50% 50%;animation:l25Pop .75s cubic-bezier(.3,1.5,.5,1) var(--d) backwards,l25Pulse 3.6s ease-in-out 1s infinite;}
-.l-anuario{transform-origin:50% 60%;animation:l25Pop .75s cubic-bezier(.3,1.5,.5,1) var(--d) backwards,l25Wig 4.6s ease-in-out 1s infinite;}
-.l-doblaje{transform-origin:40% 60%;animation:l25Pop .75s cubic-bezier(.3,1.5,.5,1) var(--d) backwards,l25FloatA 4.2s ease-in-out 1.1s infinite;}
-.l-canto{transform-origin:60% 60%;animation:l25Pop .75s cubic-bezier(.3,1.5,.5,1) var(--d) backwards,l25FloatB 4.8s ease-in-out 1.2s infinite;}
-.l-amp{transform-origin:50% 55%;animation:l25Pop .75s cubic-bezier(.3,1.5,.5,1) var(--d) backwards,l25Spin 3.8s ease-in-out 1.3s infinite;}
-@keyframes l25Pop{from{opacity:0;transform:translateY(18px) scale(.55) rotate(-6deg)}}
+  animation:l25Pop .85s cubic-bezier(.22,.9,.3,1) var(--d,0s) backwards;}
+.l-logo{transform-origin:50% 50%;animation:l25Pop .85s cubic-bezier(.22,.9,.3,1) var(--d) backwards,l25Pulse 3.6s ease-in-out 1s infinite;}
+.l-anuario{transform-origin:50% 60%;animation:l25Pop .85s cubic-bezier(.22,.9,.3,1) var(--d) backwards,l25Wig 4.6s ease-in-out 1s infinite;}
+.l-doblaje{transform-origin:40% 60%;animation:l25Pop .85s cubic-bezier(.22,.9,.3,1) var(--d) backwards,l25FloatA 4.2s ease-in-out 1.1s infinite;}
+.l-canto{transform-origin:60% 60%;animation:l25Pop .85s cubic-bezier(.22,.9,.3,1) var(--d) backwards,l25FloatB 4.8s ease-in-out 1.2s infinite;}
+.l-amp{transform-origin:50% 55%;animation:l25Pop .85s cubic-bezier(.22,.9,.3,1) var(--d) backwards,l25Spin 3.8s ease-in-out 1.3s infinite;}
+@keyframes l25Pop{from{opacity:0;transform:translateY(12px) scale(.9)}}
 @keyframes l25Pulse{0%,100%{transform:scale(1) rotate(0)}50%{transform:scale(1.07) rotate(-2deg)}}
 @keyframes l25Wig{0%,100%{transform:rotate(-1.4deg) scale(1)}50%{transform:rotate(1.4deg) scale(1.025)}}
 @keyframes l25FloatA{0%,100%{transform:translateY(0) rotate(-.8deg)}50%{transform:translateY(-2.2%) rotate(.8deg)}}
@@ -486,8 +486,8 @@ html[data-anu-v="libro"] body.anuario-mode #anuSceneM.on{opacity:1;visibility:vi
 
 /* Cambio de año: portada, esquinas y fondo de meses salen y entran JUNTOS (sin elementos a medias) */
 html.anu-swapping #anuScene,html.anu-swapping #anuSceneM{opacity:0 !important;transition:opacity .3s ease !important;}
-#anuScene,#anuSceneM{transition:opacity .5s ease,visibility 0s .5s;}
-html[data-anu-v="portada"] body.anuario-mode #anuScene.on,html[data-anu-v="libro"] body.anuario-mode #anuSceneM.on{transition:opacity .5s ease,visibility 0s;}
+#anuScene,#anuSceneM{transition:opacity .85s ease,visibility 0s .85s;}
+html[data-anu-v="portada"] body.anuario-mode #anuScene.on,html[data-anu-v="libro"] body.anuario-mode #anuSceneM.on{transition:opacity .85s ease,visibility 0s;}
 
 
 .cv-yv{overflow:visible;}
@@ -517,7 +517,7 @@ body{transition:background-color .6s ease;}
 .sc-fg{left:62.3%;top:33.1%;animation:scFlor 12s ease-in-out -5s infinite;}
 @keyframes scFlor{0%,100%{transform:rotate(-2deg)}50%{transform:rotate(2deg)}}
 @media (orientation:portrait){.sc-f{display:block;}}
-.l-hojitas{transform-origin:73% 92%;animation:l25Pop .75s cubic-bezier(.3,1.5,.5,1) var(--d) backwards,l25Leaf 5s ease-in-out 1s infinite;filter:none;}
+.l-hojitas{transform-origin:73% 92%;animation:l25Pop .85s cubic-bezier(.22,.9,.3,1) var(--d) backwards,l25Leaf 5s ease-in-out 1s infinite;filter:none;}
 @keyframes l25Leaf{0%,100%{transform:rotate(-2deg)}50%{transform:rotate(3deg)}}
 @media (prefers-reduced-motion:reduce){.sc-f,.l-hojitas{animation:none !important;}}
 
@@ -622,3 +622,11 @@ html:not([data-anu-v]) #anuScene *,html:not([data-anu-v]) #anuSceneM *{animation
   #anuLoad,#anuLoad.on{transition:opacity .2s ease,visibility 0s;}
   .al-card,.al-peach-ring,.al-peach,.al-spark,.al-track i{animation:none !important;}
 }
+
+/* ===== Carga conjunta: la portada espera a que TODO esté listo y entra de una sola vez, con fundido suave ===== */
+.anu-cover{transition:opacity .85s cubic-bezier(.22,.9,.3,1),transform .95s cubic-bezier(.22,.9,.3,1);}
+.anu-wrap.anu-wait .anu-cover{opacity:0;transform:scale(.985);pointer-events:none;}
+.anu-wrap:not(.c25) .cv-logo{animation:cvPop .85s cubic-bezier(.22,.9,.3,1) backwards;}
+.cv-peach img{animation:cvPop .85s cubic-bezier(.22,.9,.3,1) backwards,cvFloat 4.4s ease-in-out 1.1s infinite;}
+.anu-wrap.anu-wait .cv-logo,.anu-wrap.anu-wait .cv-peach img{animation:none;}
+@media (prefers-reduced-motion:reduce){.anu-cover,#anuScene,#anuSceneM{transition-duration:.2s !important;}}

@@ -486,7 +486,9 @@ function renderAnuario(){
     matchMedia("(min-width:900px)").addEventListener("change",()=>{ if(anuS.v==="libro"){ if(anuDesk_()&&!anuS.key) anuS.key=anuFirst_(); anuView_(); } });
     $a("anuModal").addEventListener("click",e=>{ if(e.target===e.currentTarget) mdHide_(); });
     addEventListener("keydown",e=>{ if(e.key==="Escape") mdHide_(); }); }
+  const _p0=anuP_(); if(!(_p0&&anuListo_(_p0.anio))){ $a("anuWrap").classList.add("anu-wait"); document.documentElement.classList.remove("anu-ready"); }
   anuEscena_(); medHeader_(); anuCover_(0); anuView_(); anuS.th=undefined; anuAplicarTema_(true);
+  setTimeout(()=>{ const w=$a("anuWrap"); if(w) w.classList.remove("anu-wait"); document.documentElement.classList.add("anu-ready"); },6000); /* red de seguridad: nunca se queda oculta */
   anuFonts_(); // La portada se muestra de inmediato; las fuentes con font-display:swap se aplican al terminar de cargar.
 }
 /* Preload display fonts without blocking the cover; the typeface swaps in when ready. */
@@ -533,12 +535,31 @@ function anuCapas_(t,w){
   if(!c){ box.innerHTML=""; delete box.dataset.k; if(sc) sc.classList.remove("on"); return; }
   const B=t._b+(c.carpeta||"capas/"), M=c.piezas||{}, E=c.esquinas||{};
   if(!box.dataset.k||box.dataset.k!==B){ box.dataset.k=B;
-    box.innerHTML=(c.orden||[]).map((n,i)=>{ const m=M[n]; if(!m) return ""; return `<img class="l25 l-${n}" src="${B}${n}.webp" alt="" draggable="false" style="--l:${m.l}%;--t:${m.t}%;--w:${m.w}%;--d:${(i*0.11).toFixed(2)}s">`; }).join(""); }
+    box.innerHTML=(c.orden||[]).map((n,i)=>{ const m=M[n]; if(!m) return ""; return `<img class="l25 l-${n}" src="${B}${n}.webp" alt="" draggable="false" style="--l:${m.l}%;--t:${m.t}%;--w:${m.w}%;--d:0s">`; }).join(""); }
   if(sc){ ["it","dt","ib","db","pt","pb","fg","fp","fm"].forEach(k=>{ const im=sc.querySelector(".sc-"+k), e=E[k]; if(im&&e&&im.dataset.s!==B+k){ im.dataset.s=B+k; im.src=B+k+".webp"; im.style.setProperty("--pw",e.w); } });
     sc.style.setProperty("--paper",c.papel||"#f0dcda"); sc.classList.add("on"); }
 }
-const anuPre_=u=>new Promise(r=>{ const i=new Image(); i.onload=()=>r(true); i.onerror=()=>r(false); i.src=u; });
+/* Imágenes ya descargadas y decodificadas (_anuOK) o que fallaron (_anuBad): así no se vuelve a esperar por ellas */
+const _anuOK=new Set(), _anuBad=new Set();
+const anuPre_=u=>new Promise(r=>{ if(_anuOK.has(u)){ r(!_anuBad.has(u)); return; } const i=new Image();
+  i.onload=()=>{ const fin=()=>{ _anuOK.add(u); r(true); }; if(i.decode) i.decode().then(fin,fin); else fin(); };
+  i.onerror=()=>{ _anuOK.add(u); _anuBad.add(u); r(false); }; i.src=u; });
 const anuWait_=ms=>new Promise(r=>setTimeout(r,ms));
+/* Todo lo que necesita un año para mostrarse completo (capas, esquinas, fondos de meses, año, portada) */
+function anuUrls_(t,anio){
+  if(!t) return [ANU_BG,ANU_BGH,ANU_DURAZNO];
+  const B=t._b, u=[], pick=a=>Array.isArray(a)&&a.length?B+a[anio%a.length]:null;
+  const fv=pick(t.fondos&&t.fondos.vertical), fh=pick(t.fondos&&t.fondos.horizontal)||fv; if(fv||fh) u.push(fv||fh,fh||fv);
+  if(t.portada) u.push(B+t.portada);
+  if(t.anioImg) u.push(B+t.anioImg);
+  const c=t.capas; if(c){ const cb=B+(c.carpeta||"capas/"); (c.orden||[]).forEach(n=>{ if((c.piezas||{})[n]) u.push(cb+n+".webp"); }); Object.keys(c.esquinas||{}).forEach(k=>u.push(cb+k+".webp")); }
+  const m=t.mes; if(m){ const mb=B+(m.carpeta||"fondo/"); (m.piezas||[]).forEach(n=>u.push(mb+n+".svg")); if(m.puntos) u.push(mb+m.puntos); }
+  return [...new Set(u)];
+}
+const anuListo_=anio=>(anio in _anuTV)&&anuUrls_(_anuTV[anio],anio).every(u=>_anuOK.has(u));
+/* Espera a que TODO esté descargado y decodificado (máx. ms, para no quedarse colgado con mala señal) */
+const anuPreAll_=(urls,ms)=>{ const pend=urls.filter(u=>!_anuOK.has(u)); if(!pend.length) return Promise.resolve();
+  return Promise.race([Promise.all([...pend.map(anuPre_),anuFonts_()]),anuWait_(ms||3500)]); };
 let _anuThSeq=0, _anuThSwapT=0;
 /* Cambia el fondo del Anuario (con fundido). Estaba referenciada pero se había borrado en la reorganización v3.1 */
 async function anuFondo_(v,h,instant){
@@ -559,7 +580,9 @@ async function anuAplicarTema_(instant){
   const B=t&&t._b, pick=a=>Array.isArray(a)&&a.length?B+a[p.anio%a.length]:null;
   let v=pick(t&&t.fondos&&t.fondos.vertical), h=pick(t&&t.fondos&&t.fondos.horizontal)||v; v=v||h;
   let port=t&&t.portada?B+t.portada:null;
-  if(!instant&&t&&(v||port)){ const ok=await Promise.all([v?anuPre_(v):1,h?anuPre_(h):1,port?anuPre_(port):1]); if(seq!==_anuThSeq) return; if(!ok[0]||!ok[1]) v=h=null; if(!ok[2]) port=null; }
+  /* Nada se muestra hasta que TODAS las piezas estén listas: así entran juntas */
+  await anuPreAll_(anuUrls_(t,p.anio)); if(seq!==_anuThSeq) return;
+  if((v&&_anuBad.has(v))||(h&&_anuBad.has(h))) v=h=null; if(port&&_anuBad.has(port)) port=null;
   const key=t?String(p.anio):"def", first=instant||anuS.th===undefined;
   if(!instant&&key===anuS.th){
     H.classList.add("anu-swapping"); c.classList.add("sw"); await anuWait_(520);
@@ -577,6 +600,7 @@ async function anuAplicarTema_(instant){
   const img=$a("cvPoster").querySelector("img");
   if(t&&port){ img.src=port; w.classList.add("poster"); } else { w.classList.remove("poster"); img.removeAttribute("src"); }
   anuCapas_(t,w); anuMes_(t); anuYearSet_(); H.classList.remove("anu-swapping");
+  w.classList.remove("anu-wait"); H.classList.add("anu-ready"); /* revelado conjunto: portada, esquinas y fondo con el mismo fundido */
   if(!first) _anuThSwapT=setTimeout(()=>{ if(seq===_anuThSeq) c.classList.remove("sw"); },520);
 }
 
@@ -588,7 +612,8 @@ async function anuAplicarTema_(instant){
     document.body.appendChild(_ld); return _ld; };
   const ldShow=(txt,toA)=>{ const e=ldEl(); clearTimeout(_ldT); clearTimeout(_ldMinT); e.querySelector(".al-t").textContent=txt; e.querySelector(".al-sub").textContent=toA?"Preparando tu anuario de recuerdos":"Volviendo a la página principal"; _ldSince=Date.now(); e.classList.add("on"); _ldT=setTimeout(ldHide,9000); };
   const ldHide=()=>{ clearTimeout(_ldT); clearTimeout(_ldMinT); if(!_ld) return; const min=matchMedia("(prefers-reduced-motion:reduce)").matches?180:350, wait=Math.max(0,min-(Date.now()-_ldSince)); _ldMinT=setTimeout(()=>{ if(_ld) _ld.classList.remove("on"); },wait); };
-  const ldDone=()=>ldHide();
+  const ldDone=()=>{ const t0=Date.now(), H=document.documentElement, v=document.getElementById("viewAnuario");
+    (function p(){ if(!v||v.classList.contains("hidden")||H.classList.contains("anu-ready")||Date.now()-t0>4200) ldHide(); else setTimeout(p,80); })(); };
   const wrap=()=>{ const o=window.switchTab; if(typeof o!=="function"||o._anuVT) return;
     const n=function(tab){
       const toA=tab==="anuario", inA=document.body.classList.contains("anuario-mode"), args=arguments, self=this;
