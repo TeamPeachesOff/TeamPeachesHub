@@ -437,7 +437,8 @@ function anuYearSet_(){
 }
 function anuCover_(d){
   const per=anuS.per, y=$a("yrVal"), pe=$a("cvPeach");
-  if(!d) anuYearSet_(); y.className="cv-yv"; pe.classList.remove("wob"); void y.offsetWidth;
+  // Actualiza el año inmediatamente; la carga del tema y sus imágenes continúa en paralelo.
+  anuYearSet_(); y.className="cv-yv"; pe.classList.remove("wob"); void y.offsetWidth;
   if(d) pe.classList.add("wob");
   if(d) anuAplicarTema_(false);
   $a("yrPrev").disabled=anuS.pi===0; $a("yrNext").disabled=anuS.pi===per.length-1;
