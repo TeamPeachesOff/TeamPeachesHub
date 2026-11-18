@@ -810,7 +810,7 @@
   .anuario-dest-btns button{padding:12px;border-radius:12px;font-weight:800;background:var(--card-bg-2);color:var(--text);}
   .anuario-dest-btns button:hover:not(:disabled){background:rgba(255,215,0,0.15);color:var(--gold);}
 
-  .toast{position:fixed;bottom:70px;left:50%;transform:translateX(-50%);background:#222;color:#fff;padding:10px 18px;border-radius:999px;font-size:13px;z-index:300;opacity:0;transition:opacity .25s;text-align:center;max-width:85vw;}
+  .toast{position:fixed;bottom:70px;left:50%;transform:translateX(-50%);background:rgba(34,24,40,.94);color:#fff;padding:10px 18px;border:1px solid rgba(255,255,255,.12);border-radius:999px;font-size:13px;z-index:2147483647;box-shadow:0 6px 20px rgba(0,0,0,.24);backdrop-filter:blur(8px);opacity:0;transition:opacity .25s;text-align:center;max-width:85vw;}
   .toast.show{opacity:1;}
   .empty-state{text-align:center;color:var(--text-dim);padding:40px 10px;font-size:14px;}
   /* Separador de año entre actividades: es un <button> (no solo decorativo) que expande/colapsa
@@ -1668,7 +1668,7 @@
 </div>
 
 <script src="scripts/anuario-assets.js?v=1"></script>
-<script src="scripts/anuario.js?v=2.149"></script>
+<script src="scripts/anuario.js?v=2.150"></script>
 <script>
 // Si el navegador restaura esta página desde su caché de "atrás/adelante" (bfcache), el DOM puede
 // quedar congelado a mitad de una actualización (ej. justo cuando un innerHTML se estaba

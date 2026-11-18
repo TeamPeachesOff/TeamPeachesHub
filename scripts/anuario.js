@@ -164,8 +164,14 @@ function anuNorm_(e){
   if(!tipos.length&&(e.categoria==="canto"||e.categoria==="doblaje")) add(e.categoria);
   return {e,f:e.fechaInicio,titulo:e.titulo||"Actividad",tipos:tipos.sort((a,b)=>rankCategoria(a)-rankCategoria(b)),imgs:e.imagenUrl?[e.imagenUrl]:[]};
 }
+function anuFechaTarjeta_(e){
+  const directa=anuFecha_(e.fechaInicio); if(!isNaN(directa)) return directa;
+  const lineas=["ganadorCanto","ganadorDoblaje","mencionesHonorificas"].flatMap(k=>parseWinnerLines(e[k]));
+  const fechas=anuActsDe_(e,lineas).map(a=>anuFecha_(a.fechaInicio)).filter(d=>!isNaN(d)).sort((a,b)=>a-b);
+  return fechas[0]||null;
+}
 function anuBuild_(){
-  const it=[]; (DB.anuario||[]).forEach(e=>{ const n=anuNorm_(e); if(!n.f) return; const d=anuFecha_(n.f); if(isNaN(d)) return;
+  const it=[]; (DB.anuario||[]).forEach(e=>{ const n=anuNorm_(e), d=anuFechaTarjeta_(e); if(!d) return;
     it.push({n,anio:d.getFullYear(),mes:d.getMonth(),dia:d.getDate(),sem:["dom","lun","mar","mié","jue","vie","sáb"][d.getDay()],t:d.getTime()}); });
   const anios=[...new Set([2025,...it.map(x=>x.anio)])]; if(!it.length&&!anios.includes(new Date().getFullYear())) anios.push(new Date().getFullYear()); anios.sort((x,y)=>x-y);
   anuS.per=anios.map(y=>{
@@ -252,7 +258,11 @@ function anuAgregar_(target){
   const nSel=()=>Object.keys(picks).length;
   const eKey=(a,e,i)=>a.id+"|"+((e&&e.id!=null&&String(e.id)!=="")?e.id:"i"+i);
   const drawActs=()=>{
-    const enAnu=new Set((DB.anuario||[]).map(r=>String(r.id)));
+    const enAnu=new Set();
+    (DB.anuario||[]).forEach(r=>{
+      const lineas=["ganadorCanto","ganadorDoblaje","mencionesHonorificas"].flatMap(k=>parseWinnerLines(r[k]));
+      anuActsDe_(r,lineas).forEach(a=>enAnu.add(String(a.id)));
+    });
     const L=(DB.actividades||[]).filter(enMes).sort((a,c)=>anuFecha_(a.fechaInicio)-anuFecha_(c.fechaInicio)||rankCategoria(a.categoria)-rankCategoria(c.categoria));
     const b=anuModal_(`<div class="md-body"><h3 class="md-t">Agregar al anuario</h3>
       <div class="md-nav"><button type="button" data-nav="-1" aria-label="Mes anterior">${CH_L}</button><b>${MESES_LARGO[m]} ${y}</b><button type="button" data-nav="1" aria-label="Mes siguiente">${CH_R}</button></div>
