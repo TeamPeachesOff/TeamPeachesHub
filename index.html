@@ -1342,6 +1342,7 @@
       <button type="button" class="btn-small btn-family" id="me_fetchSmuleBtn" style="width:100%;margin:-4px 0 12px;">🔄 Actualizar foto desde Smule</button>
       <div class="form-group"><label>Usuario Discord</label><input autocomplete="off" type="text" id="me_discord"></div>
       <div class="form-group"><label>Usuario BandLab (exacto, sin @ ni link)</label><input autocomplete="off" type="text" id="me_bandlab" placeholder="usuario exacto"></div>
+      <div class="form-group"><label>Usuario Instagram (sin @ ni link, opcional)</label><input autocomplete="off" type="text" id="me_instagram" placeholder="usuario exacto"></div>
       <div class="form-group"><label>Teléfono (WhatsApp, ej: 50688888888)</label><input autocomplete="off" type="text" id="me_telefono"></div>
       <div class="form-group"><label>Rango vocal</label><input autocomplete="off" type="text" id="me_rango"></div>
       <div class="form-group"><label>Cumpleaños</label><input autocomplete="off" type="date" id="me_cumple"></div>
@@ -2158,6 +2159,18 @@ function limpiarUsuarioBandlab(raw){
   v=v.split(/[?#/]/)[0];
   return v.trim();
 }
+function limpiarUsuarioInstagram(raw){
+  if(!raw) return "";
+  let v=String(raw).trim();
+  v=v.replace(/^https?:\/\/(www\.)?instagram\.com\//i,"");
+  v=v.replace(/^@/,"");
+  v=v.split(/[?#/]/)[0];
+  return v.trim();
+}
+function toInstagramUrl(raw){
+  const v=limpiarUsuarioInstagram(raw);
+  return v?"https://www.instagram.com/"+v+"/":"";
+}
 function toSmuleUrl(raw){
   const v=limpiarUsuarioSmule(raw);
   return v?"https://www.smule.com/"+v:"";
@@ -2522,7 +2535,7 @@ const ANALITICA_LABELS = {
   addFalta:"⚠️ Falta registrada", addFaltasMultiples:"⚠️ Faltas registradas (lote, Pasar Lista)", addStrike:"⚡ Strike registrado", addStrikePermanente:"☠️ Strike Permanente registrado", deleteHistorialCastigos:"🗑️ Registros del historial de castigos borrados",
   resetCastigos:"♻️ Castigos reiniciados (individual)", resetStrikesGlobal:"♻️ Strikes reiniciados (global)",
   limpiarNombresBD:"🧹 Limpieza de nombres BD",
-  abrirTarjetaMiembro:"🪪 Tarjeta de Miembro abierta", irASmule:"🎤 Botón Smule usado", irABandlab:"🎧 Botón BandLab usado",
+  abrirTarjetaMiembro:"🪪 Tarjeta de Miembro abierta", irASmule:"🎤 Botón Smule usado", irAInstagram:"📸 Botón Instagram usado", irABandlab:"🎧 Botón BandLab usado",
   copiarDiscord:"💬 Discord copiado", irAWhatsapp:"📱 Botón WhatsApp usado", buscarMiembros:"🔎 Búsqueda de Miembros usada",
   addToAnuario:"👑 Agregado al Anuario", editAnuario:"✏️ Anuario editado", deleteAnuario:"🗑️ Anuario borrado", verAnuario:"📖 Anuario abierto",
   abrirGlobo:"🌍 Mundo Peaches abierto", interaccionMapa:"🗺️ Interacción con el mapa", buscarMundo:"🔎 Búsqueda en Mundo Peaches usada", actualizarMapaMundo:"🌍 Mapa de Mundo Peaches actualizado",
@@ -2542,7 +2555,7 @@ const ANALITICA_CATEGORIAS_ORDEN = ["Accesos a la app","Seguridad","Tarjetas de 
 const ANALITICA_CATEGORIA_DE = {
   cargarPagina_publico:"Accesos a la app", cargarPagina_miembro:"Accesos a la app", cargarPagina_staff:"Accesos a la app",
   loginGoogle_staff:"Accesos a la app", loginGoogle_miembro:"Accesos a la app",
-  abrirTarjetaMiembro:"Tarjetas de Miembro", irASmule:"Tarjetas de Miembro", irABandlab:"Tarjetas de Miembro", copiarDiscord:"Tarjetas de Miembro", irAWhatsapp:"Tarjetas de Miembro",
+  abrirTarjetaMiembro:"Tarjetas de Miembro", irASmule:"Tarjetas de Miembro", irAInstagram:"Tarjetas de Miembro", irABandlab:"Tarjetas de Miembro", copiarDiscord:"Tarjetas de Miembro", irAWhatsapp:"Tarjetas de Miembro",
   abrirGlobo:"Mundo Peaches (globo)", interaccionMapa:"Mundo Peaches (globo)", actualizarMapaMundo:"Mundo Peaches (globo)",
   buscarMiembros:"Búsquedas", buscarMundo:"Búsquedas",
   addActividad:"Actividades y entregas", editActividad:"Actividades y entregas", deleteActividad:"Actividades y entregas",
@@ -4073,6 +4086,8 @@ function openMemberModal(id,desdeAnuario){
         <img src="https://raw.githubusercontent.com/TeamPeachesOff/TeamPeachesHub/main/Logos/SmuleLogo.png" onerror="this.onerror=null;this.src='https://blog.smule.com/wp-content/uploads/smule-icon.png';"><span>Smule</span></a>`:""}
       ${m.usuarioBandlab?`<a class="platform-btn" target="_blank" data-track="irABandlab" data-dbl-copy="${escAttr(m.usuarioBandlab)}" data-dbl-msg="Usuario de BandLab copiado" title="Clic: abrir BandLab · Mantener presionado: copiar usuario" href="${escAttr(toBandlabUrl(m.usuarioBandlab))}">
         <img src="https://raw.githubusercontent.com/TeamPeachesOff/TeamPeachesHub/main/Logos/BandLabLogo.png" onerror="this.onerror=null;this.src='https://onbukei.com/wp-content/uploads/2021/10/bandlab-music-making-studio.png';"><span>BandLab</span></a>`:""}
+      ${m.usuarioInstagram?`<a class="platform-btn" target="_blank" rel="noopener" data-track="irAInstagram" data-dbl-copy="${escAttr(limpiarUsuarioInstagram(m.usuarioInstagram))}" data-dbl-msg="Usuario de Instagram copiado" title="Clic: abrir Instagram · Mantener presionado: copiar usuario" href="${escAttr(toInstagramUrl(m.usuarioInstagram))}">
+        <img src="https://raw.githubusercontent.com/TeamPeachesOff/TeamPeachesHub/main/Logos/InstagramLogo.png" onerror="this.onerror=null;this.src='https://upload.wikimedia.org/wikipedia/commons/a/a5/Instagram_icon.png';"><span>Instagram</span></a>`:""}
       ${m.usuarioDiscord?`<button class="platform-btn" title="Copiar usuario de Discord" aria-label="Copiar usuario de Discord" data-copy-discord="${escAttr(m.usuarioDiscord)}">
         <img src="https://raw.githubusercontent.com/TeamPeachesOff/TeamPeachesHub/main/Logos/DiscordLogo.webp" onerror="this.onerror=null;this.src='https://freelogopng.com/images/all_img/1691730767discord-logo-transparent.png';"><span>Copiar Discord</span></button>`:""}
       ${m.telefono?`<a class="platform-btn" target="_blank" data-track="irAWhatsapp" data-dbl-copy="${escAttr(String(m.telefono).trim())}" data-dbl-msg="Número de WhatsApp copiado" title="Clic: abrir WhatsApp · Mantener presionado o doble clic: copiar número" href="https://wa.me/${escAttr(limpiarTelefono(m.telefono))}">
@@ -5642,6 +5657,7 @@ function openMemberEditForm(id){
   document.getElementById("me_smule").value=m?m.usuarioSmule||"":"";
   document.getElementById("me_discord").value=m?m.usuarioDiscord||"":"";
   document.getElementById("me_bandlab").value=m?m.usuarioBandlab||"":"";
+  document.getElementById("me_instagram").value=m?m.usuarioInstagram||"":"";
   document.getElementById("me_telefono").value=m?m.telefono||"":"";
   document.getElementById("me_rango").value=m?m.rangoVocal||"":"";
   document.getElementById("me_cumple").value=m?toDateInputCumple(m.cumpleanos):"";
@@ -5684,6 +5700,7 @@ document.getElementById("memberEditForm").addEventListener("submit", async(e)=>{
     usuarioSmule: limpiarUsuarioSmule(document.getElementById("me_smule").value),
     usuarioDiscord: document.getElementById("me_discord").value,
     usuarioBandlab: limpiarUsuarioBandlab(document.getElementById("me_bandlab").value),
+    usuarioInstagram: limpiarUsuarioInstagram(document.getElementById("me_instagram").value),
     telefono: document.getElementById("me_telefono").value,
     rangoVocal: document.getElementById("me_rango").value,
     cumpleanos: document.getElementById("me_cumple").value,
