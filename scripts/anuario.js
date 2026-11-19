@@ -230,15 +230,18 @@ function anuEntregasHTML_(e,lineas){
 function anuActHTML_(id){
   const e=(DB.anuario||[]).find(x=>String(x.id)===String(id)); if(!e) return "";
   const n=anuNorm_(e), f=anuFecha_(n.f), mens=parseWinnerLines(e.mencionesHonorificas), grup=parseWinnerLines(e.grupales);
-  /* Lo mejor de la actividad: los GRUPALES van primero (aunque haya mejores), y si no hay mejores igual se muestran. */
-  const best=[...grup.map(w=>({w,l:"Grupal"})),...parseWinnerLines(e.ganadorCanto).map(w=>({w,l:"Mejor canción"})),...parseWinnerLines(e.ganadorDoblaje).map(w=>({w,l:"Mejor doblaje"}))];
-  const fechaTxt=isNaN(f)?"":`${f.getDate()} de ${MESES_LARGO[f.getMonth()].toLowerCase()} ${f.getFullYear()}`;
-  return `<div class="act-pg"><div class="act-h">${n.imgs.length?`<span class="act-ps"><img class="js-longpress" data-filename="${escAttr(n.titulo+".jpg")}" src="${escAttr(n.imgs[0])}" alt=""></span>`:""}<div><h2>${escHtml(n.titulo)}</h2><div class="md-meta"><span>${fechaTxt}</span>${n.tipos.map(anuTag_).join("")}</div></div></div>
-    <h3 class="act-sec">👑 Lo mejor de la actividad</h3>
-    ${best.length?`<div class="act-best">${best.map(x=>{ const m=anuMem_(x.w.nombre), nm=String(x.w.nombre||"").replace(/@/g,"");
+  /* Si hay GRUPALES, son lo principal de la tarjeta (sección «Grupales»); los mejores van debajo en «Lo mejor de la actividad».
+     Sin grupales queda como siempre. */
+  const bestOnly=[...parseWinnerLines(e.ganadorCanto).map(w=>({w,l:"Mejor canción"})),...parseWinnerLines(e.ganadorDoblaje).map(w=>({w,l:"Mejor doblaje"}))];
+  const grupL=grup.map(w=>({w,l:"Grupal"})), best=[...grupL,...bestOnly];
+  const bstHTML=lst=>`<div class="act-best">${lst.map(x=>{ const m=anuMem_(x.w.nombre), nm=String(x.w.nombre||"").replace(/@/g,"");
       const peachys=nm.split(/[,،]/).map(n=>n.trim()).filter(Boolean);
       const nombreHTML=peachys.length>3?`<div class="bst-peachys"><span class="bst-count">${peachys.length} Peachys</span><span class="bst-full hidden">${escHtml(peachys.join(", "))}</span><button type="button" class="bst-expand" data-peachys-toggle aria-expanded="false" aria-label="Mostrar todos los Peachys">⌄</button></div>`:`<b>${escHtml(nm||"Miembro")}</b>`;
-      return `<div class="bst"><span class="bst-l">${x.l}</span><button type="button" class="bst-av"${m?` data-miembro="${escAttr(m.id)}"`:""} aria-label="${escAttr(nm)}">${ANU_CROWN}<img class="anu-fb" src="${escAttr(anuAv_(m))}" alt=""></button>${nombreHTML}<small>${escHtml(x.w.detalle||"")}</small>${x.w.link?`<a class="md-play" href="${escAttr(x.w.link)}" target="_blank" rel="noopener">Ver presentación</a>`:""}</div>`; }).join("")}</div>`:`<p class="md-empty" style="text-align:center">Todavía sin ganadores asignados.</p>`}
+      return `<div class="bst"><span class="bst-l">${x.l}</span><button type="button" class="bst-av"${m?` data-miembro="${escAttr(m.id)}"`:""} aria-label="${escAttr(nm)}">${ANU_CROWN}<img class="anu-fb" src="${escAttr(anuAv_(m))}" alt=""></button>${nombreHTML}<small>${escHtml(x.w.detalle||"")}</small>${x.w.link?`<a class="md-play" href="${escAttr(x.w.link)}" target="_blank" rel="noopener">Ver presentación</a>`:""}</div>`; }).join("")}</div>`;
+  const fechaTxt=isNaN(f)?"":`${f.getDate()} de ${MESES_LARGO[f.getMonth()].toLowerCase()} ${f.getFullYear()}`;
+  return `<div class="act-pg"><div class="act-h">${n.imgs.length?`<span class="act-ps"><img class="js-longpress" data-filename="${escAttr(n.titulo+".jpg")}" src="${escAttr(n.imgs[0])}" alt=""></span>`:""}<div><h2>${escHtml(n.titulo)}</h2><div class="md-meta"><span>${fechaTxt}</span>${n.tipos.map(anuTag_).join("")}</div></div></div>
+    ${grupL.length?`<h3 class="act-sec">👥 Grupales</h3>${bstHTML(grupL)}`:""}
+    ${grupL.length&&!bestOnly.length?"":`<h3 class="act-sec">👑 Lo mejor de la actividad</h3>${bestOnly.length?bstHTML(bestOnly):`<p class="md-empty" style="text-align:center">Todavía sin ganadores asignados.</p>`}`}
     ${mens.length?`<h3 class="act-sec">🎖️ Menciones honoríficas</h3><div class="act-list">${mens.map(w=>anuRowW_(w)).join("")}</div>`:""}
     ${anuEntregasHTML_(e,[...best.map(x=>x.w),...mens])}
     <div class="act-staff"><button type="button" class="shr" data-share-anuario="${escAttr(e.id)}">${ANU_SHARE_ICON}<span>Compartir</span></button><button type="button" data-edit-anuario="${escAttr(e.id)}">✏️ Editar</button><button type="button" class="del" data-delete-anuario="${escAttr(e.id)}">🗑️ Borrar tarjeta</button></div></div>`;
