@@ -517,6 +517,15 @@
   .mm-anu-ver{padding:6px 18px;border-radius:999px;background:linear-gradient(90deg,var(--peach-2),var(--peach-1));color:#fff;font-weight:800;font-size:13px;cursor:pointer;transition:transform .15s,filter .15s;}
   .mm-anu-ver:hover{transform:scale(1.06);filter:brightness(1.08);}
   /* ----- Ventana de medallas: pestañas por medalla + menciones al estilo Anuario (usa las variables de color de la página, así sigue el modo oscuro/claro) ----- */
+  .med-head{display:flex;flex-direction:column;align-items:center;gap:2px;margin:0 0 16px;text-align:center;}
+  .med-head-ic{display:grid;place-items:center;margin-bottom:2px;filter:drop-shadow(0 4px 8px rgba(0,0,0,.25));}
+  .med-head-t{margin:0;font:400 clamp(28px,8vw,38px)/1.05 var(--f-disp);color:var(--mc,var(--peach-1));text-shadow:0 2px 0 color-mix(in srgb,var(--mc,#000) 28%,transparent);}
+  .med-head-sub{margin-top:4px;padding:0;background:none;color:var(--text-dim);font-weight:700;font-size:13px;}
+  button.med-head-sub{color:var(--peach-1);text-decoration:underline;cursor:pointer;}
+  .med-thumb{display:block;flex:none;width:52px;height:52px;border-radius:12px;overflow:hidden;background:color-mix(in srgb,var(--text) 8%,transparent);}
+  .med-thumb img{display:block;width:100%;height:100%;object-fit:cover;}
+  .med-actrow{padding:8px 10px 8px 8px;}
+  .med-acard{padding:8px 10px 0;}
   .med-tabs{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;margin:4px 0 10px;}
   .med-tab{display:flex;flex-direction:column;align-items:center;gap:2px;padding:9px 4px 8px;border-radius:14px;background:var(--card-bg-2);border:2px solid transparent;color:var(--text);cursor:pointer;transition:border-color .15s,background .15s,transform .15s,opacity .15s;}
   .med-tab:hover{transform:translateY(-1px);}
@@ -4263,24 +4272,34 @@ const MEDALLAS_DEF=[
 ];
 // {idMiembro: {mejorCancion:[{e,w}], mejorDoblaje:[...], mencion:[...]}}; se recalcula solo cuando cambian DB.anuario / DB.miembros.
 let _medIdx=null, _medIdxRef=null;
+/* Miembros de una línea del Anuario: (1) los nombres escritos en la línea (separados por coma, «&», «+», «/», « y », « x »)
+   y (2) los miembros VINCULADOS a la entrega que coincide con esa línea (persona + canción), o en su defecto una entrega de la misma
+   actividad con el mismo nombre. Así cuenta aunque el nombre esté escrito distinto o sea un dueto vinculado a varios miembros. */
+function medMiembrosLinea_(e,w,porLinea,porActividad){
+  const ids=new Map(), add=m=>{ if(m&&m.id!=null) ids.set(String(m.id),m); };
+  String(w.nombre||"").replace(/@/g,"").split(/\s*(?:[,،&+\/]|\sy\s|\sx\s)\s*/i).map(x=>x.trim()).filter(Boolean).forEach(nom=>add(anuMem_(nom)));
+  let ent=porLinea.get(anuLinea_(w.nombre,w.detalle));
+  if(!ent){ const k=anuKey_(w.nombre); if(k){ const acts=anuActsDe_(e,[w]).map(a=>String(a.id)); for(const id of acts){ ent=(porActividad.get(id)||[]).find(r=>anuKey_(r.nombreUsuario)===k); if(ent) break; } } }
+  if(ent) miembrosDeEntrega_(ent).forEach(add);
+  return [...ids.values()];
+}
 function medallasIndice_(){
-  const A=DB.anuario||[], M=DB.miembros||[];
-  if(_medIdx && _medIdxRef && _medIdxRef.a===A && _medIdxRef.m===M && _medIdxRef.n===A.length) return _medIdx;
-  const idx=new Map();
+  const A=DB.anuario||[], M=DB.miembros||[], E=DB.entregas||[];
+  if(_medIdx && _medIdxRef && _medIdxRef.a===A && _medIdxRef.m===M && _medIdxRef.en===E && _medIdxRef.n===A.length) return _medIdx;
+  const idx=new Map(), porLinea=new Map(), porActividad=new Map();
+  E.forEach(r=>{ const k=anuLinea_(r.nombreUsuario,r.detalleEntrega); if(!porLinea.has(k)) porLinea.set(k,r); const ia=String(r.idActividad); if(!porActividad.has(ia)) porActividad.set(ia,[]); porActividad.get(ia).push(r); });
   A.forEach(e=>{
     MEDALLAS_DEF.forEach(d=>{
       parseWinnerLines(e[d.campo]).forEach(w=>{
-        const vistos=new Set();
-        String(w.nombre||"").split(/[,،]/).map(x=>x.trim()).filter(Boolean).forEach(nom=>{
-          const m=anuMem_(nom); if(!m) return;
-          const id=String(m.id); if(vistos.has(id)) return; vistos.add(id);
+        medMiembrosLinea_(e,w,porLinea,porActividad).forEach(m=>{
+          const id=String(m.id);
           if(!idx.has(id)) idx.set(id,{mejorCancion:[],mejorDoblaje:[],mencion:[]});
           idx.get(id)[d.id].push({e,w});
         });
       });
     });
   });
-  _medIdx=idx; _medIdxRef={a:A,m:M,n:A.length};
+  _medIdx=idx; _medIdxRef={a:A,m:M,en:E,n:A.length};
   return idx;
 }
 function medallasListaDe_(m){ return medallasIndice_().get(String(m&&m.id))||{mejorCancion:[],mejorDoblaje:[],mencion:[]}; }
@@ -4297,7 +4316,6 @@ function medallasHTML_(m){
   const c=medallasDe_(m), total=medallasTotal_(m), id=escAttr(m.id);
   return `<div class="mm-medallas-wrap">
     <div class="mm-medallas">${MEDALLAS_DEF.map(d=>{ const n=Number(c[d.id])||0; return `<button type="button" class="mm-med${n?"":" vacia"}" data-medallas="${id}" data-medalla-cat="${d.id}" title="Ver: ${escAttr(d.nombre)}"><span class="mm-med-top">${medallaSvg_(d.color)}<b>${n}</b></span><small>${escHtml(d.nombre)}</small></button>`; }).join("")}</div>
-    <div class="mm-anu-total"><span class="mm-anu-txt"><b>${total}</b> ${total===1?"mención":"menciones"} en el Anuario</span>${total?`<button type="button" class="mm-anu-ver" data-medallas="${id}">Ver</button>`:""}</div>
   </div>`;
 }
 // Ventana de medallas: "cat" = una medalla (SOLO esas menciones) o null = todas.
@@ -4311,13 +4329,14 @@ function medallaItemHTML_(it,def,mostrarEtiqueta){
   const act=(ent&&acts.find(a=>String(a.id)===String(ent.idActividad)))||acts[0]||null;
   const link=w.link||(ent&&ent.linkGrabacion)||"";
   const puedeIr=DB.anuarioModo==="hub"||!!staffPin;
-  const portada=n.imgs[0]?`<span class="med-pic"><img src="${escAttr(n.imgs[0])}" alt="" loading="lazy" decoding="async" onerror="this.onerror=null;this.src=LOGO_DEFAULT"></span>`:`<span class="med-pic med-pic-vacia"></span>`;
+  const foto=(act&&act.imagenUrl)||n.imgs[0]||"";
+  const thumb=foto?`<span class="med-thumb"><img src="${escAttr(foto)}" alt="" loading="lazy" decoding="async" onerror="this.onerror=null;this.src=LOGO_DEFAULT"></span>`:"";
   const tags=n.tipos.map(t=>{ const x=TIPO_[t]||{t:"Especial",e:"✨"}; return `<span class="med-tag">${x.e} ${x.t}</span>`; }).join("");
-  const tarjeta=`<${puedeIr?`button type="button" data-med-ir="${escAttr(e.id)}"`:`div`} class="med-acard">${portada}<span class="med-acb"><span class="med-act">${escHtml(n.titulo)}</span><span class="med-tags">${tags}</span></span></${puedeIr?"button":"div"}>`;
+  const tarjeta=`<${puedeIr?`button type="button" data-med-ir="${escAttr(e.id)}"`:`div`} class="med-acard"><span class="med-acb"><span class="med-act">${escHtml(n.titulo)}</span><span class="med-tags">${tags}</span></span></${puedeIr?"button":"div"}>`;
   return `<div class="med-item">
     <div class="med-top">${tarjeta}<div class="med-mes"><b>${escHtml(mes)}</b><small>${anio}</small></div></div>
     ${mostrarEtiqueta?`<div class="med-chip" style="--mc:${def.color}">${medallaSvg_(def.color,16)}<span>${escHtml(def.nombre)}</span></div>`:""}
-    <div class="med-actrow"><span class="med-who"><b>${escHtml((act&&act.titulo)||n.titulo)}</b><small>${escHtml(w.detalle||def.nombre)}</small></span>${link?`<a class="med-play" href="${escAttr(link)}" target="_blank" rel="noopener" aria-label="Reproducir actividad" title="Reproducir actividad">▶</a>`:""}</div>
+    <div class="med-actrow">${thumb}<span class="med-who"><b>${escHtml((act&&act.titulo)||n.titulo)}</b><small>${escHtml(w.detalle||def.nombre)}</small></span>${link?`<a class="med-play" href="${escAttr(link)}" target="_blank" rel="noopener" aria-label="Reproducir actividad" title="Reproducir actividad">▶</a>`:""}</div>
   </div>`;
 }
 function pintarMedallas_(id,cat){
@@ -4328,10 +4347,10 @@ function pintarMedallas_(id,cat){
     const fa=anuFechaTarjeta_(a.it.e), fb=anuFechaTarjeta_(b.it.e);
     return ((fb?fb.getTime():0)-(fa?fa.getTime():0))||(MEDALLAS_DEF.indexOf(a.d)-MEDALLAS_DEF.indexOf(b.d));
   });
+  const d0=cat?defs[0]:null, nom=m.nombre||"";
+  const TIT={mejorCancion:"Mejor Canción",mejorDoblaje:"Mejor Doblaje",mencion:"Menciones Honoríficas"};
   document.getElementById("medallasContent").innerHTML=`
-    <h3 style="margin-top:0;">🏅 Medallas de ${escHtml(m.nombre||"")}</h3>
-    <div class="med-tabs" role="tablist">${MEDALLAS_DEF.map(d=>{ const n=c[d.id]||0; return `<button type="button" class="med-tab${cat===d.id?" on":""}${n?"":" vacia"}" style="--mc:${d.color}" data-med-cat="${d.id}" aria-pressed="${cat===d.id}">${medallaSvg_(d.color,24)}<b>${n}</b><small>${escHtml(d.nombre)}</small></button>`; }).join("")}</div>
-    <div class="med-resumen">${cat?`Solo <b>${escHtml(defs[0].nombre)}</b> · <button type="button" class="med-todas" data-med-cat="">Ver todas (${total})</button>`:`Todas las apariciones en el Anuario · <b>${total}</b>`}</div>
+    <div class="med-head">${d0?`<span class="med-head-ic">${medallaSvg_(d0.color,38)}</span><h3 class="med-head-t" style="--mc:${d0.color}">${TIT[d0.id]||escHtml(d0.nombre)}</h3><button type="button" class="med-head-sub" data-med-cat="">Ver todas las medallas</button>`:`<span class="med-head-ic">${medallaSvg_("#FFB300",38)}</span><h3 class="med-head-t" style="--mc:#FFB300">Todas las medallas</h3><span class="med-head-sub plano">${escHtml(nom)} · ${total} ${total===1?"mención":"menciones"} en el Anuario</span>`}</div>
     <div class="med-lista">${items.length?items.map(x=>medallaItemHTML_(x.it,x.d,!cat)).join(""):`<div class="med-vacio">Todavía sin menciones${cat?" de este tipo":""} en el Anuario.</div>`}</div>`;
   document.getElementById("medallasContent").dataset.id=String(id);
 }
