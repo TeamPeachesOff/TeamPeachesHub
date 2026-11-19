@@ -723,7 +723,10 @@ html.anu-x-hide #anuScene .sc-26{opacity:0;transition:none;}
 html[data-anu-v="libro"] body.anuario-mode main{padding-top:0;}
 .anu-menu,.anu-home{display:none;}
 @media (min-width:900px){
-  html[data-anu-v="libro"] body.anuario-mode .anu-bar{padding-top:max(10px,env(safe-area-inset-top));padding-left:56px;padding-right:calc(var(--anu-tabs-w,230px) + 26px);}
+  /* Portada/título pegados al borde izquierdo del índice y Agregar al borde derecho de la tarjeta; solo se aparta de los botones flotantes si no hay margen (JS: --anu-bar-pl / --anu-bar-pr) */
+  html[data-anu-v="libro"] body.anuario-mode .anu-bar{padding-top:max(10px,env(safe-area-inset-top));padding-left:var(--anu-bar-pl,56px);padding-right:var(--anu-bar-pr,calc(var(--anu-tabs-w,230px) + 26px));justify-content:flex-start;}
+  html[data-anu-v="libro"] .anu-bar .anu-bt{flex:0 1 auto;text-align:left;margin:0;}
+  html[data-anu-v="libro"] .anu-bar .anu-add{margin-left:auto;}
 }
 @media (max-width:899px){
   html[data-anu-v="libro"] body.anuario-mode header{display:none;}

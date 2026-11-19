@@ -569,6 +569,11 @@
   .me-entregas{margin-top:18px;}
   .me-title,.me-sub{font-weight:800;color:var(--peach-2);font-size:13px;}
   .me-sub{margin:14px 0 8px;}
+  .me-filtro{margin:0;display:flex;flex-wrap:wrap;gap:8px;}
+  .me-filtro .pill-toggle{display:inline-flex;align-items:center;gap:10px;}
+  .me-n{display:inline-grid;place-items:center;min-width:22px;height:22px;padding:0 7px;border-radius:999px;background:rgba(239,8,112,.16);color:inherit;font-size:12px;font-weight:800;line-height:1;}
+  .me-filtro .pill-toggle.on .me-n{background:rgba(255,255,255,.28);}
+  .me-sub-row{display:flex;align-items:center;justify-content:space-between;gap:10px;}
   .me-lista{display:flex;flex-direction:column;gap:8px;}
   .me-ent{display:flex;align-items:center;gap:10px;padding:9px 10px 9px 12px;border-radius:14px;background:linear-gradient(135deg,rgba(239,8,112,0.12),rgba(255,143,177,0.05));border:1px solid rgba(239,8,112,0.25);}
   .me-ent-info{flex:1;min-width:0;}
@@ -643,7 +648,7 @@
 
 </style>
 <link rel="stylesheet" href="styles/anuario-fonts.css?v=1">
-<link rel="stylesheet" href="styles/anuario.css?v=2.154">
+<link rel="stylesheet" href="styles/anuario.css?v=2.155">
 <style>
 
   #searchMiembros{width:100%;padding:12px 14px;border-radius:12px;border:1px solid rgba(255,255,255,0.1);background:var(--card-bg-2);color:var(--text);font-size:14px;display:block;}
@@ -1826,7 +1831,7 @@
 </div>
 
 <script src="scripts/anuario-assets.js?v=1"></script>
-<script src="scripts/anuario.js?v=2.159"></script>
+<script src="scripts/anuario.js?v=2.160"></script>
 <script>
 // Si el navegador restaura esta página desde su caché de "atrás/adelante" (bfcache), el DOM puede
 // quedar congelado a mitad de una actualización (ej. justo cuando un innerHTML se estaba
@@ -4146,10 +4151,10 @@ function openMemberModal(id,desdeAnuario){
   const editBtn=document.querySelector("[data-edit-member]"); if(editBtn) editBtn.onclick=()=>{ closeModal("memberModal"); openMemberEditForm(m.id); };
   // v23: filtro Canto/Doblaje de la sección de Entregas de esta tarjeta -- cada pill es
   // independiente (no exclusivo), así que pueden quedar ambas prendidas, solo una, o ninguna.
-  // Filtro Canto/Doblaje: ambos APAGADOS al abrir = se ven todas las entregas. Al prender uno (o los dos) solo se ven esas categorías.
+  // Filtro Canto/Doblaje: APAGADOS al abrir = no se muestra ninguna entrega. Al prender uno (o varios) salen solo esas categorías.
   const aplicarFiltroEntregas_=()=>{
     const on=[...document.querySelectorAll("#meEntregasFiltro [data-me-filtro].on")].map(x=>x.dataset.meFiltro);
-    document.querySelectorAll("[data-entregas-bloque]").forEach(bl=>bl.classList.toggle("hidden", on.length>0 && !on.includes(bl.dataset.entregasBloque)));
+    document.querySelectorAll("[data-entregas-bloque]").forEach(bl=>bl.classList.toggle("hidden", !on.includes(bl.dataset.entregasBloque)));
   };
   document.querySelectorAll("#meEntregasFiltro [data-me-filtro]").forEach(btn=>{
     btn.onclick=()=>{ btn.classList.toggle("on"); btn.setAttribute("aria-pressed",String(btn.classList.contains("on"))); aplicarFiltroEntregas_(); };
@@ -4477,7 +4482,7 @@ function entregasDelMiembroHTML_(idMiembro){
   };
   Object.keys(porCategoria).forEach(k=>porCategoria[k].sort(porFechaDesc));
   const bloque=(titulo,emoji,lista)=> !lista.length ? "" : `
-    <div class="me-sub">${emoji} ${titulo} (${lista.length})</div>
+    <div class="me-sub me-sub-row"><span>${emoji} ${titulo}</span><b class="me-n">${lista.length}</b></div>
     <div class="me-lista">
       ${lista.map(e=>`<div class="me-ent">
         <div class="me-ent-info">
@@ -4487,15 +4492,12 @@ function entregasDelMiembroHTML_(idMiembro){
         ${playBtnHTML_(e.linkGrabacion)}
       </div>`).join("")}
     </div>`;
-  const hayFiltro = porCategoria.canto.length || porCategoria.doblaje.length;
+  const CATS=[["canto","\u{1F3A4}","Canto"],["doblaje","\u{1F399}\uFE0F","Doblaje"],["otras","\u2728","Otras"]].filter(c=>porCategoria[c[0]].length);
   return `<div class="me-entregas">
-    ${hayFiltro?`<div class="filter-pills" id="meEntregasFiltro" style="margin:0;">
-      <button type="button" class="pill-toggle" data-me-filtro="canto" aria-pressed="false">🎤 Canto</button>
-      <button type="button" class="pill-toggle" data-me-filtro="doblaje" aria-pressed="false">🎙️ Doblaje</button>
-    </div>`:""}
-    <div data-entregas-bloque="canto">${bloque("Canto","🎤",porCategoria.canto)}</div>
-    <div data-entregas-bloque="doblaje">${bloque("Doblaje","🎙️",porCategoria.doblaje)}</div>
-    <div data-entregas-bloque="otras">${bloque("Otras","📁",porCategoria.otras)}</div>
+    <div class="filter-pills me-filtro" id="meEntregasFiltro">
+      ${CATS.map(c=>`<button type="button" class="pill-toggle" data-me-filtro="${c[0]}" aria-pressed="false"><span>${c[1]} ${c[2]}</span><b class="me-n">${porCategoria[c[0]].length}</b></button>`).join("")}
+    </div>
+    ${CATS.map(c=>`<div data-entregas-bloque="${c[0]}" class="hidden">${bloque(c[2],c[1],porCategoria[c[0]])}</div>`).join("")}
   </div>`;
 }
 

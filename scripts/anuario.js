@@ -545,7 +545,15 @@ function anuView_(){
   anuIdx_(); anuDet_(); anuTabsAncho_();
 }
 /* Ancho de las pestañas flotantes (Actividades/Anuario): la barra del libro se aparta justo lo necesario en pantalla ancha. */
-function anuTabsAncho_(){ const tb=document.querySelector("header .tabs"); if(tb&&tb.offsetWidth) document.documentElement.style.setProperty("--anu-tabs-w",tb.offsetWidth+"px"); }
+function anuTabsAncho_(){
+  const R=document.documentElement, tb=document.querySelector("header .tabs"), bk=$a("anuBook"), tw=tb&&tb.offsetWidth;
+  if(tw) R.style.setProperty("--anu-tabs-w",tw+"px");
+  if(!bk||!matchMedia("(min-width:900px)").matches) return;
+  const r=bk.getBoundingClientRect(); if(!r.width) return;
+  /* a la izquierda: el menú flotante ocupa ~62px desde el borde; a la derecha: las pestañas flotantes. Solo se aparta lo que haga falta. */
+  R.style.setProperty("--anu-bar-pl",Math.max(0,Math.round(64-r.left))+"px");
+  R.style.setProperty("--anu-bar-pr",Math.max(0,Math.round((tw||230)+28-(R.clientWidth-r.right)))+"px");
+}
 addEventListener("resize",()=>{ if(document.body.classList.contains("anuario-mode")) anuTabsAncho_(); });
 /* El año de la portada: si el tema del año trae «anioImg» se muestra esa imagen (la letra exacta de ese año); si no, texto con la letra del tema */
 const _anuTV={};
