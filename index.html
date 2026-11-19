@@ -461,6 +461,38 @@
   table.entregas-table td.td-persona{text-wrap:balance;}
   .persona-nw{white-space:nowrap;}
   .anuario-mini-btn{background:rgba(255,215,0,0.18);color:var(--gold);padding:5px 8px;border-radius:8px;font-size:11px;font-weight:700;white-space:nowrap;}
+
+  /* ===== Entregas estilo Anuario: tarjetas con foto, nombre, canción y botón play ===== */
+  table.entregas-table{display:block;}
+  table.entregas-table>tbody{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:8px;}
+  table.entregas-table tr:not([data-entrega-row]){display:none;}
+  table.entregas-table tr[data-entrega-row]{display:grid;grid-template-columns:auto auto minmax(0,1fr) auto auto;grid-template-areas:"chk av who play adm" "chk av song play adm";align-items:center;column-gap:0;background:var(--card-bg-2);border-radius:16px;padding:8px 10px;border:1px solid rgba(255,255,255,0.06);}
+  table.entregas-table tr[data-entrega-row] td{border:0;padding:0;background:none;}
+  table.entregas-table td:first-child{grid-area:chk;display:none;}
+  table.entregas-table td:first-child:has(.js-check-entrega:not(.hidden)){display:block;margin-right:10px;}
+  table.entregas-table td.td-persona{display:contents;}
+  table.entregas-table .ent-av{grid-area:av;width:44px;height:44px;margin-right:10px;align-self:center;}
+  table.entregas-table .ent-av>img{width:44px;height:44px;border-radius:50%;object-fit:cover;border:2px solid var(--peach-2);}
+  table.entregas-table .ent-name{grid-area:who;align-self:end;font-weight:800;font-size:14px;color:var(--text);min-width:0;overflow-wrap:anywhere;}
+  table.entregas-table td.ent-song{grid-area:song;align-self:start;font-size:12px;color:var(--text-dim);min-width:0;overflow-wrap:anywhere;}
+  table.entregas-table td.col-enlace{grid-area:play;margin-left:8px;}
+  table.entregas-table td.col-enlace:empty{display:none;}
+  table.entregas-table a.ent-play{display:inline-flex;align-items:center;justify-content:center;width:38px;height:38px;border-radius:50%;background:linear-gradient(135deg,var(--peach-2),var(--peach-1));text-decoration:none;box-shadow:0 3px 10px rgba(0,0,0,0.3);transition:transform .15s ease,filter .15s ease;}
+  table.entregas-table a.ent-play svg{margin-left:2px;}
+  table.entregas-table a.ent-play:hover{transform:scale(1.08);filter:brightness(1.1);}
+  table.entregas-table td.ent-adm{grid-area:adm;margin-left:8px;}
+  table.entregas-table .ent-adm-in{display:flex;gap:6px;}
+  table.entregas-table .anuario-mini-btn{width:38px;height:38px;padding:0;border:0;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;font-size:16px;cursor:pointer;box-shadow:0 3px 10px rgba(0,0,0,0.3);transition:transform .15s ease,filter .15s ease;}
+  table.entregas-table .anuario-mini-btn[data-anuario-entrega]{background:rgba(255,215,0,0.2);color:var(--gold);}
+  table.entregas-table .anuario-mini-btn[data-edit-entrega]{background:rgba(164,95,199,0.3);color:#d9b6f5;}
+  table.entregas-table .anuario-mini-btn:hover{transform:scale(1.08);filter:brightness(1.15);}
+  table.entregas-table tr.search-hit-row{background:rgba(13,239,138,0.10);box-shadow:inset 0 0 0 2px var(--rosa-comp);}
+  table.entregas-table tr.search-hit-row td,table.entregas-table tr.search-hit-row td:first-child{background:none;box-shadow:none;}
+  @media (max-width:420px){
+    table.entregas-table tr[data-entrega-row]{grid-template-areas:"chk av who play" "chk av song play" "adm adm adm adm";}
+    table.entregas-table td.ent-adm{margin:8px 0 0;}
+    table.entregas-table .ent-adm-in{justify-content:flex-end;}
+  }
   .entregas-toolbar{display:flex;gap:8px;margin-top:10px;flex-wrap:wrap;}
 
   /* ===== v22: Pasar Lista (asignar entregas a miembros) + Chambeadores del año ===== */
@@ -3540,10 +3572,10 @@ function cardHTML(a, entregasDeEsta){
           <tr><th></th><th>Persona</th><th>Canción/Escena</th><th class="col-enlace">Enlace</th>${staffPin?"<th></th>":""}</tr>
           ${entregasDeEsta.map(e=>`<tr data-entrega-row="${e.id}">
             <td><input autocomplete="off" type="checkbox" class="js-check-entrega hidden" data-id="${e.id}" data-act="${a.id}"></td>
-            <td class="td-persona">${personaEntregaHTML_(e)}</td>
-            <td>${escHtml(e.detalleEntrega||"")}</td>
-            <td class="col-enlace">${e.linkGrabacion?`<a class="play-btn" href="${escAttr(e.linkGrabacion)}" target="_blank" title="Escuchar" aria-label="Escuchar">▷</a>`:""}</td>
-            ${staffPin?`<td style="white-space:nowrap;"><div style="display:flex;gap:4px;flex-wrap:wrap;"><button class="anuario-mini-btn" data-anuario-entrega="${a.id}" data-titulo="${escAttr(a.titulo||"")}" data-nombre="${escAttr(e.nombreUsuario||"")}" data-detalle="${escAttr(e.detalleEntrega||"")}" data-link="${escAttr(e.linkGrabacion||"")}">👑</button><button class="anuario-mini-btn" data-edit-entrega="${e.id}" title="Editar entrega" style="background:rgba(164,95,199,0.25);color:#d9b6f5;">✏️</button></div></td>`:""}
+            <td class="td-persona">${avatarEntrega_(e)}<span class="ent-name">${personaEntregaHTML_(e)}</span></td>
+            <td class="ent-song">${escHtml(e.detalleEntrega||"")}</td>
+            <td class="col-enlace">${e.linkGrabacion?`<a class="ent-play" href="${escAttr(e.linkGrabacion)}" target="_blank" title="Escuchar" aria-label="Escuchar"><svg viewBox="0 0 24 24" width="17" height="17" fill="#fff" aria-hidden="true"><path d="M8 5.5v13a1 1 0 0 0 1.5.86l10.5-6.5a1 1 0 0 0 0-1.72L9.5 4.64A1 1 0 0 0 8 5.5z"/></svg></a>`:""}</td>
+            ${staffPin?`<td class="ent-adm"><div class="ent-adm-in"><button class="anuario-mini-btn" data-anuario-entrega="${a.id}" data-titulo="${escAttr(a.titulo||"")}" data-nombre="${escAttr(e.nombreUsuario||"")}" data-detalle="${escAttr(e.detalleEntrega||"")}" data-link="${escAttr(e.linkGrabacion||"")}">👑</button><button class="anuario-mini-btn" data-edit-entrega="${e.id}" title="Editar entrega">✏️</button></div></td>`:""}
           </tr>`).join("")}
         </table>`:`<div style="color:var(--text-dim);">Todavía no hay entregas registradas.</div>`}
         ${staffPin?`
@@ -4108,6 +4140,11 @@ function miembrosDeEntrega_(e){
 // normal (sin subrayado ni cambio de color), solo el cursor indica que se puede tocar.
 // El texto original NO se borra de la hoja: lo sigue usando "Asignar automáticamente" y se puede
 // ver/editar con ✏️; solo cambia lo que se muestra. Sin asignación, se muestra el texto tal cual.
+function avatarEntrega_(e){
+  const m=miembrosDeEntrega_(e)[0];
+  const img=`<img src="${escAttr((m&&m.avatarUrl)||LOGO_DEFAULT)}" alt="" loading="lazy" decoding="async" onerror="this.onerror=null;this.src=LOGO_DEFAULT">`;
+  return `<span class="vip-wrap ent-av">${img}${m&&esTrue(m.esVip)?vipBadgeSvg_():""}</span>`;
+}
 function personaEntregaHTML_(e){
   const ms=miembrosDeEntrega_(e);
   if(ms.length){
