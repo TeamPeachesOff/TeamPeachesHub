@@ -99,7 +99,10 @@
     .anu-m.f{--mw:clamp(104px,30vw,140px);}
     .anu-m:hover{transform:translateY(-3px);} .anu-m:active{transform:scale(.96);}
     .anu-av{position:relative;display:block;aspect-ratio:1/1;margin:0 8%;}
-    .anu-av>img.js-avatar{position:absolute;inset:0;width:100%;height:100%;border-radius:50%;object-fit:cover;border:1.5px solid var(--anu-ink,#2a1745);background:#fff;z-index:1;}
+    .anu-av>img.js-avatar,.anu-av>.vip-wrap>img.js-avatar{position:absolute;inset:0;width:100%;height:100%;border-radius:50%;object-fit:cover;border:1.5px solid var(--anu-ink,#2a1745);background:#fff;z-index:1;}
+    /* Miembros VIP: su foto viene dentro de .vip-wrap; el contenedor ocupa todo el círculo y la insignia se apoya en el borde del círculo (no en la esquina del cuadrado). */
+    .anu-av>.vip-wrap{position:absolute;inset:0;display:block;z-index:1;line-height:0;}
+    .anu-av>.vip-wrap>.vip-badge{right:3%;bottom:3%;}
     .anu-sp{position:absolute;inset:0;width:100%;height:100%;overflow:visible;z-index:0;pointer-events:none;}
     .anu-wr{position:absolute;inset:0;width:100%;height:100%;overflow:visible;z-index:2;pointer-events:none;}
     .anu-arc{position:absolute;inset:0;width:100%;height:100%;overflow:visible;z-index:3;pointer-events:none;}
