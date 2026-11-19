@@ -464,9 +464,10 @@
 
   /* ===== Entregas estilo Anuario: tarjetas con foto, nombre, canción y botón play ===== */
   table.entregas-table{display:block;}
-  table.entregas-table>tbody{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:8px;}
+  table.entregas-table>tbody{display:block;}
   table.entregas-table tr:not([data-entrega-row]){display:none;}
-  table.entregas-table tr[data-entrega-row]{display:grid;grid-template-columns:auto auto minmax(0,1fr) auto auto;grid-template-areas:"chk av who play adm" "chk av song play adm";align-items:center;column-gap:0;background:linear-gradient(135deg,rgba(239,8,112,0.12),rgba(255,143,177,0.05));border-radius:14px;padding:8px 10px;border:1px solid rgba(239,8,112,0.25);}
+  table.entregas-table tr[data-entrega-row]{display:grid;grid-template-columns:auto auto minmax(0,1fr) auto auto;grid-template-areas:"chk av who play adm" "chk av song play adm";align-items:center;column-gap:0;background:none;border-radius:0;padding:9px 2px;border:0;border-bottom:1px solid rgba(255,255,255,0.06);}
+  table.entregas-table tr[data-entrega-row]:last-child{border-bottom:0;}
   table.entregas-table tr[data-entrega-row] td{border:0;padding:0;background:none;}
   table.entregas-table td:first-child{grid-area:chk;display:none;}
   table.entregas-table td:first-child:has(.js-check-entrega:not(.hidden)){display:block;margin-right:10px;}
@@ -477,17 +478,35 @@
   table.entregas-table td.ent-song{grid-area:song;align-self:start;font-size:12px;color:var(--text-dim);min-width:0;overflow-wrap:anywhere;}
   table.entregas-table td.col-enlace{grid-area:play;margin-left:8px;}
   table.entregas-table td.col-enlace:empty{display:none;}
-  table.entregas-table a.ent-play{display:inline-flex;align-items:center;justify-content:center;width:38px;height:38px;border-radius:50%;background:linear-gradient(90deg,var(--peach-2),var(--peach-1));text-decoration:none;transition:transform .15s ease,filter .15s ease;}
-  table.entregas-table a.ent-play svg{display:block;position:relative;left:-0.5px;}
-  table.entregas-table a.ent-play:hover{transform:scale(1.08);filter:brightness(1.1);}
+  a.ent-play{display:inline-flex;align-items:center;justify-content:center;width:38px;height:38px;border-radius:50%;background:linear-gradient(90deg,var(--peach-2),var(--peach-1));text-decoration:none;transition:transform .15s ease,filter .15s ease;}
+  a.ent-play svg{display:block;position:relative;left:-0.5px;}
+  a.ent-play:hover{transform:scale(1.08);filter:brightness(1.1);}
   table.entregas-table td.ent-adm{grid-area:adm;margin-left:8px;}
   table.entregas-table .ent-adm-in{display:flex;gap:6px;}
   table.entregas-table .anuario-mini-btn{width:38px;height:38px;padding:0;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;font-size:16px;cursor:pointer;transition:transform .15s ease,filter .15s ease;}
   table.entregas-table .anuario-mini-btn[data-anuario-entrega]{background:rgba(255,215,0,0.16);color:var(--gold);border:1px solid rgba(255,215,0,0.4);}
   table.entregas-table .anuario-mini-btn[data-edit-entrega]{background:rgba(164,95,199,0.25);color:#d9b6f5;border:1px solid rgba(164,95,199,0.45);}
   table.entregas-table .anuario-mini-btn:hover{transform:scale(1.08);filter:brightness(1.15);}
-  table.entregas-table tr.search-hit-row{background:rgba(13,239,138,0.10);box-shadow:inset 0 0 0 2px var(--rosa-comp);}
+  table.entregas-table tr.search-hit-row{border-radius:10px;background:rgba(13,239,138,0.10);box-shadow:inset 0 0 0 2px var(--rosa-comp);}
   table.entregas-table tr.search-hit-row td,table.entregas-table tr.search-hit-row td:first-child{background:none;box-shadow:none;}
+  /* ----- Medallas en la tarjeta de miembro ----- */
+  .mm-medallas{display:flex;justify-content:center;align-items:flex-start;gap:20px;width:100%;margin:14px 0 0;padding:4px 0;background:none;color:inherit;cursor:pointer;}
+  .mm-med{display:flex;flex-direction:column;align-items:center;gap:2px;}
+  .mm-med-top{display:flex;align-items:center;gap:5px;}
+  .mm-med-top b{font-size:16px;font-weight:800;}
+  .mm-med small{font-size:10px;color:var(--text-dim);}
+  .mm-med.vacia{opacity:0.45;}
+  .med-fila{display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid rgba(255,255,255,0.06);}
+  .med-fila b{margin-left:auto;font-size:16px;}
+  .med-aviso{margin-top:12px;padding:10px 12px;border-radius:12px;background:var(--card-bg-2);font-size:12.5px;color:var(--text-dim);}
+  .med-aviso strong{display:block;color:var(--text);margin-bottom:2px;}
+  /* ----- Entregas en la tarjeta de miembro (sin foto) ----- */
+  .me-entregas{margin-top:18px;}
+  .me-title,.me-sub{font-weight:800;color:var(--peach-2);font-size:13px;}
+  .me-sub{margin:14px 0 8px;}
+  .me-lista{display:flex;flex-direction:column;gap:8px;}
+  .me-ent{display:flex;align-items:center;gap:10px;padding:9px 10px 9px 12px;border-radius:14px;background:linear-gradient(135deg,rgba(239,8,112,0.12),rgba(255,143,177,0.05));border:1px solid rgba(239,8,112,0.25);}
+  .me-ent-info{flex:1;min-width:0;}
   @media (max-width:420px){
     table.entregas-table tr[data-entrega-row]{grid-template-areas:"chk av who play" "chk av song play" "adm adm adm adm";}
     table.entregas-table td.ent-adm{margin:8px 0 0;}
@@ -812,10 +831,10 @@
   .info-table{width:100%;margin-top:14px;font-size:13.5px;}
   .info-table td{padding:6px 0;border-bottom:1px solid rgba(255,255,255,0.06);}
   .info-table td:first-child{color:var(--text-dim);width:50%;}
-  .platform-row{display:flex;gap:10px;margin-top:14px;flex-wrap:wrap;}
-  .platform-btn{flex:1;min-width:70px;display:flex;flex-direction:column;align-items:center;gap:6px;padding:10px;background:var(--card-bg-2);border-radius:12px;}
-  .platform-btn img{width:28px;height:28px;object-fit:contain;}
-  .platform-btn span{font-size:11px;color:var(--text-dim);}
+  .platform-row{display:flex;gap:26px;margin-top:14px;flex-wrap:wrap;justify-content:center;}
+  .platform-btn{flex:none;display:flex;align-items:center;justify-content:center;padding:0;background:none;}
+  .platform-btn img{width:34px;height:34px;object-fit:contain;}
+  .platform-btn span{display:none;}
   .castigos-box{margin-top:16px;background:var(--card-bg-2);border-radius:12px;padding:12px;}
   .castigos-box .ct-title{font-weight:800;color:var(--peach-2);margin-bottom:8px;font-size:13px;}
   .castigos-box .ct-row{display:flex;justify-content:space-between;font-size:13.5px;padding:3px 0;}
@@ -1229,6 +1248,8 @@
     <div id="vipImportLog" style="margin-top:8px;"></div>
   </div>
 </div></div>
+
+<div class="modal-overlay" id="medallasModal" style="z-index:300;"><div class="modal-box"><button class="modal-close" data-close="medallasModal">✕</button><div id="medallasContent"></div></div></div>
 
 <div class="modal-overlay" id="miembrosOrdenModal"><div class="modal-box"><button class="modal-close" data-close="miembrosOrdenModal">✕</button>
   <h3>Ordenar miembros</h3>
@@ -3574,7 +3595,7 @@ function cardHTML(a, entregasDeEsta){
             <td><input autocomplete="off" type="checkbox" class="js-check-entrega hidden" data-id="${e.id}" data-act="${a.id}"></td>
             <td class="td-persona">${avatarEntrega_(e)}<span class="ent-name">${personaEntregaHTML_(e)}</span></td>
             <td class="ent-song">${escHtml(e.detalleEntrega||"")}</td>
-            <td class="col-enlace">${e.linkGrabacion?`<a class="ent-play" href="${escAttr(e.linkGrabacion)}" target="_blank" title="Escuchar" aria-label="Escuchar"><svg viewBox="0 0 24 24" width="17" height="17" fill="#fff" aria-hidden="true"><path d="M8 5.5v13a1 1 0 0 0 1.5.86l10.5-6.5a1 1 0 0 0 0-1.72L9.5 4.64A1 1 0 0 0 8 5.5z"/></svg></a>`:""}</td>
+            <td class="col-enlace">${playBtnHTML_(e.linkGrabacion)}</td>
             ${staffPin?`<td class="ent-adm"><div class="ent-adm-in"><button class="anuario-mini-btn" data-anuario-entrega="${a.id}" data-titulo="${escAttr(a.titulo||"")}" data-nombre="${escAttr(e.nombreUsuario||"")}" data-detalle="${escAttr(e.detalleEntrega||"")}" data-link="${escAttr(e.linkGrabacion||"")}">👑</button><button class="anuario-mini-btn" data-edit-entrega="${e.id}" title="Editar entrega">✏️</button></div></td>`:""}
           </tr>`).join("")}
         </table>`:`<div style="color:var(--text-dim);">Todavía no hay entregas registradas.</div>`}
@@ -3954,12 +3975,13 @@ function openMemberModal(id,desdeAnuario){
       <tr><td>📅 Miembro desde</td><td>${fmtFecha(m.fechaIngreso)||"—"}</td></tr>
       ${(m.generacionNum!==undefined && m.generacionNum!==null && m.generacionNum!=="")?`<tr><td>🌱 Generación</td><td>${fmtGeneracion(m.generacionNum)}</td></tr>`:""}
     </table>
+    ${medallasHTML_(m)}
     <div class="platform-row">
       ${m.usuarioSmule?`<a class="platform-btn" target="_blank" data-track="irASmule" data-dbl-copy="${escAttr(m.usuarioSmule)}" data-dbl-msg="Usuario de Smule copiado" title="Clic: abrir Smule · Mantener presionado o doble clic: copiar usuario" href="${escAttr(toSmuleUrl(m.usuarioSmule))}">
         <img src="https://raw.githubusercontent.com/TeamPeachesOff/TeamPeachesHub/main/Logos/SmuleLogo.png" onerror="this.onerror=null;this.src='https://blog.smule.com/wp-content/uploads/smule-icon.png';"><span>Smule</span></a>`:""}
       ${m.usuarioBandlab?`<a class="platform-btn" target="_blank" data-track="irABandlab" data-dbl-copy="${escAttr(m.usuarioBandlab)}" data-dbl-msg="Usuario de BandLab copiado" title="Clic: abrir BandLab · Mantener presionado: copiar usuario" href="${escAttr(toBandlabUrl(m.usuarioBandlab))}">
         <img src="https://raw.githubusercontent.com/TeamPeachesOff/TeamPeachesHub/main/Logos/BandLabLogo.png" onerror="this.onerror=null;this.src='https://onbukei.com/wp-content/uploads/2021/10/bandlab-music-making-studio.png';"><span>BandLab</span></a>`:""}
-      ${m.usuarioDiscord?`<button class="platform-btn" data-copy-discord="${escAttr(m.usuarioDiscord)}">
+      ${m.usuarioDiscord?`<button class="platform-btn" title="Copiar usuario de Discord" aria-label="Copiar usuario de Discord" data-copy-discord="${escAttr(m.usuarioDiscord)}">
         <img src="https://raw.githubusercontent.com/TeamPeachesOff/TeamPeachesHub/main/Logos/DiscordLogo.webp" onerror="this.onerror=null;this.src='https://freelogopng.com/images/all_img/1691730767discord-logo-transparent.png';"><span>Copiar Discord</span></button>`:""}
       ${m.telefono?`<a class="platform-btn" target="_blank" data-track="irAWhatsapp" data-dbl-copy="${escAttr(String(m.telefono).trim())}" data-dbl-msg="Número de WhatsApp copiado" title="Clic: abrir WhatsApp · Mantener presionado o doble clic: copiar número" href="https://wa.me/${escAttr(limpiarTelefono(m.telefono))}">
         <img src="https://raw.githubusercontent.com/TeamPeachesOff/TeamPeachesHub/main/Logos/WhatsAppLogo.png" onerror="this.onerror=null;this.src='https://upload.wikimedia.org/wikipedia/commons/5/5e/WhatsApp_icon.png';"><span>WhatsApp</span></a>`:""}
@@ -4140,6 +4162,9 @@ function miembrosDeEntrega_(e){
 // normal (sin subrayado ni cambio de color), solo el cursor indica que se puede tocar.
 // El texto original NO se borra de la hoja: lo sigue usando "Asignar automáticamente" y se puede
 // ver/editar con ✏️; solo cambia lo que se muestra. Sin asignación, se muestra el texto tal cual.
+function playBtnHTML_(url){
+  return url?`<a class="ent-play" href="${escAttr(url)}" target="_blank" title="Escuchar" aria-label="Escuchar"><svg viewBox="0 0 24 24" width="17" height="17" fill="#fff" aria-hidden="true"><path d="M8 5.5v13a1 1 0 0 0 1.5.86l10.5-6.5a1 1 0 0 0 0-1.72L9.5 4.64A1 1 0 0 0 8 5.5z"/></svg></a>`:"";
+}
 const ENT_SHOW_IMG="https://raw.githubusercontent.com/TeamPeachesOff/TeamPeachesHub/main/Anuario/ShowPeaches.png";
 // Cantidad de personas de la entrega si son MÁS de 3 (si no, 0). Asignadas → miembros; sin asignar → partes separadas por coma.
 function entregaGrupoN_(e){
@@ -4148,6 +4173,35 @@ function entregaGrupoN_(e){
   const partes=String(e.nombreUsuario||"").split(",").map(x=>x.trim()).filter(Boolean);
   return partes.length>3?partes.length:0;
 }
+/* ---------- Medallas (placeholder; se conectarán a los anuarios) ---------- */
+const MEDALLAS_DEF=[
+  {id:"mejorCancion",nombre:"Mejor canción",color:"#ffd24a"},
+  {id:"mejorDoblaje",nombre:"Mejor doblaje",color:"#5dade2"},
+  {id:"mejorDoblaje2",nombre:"Mejor doblaje",color:"#d98c5f"}
+];
+// Punto único para conectar los anuarios: devuelve {idMedalla: cantidad}. Hoy lee m.medallas (objeto o JSON) si existe.
+function medallasDe_(m){
+  let o=m&&m.medallas;
+  if(typeof o==="string"){ try{ o=JSON.parse(o); }catch(e){ o=null; } }
+  return (o&&typeof o==="object")?o:{};
+}
+function medallaSvg_(c,t){ return `<svg viewBox="0 0 24 24" width="${t||26}" height="${t||26}" aria-hidden="true"><path d="M7.5 2l3.4 6.4M16.5 2l-3.4 6.4" stroke="${c}" stroke-width="2" stroke-linecap="round" fill="none"/><circle cx="12" cy="15" r="6.6" fill="${c}"/><circle cx="12" cy="15" r="4.7" fill="none" stroke="rgba(0,0,0,0.25)" stroke-width="1"/><path d="M12 11.6l1.1 2.3 2.5.3-1.8 1.8.5 2.5-2.3-1.2-2.3 1.2.5-2.5-1.8-1.8 2.5-.3z" fill="rgba(255,255,255,0.9)"/></svg>`; }
+function medallasHTML_(m){
+  const c=medallasDe_(m);
+  return `<button type="button" class="mm-medallas" data-medallas="${escAttr(m.id)}" title="Ver medallas y apariciones en el Anuario">${MEDALLAS_DEF.map(d=>{ const n=Number(c[d.id])||0; return `<span class="mm-med${n?"":" vacia"}"><span class="mm-med-top">${medallaSvg_(d.color)}<b>${n}</b></span><small>${escHtml(d.nombre)}</small></span>`; }).join("")}</button>`;
+}
+function abrirMedallas_(id){
+  const m=(DB.miembros||[]).find(x=>String(x.id)===String(id)); if(!m) return;
+  const c=medallasDe_(m);
+  document.getElementById("medallasContent").innerHTML=`
+    <h3 style="margin-top:0;">🏅 Medallas de ${escHtml(m.nombre||"")}</h3>
+    ${MEDALLAS_DEF.map(d=>`<div class="med-fila">${medallaSvg_(d.color,30)}<span>${escHtml(d.nombre)}</span><b>${Number(c[d.id])||0}</b></div>`).join("")}
+    <div class="med-aviso"><strong>📖 AnuarioHub</strong>Próximamente: aquí verás en qué partes del AnuarioHub apareces y podrás ir a verlo.</div>
+    <div class="med-aviso"><strong>📺 Anuario público</strong>Próximamente: aquí verás en qué partes del Anuario público apareces y podrás ir a verlo.</div>`;
+  openModal("medallasModal");
+}
+document.addEventListener("click",ev=>{ const b=ev.target.closest&&ev.target.closest("[data-medallas]"); if(b) abrirMedallas_(b.dataset.medallas); });
+
 function avatarEntrega_(e){
   if(entregaGrupoN_(e)) return `<span class="vip-wrap ent-av"><img src="${ENT_SHOW_IMG}" alt="" loading="lazy" decoding="async" onerror="this.onerror=null;this.src=LOGO_DEFAULT"></span>`;
   const m=miembrosDeEntrega_(e)[0];
@@ -4212,19 +4266,19 @@ function entregasDelMiembroHTML_(idMiembro){
   };
   Object.keys(porCategoria).forEach(k=>porCategoria[k].sort(porFechaDesc));
   const bloque=(titulo,emoji,lista)=> !lista.length ? "" : `
-    <div class="ct-title" style="margin-top:14px;">${emoji} ${titulo} (${lista.length})</div>
-    <div style="display:flex;flex-direction:column;gap:6px;">
-      ${lista.map(e=>`<div class="pl-entrega-row" style="border-top:none;padding:4px 0;">
-        <div class="pl-entrega-info">
+    <div class="me-sub">${emoji} ${titulo} (${lista.length})</div>
+    <div class="me-lista">
+      ${lista.map(e=>`<div class="me-ent">
+        <div class="me-ent-info">
           <div class="pl-entrega-nombre">${escHtml(e.tituloActividad||"")}</div>
           <div class="pl-entrega-detalle">${escHtml(e.detalleEntrega||"")}</div>
         </div>
-        ${e.linkGrabacion?`<a class="btn-small btn-family play-btn" target="_blank" href="${escAttr(e.linkGrabacion)}" title="Escuchar" aria-label="Escuchar">▷</a>`:""}
+        ${playBtnHTML_(e.linkGrabacion)}
       </div>`).join("")}
     </div>`;
   const hayFiltro = porCategoria.canto.length || porCategoria.doblaje.length;
-  return `<div class="castigos-box">
-    <div class="ct-title">🎶 Entregas</div>
+  return `<div class="me-entregas">
+    <div class="me-title">🎶 Entregas</div>
     ${hayFiltro?`<div class="filter-pills" id="meEntregasFiltro" style="margin:10px 0 0;">
       <button type="button" class="pill-toggle on" data-me-filtro="canto">🎤 Canto</button>
       <button type="button" class="pill-toggle on" data-me-filtro="doblaje">🎙️ Doblaje</button>
