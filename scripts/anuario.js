@@ -1,10 +1,14 @@
 /* ---------- modal anuario (ventana suelta: una canción → Mejor / Mención) ---------- */
 const anuCatIc_=c=>c==="doblaje"?"🎙️":c==="canto"?"🎤":"🥇";
+/* Campos de la tarjeta del Anuario donde viven las líneas. «grupales» es una categoría aparte: NO cuenta como medalla (ver MEDALLAS_DEF en index.html). */
+const ANU_CAMPOS_=["ganadorCanto","ganadorDoblaje","mencionesHonorificas","grupales"];
+/* Botón elegido → destino que entiende el backend */
+const anuDestino_=(p,cat)=>p==="mencion"?"mencion":p==="grupal"?"grupal":(cat==="doblaje"?"doblaje":"cancion");
 /* Tarjeta de canción: título + usuario, y los botones «Mejor» (según canto/doblaje) y «Mención» */
 function anuSongCardHTML_(s,cat,key,pick,done){
   const t=String(s.detalle||"").trim(), u=String(s.nombreUsuario||"").replace(/@/g,"");
   return `<div class="sg-card${pick?" on-"+pick:""}" data-key="${escAttr(key)}"><div><b>${escHtml(t||u||"Entrega")}</b>${t?`<small>${escHtml(u)}</small>`:""}${done?`<span class="sg-done">✓ ya está en el anuario</span>`:""}</div>
-    <div class="sg-btns"><button type="button" data-k="mejor" class="${pick==="mejor"?"on":""}">${anuCatIc_(cat)} Mejor</button><button type="button" data-k="mencion" class="${pick==="mencion"?"on":""}">✨ Mención</button></div></div>`;
+    <div class="sg-btns"><button type="button" data-k="mejor" class="${pick==="mejor"?"on":""}">${anuCatIc_(cat)} Mejor</button><button type="button" data-k="mencion" class="${pick==="mencion"?"on":""}">✨ Mención</button><button type="button" data-k="grupal" class="${pick==="grupal"?"on":""}">👥 Grupal</button></div></div>`;
 }
 /* Guardado en segundo plano: las canciones que se mandan quedan en una cola (una a la vez, en orden, para que no se pisen)
    y mientras tanto se puede seguir añadiendo. _anuPend recuerda las que van en camino para marcarlas como «ya está». */
@@ -45,7 +49,7 @@ async function anuProcesar_(){
 }
 /* Líneas ya guardadas en el anuario, para avisar si una canción ya está (sinPend=true: solo lo que ya está guardado de verdad) */
 function anuYaSet_(sinPend){
-  const s=new Set(sinPend?[]:_anuPend.keys()); (DB.anuario||[]).forEach(r=>["ganadorCanto","ganadorDoblaje","mencionesHonorificas"].forEach(k=>parseWinnerLines(r[k]).forEach(w=>s.add(String(w.nombre).trim()+"|"+String(w.detalle).trim()))));
+  const s=new Set(sinPend?[]:_anuPend.keys()); (DB.anuario||[]).forEach(r=>ANU_CAMPOS_.forEach(k=>parseWinnerLines(r[k]).forEach(w=>s.add(String(w.nombre).trim()+"|"+String(w.detalle).trim()))));
   return s;
 }
 /* Agrega una o varias canciones en UNA sola tarjeta (la de la primera actividad) y, si hace falta, le pone el nombre elegido */
@@ -71,7 +75,7 @@ function abrirModalAnuario(idActividad,titulo,nombreUsuario,detalle,link){
   const box=document.getElementById("anuarioModalSong");
   box.innerHTML=anuSongCardHTML_({nombreUsuario,detalle},cat,"x","",anuYaSet_().has(String(nombreUsuario).trim()+"|"+String(detalle).trim()));
   box.querySelectorAll("[data-k]").forEach(b=>b.onclick=()=>{
-    anuEncolar_([{destino:b.dataset.k==="mencion"?"mencion":(cat==="doblaje"?"doblaje":"cancion"),nombreUsuario,detalle,link}],idActividad,""); /* en segundo plano: se cierra y se puede seguir */
+    anuEncolar_([{destino:anuDestino_(b.dataset.k,cat),nombreUsuario,detalle,link}],idActividad,""); /* en segundo plano: se cierra y se puede seguir */
     closeModal("anuarioModal");
   });
   openModal("anuarioModal");
@@ -166,7 +170,7 @@ function anuNorm_(e){
 }
 function anuFechaTarjeta_(e){
   const directa=anuFecha_(e.fechaInicio); if(!isNaN(directa)) return directa;
-  const lineas=["ganadorCanto","ganadorDoblaje","mencionesHonorificas"].flatMap(k=>parseWinnerLines(e[k]));
+  const lineas=ANU_CAMPOS_.flatMap(k=>parseWinnerLines(e[k]));
   const fechas=anuActsDe_(e,lineas).map(a=>anuFecha_(a.fechaInicio)).filter(d=>!isNaN(d)).sort((a,b)=>a-b);
   return fechas[0]||null;
 }
@@ -183,8 +187,8 @@ const anuP_=()=>anuS.per[anuS.pi];
 const anuRows_=p=>[...(p.admin?[{k:"admin",b:"00",t:"Administradores",n:1}]:[]),...p.cuenta.map(c=>({k:p.anio+"-"+c.m,b:pad(c.m+1),t:MESES_LARGO[c.m],n:c.items.length}))];
 const anuFirst_=()=>(anuRows_(anuP_()).find(r=>r.n)||{}).k||null;
 function anuWinBadges_(e){
-  const b=parseWinnerLines(e.ganadorCanto).length+parseWinnerLines(e.ganadorDoblaje).length, m=parseWinnerLines(e.mencionesHonorificas).length;
-  return (b||m)?`<span class="anu-win">${b?`<i class="w1">👑 ${b} ${b===1?"Mejor":"Mejores"}</i>`:""}${m?`<i class="w2">🎖️ ${m} ${m===1?"Mención":"Menciones"}</i>`:""}</span>`:"";
+  const b=parseWinnerLines(e.ganadorCanto).length+parseWinnerLines(e.ganadorDoblaje).length, m=parseWinnerLines(e.mencionesHonorificas).length, g=parseWinnerLines(e.grupales).length;
+  return (b||m||g)?`<span class="anu-win">${b?`<i class="w1">👑 ${b} ${b===1?"Mejor":"Mejores"}</i>`:""}${m?`<i class="w2">🎖️ ${m} ${m===1?"Mención":"Menciones"}</i>`:""}${g?`<i class="w3">👥 ${g} ${g===1?"Grupal":"Grupales"}</i>`:""}</span>`:"";
 }
 function anuarioBlockHTML(x,i=0){
   const n=x.n, im=n.imgs, r=[-1.6,1.2,-0.8,1.8][i%4], img=(s,f)=>`<img${f?` class="js-longpress" data-filename="${escAttr(n.titulo+".jpg")}"`:""} src="${escAttr(s)}" alt="" loading="lazy" decoding="async">`;
@@ -225,7 +229,7 @@ function anuEntregasHTML_(e,lineas){
 }
 function anuActHTML_(id){
   const e=(DB.anuario||[]).find(x=>String(x.id)===String(id)); if(!e) return "";
-  const n=anuNorm_(e), f=anuFecha_(n.f), mens=parseWinnerLines(e.mencionesHonorificas);
+  const n=anuNorm_(e), f=anuFecha_(n.f), mens=parseWinnerLines(e.mencionesHonorificas), grup=parseWinnerLines(e.grupales);
   const best=[...parseWinnerLines(e.ganadorCanto).map(w=>({w,l:"Mejor canción"})),...parseWinnerLines(e.ganadorDoblaje).map(w=>({w,l:"Mejor doblaje"}))];
   const fechaTxt=isNaN(f)?"":`${f.getDate()} de ${MESES_LARGO[f.getMonth()].toLowerCase()} ${f.getFullYear()}`;
   return `<div class="act-pg"><div class="act-h">${n.imgs.length?`<span class="act-ps"><img class="js-longpress" data-filename="${escAttr(n.titulo+".jpg")}" src="${escAttr(n.imgs[0])}" alt=""></span>`:""}<div><h2>${escHtml(n.titulo)}</h2><div class="md-meta"><span>${fechaTxt}</span>${n.tipos.map(anuTag_).join("")}</div></div></div>
@@ -235,7 +239,8 @@ function anuActHTML_(id){
       const nombreHTML=peachys.length>3?`<div class="bst-peachys"><span class="bst-count">${peachys.length} Peachys</span><span class="bst-full hidden">${escHtml(peachys.join(", "))}</span><button type="button" class="bst-expand" data-peachys-toggle aria-expanded="false" aria-label="Mostrar todos los Peachys">⌄</button></div>`:`<b>${escHtml(nm||"Miembro")}</b>`;
       return `<div class="bst"><span class="bst-l">${x.l}</span><button type="button" class="bst-av"${m?` data-miembro="${escAttr(m.id)}"`:""} aria-label="${escAttr(nm)}">${ANU_CROWN}<img class="anu-fb" src="${escAttr(anuAv_(m))}" alt=""></button>${nombreHTML}<small>${escHtml(x.w.detalle||"")}</small>${x.w.link?`<a class="md-play" href="${escAttr(x.w.link)}" target="_blank" rel="noopener">Ver presentación</a>`:""}</div>`; }).join("")}</div>`:`<p class="md-empty" style="text-align:center">Todavía sin ganadores asignados.</p>`}
     ${mens.length?`<h3 class="act-sec">🎖️ Menciones honoríficas</h3><div class="act-list">${mens.map(w=>anuRowW_(w)).join("")}</div>`:""}
-    ${anuEntregasHTML_(e,[...best.map(x=>x.w),...mens])}
+    ${grup.length?`<h3 class="act-sec">👥 Grupales</h3><div class="act-list">${grup.map(w=>anuRowW_(w)).join("")}</div>`:""}
+    ${anuEntregasHTML_(e,[...best.map(x=>x.w),...mens,...grup])}
     <div class="act-staff"><button type="button" class="shr" data-share-anuario="${escAttr(e.id)}">${ANU_SHARE_ICON}<span>Compartir</span></button><button type="button" data-edit-anuario="${escAttr(e.id)}">✏️ Editar</button><button type="button" class="del" data-delete-anuario="${escAttr(e.id)}">🗑️ Borrar tarjeta</button></div></div>`;
 }
 function anuOpenAct_(id){ anuS.act=id; anuView_(); $a("anuDet").scrollTop=0; document.body.scrollTo({top:0}); }
@@ -262,7 +267,7 @@ function anuAgregar_(target){
   const drawActs=()=>{
     const enAnu=new Set();
     (DB.anuario||[]).forEach(r=>{
-      const lineas=["ganadorCanto","ganadorDoblaje","mencionesHonorificas"].flatMap(k=>parseWinnerLines(r[k]));
+      const lineas=ANU_CAMPOS_.flatMap(k=>parseWinnerLines(r[k]));
       anuActsDe_(r,lineas).forEach(a=>enAnu.add(String(a.id)));
     });
     const L=(DB.actividades||[]).filter(enMes).sort((a,c)=>anuFecha_(a.fechaInicio)-anuFecha_(c.fechaInicio)||rankCategoria(a.categoria)-rankCategoria(c.categoria));
@@ -296,13 +301,13 @@ function anuAgregar_(target){
     b.querySelectorAll(".sg-card").forEach(card=>card.querySelectorAll("[data-k]").forEach(btn=>btn.onclick=()=>{
       const key=card.dataset.key, k=btn.dataset.k;
       if(picks[key]===k) delete picks[key]; else picks[key]=k;
-      card.classList.remove("on-mejor","on-mencion"); if(picks[key]) card.classList.add("on-"+picks[key]);
+      card.classList.remove("on-mejor","on-mencion","on-grupal"); if(picks[key]) card.classList.add("on-"+picks[key]);
       card.querySelectorAll("[data-k]").forEach(x=>x.classList.toggle("on",picks[key]===x.dataset.k)); upd(); }));
     $a("sgGo").onclick=async()=>{
-      if(!nSel()){ toast("Elige «Mejor» o «Mención» en al menos una canción"); return; }
+      if(!nSel()){ toast("Elige «Mejor», «Mención» o «Grupal» en al menos una canción"); return; }
       if(b.dataset.busy==="1") return;
       const items=[]; sel.forEach(a=>entregasDe(a).forEach((e,i)=>{ const p=picks[eKey(a,e,i)]; if(!p) return;
-        items.push({destino:p==="mencion"?"mencion":(a.categoria==="doblaje"?"doblaje":"cancion"),nombreUsuario:e.nombreUsuario||"",detalle:e.detalleEntrega||"",link:e.linkGrabacion||""}); }));
+        items.push({destino:anuDestino_(p,a.categoria),nombreUsuario:e.nombreUsuario||"",detalle:e.detalleEntrega||"",link:e.linkGrabacion||""}); }));
       if(!items.length) return;
       if(!target){ /* en segundo plano: se guarda solo y la ventana vuelve a las actividades del mes para seguir añadiendo */
         anuEncolar_(items,sel[0].id,tocado?nombre:"");
@@ -327,9 +332,9 @@ function anuEditarTarjeta_(id){
   const actDe=w=>{ const k=anuKey_(w.nombre), d=String(w.detalle||"").trim().toLowerCase();
     const e=(DB.entregas||[]).find(e=>anuKey_(e.nombreUsuario)===k&&String(e.detalleEntrega||"").trim().toLowerCase()===d);
     return e?(DB.actividades||[]).find(a=>String(a.id)===String(e.idActividad))||null:null; };
-  [["canto","ganadorCanto"],["doblaje","ganadorDoblaje"],["mencion","mencionesHonorificas"]].forEach(([t,k])=>parseWinnerLines(row[k]).forEach(w=>{ const act=actDe(w); st.L.push({w,tipo:t,best:t==="mencion"?(act&&act.categoria==="doblaje"?"doblaje":"canto"):t,act}); }));
+  [["canto","ganadorCanto"],["doblaje","ganadorDoblaje"],["mencion","mencionesHonorificas"],["grupal","grupales"]].forEach(([t,k])=>parseWinnerLines(row[k]).forEach(w=>{ const act=actDe(w); st.L.push({w,tipo:t,best:(t==="mencion"||t==="grupal")?(act&&act.categoria==="doblaje"?"doblaje":"canto"):t,act}); }));
   const datos=()=>({id:st.id,titulo:st.titulo.trim()||row.titulo||"Actividad",imagenUrl:st.imagenUrl,fechaInicio:st.fi,fechaFin:st.ff,
-    ganadorCanto:st.L.filter(i=>i.tipo==="canto").map(i=>anuLn_(i.w)).join("\n"),ganadorDoblaje:st.L.filter(i=>i.tipo==="doblaje").map(i=>anuLn_(i.w)).join("\n"),mencionesHonorificas:st.L.filter(i=>i.tipo==="mencion").map(i=>anuLn_(i.w)).join("\n")});
+    ganadorCanto:st.L.filter(i=>i.tipo==="canto").map(i=>anuLn_(i.w)).join("\n"),ganadorDoblaje:st.L.filter(i=>i.tipo==="doblaje").map(i=>anuLn_(i.w)).join("\n"),mencionesHonorificas:st.L.filter(i=>i.tipo==="mencion").map(i=>anuLn_(i.w)).join("\n"),grupales:st.L.filter(i=>i.tipo==="grupal").map(i=>anuLn_(i.w)).join("\n")});
   const guardar=async()=>{ const r=await apiPost({action:"editAnuario",data:datos()},"Guardando tarjeta del Anuario..."); if(!r.ok){ toast("Error: "+(r.error||"")); return false; } st.dirty=false; await cargarDatos(); return true; };
   const grupos=()=>{ const g=new Map(); st.L.forEach((it,i)=>{ const k=it.act?String(it.act.id):"otras"; if(!g.has(k)) g.set(k,{act:it.act,items:[]}); g.get(k).items.push({it,i}); });
     return [...g.values()].sort((a,b)=>(a.act?0:1)-(b.act?0:1)||(anuFecha_(a.act&&a.act.fechaInicio)-anuFecha_(b.act&&b.act.fechaInicio))||0); };
@@ -341,7 +346,7 @@ function anuEditarTarjeta_(id){
       <div class="ed-row"><div><label class="sg-name-l" for="edFi">Fecha inicio</label><input class="sg-name" id="edFi" type="date" value="${escAttr(st.fi)}"><button type="button" class="md-sec" id="edFixMonth" style="margin-top:8px">Corregir mes</button><div id="edMonthWrap" class="hidden" style="margin-top:8px"><label class="sg-name-l" for="edMonth">Mes correcto</label><input class="sg-name" id="edMonth" type="month" value="${escAttr(st.fi.slice(0,7))}"></div></div><div><label class="sg-name-l" for="edFf">Fecha fin</label><input class="sg-name" id="edFf" type="date" value="${escAttr(st.ff)}"></div></div>
       <h4 class="sg-gt" style="margin-top:20px"><span>Actividades incluidas (${gs.filter(x=>x.act).length||0})<small>${st.L.length} ${st.L.length===1?"canción":"canciones"} en total</small></span></h4>
       ${gs.length?gs.map(g=>{ const x=g.act?(TIPO_[g.act.categoria]||{t:"Especial",e:"✨"}):null;
-        return `<section class="sg-grp" style="margin-top:12px"><h4 class="sg-gt" style="font-size:20px">${g.act&&g.act.imagenUrl?`<img src="${escAttr(g.act.imagenUrl)}" alt="">`:""}<span>${escHtml(g.act?g.act.titulo||"":"Otras canciones")}<small>${x?x.e+" "+x.t:"No se pudo ligar a una actividad"}</small></span></h4>${g.items.map(({it,i})=>`<div class="ed-line m-${it.tipo==="mencion"?"mencion":"mejor"}"><div><b>${escHtml(String(it.w.nombre||"").replace(/@/g,""))}</b>${it.w.detalle?`<small>${escHtml(it.w.detalle)}</small>`:""}</div><div class="ed-ctl"><button type="button" data-t="mejor" data-i="${i}" class="${it.tipo!=="mencion"?"on":""}">👑 Mejor</button><button type="button" data-t="mencion" data-i="${i}" class="${it.tipo==="mencion"?"on":""}">🎖️ Mención</button><button type="button" class="ed-x" data-x="${i}" aria-label="Quitar">🗑️</button></div></div>`).join("")}</section>`; }).join(""):`<p class="md-empty">Esta tarjeta todavía no tiene canciones.</p>`}
+        return `<section class="sg-grp" style="margin-top:12px"><h4 class="sg-gt" style="font-size:20px">${g.act&&g.act.imagenUrl?`<img src="${escAttr(g.act.imagenUrl)}" alt="">`:""}<span>${escHtml(g.act?g.act.titulo||"":"Otras canciones")}<small>${x?x.e+" "+x.t:"No se pudo ligar a una actividad"}</small></span></h4>${g.items.map(({it,i})=>`<div class="ed-line m-${it.tipo==="mencion"?"mencion":it.tipo==="grupal"?"grupal":"mejor"}"><div><b>${escHtml(String(it.w.nombre||"").replace(/@/g,""))}</b>${it.w.detalle?`<small>${escHtml(it.w.detalle)}</small>`:""}</div><div class="ed-ctl"><button type="button" data-t="mejor" data-i="${i}" class="${it.tipo!=="mencion"&&it.tipo!=="grupal"?"on":""}">👑 Mejor</button><button type="button" data-t="mencion" data-i="${i}" class="${it.tipo==="mencion"?"on":""}">🎖️ Mención</button><button type="button" data-t="grupal" data-i="${i}" class="${it.tipo==="grupal"?"on":""}">👥 Grupal</button><button type="button" class="ed-x" data-x="${i}" aria-label="Quitar">🗑️</button></div></div>`).join("")}</section>`; }).join(""):`<p class="md-empty">Esta tarjeta todavía no tiene canciones.</p>`}
       <div class="ed-big"><button type="button" id="edAdd">＋ Agregar actividad</button><button type="button" id="edMerge">🔀 Fusionar tarjetas</button></div>
       <div class="md-acts"><button type="button" class="md-sec" data-close>Cerrar</button><button type="button" class="md-pri" id="edSave">Guardar</button></div></div>`);
     const val=(sel,f)=>{ const el=b.querySelector(sel); el.oninput=()=>{ f(el.value); st.dirty=true; }; };
@@ -359,7 +364,7 @@ function anuEditarTarjeta_(id){
     b.querySelector("#edI").onchange=e=>{ const im=b.querySelector(".ed-img img"); if(im) im.src=e.target.value; };
     b.querySelector("#edF").onchange=async e=>{ const f=e.target.files[0]; if(!f) return;
       try{ const base64Data=await fileToBase64(f); const r=await apiPost({action:"uploadImage",filename:f.name,base64Data},"Subiendo imagen..."); if(r.ok){ st.imagenUrl=r.url; st.dirty=true; draw(); } else toast("Error: "+(r.error||"")); }catch(_){ toast("No se pudo leer la imagen"); } };
-    b.querySelectorAll("[data-t]").forEach(bt=>bt.onclick=()=>{ const it=st.L[+bt.dataset.i]; it.tipo=bt.dataset.t==="mencion"?"mencion":it.best; st.dirty=true; draw(); });
+    b.querySelectorAll("[data-t]").forEach(bt=>bt.onclick=()=>{ const it=st.L[+bt.dataset.i]; it.tipo=bt.dataset.t==="mencion"?"mencion":bt.dataset.t==="grupal"?"grupal":it.best; st.dirty=true; draw(); });
     b.querySelectorAll("[data-x]").forEach(bt=>bt.onclick=()=>{ st.L.splice(+bt.dataset.x,1); st.dirty=true; draw(); });
     const antes=async()=>{ if(st.dirty) return await guardar(); return true; };
     b.querySelector("#edAdd").onclick=async()=>{ if(!await antes()) return; anuAgregar_({id:st.id,titulo:st.titulo,fecha:st.fi,volver:()=>anuEditarTarjeta_(st.id)}); };
@@ -369,7 +374,7 @@ function anuEditarTarjeta_(id){
   const fusion=()=>{
     const cur=(DB.anuario||[]).find(x=>String(x.id)===String(st.id))||row;
     const otras=(DB.anuario||[]).filter(x=>String(x.id)!==String(st.id)).sort((a,c)=>anuFecha_(c.fechaInicio)-anuFecha_(a.fechaInicio)); const sel=new Set();
-    const nL=r=>["ganadorCanto","ganadorDoblaje","mencionesHonorificas"].reduce((s,k)=>s+parseWinnerLines(r[k]).length,0);
+    const nL=r=>ANU_CAMPOS_.reduce((s,k)=>s+parseWinnerLines(r[k]).length,0);
     const dm=f=>{ const d=anuFecha_(f); return isNaN(d)?"":d.getDate()+" "+MESES_LARGO[d.getMonth()].slice(0,3).toLowerCase()+" "+d.getFullYear(); };
     const d1=()=>{ const b=anuModal_(`<div class="md-body"><button type="button" class="md-back" id="fuBack">← Volver a la tarjeta</button><h3 class="md-t">Fusionar tarjetas</h3><p class="md-hint">Elige las tarjetas que quieres juntar dentro de «${escHtml(cur.titulo||"")}». Sus canciones pasan a esta tarjeta y las otras se borran.</p>
         <div class="md-list">${otras.length?otras.map((r,i)=>`<button type="button" class="md-opt${sel.has(String(r.id))?" sel":""}" data-f="${i}">${r.imagenUrl?`<img src="${escAttr(r.imagenUrl)}" alt="">`:""}<span><b>${escHtml(r.titulo||"")}</b><small>${dm(r.fechaInicio)} · ${nL(r)} ${nL(r)===1?"canción":"canciones"}</small></span></button>`).join(""):`<p class="md-empty">No hay otras tarjetas en el Anuario.</p>`}</div>
@@ -573,6 +578,18 @@ function anuBack_(){
   const run=()=>{ if(anuS.act){ anuS.act=null; } else if(!anuDesk_()&&anuS.key){ anuS.key=null; } else { anuS.v="portada"; anuS.key=null; }
     anuView_(); document.body.scrollTo({top:0}); };
   run();
+}
+/* Abre el libro directo en la página de una tarjeta (lo usan las medallas del perfil). Devuelve false si la tarjeta no tiene fecha/año. */
+function anuIrA_(id){
+  const e=(DB.anuario||[]).find(x=>String(x.id)===String(id)); if(!e||!anuS.per||!anuS.per.length) return false;
+  const d=anuFechaTarjeta_(e); if(!d) return false;
+  const pi=anuS.per.findIndex(p=>p.anio===d.getFullYear()); if(pi<0) return false;
+  const antes=anuS.pi, c=$a("anuCover");
+  Object.assign(anuS,{pi,key:d.getFullYear()+"-"+d.getMonth(),act:String(e.id),v:"libro"});
+  if(c) c.classList.remove("out");
+  anuCover_(pi===antes?0:(pi>antes?1:-1));
+  anuView_(); const det=$a("anuDet"); if(det) det.scrollTop=0;
+  return true;
 }
 function renderAnuario(){
   (document.getElementById("anuBgCss")||document.head.appendChild(Object.assign(document.createElement("style"),{id:"anuBgCss"}))).textContent=anuS.bgCss||anuBgCss_(ANU_BG,ANU_BGH);

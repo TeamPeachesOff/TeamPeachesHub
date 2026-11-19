@@ -192,7 +192,8 @@
   table.entregas-table tr.search-hit-row td:first-child{box-shadow:inset 3px 0 0 var(--rosa-comp);}
   /* Botón del acordeón cuya sección contiene la coincidencia. Se usa ::after (no un hijo) porque el
      JS de los acordeones reescribe el textContent del botón al abrir/cerrar y borraría cualquier hijo. */
-  .accordion-toggle.search-hit-toggle::after{content:"🔍";font-size:12px;margin-left:8px;}
+  .accordion-toggle.search-hit-toggle{justify-content:flex-start;}
+  .accordion-toggle.search-hit-toggle::after{content:"🔍";flex:none;font-size:14px;line-height:1;margin-left:8px;}
   /* Fila de categorías del buscador (Actividad/Descripción/Entrega/Fecha): SIEMPRE los 4 en una
      sola línea (sin flex-wrap), mismo ancho entre ellos (flex:1) y misma altura que .search-bar
      de arriba (height:40px en ambas). Cada uno se prende/apaga solo, de forma independiente. */
@@ -629,7 +630,7 @@
 
 </style>
 <link rel="stylesheet" href="styles/anuario-fonts.css?v=1">
-<link rel="stylesheet" href="styles/anuario.css?v=2.150">
+<link rel="stylesheet" href="styles/anuario.css?v=2.151">
 <style>
 
   #searchMiembros{width:100%;padding:12px 14px;border-radius:12px;border:1px solid rgba(255,255,255,0.1);background:var(--card-bg-2);color:var(--text);font-size:14px;display:block;}
@@ -1454,6 +1455,7 @@
         <div class="form-group"><label>🥇 Mejor Canto (una entrada por línea, se van acumulando)</label><textarea autocomplete="off" id="af_ganadorCanto"></textarea></div>
         <div class="form-group"><label>🎙️ Mejor Doblaje</label><textarea autocomplete="off" id="af_ganadorDoblaje"></textarea></div>
         <div class="form-group"><label>✨ Menciones Honoríficas</label><textarea autocomplete="off" id="af_menciones"></textarea></div>
+        <div class="form-group"><label>👥 Grupales (no cuentan como medalla)</label><textarea autocomplete="off" id="af_grupales"></textarea></div>
       </div>
       <div class="form-group" id="af_discordGroup">
         <label>📣 Anuncio a Discord</label>
@@ -1810,7 +1812,7 @@
 </div>
 
 <script src="scripts/anuario-assets.js?v=1"></script>
-<script src="scripts/anuario.js?v=2.153"></script>
+<script src="scripts/anuario.js?v=2.154"></script>
 <script>
 // Si el navegador restaura esta página desde su caché de "atrás/adelante" (bfcache), el DOM puede
 // quedar congelado a mitad de una actualización (ej. justo cuando un innerHTML se estaba
@@ -4225,6 +4227,7 @@ function entregaGrupoN_(e){
 }
 /* ---------- Medallas: conectadas al Anuario real (DB.anuario) ----------
    Cada tarjeta del Anuario guarda sus líneas en ganadorCanto / ganadorDoblaje / mencionesHonorificas.
+   La categoría «grupales» NO es medalla: a propósito no está en esta lista, así que nunca suma ni se muestra aquí.
    Una "aparición" = una línea que nombra al miembro (si la línea es de varias personas separadas por coma, cuenta para cada una). */
 const MEDALLAS_DEF=[
   {id:"mejorCancion",nombre:"Mejor canción",color:"#B200FE",campo:"ganadorCanto"},
@@ -6255,6 +6258,7 @@ function openActivityForm(id, esAnuarioItem){
   document.getElementById("af_ganadorCanto").value=a?a.ganadorCanto||"":"";
   document.getElementById("af_ganadorDoblaje").value=a?a.ganadorDoblaje||"":"";
   document.getElementById("af_menciones").value=a?a.mencionesHonorificas||"":"";
+  document.getElementById("af_grupales").value=a?a.grupales||"":"";
   // Anuncio a Discord: el switch SIEMPRE arranca apagado (nueva actividad o edición), para
   // evitar reenvíos accidentales. Si esta actividad ya se anunció antes, se guarda ese dato en
   // el dataset del form (lo usa bindDiscordSwitch para decidir si hace falta advertir) y se
@@ -6432,6 +6436,7 @@ document.getElementById("activityForm").addEventListener("submit", async(e)=>{
       ganadorCanto: document.getElementById("af_ganadorCanto").value,
       ganadorDoblaje: document.getElementById("af_ganadorDoblaje").value,
       mencionesHonorificas: document.getElementById("af_menciones").value,
+      grupales: document.getElementById("af_grupales").value,
       botonesPersonalizados: JSON.stringify(leerBotonesPersonalizados()),
     };
     const esModoAnuario=document.getElementById("activityForm").dataset.modoAnuario==="1";
@@ -6537,6 +6542,7 @@ function datosActividadParaGuardar(a, nuevaImagenUrl){
     ganadorCanto: a.ganadorCanto||"",
     ganadorDoblaje: a.ganadorDoblaje||"",
     mencionesHonorificas: a.mencionesHonorificas||"",
+    grupales: a.grupales||"",
     botonesPersonalizados: a.botonesPersonalizados||"[]",
     enviarDiscordAnuncio: false,
     dobleEspacio: esTrue(a.dobleEspacio) ? "TRUE" : "FALSE",
