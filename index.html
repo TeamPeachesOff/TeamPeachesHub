@@ -466,53 +466,28 @@
   table.entregas-table{display:block;}
   table.entregas-table>tbody{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:8px;}
   table.entregas-table tr:not([data-entrega-row]){display:none;}
-  table.entregas-table tr[data-entrega-row]{display:grid;grid-template-columns:auto auto minmax(0,1fr) auto auto;grid-template-areas:"chk av who play adm" "chk av song play adm";align-items:center;column-gap:0;background:var(--card-bg-2);border-radius:16px;padding:8px 10px;border:1px solid rgba(255,255,255,0.06);}
+  table.entregas-table tr[data-entrega-row]{display:grid;grid-template-columns:auto auto minmax(0,1fr) auto auto;grid-template-areas:"chk av who play adm" "chk av song play adm";align-items:center;column-gap:0;background:linear-gradient(135deg,rgba(239,8,112,0.12),rgba(255,143,177,0.05));border-radius:14px;padding:8px 10px;border:1px solid rgba(239,8,112,0.25);}
   table.entregas-table tr[data-entrega-row] td{border:0;padding:0;background:none;}
   table.entregas-table td:first-child{grid-area:chk;display:none;}
   table.entregas-table td:first-child:has(.js-check-entrega:not(.hidden)){display:block;margin-right:10px;}
   table.entregas-table td.td-persona{display:contents;}
   table.entregas-table .ent-av{grid-area:av;width:44px;height:44px;margin-right:10px;align-self:center;}
-  table.entregas-table .ent-av>img{width:44px;height:44px;border-radius:50%;object-fit:cover;border:2px solid var(--peach-2);}
-  table.entregas-table .ent-name{grid-area:who;align-self:end;font-weight:800;font-size:14px;color:var(--text);min-width:0;overflow-wrap:anywhere;}
+  table.entregas-table .ent-av>img{width:44px;height:44px;border-radius:50%;object-fit:cover;border:2px solid rgba(239,8,112,0.55);}
+  table.entregas-table .ent-name{grid-area:who;align-self:end;font-weight:700;font-size:14px;color:var(--text);min-width:0;overflow-wrap:anywhere;}
   table.entregas-table td.ent-song{grid-area:song;align-self:start;font-size:12px;color:var(--text-dim);min-width:0;overflow-wrap:anywhere;}
   table.entregas-table td.col-enlace{grid-area:play;margin-left:8px;}
   table.entregas-table td.col-enlace:empty{display:none;}
-  table.entregas-table a.ent-play{display:inline-flex;align-items:center;justify-content:center;width:38px;height:38px;border-radius:50%;background:linear-gradient(135deg,var(--peach-2),var(--peach-1));text-decoration:none;box-shadow:0 3px 10px rgba(0,0,0,0.3);transition:transform .15s ease,filter .15s ease;}
+  table.entregas-table a.ent-play{display:inline-flex;align-items:center;justify-content:center;width:38px;height:38px;border-radius:50%;background:linear-gradient(90deg,var(--peach-2),var(--peach-1));text-decoration:none;transition:transform .15s ease,filter .15s ease;}
   table.entregas-table a.ent-play svg{display:block;position:relative;left:-0.5px;}
   table.entregas-table a.ent-play:hover{transform:scale(1.08);filter:brightness(1.1);}
   table.entregas-table td.ent-adm{grid-area:adm;margin-left:8px;}
   table.entregas-table .ent-adm-in{display:flex;gap:6px;}
-  table.entregas-table .anuario-mini-btn{width:38px;height:38px;padding:0;border:0;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;font-size:16px;cursor:pointer;box-shadow:0 3px 10px rgba(0,0,0,0.3);transition:transform .15s ease,filter .15s ease;}
-  table.entregas-table .anuario-mini-btn[data-anuario-entrega]{background:rgba(255,215,0,0.2);color:var(--gold);}
-  table.entregas-table .anuario-mini-btn[data-edit-entrega]{background:rgba(164,95,199,0.3);color:#d9b6f5;}
+  table.entregas-table .anuario-mini-btn{width:38px;height:38px;padding:0;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;font-size:16px;cursor:pointer;transition:transform .15s ease,filter .15s ease;}
+  table.entregas-table .anuario-mini-btn[data-anuario-entrega]{background:rgba(255,215,0,0.16);color:var(--gold);border:1px solid rgba(255,215,0,0.4);}
+  table.entregas-table .anuario-mini-btn[data-edit-entrega]{background:rgba(164,95,199,0.25);color:#d9b6f5;border:1px solid rgba(164,95,199,0.45);}
   table.entregas-table .anuario-mini-btn:hover{transform:scale(1.08);filter:brightness(1.15);}
   table.entregas-table tr.search-hit-row{background:rgba(13,239,138,0.10);box-shadow:inset 0 0 0 2px var(--rosa-comp);}
   table.entregas-table tr.search-hit-row td,table.entregas-table tr.search-hit-row td:first-child{background:none;box-shadow:none;}
-  /* ===== TARJETAS V2 (rediseño visual; mismos tamaños y elementos) =====
-     Reversible: poner TARJETAS_V2=false en el JS, o borrar este bloque. */
-  html.tarjetas-v2 .card{background:#2a1830;border:1px solid rgba(255,143,177,0.16);border-radius:14px;box-shadow:0 8px 20px -14px rgba(0,0,0,0.7);}
-  html.tarjetas-v2 .card:not(.doble) .card-img-wrap{border-radius:8px;box-shadow:0 0 0 1px rgba(255,255,255,0.08),0 0 0 4px #2a1830,0 0 0 5px rgba(255,143,177,0.28);}
-  html.tarjetas-v2 .card-title{font-weight:700;letter-spacing:-0.005em;}
-  html.tarjetas-v2 .card-dates{font-variant-numeric:tabular-nums;letter-spacing:0.02em;}
-  html.tarjetas-v2 .status-tag,html.tarjetas-v2 .part-tag,html.tarjetas-v2 .cat-tag{padding:2px 9px;border-radius:6px;border:1px solid rgba(255,255,255,0.2);border-color:color-mix(in srgb,currentColor 45%,transparent);font-weight:700;letter-spacing:0.02em;}
-  html.tarjetas-v2 .status-green{background:rgba(46,204,113,0.08);}
-  html.tarjetas-v2 .status-yellow,html.tarjetas-v2 .part-obligatoria{background:rgba(241,196,15,0.08);}
-  html.tarjetas-v2 .status-red,html.tarjetas-v2 .part-purga{background:rgba(231,76,60,0.1);}
-  html.tarjetas-v2 .part-opcional{background:rgba(93,173,226,0.08);}
-  html.tarjetas-v2 .cat-tag{background:rgba(217,182,245,0.08);}
-  html.tarjetas-v2 .card .btn-small{border-radius:8px;border:1px solid transparent;padding:5px 11px;}
-  html.tarjetas-v2 .card .btn-primary{background:var(--peach-2);color:#fff;border-color:rgba(0,0,0,0.25);border-bottom-width:3px;padding-bottom:4px;}
-  html.tarjetas-v2 .card .btn-family{background:transparent;color:var(--peach-1);border-color:rgba(255,143,177,0.5);}
-  html.tarjetas-v2 .card .btn-admin,html.tarjetas-v2 .card .btn-bell{background:rgba(255,255,255,0.06);border-color:rgba(255,255,255,0.1);color:#ecd9f6;}
-  html.tarjetas-v2 .card .btn-bell{color:var(--gold);}
-  html.tarjetas-v2 .card .btn-danger{background:transparent;border-color:rgba(231,76,60,0.5);}
-  html.tarjetas-v2 .accordion{border-top:1px dashed rgba(255,143,177,0.22);}
-  html.tarjetas-v2 .accordion-toggle{color:#f3b6cd;letter-spacing:0.01em;}
-  html.tarjetas-v2 .wishlist-block,html.tarjetas-v2 .indicacion-block{background:rgba(255,255,255,0.04);border-left:3px solid var(--peach-2);border-radius:4px 10px 10px 4px;}
-  html.tarjetas-v2 .stream-block{background:rgba(255,255,255,0.04);border:1px solid rgba(255,143,177,0.25);border-left:3px solid var(--peach-2);border-radius:4px 12px 12px 4px;}
-  html.tarjetas-v2 table.entregas-table tr[data-entrega-row]{background:rgba(255,255,255,0.04);border:1px solid rgba(255,143,177,0.14);border-radius:12px;}
-  html.tarjetas-v2 table.entregas-table a.ent-play{background:var(--peach-2);box-shadow:none;border-bottom:2px solid rgba(0,0,0,0.25);}
-  html.tarjetas-v2 table.entregas-table .ent-av>img{border-color:rgba(255,143,177,0.5);}
   @media (max-width:420px){
     table.entregas-table tr[data-entrega-row]{grid-template-areas:"chk av who play" "chk av song play" "adm adm adm adm";}
     table.entregas-table td.ent-adm{margin:8px 0 0;}
@@ -4165,8 +4140,6 @@ function miembrosDeEntrega_(e){
 // normal (sin subrayado ni cambio de color), solo el cursor indica que se puede tocar.
 // El texto original NO se borra de la hoja: lo sigue usando "Asignar automáticamente" y se puede
 // ver/editar con ✏️; solo cambia lo que se muestra. Sin asignación, se muestra el texto tal cual.
-const TARJETAS_V2=true; // false = vuelve al diseño anterior de las tarjetas de actividad
-if(TARJETAS_V2) document.documentElement.classList.add("tarjetas-v2");
 const ENT_SHOW_IMG="https://raw.githubusercontent.com/TeamPeachesOff/TeamPeachesHub/main/Anuario/ShowPeaches.png";
 // Cantidad de personas de la entrega si son MÁS de 3 (si no, 0). Asignadas → miembros; sin asignar → partes separadas por coma.
 function entregaGrupoN_(e){
