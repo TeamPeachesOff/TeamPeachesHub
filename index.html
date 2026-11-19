@@ -525,7 +525,8 @@
   .med-thumb{display:block;flex:none;width:52px;height:52px;border-radius:12px;overflow:hidden;background:color-mix(in srgb,var(--text) 8%,transparent);}
   .med-thumb img{display:block;width:100%;height:100%;object-fit:cover;}
   .med-actrow{padding:8px 10px 8px 8px;}
-  .med-acard{padding:8px 10px 0;}
+  .med-top{justify-content:center;}
+  .med-mes{flex:0 1 auto;}
   .med-tabs{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;margin:4px 0 10px;}
   .med-tab{display:flex;flex-direction:column;align-items:center;gap:2px;padding:9px 4px 8px;border-radius:14px;background:var(--card-bg-2);border:2px solid transparent;color:var(--text);cursor:pointer;transition:border-color .15s,background .15s,transform .15s,opacity .15s;}
   .med-tab:hover{transform:translateY(-1px);}
@@ -4331,10 +4332,8 @@ function medallaItemHTML_(it,def,mostrarEtiqueta){
   const puedeIr=DB.anuarioModo==="hub"||!!staffPin;
   const foto=(act&&act.imagenUrl)||n.imgs[0]||"";
   const thumb=foto?`<span class="med-thumb"><img src="${escAttr(foto)}" alt="" loading="lazy" decoding="async" onerror="this.onerror=null;this.src=LOGO_DEFAULT"></span>`:"";
-  const tags=n.tipos.map(t=>{ const x=TIPO_[t]||{t:"Especial",e:"✨"}; return `<span class="med-tag">${x.e} ${x.t}</span>`; }).join("");
-  const tarjeta=`<${puedeIr?`button type="button" data-med-ir="${escAttr(e.id)}"`:`div`} class="med-acard"><span class="med-acb"><span class="med-act">${escHtml(n.titulo)}</span><span class="med-tags">${tags}</span></span></${puedeIr?"button":"div"}>`;
   return `<div class="med-item">
-    <div class="med-top">${tarjeta}<div class="med-mes"><b>${escHtml(mes)}</b><small>${anio}</small></div></div>
+    <div class="med-top"><div class="med-mes"><b>${escHtml(mes)}</b><small>${anio}</small></div></div>
     ${mostrarEtiqueta?`<div class="med-chip" style="--mc:${def.color}">${medallaSvg_(def.color,16)}<span>${escHtml(def.nombre)}</span></div>`:""}
     <div class="med-actrow">${thumb}<span class="med-who"><b>${escHtml((act&&act.titulo)||n.titulo)}</b><small>${escHtml(w.detalle||def.nombre)}</small></span>${link?`<a class="med-play" href="${escAttr(link)}" target="_blank" rel="noopener" aria-label="Reproducir actividad" title="Reproducir actividad">▶</a>`:""}</div>
   </div>`;
