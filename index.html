@@ -478,7 +478,7 @@
   table.entregas-table td.col-enlace{grid-area:play;margin-left:8px;}
   table.entregas-table td.col-enlace:empty{display:none;}
   table.entregas-table a.ent-play{display:inline-flex;align-items:center;justify-content:center;width:38px;height:38px;border-radius:50%;background:linear-gradient(135deg,var(--peach-2),var(--peach-1));text-decoration:none;box-shadow:0 3px 10px rgba(0,0,0,0.3);transition:transform .15s ease,filter .15s ease;}
-  table.entregas-table a.ent-play svg{margin-left:2px;}
+  table.entregas-table a.ent-play svg{display:block;position:relative;left:-0.5px;}
   table.entregas-table a.ent-play:hover{transform:scale(1.08);filter:brightness(1.1);}
   table.entregas-table td.ent-adm{grid-area:adm;margin-left:8px;}
   table.entregas-table .ent-adm-in{display:flex;gap:6px;}
@@ -488,6 +488,31 @@
   table.entregas-table .anuario-mini-btn:hover{transform:scale(1.08);filter:brightness(1.15);}
   table.entregas-table tr.search-hit-row{background:rgba(13,239,138,0.10);box-shadow:inset 0 0 0 2px var(--rosa-comp);}
   table.entregas-table tr.search-hit-row td,table.entregas-table tr.search-hit-row td:first-child{background:none;box-shadow:none;}
+  /* ===== TARJETAS V2 (rediseño visual; mismos tamaños y elementos) =====
+     Reversible: poner TARJETAS_V2=false en el JS, o borrar este bloque. */
+  html.tarjetas-v2 .card{background:#2a1830;border:1px solid rgba(255,143,177,0.16);border-radius:14px;box-shadow:0 8px 20px -14px rgba(0,0,0,0.7);}
+  html.tarjetas-v2 .card:not(.doble) .card-img-wrap{border-radius:8px;box-shadow:0 0 0 1px rgba(255,255,255,0.08),0 0 0 4px #2a1830,0 0 0 5px rgba(255,143,177,0.28);}
+  html.tarjetas-v2 .card-title{font-weight:700;letter-spacing:-0.005em;}
+  html.tarjetas-v2 .card-dates{font-variant-numeric:tabular-nums;letter-spacing:0.02em;}
+  html.tarjetas-v2 .status-tag,html.tarjetas-v2 .part-tag,html.tarjetas-v2 .cat-tag{padding:2px 9px;border-radius:6px;border:1px solid rgba(255,255,255,0.2);border-color:color-mix(in srgb,currentColor 45%,transparent);font-weight:700;letter-spacing:0.02em;}
+  html.tarjetas-v2 .status-green{background:rgba(46,204,113,0.08);}
+  html.tarjetas-v2 .status-yellow,html.tarjetas-v2 .part-obligatoria{background:rgba(241,196,15,0.08);}
+  html.tarjetas-v2 .status-red,html.tarjetas-v2 .part-purga{background:rgba(231,76,60,0.1);}
+  html.tarjetas-v2 .part-opcional{background:rgba(93,173,226,0.08);}
+  html.tarjetas-v2 .cat-tag{background:rgba(217,182,245,0.08);}
+  html.tarjetas-v2 .card .btn-small{border-radius:8px;border:1px solid transparent;padding:5px 11px;}
+  html.tarjetas-v2 .card .btn-primary{background:var(--peach-2);color:#fff;border-color:rgba(0,0,0,0.25);border-bottom-width:3px;padding-bottom:4px;}
+  html.tarjetas-v2 .card .btn-family{background:transparent;color:var(--peach-1);border-color:rgba(255,143,177,0.5);}
+  html.tarjetas-v2 .card .btn-admin,html.tarjetas-v2 .card .btn-bell{background:rgba(255,255,255,0.06);border-color:rgba(255,255,255,0.1);color:#ecd9f6;}
+  html.tarjetas-v2 .card .btn-bell{color:var(--gold);}
+  html.tarjetas-v2 .card .btn-danger{background:transparent;border-color:rgba(231,76,60,0.5);}
+  html.tarjetas-v2 .accordion{border-top:1px dashed rgba(255,143,177,0.22);}
+  html.tarjetas-v2 .accordion-toggle{color:#f3b6cd;letter-spacing:0.01em;}
+  html.tarjetas-v2 .wishlist-block,html.tarjetas-v2 .indicacion-block{background:rgba(255,255,255,0.04);border-left:3px solid var(--peach-2);border-radius:4px 10px 10px 4px;}
+  html.tarjetas-v2 .stream-block{background:rgba(255,255,255,0.04);border:1px solid rgba(255,143,177,0.25);border-left:3px solid var(--peach-2);border-radius:4px 12px 12px 4px;}
+  html.tarjetas-v2 table.entregas-table tr[data-entrega-row]{background:rgba(255,255,255,0.04);border:1px solid rgba(255,143,177,0.14);border-radius:12px;}
+  html.tarjetas-v2 table.entregas-table a.ent-play{background:var(--peach-2);box-shadow:none;border-bottom:2px solid rgba(0,0,0,0.25);}
+  html.tarjetas-v2 table.entregas-table .ent-av>img{border-color:rgba(255,143,177,0.5);}
   @media (max-width:420px){
     table.entregas-table tr[data-entrega-row]{grid-template-areas:"chk av who play" "chk av song play" "adm adm adm adm";}
     table.entregas-table td.ent-adm{margin:8px 0 0;}
@@ -4140,22 +4165,47 @@ function miembrosDeEntrega_(e){
 // normal (sin subrayado ni cambio de color), solo el cursor indica que se puede tocar.
 // El texto original NO se borra de la hoja: lo sigue usando "Asignar automáticamente" y se puede
 // ver/editar con ✏️; solo cambia lo que se muestra. Sin asignación, se muestra el texto tal cual.
+const TARJETAS_V2=true; // false = vuelve al diseño anterior de las tarjetas de actividad
+if(TARJETAS_V2) document.documentElement.classList.add("tarjetas-v2");
+const ENT_SHOW_IMG="https://raw.githubusercontent.com/TeamPeachesOff/TeamPeachesHub/main/Anuario/ShowPeaches.png";
+// Cantidad de personas de la entrega si son MÁS de 3 (si no, 0). Asignadas → miembros; sin asignar → partes separadas por coma.
+function entregaGrupoN_(e){
+  const ms=miembrosDeEntrega_(e);
+  if(ms.length) return ms.length>3?ms.length:0;
+  const partes=String(e.nombreUsuario||"").split(",").map(x=>x.trim()).filter(Boolean);
+  return partes.length>3?partes.length:0;
+}
 function avatarEntrega_(e){
+  if(entregaGrupoN_(e)) return `<span class="vip-wrap ent-av"><img src="${ENT_SHOW_IMG}" alt="" loading="lazy" decoding="async" onerror="this.onerror=null;this.src=LOGO_DEFAULT"></span>`;
   const m=miembrosDeEntrega_(e)[0];
   const img=`<img src="${escAttr((m&&m.avatarUrl)||LOGO_DEFAULT)}" alt="" loading="lazy" decoding="async" onerror="this.onerror=null;this.src=LOGO_DEFAULT">`;
   return `<span class="vip-wrap ent-av">${img}${m&&esTrue(m.esVip)?vipBadgeSvg_():""}</span>`;
 }
+// "N Peachys": al tocar el texto se muestran los nombres (mismo texto que el resto); tocar fuera de un nombre vuelve a contraer.
+document.addEventListener("click",ev=>{
+  const g=ev.target.closest&&ev.target.closest("[data-grupo]"); if(!g) return;
+  const lab=g.querySelector("[data-grupo-toggle]"), lis=g.querySelector(".pg-lista");
+  if(ev.target.closest("[data-grupo-toggle]")){ lab.hidden=true; lis.hidden=false; }
+  else if(!ev.target.closest("[data-open-member]")){ lis.hidden=true; lab.hidden=false; }
+});
+document.addEventListener("keydown",ev=>{
+  if((ev.key==="Enter"||ev.key===" ")&&ev.target.matches&&ev.target.matches("[data-grupo-toggle]")){ ev.preventDefault(); ev.target.click(); }
+});
 function personaEntregaHTML_(e){
   const ms=miembrosDeEntrega_(e);
+  const nG=entregaGrupoN_(e);
+  const envolver=lista=>`<span data-grupo><span class="persona-link" role="button" tabindex="0" data-grupo-toggle>${nG} Peachys</span><span class="pg-lista" hidden>${lista}</span></span>`;
   if(ms.length){
-    return ms.map((m,i)=>`<span class="persona-nw"><span class="persona-link" role="link" tabindex="0" data-open-member="${escAttr(m.id)}">${escHtml(m.nombre)}</span>${i<ms.length-1?",":""}</span>`).join(" ");
+    const h=ms.map((m,i)=>`<span class="persona-nw"><span class="persona-link" role="link" tabindex="0" data-open-member="${escAttr(m.id)}">${escHtml(m.nombre)}</span>${i<ms.length-1?",":""}</span>`).join(" ");
+    return nG?envolver(h):h;
   }
   // Sin asignar: se parte el texto por comas; cada pedazo (con su coma pegada) no se corta por dentro.
   // Si no hay comas, o algún pedazo es larguísimo, se deja el texto normal para que nunca desborde.
   const txt=String(e.nombreUsuario||"");
   const partes=txt.split(",").map(x=>x.trim()).filter(Boolean);
   if(partes.length<2 || partes.some(x=>x.length>40)) return escHtml(txt);
-  return partes.map((x,i)=>`<span class="persona-nw">${escHtml(x)}${i<partes.length-1?",":""}</span>`).join(" ");
+  const h2=partes.map((x,i)=>`<span class="persona-nw">${escHtml(x)}${i<partes.length-1?",":""}</span>`).join(" ");
+  return nG?envolver(h2):h2;
 }
 
 // Sección "🎶 Entregas" del perfil de un miembro: separadas por categoría, más reciente primero,
