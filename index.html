@@ -442,7 +442,9 @@
   .indicacion-block{display:inline-block;margin:2px 0;padding:6px 10px;background:var(--card-bg-2);border-radius:10px;word-break:break-word;}
   /* Botón de copiar hashtags anclado a la tarjeta (no al form de admin), al mismo nivel que el
      toggle de "Más Info" para no interrumpir el texto — visible para cualquiera, no solo admins. */
-  .card-copy-hashtags{position:absolute;right:8px;top:6px;padding:4px 10px;font-size:12px;width:auto;z-index:2;}
+  .card-copy-hashtags{position:absolute;right:16px;top:calc(var(--tgh,41px)/2);margin-top:-19px;width:38px;height:38px;padding:0;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;z-index:2;}
+  .card-copy-hashtags svg{display:block;}
+  #actividadesFeed .card-copy-hashtags{right:18px;--tgh:33px;}
   .stream-block{background:linear-gradient(135deg,rgba(239,8,112,0.18),rgba(255,143,177,0.08));border:1px solid rgba(239,8,112,0.35);border-radius:14px;padding:12px;margin-bottom:12px;}
   .stream-title{font-weight:800;color:var(--text);font-size:14px;margin-bottom:4px;}
   .stream-time{font-size:12.5px;color:var(--text-dim);margin-bottom:10px;}
@@ -473,11 +475,14 @@
   table.entregas-table td:first-child:has(.js-check-entrega:not(.hidden)){display:block;margin-right:10px;}
   table.entregas-table td.td-persona{display:contents;}
   table.entregas-table .ent-av{grid-area:av;width:44px;height:44px;margin-right:10px;align-self:center;}
-  table.entregas-table .ent-av>img{width:44px;height:44px;border-radius:50%;object-fit:cover;border:2px solid rgba(239,8,112,0.55);}
+  table.entregas-table .ent-av img{width:44px;height:44px;border-radius:50%;object-fit:cover;border:2px solid rgba(239,8,112,0.55);}
   table.entregas-table .ent-name{grid-area:who;align-self:end;font-weight:700;font-size:14px;color:var(--text);min-width:0;overflow-wrap:anywhere;}
   table.entregas-table td.ent-song{grid-area:song;align-self:start;font-size:12px;color:var(--text-dim);min-width:0;overflow-wrap:anywhere;}
   table.entregas-table td.col-enlace{grid-area:play;margin-left:8px;}
   table.entregas-table td.col-enlace:empty{display:none;}
+  .ent-av.rot .ent-slide{position:absolute;inset:0;opacity:0;transition:opacity .35s ease;}
+  .ent-av.rot .ent-slide.on{opacity:1;}
+  .ent-av .ent-slide img{display:block;}
   a.ent-play{display:inline-flex;align-items:center;justify-content:center;width:38px;height:38px;border-radius:50%;background:linear-gradient(90deg,var(--peach-2),var(--peach-1));text-decoration:none;transition:transform .15s ease,filter .15s ease;}
   a.ent-play svg{display:block;position:relative;left:-0.5px;}
   a.ent-play:hover{transform:scale(1.08);filter:brightness(1.1);}
@@ -3582,7 +3587,7 @@ function cardHTML(a, entregasDeEsta){
     ${(a.descripcion||a.wishlist||a.streamNombre||streamsDeActividad_(a.id).length)?`
     <div class="accordion">
       <button class="accordion-toggle" data-toggle="info-${a.id}">▼ Más Info & Wishlist</button>
-      ${extraerHashtags(a.descripcion).length?`<button type="button" class="btn-small btn-family card-copy-hashtags" data-copy-hashtags="${a.id}" title="Copiar hashtags">📋</button>`:""}
+      ${extraerHashtags(a.descripcion).length?`<button type="button" class="btn-small btn-family card-copy-hashtags" data-copy-hashtags="${a.id}" title="Copiar hashtags" aria-label="Copiar hashtags"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="9" y="9" width="13" height="13" rx="2.5"/><path d="M5 15H4.5A2.5 2.5 0 0 1 2 12.5v-8A2.5 2.5 0 0 1 4.5 2h8A2.5 2.5 0 0 1 15 4.5V5"/></svg></button>`:""}
       <div class="accordion-body" id="info-${a.id}"></div>
     </div>`:""}
     <div class="accordion">
@@ -4204,10 +4209,21 @@ document.addEventListener("click",ev=>{ const b=ev.target.closest&&ev.target.clo
 
 function avatarEntrega_(e){
   if(entregaGrupoN_(e)) return `<span class="vip-wrap ent-av"><img src="${ENT_SHOW_IMG}" alt="" loading="lazy" decoding="async" onerror="this.onerror=null;this.src=LOGO_DEFAULT"></span>`;
-  const m=miembrosDeEntrega_(e)[0];
+  const ms=miembrosDeEntrega_(e);
+  const imgDe=m=>`<img src="${escAttr((m&&m.avatarUrl)||LOGO_DEFAULT)}" alt="" loading="lazy" decoding="async" onerror="this.onerror=null;this.src=LOGO_DEFAULT">`;
+  if(ms.length>1) return `<span class="vip-wrap ent-av rot">${ms.map((m,i)=>`<span class="ent-slide${i?"":" on"}">${imgDe(m)}${esTrue(m.esVip)?vipBadgeSvg_():""}</span>`).join("")}</span>`;
+  const m=ms[0];
   const img=`<img src="${escAttr((m&&m.avatarUrl)||LOGO_DEFAULT)}" alt="" loading="lazy" decoding="async" onerror="this.onerror=null;this.src=LOGO_DEFAULT">`;
   return `<span class="vip-wrap ent-av">${img}${m&&esTrue(m.esVip)?vipBadgeSvg_():""}</span>`;
 }
+// Entregas de 2-3 personas: la foto va rotando entre ellas cada 1 s.
+setInterval(()=>{
+  document.querySelectorAll(".ent-av.rot").forEach(w=>{
+    const sl=w.querySelectorAll(".ent-slide"); if(sl.length<2) return;
+    const i=((+w.dataset.i||0)+1)%sl.length; w.dataset.i=i;
+    sl.forEach((x,k)=>x.classList.toggle("on",k===i));
+  });
+},1000);
 // "N Peachys": al tocar el texto se muestran los nombres (mismo texto que el resto); tocar fuera de un nombre vuelve a contraer.
 document.addEventListener("click",ev=>{
   const g=ev.target.closest&&ev.target.closest("[data-grupo]"); if(!g) return;
