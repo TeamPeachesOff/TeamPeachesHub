@@ -241,7 +241,7 @@ function anuActHTML_(id){
   const fechaTxt=isNaN(f)?"":`${f.getDate()} de ${MESES_LARGO[f.getMonth()].toLowerCase()} ${f.getFullYear()}`;
   return `<div class="act-pg"><div class="act-h">${n.imgs.length?`<span class="act-ps"><img class="js-longpress" data-filename="${escAttr(n.titulo+".jpg")}" src="${escAttr(n.imgs[0])}" alt=""></span>`:""}<div><h2>${escHtml(n.titulo)}</h2><div class="md-meta"><span>${fechaTxt}</span>${n.tipos.map(anuTag_).join("")}</div></div></div>
     ${grupL.length?`<h3 class="act-sec">👥 Grupales</h3>${bstHTML(grupL)}`:""}
-    ${grupL.length&&!bestOnly.length?"":`<h3 class="act-sec">👑 Lo mejor de la actividad</h3>${bestOnly.length?bstHTML(bestOnly):`<p class="md-empty" style="text-align:center">Todavía sin ganadores asignados.</p>`}`}
+    ${bestOnly.length?`<h3 class="act-sec">👑 Lo mejor de la actividad</h3>${bstHTML(bestOnly)}`:(grupL.length?"":`<p class="md-empty" style="text-align:center">Todavía sin ganadores asignados.</p>`)}
     ${mens.length?`<h3 class="act-sec">🎖️ Menciones honoríficas</h3><div class="act-list">${mens.map(w=>anuRowW_(w)).join("")}</div>`:""}
     ${anuEntregasHTML_(e,[...best.map(x=>x.w),...mens])}
     <div class="act-staff"><button type="button" class="shr" data-share-anuario="${escAttr(e.id)}">${ANU_SHARE_ICON}<span>Compartir</span></button><button type="button" data-edit-anuario="${escAttr(e.id)}">✏️ Editar</button><button type="button" class="del" data-delete-anuario="${escAttr(e.id)}">🗑️ Borrar tarjeta</button></div></div>`;

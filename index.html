@@ -1812,7 +1812,7 @@
 </div>
 
 <script src="scripts/anuario-assets.js?v=1"></script>
-<script src="scripts/anuario.js?v=2.156"></script>
+<script src="scripts/anuario.js?v=2.157"></script>
 <script>
 // Si el navegador restaura esta página desde su caché de "atrás/adelante" (bfcache), el DOM puede
 // quedar congelado a mitad de una actualización (ej. justo cuando un innerHTML se estaba
@@ -2298,7 +2298,15 @@ async function apiGet(silencioso){
     if(silencioso || escaladoATop) hideTopProgress(); else hideLoading();
   }
 }
+function anuPayloadGrupal_(p){
+  if(!p||typeof p!=="object") return p;
+  if((p.action==="editAnuario"||p.action==="fusionarAnuario")&&p.data) return Object.assign({},p,{data:anuCodificarGrupales_(p.data)});
+  if(p.action==="addToAnuario"&&p.destino==="grupal") return Object.assign({},p,{destino:"mencion",nombreUsuario:GRU_MARCA_+String(p.nombreUsuario||"")});
+  if(p.action==="addToAnuarioLote"&&Array.isArray(p.items)) return Object.assign({},p,{items:p.items.map(it=>it&&it.destino==="grupal"?Object.assign({},it,{destino:"mencion",nombreUsuario:GRU_MARCA_+String(it.nombreUsuario||"")}):it)});
+  return p;
+}
 async function apiPost(payload, msg, silencioso){
+  payload = anuPayloadGrupal_(payload);
   // silencioso=true: carga de fondo (p. ej. los enlaces de Staff al abrir la app) — no tapa la vista con el overlay.
   if(!silencioso) showLoading(msg||"Guardando...");
   // Si se pasa de 8s sin respuesta, probablemente sea un cold-start de Apps Script (el servidor
@@ -2900,9 +2908,28 @@ async function cargarDatos(){
   }
 }
 
+/* GRUPALES sin tocar el backend: el Code.gs viejo no conoce la columna «grupales», así que las líneas grupales se guardan dentro de
+   «mencionesHonorificas» con la marca «[G] ». Al leer se separan (y así NO cuentan como mención ni como medalla); al escribir se vuelven a marcar. */
+const GRU_MARCA_="[G] ";
+function anuSepararGrupales_(datos){
+  try{ (datos&&datos.anuario||[]).forEach(r=>{
+    const men=[], gru=[], visto=new Set();
+    const add=l=>{ const k=l.trim().toLowerCase(); if(k&&!visto.has(k)){ visto.add(k); gru.push(l.trim()); } };
+    String(r.grupales||"").split("\n").filter(l=>l.trim()).forEach(add);
+    String(r.mencionesHonorificas||"").split("\n").filter(l=>l.trim()).forEach(l=>{ if(l.trim().startsWith(GRU_MARCA_.trim())) add(l.trim().slice(GRU_MARCA_.trim().length).trim()); else men.push(l); });
+    r.mencionesHonorificas=men.join("\n"); r.grupales=gru.join("\n");
+  }); }catch(_){}
+  return datos;
+}
+function anuCodificarGrupales_(data){
+  if(!data||typeof data!=="object") return data;
+  const g=String(data.grupales||"").split("\n").map(l=>l.trim()).filter(Boolean);
+  const m=String(data.mencionesHonorificas||"").split("\n").filter(l=>l.trim()&&!l.trim().startsWith(GRU_MARCA_.trim()));
+  return Object.assign({},data,{mencionesHonorificas:[...m,...g.map(l=>GRU_MARCA_+l)].join("\n")});
+}
 function aplicarDatosCargados_(datos, esCache, sinRepintar){
   const estadoAntes_ = [sessionToken, memberPin, staffPin];
-  DB = datos;
+  DB = anuSepararGrupales_(datos);
   // "nivel" sale SIEMPRE de lo que el servidor resolvió — nunca de lo que el cliente cree
   // tener. Staff: a partir del token de sesión (ver validarSesion_ en Code.gs). Miembro: a
   // partir de la clave que se mandó en la misma request (ver doGet, v21). Si ninguno de los dos
