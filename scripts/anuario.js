@@ -542,8 +542,11 @@ function anuView_(){
   $a("anuWrap").dataset.v=anuS.v; $a("anuBook").dataset.s=anuS.key?"det":"idx";
   $a("anuBackT").textContent=anuS.act?MESES_LARGO[+anuS.key.split("-")[1]]:inDet?"Índice":"Portada";
   $a("anuBarT").textContent=anuS.act?"Actividad":inDet?(anuS.key==="admin"?"Administración":MESES_LARGO[+anuS.key.split("-")[1]]):"Anuario "+p.titulo;
-  anuIdx_(); anuDet_();
+  anuIdx_(); anuDet_(); anuTabsAncho_();
 }
+/* Ancho de las pestañas flotantes (Actividades/Anuario): la barra del libro se aparta justo lo necesario en pantalla ancha. */
+function anuTabsAncho_(){ const tb=document.querySelector("header .tabs"); if(tb&&tb.offsetWidth) document.documentElement.style.setProperty("--anu-tabs-w",tb.offsetWidth+"px"); }
+addEventListener("resize",()=>{ if(document.body.classList.contains("anuario-mode")) anuTabsAncho_(); });
 /* El año de la portada: si el tema del año trae «anioImg» se muestra esa imagen (la letra exacta de ese año); si no, texto con la letra del tema */
 const _anuTV={};
 function anuYearSet_(){
@@ -606,10 +609,12 @@ function renderAnuario(){
       <div class="cv25" id="cv25" aria-hidden="true"></div>
       <div class="cv-yr"><button type="button" class="cv-arr" id="yrPrev" aria-label="Año anterior">${CH_L}</button><div class="cv-yv" id="yrVal" aria-live="polite"></div><button type="button" class="cv-arr" id="yrNext" aria-label="Año siguiente">${CH_R}</button></div></div>
       <button type="button" class="cv-go" id="anuGo">Continuar</button></section>
-    <section class="anu-book" id="anuBook"><div class="anu-bar"><button type="button" class="anu-bk" id="anuBack">${CH_L}<span id="anuBackT">Portada</span></button><div class="anu-bt" id="anuBarT"></div><button type="button" class="anu-add" id="anuAdd" aria-label="Agregar al anuario">＋<span class="lbl"> Agregar</span></button></div>
+    <section class="anu-book" id="anuBook"><div class="anu-bar"><button type="button" class="anu-menu" id="anuMenu" aria-label="Abrir menú"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h16M4 12h16M4 17h10"/></svg></button><button type="button" class="anu-bk" id="anuBack">${CH_L}<span id="anuBackT">Portada</span></button><div class="anu-bt" id="anuBarT"></div><button type="button" class="anu-add" id="anuAdd" aria-label="Agregar al anuario">＋<span class="lbl"> Agregar</span></button><button type="button" class="anu-home" id="anuHome" aria-label="Volver a Actividades" title="Volver a Actividades"><svg viewBox="0 0 24 24" aria-hidden="true"><path class="hm-door" d="M9.5 20v-5.5h5V20z"/><path d="M3.5 11.2 12 4l8.5 7.2"/><path d="M5.8 9.6V19a1 1 0 0 0 1 1h10.4a1 1 0 0 0 1-1V9.6"/><path d="M9.5 20v-5.5h5V20"/></svg></button></div>
       <div class="anu-cols"><aside id="anuIdx" aria-label="Índice por meses"></aside><div id="anuDet" aria-live="polite"></div></div></section></div>`;
   $a("yrPrev").onclick=()=>anuYear_(-1); $a("yrNext").onclick=()=>anuYear_(1);
   $a("anuGo").onclick=anuEnter_; $a("anuBack").onclick=anuBack_; $a("anuAdd").onclick=anuAgregar_;
+  $a("anuMenu").onclick=()=>{ const h=document.getElementById("hamburgerBtn"); if(h) h.click(); };
+  $a("anuHome").onclick=()=>{ const t=document.querySelector('.tab-btn[data-tab="actividades"]'); if(t) t.click(); };
   if(!window.anuInit){ window.anuInit=1;
     matchMedia("(min-width:900px)").addEventListener("change",()=>{ if(anuS.v==="libro"){ if(anuDesk_()&&!anuS.key) anuS.key=anuFirst_(); anuView_(); } });
     $a("anuModal").addEventListener("click",e=>{ if(e.target===e.currentTarget) mdHide_(); });

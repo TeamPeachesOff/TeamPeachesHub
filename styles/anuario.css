@@ -558,12 +558,12 @@ body{transition:background-color .6s ease;}
    ENTREGA 7 · SOLO PORTADA: sin encabezado, botones flotantes en las esquinas, pantalla completa
    (al entrar al libro / meses el encabezado vuelve a ser el de siempre)
    ===================================================================== */
-html[data-anu-v="portada"]:has(body.anuario-mode){--hh:0px !important;}
-html[data-anu-v="portada"] body.anuario-mode header{position:fixed;top:0;left:0;right:0;background:transparent;border-bottom-color:transparent;backdrop-filter:none;-webkit-backdrop-filter:none;pointer-events:none;}
-html[data-anu-v="portada"] body.anuario-mode .header-inner{max-width:none;margin:0;padding:max(10px,env(safe-area-inset-top)) 12px 0;align-items:flex-start;}
-html[data-anu-v="portada"] body.anuario-mode .logo{display:none;}
-html[data-anu-v="portada"] body.anuario-mode #hamburgerBtn{pointer-events:auto;width:44px;height:44px;display:grid;place-items:center;border-radius:50%;background:rgba(255,246,240,.88);box-shadow:0 4px 14px rgba(63,33,104,.22);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);}
-html[data-anu-v="portada"] body.anuario-mode .tabs{pointer-events:auto;background:rgba(255,246,240,.88);box-shadow:0 4px 14px rgba(63,33,104,.22);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);}
+html[data-anu-v]:has(body.anuario-mode){--hh:0px !important;}
+html[data-anu-v] body.anuario-mode header{position:fixed;top:0;left:0;right:0;background:transparent;border-bottom-color:transparent;backdrop-filter:none;-webkit-backdrop-filter:none;pointer-events:none;}
+html[data-anu-v] body.anuario-mode .header-inner{max-width:none;margin:0;padding:max(10px,env(safe-area-inset-top)) 12px 0;align-items:flex-start;}
+html[data-anu-v] body.anuario-mode .logo{display:none;}
+html[data-anu-v] body.anuario-mode #hamburgerBtn{pointer-events:auto;width:44px;height:44px;display:grid;place-items:center;border-radius:50%;background:rgba(255,246,240,.88);box-shadow:0 4px 14px rgba(63,33,104,.22);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);}
+html[data-anu-v] body.anuario-mode .tabs{pointer-events:auto;background:rgba(255,246,240,.88);box-shadow:0 4px 14px rgba(63,33,104,.22);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);}
 /* el contenido baja lo justo para no quedar bajo los botones */
 html[data-anu-v="portada"] body.anuario-mode .anu-cover{box-sizing:border-box;padding-top:56px;min-height:calc(100vh - 90px);min-height:calc(100dvh - 90px);}
 html[data-anu-v="portada"] body.anuario-mode .anu-wrap.c25 .cv-main{width:min(88vw,580px,calc((100vh - 206px) * .70));width:min(88vw,580px,calc((100dvh - 206px) * .70));}
@@ -712,3 +712,32 @@ html.anu-x-hide #anuScene .sc-26{opacity:0;transition:none;}
 @media (min-width:700px){.act-list>.act-row{flex-basis:calc((100% - 20px)/3);max-width:calc((100% - 20px)/3);}}
 .bst-peachys[data-peachys-toggle]{cursor:pointer;-webkit-tap-highlight-color:transparent;}
 .bst-peachys[data-peachys-toggle]:focus-visible{outline:2px solid #ffb300;outline-offset:3px;border-radius:8px;}
+
+/* =====================================================================
+   ENTREGA 12 - Libro del Anuario SIN encabezado: igual que la portada, solo botones flotantes (el libro usa todo el alto)
+   · Pantalla ancha (>=900px): caben, asi que flotan el menu (3 rayas) a la izquierda y Actividades/Anuario a la derecha,
+     en la misma fila que la barra del libro (la barra se aparta para no taparlos).
+   · Telefono / pantalla angosta (<900px): no caben comodos -> el encabezado se oculta y la barra del libro trae
+     menu (3 rayas) a la IZQUIERDA de la flecha "<" y una casita (volver a Actividades) a la DERECHA de "Agregar".
+   ===================================================================== */
+html[data-anu-v="libro"] body.anuario-mode main{padding-top:0;}
+.anu-menu,.anu-home{display:none;}
+@media (min-width:900px){
+  html[data-anu-v="libro"] body.anuario-mode .anu-bar{padding-top:max(10px,env(safe-area-inset-top));padding-left:56px;padding-right:calc(var(--anu-tabs-w,230px) + 26px);}
+}
+@media (max-width:899px){
+  html[data-anu-v="libro"] body.anuario-mode header{display:none;}
+  html[data-anu-v="libro"] body.anuario-mode .anu-bar{grid-template-columns:46px 46px minmax(0,1fr) 46px 46px;gap:8px;padding-top:max(10px,env(safe-area-inset-top));}
+  html[data-anu-v="libro"] .anu-bar .anu-menu{grid-column:1;}
+  html[data-anu-v="libro"] .anu-bar .anu-bk{grid-column:2;}
+  html[data-anu-v="libro"] .anu-bar .anu-bt{grid-column:3;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:clamp(22px,6.4vw,30px);-webkit-text-stroke-width:5px;}
+  html[data-anu-v="libro"] .anu-bar .anu-add{grid-column:4;}
+  html[data-anu-v="libro"] .anu-bar .anu-home{grid-column:5;}
+  .anu-menu,.anu-home{display:inline-grid;place-items:center;width:46px;height:46px;min-height:46px;padding:0;border-radius:999px;background:#fff;color:var(--anu-acc,#3f2168);box-shadow:0 6px 16px rgba(80,40,100,.16);transition:transform .15s ease,box-shadow .15s ease;-webkit-tap-highlight-color:transparent;}
+  .anu-menu svg,.anu-home svg{width:24px;height:24px;display:block;fill:none;stroke:currentColor;stroke-width:2.2;stroke-linecap:round;stroke-linejoin:round;}
+  .anu-home{background:linear-gradient(135deg,#fff 0%,#fff1f7 100%);box-shadow:0 6px 16px rgba(248,30,142,.2),inset 0 0 0 1.5px rgba(248,30,142,.22);}
+  .anu-home svg{stroke:#e5187f;}
+  .anu-home svg .hm-door{fill:rgba(229,24,127,.18);stroke-width:0;}
+  .anu-menu:active,.anu-home:active{transform:scale(.92);}
+  .anu-menu:focus-visible,.anu-home:focus-visible{outline:3px solid var(--anu-acc,#3f2168);outline-offset:2px;}
+}
