@@ -311,7 +311,10 @@
   /* Ventana "Próximo stream" (solo esta ventana): fecha grande, hora destacada y portadas sin marco. */
   #streamInfoModal .modal-box{background:radial-gradient(120% 70% at 50% 0%,rgba(239,8,112,0.22),transparent 60%),var(--card-bg);overflow-x:hidden;}
   .si-hero{text-align:center;padding:4px 0 2px;}
-  .si-cuenta{display:inline-block;padding:5px 13px;border-radius:999px;background:rgba(239,8,112,0.18);color:var(--peach-1);font-size:12.5px;font-weight:800;letter-spacing:.2px;}
+  /* Badge de "Faltan…" con altura fija (30px) y la X de cerrar a esa misma altura (top = 20px de padding del modal + 4px del hero). */
+  .si-cuenta{display:flex;align-items:center;justify-content:center;width:fit-content;max-width:calc(100% - 80px);height:30px;margin:0 auto;padding:0 13px;border-radius:999px;background:rgba(239,8,112,0.18);color:var(--peach-1);font-size:12.5px;font-weight:800;letter-spacing:.2px;line-height:1;white-space:nowrap;}
+  #streamInfoModal .modal-close{top:24px;right:14px;width:auto;height:30px;padding:0 6px;display:flex;align-items:center;justify-content:center;background:none;border-radius:0;font-size:20px;line-height:1;color:var(--text-dim);transition:color .15s,transform .15s;}
+  #streamInfoModal .modal-close:hover{color:var(--text);transform:scale(1.12);}
   .si-nombre{margin:12px auto 0;max-width:92%;font-size:14px;font-weight:700;line-height:1.3;color:var(--text);opacity:.92;}
   .si-fecha{display:flex;flex-direction:column;align-items:center;margin-top:12px;line-height:1;}
   .si-sem,.si-mes{font-size:15px;font-weight:700;color:var(--text-dim);text-transform:capitalize;letter-spacing:.4px;}
@@ -480,8 +483,12 @@
   table.entregas-table td.ent-song{grid-area:song;align-self:start;font-size:12px;color:var(--text-dim);min-width:0;overflow-wrap:anywhere;}
   table.entregas-table td.col-enlace{grid-area:play;margin-left:8px;}
   table.entregas-table td.col-enlace:empty{display:none;}
-  .ent-av.rot .ent-slide{position:absolute;inset:0;opacity:0;transition:opacity .35s ease;}
-  .ent-av.rot .ent-slide.on{opacity:1;}
+  /* Rotación entre 2-3 personas: la que sale se queda opaca (.prev) debajo mientras la que entra (.on) se funde por encima,
+     así nunca se ve el "hueco" semitransparente de un fundido cruzado normal y el cambio es continuo. */
+  .ent-av.rot .ent-slide{position:absolute;inset:0;opacity:0;z-index:0;transition:opacity .9s cubic-bezier(.4,0,.2,1);will-change:opacity;}
+  .ent-av.rot .ent-slide.prev{opacity:1;z-index:1;transition:none;}
+  .ent-av.rot .ent-slide.on{opacity:1;z-index:2;}
+  @media (prefers-reduced-motion:reduce){.ent-av.rot .ent-slide{transition-duration:.01s;}}
   .ent-av .ent-slide img{display:block;}
   a.ent-play{display:inline-flex;align-items:center;justify-content:center;width:38px;height:38px;border-radius:50%;background:linear-gradient(90deg,var(--peach-2),var(--peach-1));text-decoration:none;transition:transform .15s ease,filter .15s ease;}
   a.ent-play svg{display:block;position:relative;left:-0.5px;}
@@ -495,16 +502,55 @@
   table.entregas-table tr.search-hit-row{border-radius:10px;background:rgba(13,239,138,0.10);box-shadow:inset 0 0 0 2px var(--rosa-comp);}
   table.entregas-table tr.search-hit-row td,table.entregas-table tr.search-hit-row td:first-child{background:none;box-shadow:none;}
   /* ----- Medallas en la tarjeta de miembro ----- */
-  .mm-medallas{display:flex;justify-content:center;align-items:flex-start;gap:20px;width:100%;margin:14px 0 0;padding:4px 0;background:none;color:inherit;cursor:pointer;}
-  .mm-med{display:flex;flex-direction:column;align-items:center;gap:2px;}
+  .mm-medallas-wrap{width:100%;margin:14px 0 0;}
+  .mm-medallas{display:flex;justify-content:center;align-items:flex-start;gap:10px;width:100%;padding:4px 0;}
+  .mm-med{display:flex;flex-direction:column;align-items:center;gap:2px;flex:1 1 0;min-width:0;max-width:112px;padding:6px 4px;border-radius:12px;background:none;color:inherit;cursor:pointer;transition:background .15s,transform .15s;}
+  .mm-med:hover{background:color-mix(in srgb,var(--text) 8%,transparent);transform:translateY(-1px);}
   .mm-med-top{display:flex;align-items:center;gap:5px;}
   .mm-med-top b{font-size:16px;font-weight:800;}
-  .mm-med small{font-size:10px;color:var(--text-dim);}
+  .mm-med small{font-size:10px;line-height:1.15;text-align:center;color:var(--text-dim);}
   .mm-med.vacia{opacity:0.45;}
-  .med-fila{display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid rgba(255,255,255,0.06);}
-  .med-fila b{margin-left:auto;font-size:16px;}
-  .med-aviso{margin-top:12px;padding:10px 12px;border-radius:12px;background:var(--card-bg-2);font-size:12.5px;color:var(--text-dim);}
-  .med-aviso strong{display:block;color:var(--text);margin-bottom:2px;}
+  .mm-anu-total{display:flex;align-items:center;justify-content:center;gap:12px;margin:8px 0 0;padding:9px 12px;border-radius:14px;background:var(--card-bg-2);}
+  .mm-anu-txt{font-size:13px;color:var(--text-dim);}
+  .mm-anu-txt b{margin-right:2px;font-size:18px;font-weight:900;color:var(--text);}
+  .mm-anu-ver{padding:6px 18px;border-radius:999px;background:linear-gradient(90deg,var(--peach-2),var(--peach-1));color:#fff;font-weight:800;font-size:13px;cursor:pointer;transition:transform .15s,filter .15s;}
+  .mm-anu-ver:hover{transform:scale(1.06);filter:brightness(1.08);}
+  /* ----- Ventana de medallas: pestañas por medalla + menciones al estilo Anuario (usa las variables de color de la página, así sigue el modo oscuro/claro) ----- */
+  .med-tabs{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;margin:4px 0 10px;}
+  .med-tab{display:flex;flex-direction:column;align-items:center;gap:2px;padding:9px 4px 8px;border-radius:14px;background:var(--card-bg-2);border:2px solid transparent;color:var(--text);cursor:pointer;transition:border-color .15s,background .15s,transform .15s,opacity .15s;}
+  .med-tab:hover{transform:translateY(-1px);}
+  .med-tab b{font-size:17px;font-weight:900;}
+  .med-tab small{font-size:10.5px;line-height:1.15;text-align:center;color:var(--text-dim);}
+  .med-tab.vacia{opacity:.55;}
+  .med-tab.on{opacity:1;border-color:var(--mc);background:color-mix(in srgb,var(--mc) 16%,var(--card-bg-2));}
+  .med-resumen{margin:0 2px 12px;font-size:12.5px;text-align:center;color:var(--text-dim);}
+  .med-resumen b{color:var(--text);}
+  .med-todas{padding:0;background:none;color:var(--peach-1);font-weight:800;font-size:12.5px;text-decoration:underline;cursor:pointer;}
+  .med-lista{display:flex;flex-direction:column;}
+  .med-item{display:flex;flex-direction:column;gap:8px;}
+  .med-item+.med-item{margin-top:14px;padding-top:14px;border-top:1px solid color-mix(in srgb,var(--text) 10%,transparent);}
+  .med-top{display:flex;align-items:center;gap:12px;}
+  .med-acard{display:flex;flex-direction:column;flex:0 0 47%;max-width:47%;min-width:0;box-sizing:border-box;padding:8px 8px 0;text-align:left;background:var(--card-bg-2);color:var(--text);border-radius:16px;box-shadow:0 8px 18px rgba(0,0,0,.28);}
+  button.med-acard{cursor:pointer;transition:transform .2s cubic-bezier(.2,.8,.2,1),box-shadow .2s;}
+  button.med-acard:hover{transform:translateY(-3px);box-shadow:0 12px 24px rgba(0,0,0,.34);}
+  button.med-acard:active{transform:scale(.97);}
+  .med-pic{display:block;aspect-ratio:1/1;border-radius:10px;overflow:hidden;background:color-mix(in srgb,var(--text) 8%,transparent);}
+  .med-pic img{display:block;width:100%;height:100%;object-fit:cover;}
+  .med-acb{display:grid;gap:6px;padding:9px 2px 11px;}
+  .med-act{display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden;font:400 clamp(18px,4.6vw,22px)/1.08 var(--f-disp);overflow-wrap:anywhere;}
+  .med-tags{display:flex;flex-wrap:wrap;gap:4px;}
+  .med-tag{padding:2px 7px;border-radius:999px;font-size:10.5px;font-weight:800;white-space:nowrap;background:color-mix(in srgb,var(--text) 11%,transparent);color:var(--text);}
+  .med-mes{flex:1;min-width:0;display:flex;flex-direction:column;align-items:center;text-align:center;}
+  .med-mes b{font:400 clamp(21px,6.2vw,30px)/1 var(--f-disp);text-transform:uppercase;color:var(--peach-1);white-space:nowrap;max-width:100%;}
+  .med-mes small{margin-top:2px;font-size:13px;font-weight:700;color:var(--text-dim);}
+  .med-chip{display:inline-flex;align-items:center;gap:6px;align-self:flex-start;padding:3px 10px 3px 6px;border-radius:999px;font-size:11.5px;font-weight:800;color:var(--text);background:color-mix(in srgb,var(--mc) 20%,transparent);border:1px solid color-mix(in srgb,var(--mc) 55%,transparent);}
+  .med-actrow{display:flex;align-items:center;gap:8px;padding:8px 10px 8px 14px;border-radius:16px;background:var(--card-bg-2);}
+  .med-who{flex:1;min-width:0;display:block;}
+  .med-who b{display:block;font-size:14.5px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+  .med-who small{display:block;font-size:13px;color:var(--text-dim);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+  .med-play{display:grid;place-items:center;flex:none;width:36px;height:36px;border-radius:50%;background:#f0287f;color:#fff;font-size:13px;text-decoration:none;transition:transform .15s,filter .15s;}
+  .med-play:hover{transform:scale(1.08);filter:brightness(1.1);}
+  .med-vacio{padding:22px 10px;text-align:center;font-size:13px;color:var(--text-dim);}
   /* ----- Entregas en la tarjeta de miembro (sin foto) ----- */
   .me-entregas{margin-top:18px;}
   .me-title,.me-sub{font-weight:800;color:var(--peach-2);font-size:13px;}
@@ -583,7 +629,7 @@
 
 </style>
 <link rel="stylesheet" href="styles/anuario-fonts.css?v=1">
-<link rel="stylesheet" href="styles/anuario.css?v=2.149">
+<link rel="stylesheet" href="styles/anuario.css?v=2.150">
 <style>
 
   #searchMiembros{width:100%;padding:12px 14px;border-radius:12px;border:1px solid rgba(255,255,255,0.1);background:var(--card-bg-2);color:var(--text);font-size:14px;display:block;}
@@ -1221,8 +1267,7 @@
 
 <!-- Próximo stream (lectura, para todos): fecha en la hora de quien mira + actividades que se presentan. -->
 <div class="modal-overlay" id="streamInfoModal">
-  <div class="modal-box"><button class="modal-close" data-close="streamInfoModal">✕</button>
-    <h3>📺 Próximo stream</h3>
+  <div class="modal-box"><button class="modal-close" data-close="streamInfoModal" aria-label="Cerrar">✕</button>
     <div id="streamInfoBody"></div>
   </div>
 </div>
@@ -1765,7 +1810,7 @@
 </div>
 
 <script src="scripts/anuario-assets.js?v=1"></script>
-<script src="scripts/anuario.js?v=2.152"></script>
+<script src="scripts/anuario.js?v=2.153"></script>
 <script>
 // Si el navegador restaura esta página desde su caché de "atrás/adelante" (bfcache), el DOM puede
 // quedar congelado a mitad de una actualización (ej. justo cuando un innerHTML se estaba
@@ -4178,34 +4223,107 @@ function entregaGrupoN_(e){
   const partes=String(e.nombreUsuario||"").split(",").map(x=>x.trim()).filter(Boolean);
   return partes.length>3?partes.length:0;
 }
-/* ---------- Medallas (placeholder; se conectarán a los anuarios) ---------- */
+/* ---------- Medallas: conectadas al Anuario real (DB.anuario) ----------
+   Cada tarjeta del Anuario guarda sus líneas en ganadorCanto / ganadorDoblaje / mencionesHonorificas.
+   Una "aparición" = una línea que nombra al miembro (si la línea es de varias personas separadas por coma, cuenta para cada una). */
 const MEDALLAS_DEF=[
-  {id:"mejorCancion",nombre:"Mejor canción",color:"#ffd24a"},
-  {id:"mejorDoblaje",nombre:"Mejor doblaje",color:"#5dade2"},
-  {id:"mejorDoblaje2",nombre:"Mejor doblaje",color:"#d98c5f"}
+  {id:"mejorCancion",nombre:"Mejor canción",color:"#B200FE",campo:"ganadorCanto"},
+  {id:"mejorDoblaje",nombre:"Mejor doblaje",color:"#FF006A",campo:"ganadorDoblaje"},
+  {id:"mencion",nombre:"Mención Honorífica",color:"#FFB300",campo:"mencionesHonorificas"}
 ];
-// Punto único para conectar los anuarios: devuelve {idMedalla: cantidad}. Hoy lee m.medallas (objeto o JSON) si existe.
+// {idMiembro: {mejorCancion:[{e,w}], mejorDoblaje:[...], mencion:[...]}}; se recalcula solo cuando cambian DB.anuario / DB.miembros.
+let _medIdx=null, _medIdxRef=null;
+function medallasIndice_(){
+  const A=DB.anuario||[], M=DB.miembros||[];
+  if(_medIdx && _medIdxRef && _medIdxRef.a===A && _medIdxRef.m===M && _medIdxRef.n===A.length) return _medIdx;
+  const idx=new Map();
+  A.forEach(e=>{
+    MEDALLAS_DEF.forEach(d=>{
+      parseWinnerLines(e[d.campo]).forEach(w=>{
+        const vistos=new Set();
+        String(w.nombre||"").split(/[,،]/).map(x=>x.trim()).filter(Boolean).forEach(nom=>{
+          const m=anuMem_(nom); if(!m) return;
+          const id=String(m.id); if(vistos.has(id)) return; vistos.add(id);
+          if(!idx.has(id)) idx.set(id,{mejorCancion:[],mejorDoblaje:[],mencion:[]});
+          idx.get(id)[d.id].push({e,w});
+        });
+      });
+    });
+  });
+  _medIdx=idx; _medIdxRef={a:A,m:M,n:A.length};
+  return idx;
+}
+function medallasListaDe_(m){ return medallasIndice_().get(String(m&&m.id))||{mejorCancion:[],mejorDoblaje:[],mencion:[]}; }
+// {idMedalla: cantidad}
 function medallasDe_(m){
-  let o=m&&m.medallas;
-  if(typeof o==="string"){ try{ o=JSON.parse(o); }catch(e){ o=null; } }
-  return (o&&typeof o==="object")?o:{};
+  const l=medallasListaDe_(m), o={};
+  MEDALLAS_DEF.forEach(d=>o[d.id]=l[d.id].length);
+  return o;
 }
+const medallasTotal_=m=>{ const c=medallasDe_(m); return MEDALLAS_DEF.reduce((n,d)=>n+(c[d.id]||0),0); };
 function medallaSvg_(c,t){ return `<svg viewBox="0 0 24 24" width="${t||26}" height="${t||26}" aria-hidden="true"><path d="M7.5 2l3.4 6.4M16.5 2l-3.4 6.4" stroke="${c}" stroke-width="2" stroke-linecap="round" fill="none"/><circle cx="12" cy="15" r="6.6" fill="${c}"/><circle cx="12" cy="15" r="4.7" fill="none" stroke="rgba(0,0,0,0.25)" stroke-width="1"/><path d="M12 11.6l1.1 2.3 2.5.3-1.8 1.8.5 2.5-2.3-1.2-2.3 1.2.5-2.5-1.8-1.8 2.5-.3z" fill="rgba(255,255,255,0.9)"/></svg>`; }
+// En el perfil: las 3 medallas (tocar una abre SOLO esas menciones) + el total de apariciones en el Anuario con botón "Ver".
 function medallasHTML_(m){
-  const c=medallasDe_(m);
-  return `<button type="button" class="mm-medallas" data-medallas="${escAttr(m.id)}" title="Ver medallas y apariciones en el Anuario">${MEDALLAS_DEF.map(d=>{ const n=Number(c[d.id])||0; return `<span class="mm-med${n?"":" vacia"}"><span class="mm-med-top">${medallaSvg_(d.color)}<b>${n}</b></span><small>${escHtml(d.nombre)}</small></span>`; }).join("")}</button>`;
+  const c=medallasDe_(m), total=medallasTotal_(m), id=escAttr(m.id);
+  return `<div class="mm-medallas-wrap">
+    <div class="mm-medallas">${MEDALLAS_DEF.map(d=>{ const n=Number(c[d.id])||0; return `<button type="button" class="mm-med${n?"":" vacia"}" data-medallas="${id}" data-medalla-cat="${d.id}" title="Ver: ${escAttr(d.nombre)}"><span class="mm-med-top">${medallaSvg_(d.color)}<b>${n}</b></span><small>${escHtml(d.nombre)}</small></button>`; }).join("")}</div>
+    <div class="mm-anu-total"><span class="mm-anu-txt"><b>${total}</b> ${total===1?"mención":"menciones"} en el Anuario</span>${total?`<button type="button" class="mm-anu-ver" data-medallas="${id}">Ver</button>`:""}</div>
+  </div>`;
 }
-function abrirMedallas_(id){
+// Ventana de medallas: "cat" = una medalla (SOLO esas menciones) o null = todas.
+function medallaItemHTML_(it,def,mostrarEtiqueta){
+  const {e,w}=it, n=anuNorm_(e), d=anuFechaTarjeta_(e);
+  const mes=d?MESES_LARGO[d.getMonth()]:"", anio=d?d.getFullYear():"";
+  // Actividad real de esa línea (por la entrega que coincide en persona y canción); si no, la propia tarjeta.
+  const linea=anuLinea_(w.nombre,w.detalle);
+  const ent=(DB.entregas||[]).find(r=>anuLinea_(r.nombreUsuario,r.detalleEntrega)===linea);
+  const acts=anuActsDe_(e,[w]);
+  const act=(ent&&acts.find(a=>String(a.id)===String(ent.idActividad)))||acts[0]||null;
+  const link=w.link||(ent&&ent.linkGrabacion)||"";
+  const puedeIr=DB.anuarioModo==="hub"||!!staffPin;
+  const portada=n.imgs[0]?`<span class="med-pic"><img src="${escAttr(n.imgs[0])}" alt="" loading="lazy" decoding="async" onerror="this.onerror=null;this.src=LOGO_DEFAULT"></span>`:`<span class="med-pic med-pic-vacia"></span>`;
+  const tags=n.tipos.map(t=>{ const x=TIPO_[t]||{t:"Especial",e:"✨"}; return `<span class="med-tag">${x.e} ${x.t}</span>`; }).join("");
+  const tarjeta=`<${puedeIr?`button type="button" data-med-ir="${escAttr(e.id)}"`:`div`} class="med-acard">${portada}<span class="med-acb"><span class="med-act">${escHtml(n.titulo)}</span><span class="med-tags">${tags}</span></span></${puedeIr?"button":"div"}>`;
+  return `<div class="med-item">
+    <div class="med-top">${tarjeta}<div class="med-mes"><b>${escHtml(mes)}</b><small>${anio}</small></div></div>
+    ${mostrarEtiqueta?`<div class="med-chip" style="--mc:${def.color}">${medallaSvg_(def.color,16)}<span>${escHtml(def.nombre)}</span></div>`:""}
+    <div class="med-actrow"><span class="med-who"><b>${escHtml((act&&act.titulo)||n.titulo)}</b><small>${escHtml(w.detalle||def.nombre)}</small></span>${link?`<a class="med-play" href="${escAttr(link)}" target="_blank" rel="noopener" aria-label="Reproducir actividad" title="Reproducir actividad">▶</a>`:""}</div>
+  </div>`;
+}
+function pintarMedallas_(id,cat){
   const m=(DB.miembros||[]).find(x=>String(x.id)===String(id)); if(!m) return;
-  const c=medallasDe_(m);
+  const lista=medallasListaDe_(m), c=medallasDe_(m), total=medallasTotal_(m);
+  const defs=cat?MEDALLAS_DEF.filter(d=>d.id===cat):MEDALLAS_DEF;
+  const items=defs.flatMap(d=>lista[d.id].map(it=>({it,d}))).sort((a,b)=>{
+    const fa=anuFechaTarjeta_(a.it.e), fb=anuFechaTarjeta_(b.it.e);
+    return ((fb?fb.getTime():0)-(fa?fa.getTime():0))||(MEDALLAS_DEF.indexOf(a.d)-MEDALLAS_DEF.indexOf(b.d));
+  });
   document.getElementById("medallasContent").innerHTML=`
     <h3 style="margin-top:0;">🏅 Medallas de ${escHtml(m.nombre||"")}</h3>
-    ${MEDALLAS_DEF.map(d=>`<div class="med-fila">${medallaSvg_(d.color,30)}<span>${escHtml(d.nombre)}</span><b>${Number(c[d.id])||0}</b></div>`).join("")}
-    <div class="med-aviso"><strong>📖 AnuarioHub</strong>Próximamente: aquí verás en qué partes del AnuarioHub apareces y podrás ir a verlo.</div>
-    <div class="med-aviso"><strong>📺 Anuario público</strong>Próximamente: aquí verás en qué partes del Anuario público apareces y podrás ir a verlo.</div>`;
+    <div class="med-tabs" role="tablist">${MEDALLAS_DEF.map(d=>{ const n=c[d.id]||0; return `<button type="button" class="med-tab${cat===d.id?" on":""}${n?"":" vacia"}" style="--mc:${d.color}" data-med-cat="${d.id}" aria-pressed="${cat===d.id}">${medallaSvg_(d.color,24)}<b>${n}</b><small>${escHtml(d.nombre)}</small></button>`; }).join("")}</div>
+    <div class="med-resumen">${cat?`Solo <b>${escHtml(defs[0].nombre)}</b> · <button type="button" class="med-todas" data-med-cat="">Ver todas (${total})</button>`:`Todas las apariciones en el Anuario · <b>${total}</b>`}</div>
+    <div class="med-lista">${items.length?items.map(x=>medallaItemHTML_(x.it,x.d,!cat)).join(""):`<div class="med-vacio">Todavía sin menciones${cat?" de este tipo":""} en el Anuario.</div>`}</div>`;
+  document.getElementById("medallasContent").dataset.id=String(id);
+}
+function abrirMedallas_(id,cat){
+  const mm=document.getElementById("memberModal"), md=document.getElementById("medallasModal");
+  md.classList.toggle("anu-light",mm.classList.contains("anu-light")); // respeta el modo de color de la pantalla desde donde se abrió
+  pintarMedallas_(id,cat||null);
+  const box=md.querySelector(".modal-box"); if(box) box.scrollTop=0;
   openModal("medallasModal");
 }
-document.addEventListener("click",ev=>{ const b=ev.target.closest&&ev.target.closest("[data-medallas]"); if(b) abrirMedallas_(b.dataset.medallas); });
+document.addEventListener("click",ev=>{
+  const t=ev.target.closest&&ev.target.closest("[data-medallas],[data-med-cat],[data-med-ir]"); if(!t) return;
+  if(t.dataset.medCat!==undefined){ const id=document.getElementById("medallasContent").dataset.id; pintarMedallas_(id,t.dataset.medCat&&!t.classList.contains("on")?t.dataset.medCat:null); return; }
+  if(t.dataset.medIr){ // ir a esa tarjeta en el Anuario real
+    closeModal("medallasModal"); closeModal("memberModal");
+    switchTab("anuario");
+    if(typeof anuIrA_==="function") anuIrA_(t.dataset.medIr);
+    document.body.scrollTo({top:0});
+    return;
+  }
+  abrirMedallas_(t.dataset.medallas,t.dataset.medallaCat||null);
+});
 
 function avatarEntrega_(e){
   if(entregaGrupoN_(e)) return `<span class="vip-wrap ent-av"><img src="${ENT_SHOW_IMG}" alt="" loading="lazy" decoding="async" onerror="this.onerror=null;this.src=LOGO_DEFAULT"></span>`;
@@ -4216,14 +4334,17 @@ function avatarEntrega_(e){
   const img=`<img src="${escAttr((m&&m.avatarUrl)||LOGO_DEFAULT)}" alt="" loading="lazy" decoding="async" onerror="this.onerror=null;this.src=LOGO_DEFAULT">`;
   return `<span class="vip-wrap ent-av">${img}${m&&esTrue(m.esVip)?vipBadgeSvg_():""}</span>`;
 }
-// Entregas de 2-3 personas: la foto va rotando entre ellas cada 1 s.
+// Entregas de 2-3 personas: la foto va rotando entre ellas con un fundido suave (ver .ent-slide.prev/.on en el CSS).
 setInterval(()=>{
   document.querySelectorAll(".ent-av.rot").forEach(w=>{
     const sl=w.querySelectorAll(".ent-slide"); if(sl.length<2) return;
-    const i=((+w.dataset.i||0)+1)%sl.length; w.dataset.i=i;
-    sl.forEach((x,k)=>x.classList.toggle("on",k===i));
+    const antes=+w.dataset.i||0, i=(antes+1)%sl.length; w.dataset.i=i;
+    sl.forEach((x,k)=>{
+      x.classList.toggle("on",k===i);
+      x.classList.toggle("prev",k===antes);
+    });
   });
-},1000);
+},2200);
 // "N Peachys": al tocar el texto se muestran los nombres (mismo texto que el resto); tocar fuera de un nombre vuelve a contraer.
 document.addEventListener("click",ev=>{
   const g=ev.target.closest&&ev.target.closest("[data-grupo]"); if(!g) return;
@@ -5597,6 +5718,7 @@ function openModal(id){
 function closeModal(id){
   document.getElementById(id).classList.remove("open");
   if(id==="memberModal"){ document.getElementById(id).classList.remove("sobre-chambeadores"); setTimeout(()=>{ if(!document.getElementById(id).classList.contains("open")) document.getElementById(id).classList.remove("anu-light"); },300); }
+  if(id==="medallasModal"){ setTimeout(()=>{ const el=document.getElementById(id); if(!el.classList.contains("open")) el.classList.remove("anu-light"); },300); }
   // El carrusel de Minecraft corre timers propios (y puede haber un <video> reproduciéndose con
   // su audio); si no se frena acá, seguiría corriendo en segundo plano con el modal ya cerrado.
   if(id==="minecraftModal"){ mcStopCarousel(); mcMusicDetener(); }
