@@ -705,3 +705,10 @@ html.anu-x-hide #anuScene .sc-26{opacity:0;transition:none;}
 .act-ent[open]>.act-list,.act-ent[open]>.act-sub{animation:actEnt .3s ease;}
 @keyframes actEnt{from{opacity:0;transform:translateY(-6px)}}
 @media (prefers-reduced-motion:reduce){.act-ent[open]>.act-list,.act-ent[open]>.act-sub,.act-chev{animation:none;transition:none;}}
+
+/* Listas de entregas/menciones: 2 por fila (3 en pantallas anchas) y la última fila centrada (5 → 2, 2 y 1) */
+.act-list{display:flex;flex-wrap:wrap;justify-content:center;gap:10px;}
+.act-list>.act-row{flex:0 0 calc((100% - 10px)/2);max-width:calc((100% - 10px)/2);min-width:0;box-sizing:border-box;}
+@media (min-width:700px){.act-list>.act-row{flex-basis:calc((100% - 20px)/3);max-width:calc((100% - 20px)/3);}}
+.bst-peachys[data-peachys-toggle]{cursor:pointer;-webkit-tap-highlight-color:transparent;}
+.bst-peachys[data-peachys-toggle]:focus-visible{outline:2px solid #ffb300;outline-offset:3px;border-radius:8px;}

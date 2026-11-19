@@ -236,7 +236,7 @@ function anuActHTML_(id){
   const grupL=grup.map(w=>({w,l:"Grupal"})), best=[...grupL,...bestOnly];
   const bstHTML=lst=>`<div class="act-best">${lst.map(x=>{ const m=anuMem_(x.w.nombre), nm=String(x.w.nombre||"").replace(/@/g,"");
       const peachys=nm.split(/[,،]/).map(n=>n.trim()).filter(Boolean);
-      const nombreHTML=peachys.length>3?`<div class="bst-peachys"><span class="bst-count">${peachys.length} Peachys</span><span class="bst-full hidden">${escHtml(peachys.join(", "))}</span><button type="button" class="bst-expand" data-peachys-toggle aria-expanded="false" aria-label="Mostrar todos los Peachys">⌄</button></div>`:`<b>${escHtml(nm||"Miembro")}</b>`;
+      const nombreHTML=peachys.length>3?`<div class="bst-peachys" data-peachys-toggle role="button" tabindex="0" aria-expanded="false"><span class="bst-count">${peachys.length} Peachys</span><span class="bst-full hidden">${escHtml(peachys.join(", "))}</span></div>`:`<b>${escHtml(nm||"Miembro")}</b>`;
       return `<div class="bst"><span class="bst-l">${x.l}</span><button type="button" class="bst-av"${m?` data-miembro="${escAttr(m.id)}"`:""} aria-label="${escAttr(nm)}">${ANU_CROWN}<img class="anu-fb" src="${escAttr(anuAv_(m))}" alt=""></button>${nombreHTML}<small>${escHtml(x.w.detalle||"")}</small>${x.w.link?`<a class="md-play" href="${escAttr(x.w.link)}" target="_blank" rel="noopener">Ver presentación</a>`:""}</div>`; }).join("")}</div>`;
   const fechaTxt=isNaN(f)?"":`${f.getDate()} de ${MESES_LARGO[f.getMonth()].toLowerCase()} ${f.getFullYear()}`;
   return `<div class="act-pg"><div class="act-h">${n.imgs.length?`<span class="act-ps"><img class="js-longpress" data-filename="${escAttr(n.titulo+".jpg")}" src="${escAttr(n.imgs[0])}" alt=""></span>`:""}<div><h2>${escHtml(n.titulo)}</h2><div class="md-meta"><span>${fechaTxt}</span>${n.tipos.map(anuTag_).join("")}</div></div></div>
@@ -518,14 +518,13 @@ function anuDet_(){
   d.innerHTML=h;
   d.querySelectorAll("[data-anuario]").forEach(t=>t.onclick=()=>anuOpenAct_(t.dataset.anuario));
   d.querySelectorAll("[data-miembro]").forEach(t=>t.onclick=()=>anuAbrirMiembro_(t.dataset.miembro));
-  d.querySelectorAll("[data-peachys-toggle]").forEach(bt=>bt.onclick=()=>{
+  d.querySelectorAll("[data-peachys-toggle]").forEach(bt=>{ const alt=()=>{
     const card=bt.closest(".bst"), open=bt.getAttribute("aria-expanded")!=="true";
     card.querySelector(".bst-count").classList.toggle("hidden",open);
     card.querySelector(".bst-full").classList.toggle("hidden",!open);
-    bt.setAttribute("aria-expanded",String(open));
-    bt.setAttribute("aria-label",open?"Ocultar Peachys":"Mostrar todos los Peachys");
-    bt.textContent=open?"⌃":"⌄";
-  });
+    bt.setAttribute("aria-expanded",String(open)); };
+    bt.onclick=alt; bt.onkeydown=e=>{ if(e.key==="Enter"||e.key===" "){ e.preventDefault(); alt(); } }; });
+
   d.querySelectorAll(".act-pg img.js-longpress").forEach(img=>enableLongPress(img,img.dataset.filename));
   d.querySelectorAll("img.anu-fb").forEach(im=>{ const fb=()=>{ if(im.dataset.fb) return; im.dataset.fb="1"; im.src=ANU_SHOW; }; im.addEventListener("error",fb); if(im.complete&&im.naturalWidth===0) fb(); });
   d.querySelectorAll("[data-share-anuario]").forEach(bt=>bt.onclick=()=>anuCompartir_(bt.dataset.shareAnuario));
