@@ -746,3 +746,11 @@ html[data-anu-v="libro"] body.anuario-mode main{padding-top:0;}
   .anu-menu:active,.anu-home:active{transform:scale(.92);}
   .anu-menu:focus-visible,.anu-home:focus-visible{outline:3px solid var(--anu-acc,#3f2168);outline-offset:2px;}
 }
+
+/* =====================================================================
+   Cuadrícula del mes: 2 por fila, tamaño de portada medido al entrar (anuFit_, anuario.js) y última fila centrada
+   ===================================================================== */
+.anu-grid{display:flex !important;flex-wrap:wrap;justify-content:center;align-items:center;align-content:flex-start;gap:22px 14px !important;--cw:calc((100% - 14px)/2);}
+.anu-grid .anu-card{flex:0 0 var(--cw);width:var(--cw);max-width:var(--cw);min-width:0;}
+/* mientras se mide, las tarjetas ocupan su lugar pero no se ven (así no se nota el cambio de tamaño) */
+.anu-grid.fitting .anu-card{opacity:0;animation:none;pointer-events:none;}

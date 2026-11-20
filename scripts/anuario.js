@@ -199,7 +199,7 @@ function anuWinBadges_(e){
 function anuarioBlockHTML(x,i=0){
   /* La tarjeta ES la portada de la actividad (la portada ya trae el nombre): sin marco, textos ni etiquetas. */
   const n=x.n, r=[-1.6,1.2,-0.8,1.8][i%4], src=n.imgs[0];
-  const pic=src?`<img class="anu-pic js-longpress" data-filename="${escAttr(n.titulo+".jpg")}" src="${escAttr(src)}" alt="${escAttr(n.titulo)}" loading="lazy" decoding="async">`:`<span class="anu-pic anu-noimg">${escHtml(n.titulo)}</span>`;
+  const pic=src?`<img class="anu-pic js-longpress" data-filename="${escAttr(n.titulo+".jpg")}" src="${escAttr(src)}" alt="${escAttr(n.titulo)}" loading="${i<4?"eager":"lazy"}" decoding="async">`:`<span class="anu-pic anu-noimg">${escHtml(n.titulo)}</span>`;
   return `<button type="button" class="anu-card" data-anuario="${escAttr(n.e.id)}" aria-label="${escAttr(n.titulo)}" style="--r:${r}deg;--i:${Math.min(i,10)}">${pic}</button>`;
 }
 
@@ -515,6 +515,35 @@ function anuIdx_(){
     <ol class="anu-il">${rows.map(r=>`<li><button type="button" class="anu-row${r.k===anuS.key?" on":""}" data-k="${r.k}"${r.n?"":" disabled"}${r.k===anuS.key?' aria-current="true"':""}><b>${r.b}</b><i></i><span>${r.t}</span></button></li>`).join("")}</ol>`;
   el.querySelectorAll("[data-k]").forEach(b=>b.onclick=()=>anuPick_(b.dataset.k));
 }
+/* ---------- Tamaño de las portadas del mes ----------
+   Al ENTRAR a la página de un mes se mide el espacio libre y se calcula UN ancho de tarjeta para que quepan 2 de lado a lado y 2 de arriba
+   a abajo (las 4 primeras) sin recortar nada: solo se reduce el tamaño de la portada. Si hay más, se llega a ellas con scroll.
+   La medida NO se recalcula si la pantalla cambia de tamaño ni cuando la app se refresca en segundo plano; solo al salir de la página
+   (a otro mes, a una actividad, a la portada) y volver a entrar. Las filas incompletas quedan centradas (3 → 2 arriba y 1 al centro). */
+const anuTop_=el=>{ let y=0; for(let e=el;e;e=e.offsetParent) y+=e.offsetTop; return y; };
+function anuFitMide_(g){
+  const det=$a("anuDet"), cards=[...g.querySelectorAll(":scope>.anu-card")].slice(0,4); if(!det||!cards.length) return 0;
+  const cs=getComputedStyle(g), cg=parseFloat(cs.columnGap)||14, rg=parseFloat(cs.rowGap)||22, wMax=Math.floor((g.clientWidth-cg)/2); if(wMax<=0) return 0;
+  const R=cards.map(c=>{ const im=c.querySelector("img.anu-pic"); return im&&im.naturalWidth?im.naturalHeight/im.naturalWidth:1; });
+  const filas=[]; for(let i=0;i<R.length;i+=2) filas.push(Math.max(R[i],R[i+1]||0));
+  const dcs=getComputedStyle(det), enDet=/auto|scroll/.test(dcs.overflowY);   // escritorio: scrollea #anuDet · celular: scrollea <body>
+  const arriba=anuTop_(g)-(enDet?anuTop_(det)+det.clientTop:0);                // posición de la cuadrícula con el scroll en 0 (no depende de transformaciones ni de dónde esté el scroll)
+  const alto=enDet?det.clientHeight-(parseFloat(dcs.paddingBottom)||0):document.body.clientHeight;
+  const libre=alto-arriba-14-rg*(filas.length-1);                              // 14px de aire para la inclinación y la sombra de las tarjetas
+  const w=Math.floor(Math.min(wMax,libre/filas.reduce((a,b)=>a+b,0)));
+  return Math.max(w,Math.min(wMax,80));
+}
+function anuFit_(g,sig){
+  const fin=()=>g.classList.remove("fitting");
+  const imgs=[...g.querySelectorAll(":scope>.anu-card img.anu-pic")].slice(0,4);
+  const listas=imgs.map(im=>im.complete?Promise.resolve():new Promise(r=>{ im.addEventListener("load",r,{once:true}); im.addEventListener("error",r,{once:true}); }));
+  Promise.race([Promise.all(listas),new Promise(r=>setTimeout(r,2500))])
+    .then(()=>new Promise(r=>requestAnimationFrame(()=>requestAnimationFrame(r))))
+    .then(()=>{ if(!g.isConnected) return;
+      try{ const w=anuFitMide_(g); if(w){ g.style.setProperty("--cw",w+"px"); anuS.fit={sig,w}; } }catch(_){}
+      fin(); })
+    .catch(fin);
+}
 function anuDet_(){
   const p=anuP_(), d=$a("anuDet"); d.className=`anu-detail t-${p.tema}`; let h="";
   if(anuS.act) h=anuActHTML_(anuS.act);
@@ -523,6 +552,11 @@ function anuDet_(){
     h=`<div class="det-h"><h2>${MESES_LARGO[m]} <small>${y}</small></h2><span class="anu-n">${n} ${n===1?"actividad":"actividades"}</span></div><div class="anu-grid">${c.items.map((x,i)=>anuarioBlockHTML(x,i)).join("")}</div>`; }
   else h=`<div class="anu-hint"><img src="${ANU_DURAZNO}" alt=""><p>${p.n?"Elige un mes del índice.":"Aquí aparecerán las actividades."}</p></div>`;
   d.innerHTML=h;
+  { const g=d.querySelector(".anu-grid");
+    if(!g||anuS.v!=="libro"||anuS.act) anuS.fit=null;                                   // salió de la página de un mes: la próxima vez se vuelve a medir
+    else { const sig=anuS.key+"|"+[...g.children].map(c=>c.dataset.anuario).join(",");
+      if(anuS.fit&&anuS.fit.sig===sig) g.style.setProperty("--cw",anuS.fit.w+"px");   // misma visita (cambio de tamaño, refresco en segundo plano): se conserva la medida
+      else { g.classList.add("fitting"); anuFit_(g,sig); } } }
   d.querySelectorAll("[data-anuario]").forEach(t=>t.onclick=()=>anuOpenAct_(t.dataset.anuario));
   d.querySelectorAll("[data-miembro]").forEach(t=>t.onclick=()=>anuAbrirMiembro_(t.dataset.miembro));
   d.querySelectorAll("[data-peachys-toggle]").forEach(bt=>{ const alt=()=>{
