@@ -123,7 +123,7 @@ const anuRolDe_=m=>anuIsF_(m)?"f":esTrue(m.lider)?"a":esTrue(m.staff)?"s":null;
 function anuStaffIdx_(m){ const q=anuEquipo_((anuP_()||{}).anio), o=[...q.f,...q.s]; return Math.max(0,o.findIndex(x=>String(x.id)===String(m.id))); }
 /* Color favorito de cada integrante del equipo (manda sobre el color de la base de datos). Se busca por el nombre sin símbolos ni mayúsculas. */
 const ANU_COLOR_FAV_=[["alix","#ff1493"],["eryck","#7b3fc4"],["demon","#f472b6"],["anacoffee","#2f6df0"],["ragna","#e0252d"],["rcc39","#27b0e6"],["rec","#27b0e6",1],
-  ["cazador","#e0252d",2],["cami","#27b0e6",2],["wagner","#7b3fc4"],["krys","#7b3fc4"]]; /* 1 = nombre exacto · 2 = debe empezar así */
+  ["cazador","#e0252d"],["cami","#27b0e6",2],["wagner","#7b3fc4"],["krys","#7b3fc4"]]; /* 1 = nombre exacto · 2 = debe empezar así */
 const anuColorFav_=nm=>{ const k=anuKey_(nm); if(!k) return null;
   const h=ANU_COLOR_FAV_.find(([t,,md])=>md===1?k===t:md===2?k.startsWith(t):k.includes(t)); return h?h[1]:null; };
 function anuFrame_(m,rol,i){
@@ -361,7 +361,7 @@ function anuEditarTarjeta_(id){
       <div class="ed-row"><div><label class="sg-name-l" for="edFi">Fecha inicio</label><input class="sg-name" id="edFi" type="date" value="${escAttr(st.fi)}"><button type="button" class="md-sec" id="edFixMonth" style="margin-top:8px">Corregir mes</button><div id="edMonthWrap" class="hidden" style="margin-top:8px"><label class="sg-name-l" for="edMonth">Mes correcto</label><input class="sg-name" id="edMonth" type="month" value="${escAttr(st.fi.slice(0,7))}"></div></div><div><label class="sg-name-l" for="edFf">Fecha fin</label><input class="sg-name" id="edFf" type="date" value="${escAttr(st.ff)}"></div></div>
       <h4 class="sg-gt" style="margin-top:20px"><span>Actividades incluidas (${gs.filter(x=>x.act).length||0})<small>${st.L.length} ${st.L.length===1?"canción":"canciones"} en total</small></span></h4>
       ${gs.length?gs.map(g=>{ const x=g.act?(TIPO_[g.act.categoria]||{t:"Especial",e:"✨"}):null;
-        return `<section class="sg-grp" style="margin-top:12px"><h4 class="sg-gt" style="font-size:20px">${g.act&&g.act.imagenUrl?`<img src="${escAttr(g.act.imagenUrl)}" alt="">`:""}<span>${escHtml(g.act?g.act.titulo||"":"Otras canciones")}<small>${x?x.e+" "+x.t:"No se pudo ligar a una actividad"}</small></span></h4>${g.items.map(({it,i})=>`<div class="ed-line m-${it.tipo==="mencion"?"mencion":it.tipo==="grupal"?"grupal":"mejor"}"><div><b>${escHtml(String(it.w.nombre||"").replace(/@/g,""))}</b>${it.w.detalle?`<small>${escHtml(it.w.detalle)}</small>`:""}</div><div class="ed-ctl"><button type="button" data-t="mejor" data-i="${i}" class="${it.tipo!=="mencion"&&it.tipo!=="grupal"?"on":""}">👑 Mejor</button><button type="button" data-t="mencion" data-i="${i}" class="${it.tipo==="mencion"?"on":""}">🎖️ Mención</button><button type="button" data-t="grupal" data-i="${i}" class="${it.tipo==="grupal"?"on":""}">👥 Grupal</button><button type="button" class="ed-x" data-x="${i}" aria-label="Quitar">🗑️</button></div></div>`).join("")}</section>`; }).join(""):`<p class="md-empty">Esta tarjeta todavía no tiene canciones.</p>`}
+        return `<section class="sg-grp" style="margin-top:12px"><h4 class="sg-gt" style="font-size:20px">${g.act&&g.act.imagenUrl?`<img src="${escAttr(g.act.imagenUrl)}" alt="">`:""}<span>${escHtml(g.act?g.act.titulo||"":"Otras canciones")}<small>${x?x.e+" "+x.t:"No se pudo ligar a una actividad"}</small></span></h4>${g.act?`<div class="ed-grp-btns"><button type="button" data-sep="${escAttr(g.act.id)}">✂️ Separar en su propia tarjeta</button><button type="button" data-quitar="${escAttr(g.act.id)}">Quitar de esta tarjeta</button></div>`:""}${g.items.map(({it,i})=>`<div class="ed-line m-${it.tipo==="mencion"?"mencion":it.tipo==="grupal"?"grupal":"mejor"}"><div><b>${escHtml(String(it.w.nombre||"").replace(/@/g,""))}</b>${it.w.detalle?`<small>${escHtml(it.w.detalle)}</small>`:""}</div><div class="ed-ctl"><button type="button" data-t="mejor" data-i="${i}" class="${it.tipo!=="mencion"&&it.tipo!=="grupal"?"on":""}">👑 Mejor</button><button type="button" data-t="mencion" data-i="${i}" class="${it.tipo==="mencion"?"on":""}">🎖️ Mención</button><button type="button" data-t="grupal" data-i="${i}" class="${it.tipo==="grupal"?"on":""}">👥 Grupal</button><button type="button" class="ed-x" data-x="${i}" aria-label="Quitar">🗑️</button></div></div>`).join("")}</section>`; }).join(""):`<p class="md-empty">Esta tarjeta todavía no tiene canciones.</p>`}
       <div class="ed-big"><button type="button" id="edAdd">＋ Agregar actividad</button><button type="button" id="edMerge">🔀 Fusionar tarjetas</button></div>
       <div class="md-acts"><button type="button" class="md-sec" data-close>Cerrar</button><button type="button" class="md-pri" id="edSave">Guardar</button></div></div>`);
     const val=(sel,f)=>{ const el=b.querySelector(sel); el.oninput=()=>{ f(el.value); st.dirty=true; }; };
@@ -381,6 +381,24 @@ function anuEditarTarjeta_(id){
       try{ const base64Data=await fileToBase64(f); const r=await apiPost({action:"uploadImage",filename:f.name,base64Data},"Subiendo imagen..."); if(r.ok){ st.imagenUrl=r.url; st.dirty=true; draw(); } else toast("Error: "+(r.error||"")); }catch(_){ toast("No se pudo leer la imagen"); } };
     b.querySelectorAll("[data-t]").forEach(bt=>bt.onclick=()=>{ const it=st.L[+bt.dataset.i]; it.tipo=bt.dataset.t==="mencion"?"mencion":bt.dataset.t==="grupal"?"grupal":it.best; st.dirty=true; draw(); });
     b.querySelectorAll("[data-x]").forEach(bt=>bt.onclick=()=>{ st.L.splice(+bt.dataset.x,1); st.dirty=true; draw(); });
+    b.querySelectorAll("[data-quitar]").forEach(bt=>bt.onclick=async()=>{ const id=bt.dataset.quitar, n=st.L.filter(i=>i.act&&String(i.act.id)===id).length;
+      if(!await confirmarAccion(`¿Quitar de esta tarjeta las ${n} canción(es) de esta actividad? La actividad original no se toca.`)) return;
+      st.L=st.L.filter(i=>!(i.act&&String(i.act.id)===id)); st.dirty=true; draw(); });
+    b.querySelectorAll("[data-sep]").forEach(bt=>bt.onclick=async()=>{ if(st.busy) return; const id=bt.dataset.sep, grupo=st.L.filter(i=>i.act&&String(i.act.id)===id);
+      if(!grupo.length) return;
+      if(grupo.length===st.L.length){ toast("Esta tarjeta solo tiene esa actividad; ya está separada"); return; }
+      if(!await confirmarAccion(`Se sacarán ${grupo.length} canción(es) de «${st.titulo||row.titulo||"esta tarjeta"}» y quedarán en una tarjeta nueva. ¿Separar?`)) return;
+      st.busy=true; const orig=datos(), act=grupo[0].act;
+      const volver=async()=>{ await apiPost({action:"editAnuario",data:orig},"Restaurando tarjeta..."); };  /* reversa si algo falla */
+      try{
+        const resto=st.L.filter(i=>!grupo.includes(i)), L0=st.L; st.L=resto;
+        const okA=await guardar(); st.L=L0; if(!okA){ toast("No se pudo separar"); return; }
+        const items=grupo.map(i=>({destino:anuDestino_(i.tipo==="mencion"?"mencion":i.tipo==="grupal"?"grupal":"mejor",act.categoria),nombreUsuario:i.w.nombre||"",detalle:i.w.detalle||"",link:i.w.link||""}));
+        const okB=await anuEnviar_(items,act.id,act.titulo||"","");
+        const dentro=(DB.anuario||[]).some(r=>String(r.id)!==String(st.id)&&ANU_CAMPOS_.some(k=>parseWinnerLines(r[k]).some(w=>anuLn_(w)===anuLn_(grupo[0].w))));
+        if(!okB||!dentro){ await volver(); await cargarDatos(); toast("No se pudo crear la tarjeta nueva; todo quedó como estaba"); return; }
+        toast("Actividad separada en su propia tarjeta ✅"); mdHide_();
+      } finally{ st.busy=false; } });
     const antes=async()=>{ if(st.dirty) return await guardar(); return true; };
     b.querySelector("#edAdd").onclick=async()=>{ if(!await antes()) return; anuAgregar_({id:st.id,titulo:st.titulo,fecha:st.fi,volver:()=>anuEditarTarjeta_(st.id)}); };
     b.querySelector("#edMerge").onclick=async()=>{ if(!await antes()) return; fusion(); };
@@ -535,9 +553,17 @@ function anuFitMide_(g){
   const arriba=anuTop_(g)-(enDet?anuTop_(det)+det.clientTop:0);                // posición de la cuadrícula con el scroll en 0 (no depende de transformaciones ni de dónde esté el scroll)
   const alto=enDet?det.clientHeight-(parseFloat(dcs.paddingBottom)||0):document.body.clientHeight;
   const libre=alto-arriba-14-rg*(filas.length-1);                              // 14px de aire para la inclinación y la sombra de las tarjetas
-  const w=Math.floor(Math.min(wMax,libre/filas.reduce((a,b)=>a+b,0)));
-  return Math.max(w,Math.min(wMax,80));
+  const w=Math.max(Math.floor(Math.min(wMax,libre/filas.reduce((a,b)=>a+b,0))),Math.min(wMax,80));
+  /* Teléfono (pantalla angosta) y pocas tarjetas: se prueba también UNA columna (tarjetas a lo ancho, una bajo otra, en zigzag si no llegan al ancho completo)
+     y se elige la distribución que deja las portadas más grandes. 2 tarjetas → normalmente una bajo otra; 3 → 2 arriba y 1 abajo salvo que quepan las 3 en columna. */
+  const total=g.querySelectorAll(":scope>.anu-card").length, W=g.clientWidth;
+  if(!anuDesk_()&&total<=4&&cards.length===total&&W>0){
+    const libre1=alto-arriba-14-rg*(total-1), w1=Math.floor(Math.min(W,libre1/R.reduce((a,b)=>a+b,0)));
+    if(w1>=Math.min(W,80)&&w1>=w) return {w:w1,cols:1,zz:w1<W*.88};
+  }
+  return {w,cols:2,zz:false};
 }
+function anuFitPon_(g,r){ g.style.setProperty("--cw",r.w+"px"); g.dataset.cols=r.cols||2; if(r.zz) g.dataset.zz="1"; else delete g.dataset.zz; }
 function anuFit_(g,sig){
   const fin=()=>g.classList.remove("fitting");
   const imgs=[...g.querySelectorAll(":scope>.anu-card img.anu-pic")].slice(0,4);
@@ -545,7 +571,7 @@ function anuFit_(g,sig){
   Promise.race([Promise.all(listas),new Promise(r=>setTimeout(r,2500))])
     .then(()=>new Promise(r=>requestAnimationFrame(()=>requestAnimationFrame(r))))
     .then(()=>{ if(!g.isConnected) return;
-      try{ const w=anuFitMide_(g); if(w){ g.style.setProperty("--cw",w+"px"); anuS.fit={sig,w}; } }catch(_){}
+      try{ const r=anuFitMide_(g); if(r&&r.w){ anuFitPon_(g,r); anuS.fit={sig,...r}; } }catch(_){}
       fin(); })
     .catch(fin);
 }
@@ -564,7 +590,7 @@ function anuDet_(){
   { const g=d.querySelector(".anu-grid");
     if(!g||anuS.v!=="libro"||anuS.act) anuS.fit=null;                                   // salió de la página de un mes: la próxima vez se vuelve a medir
     else { const sig=anuS.key+"|"+[...g.children].map(c=>c.dataset.anuario).join(",");
-      if(anuS.fit&&anuS.fit.sig===sig) g.style.setProperty("--cw",anuS.fit.w+"px");   // misma visita (cambio de tamaño, refresco en segundo plano): se conserva la medida
+      if(anuS.fit&&anuS.fit.sig===sig) anuFitPon_(g,anuS.fit);   // misma visita (cambio de tamaño, refresco en segundo plano): se conserva la medida
       else { g.classList.add("fitting"); anuFit_(g,sig); } } }
   d.querySelectorAll("[data-anuario]").forEach(t=>t.onclick=()=>anuOpenAct_(t.dataset.anuario));
   d.querySelectorAll("[data-miembro]").forEach(t=>t.onclick=()=>anuAbrirMiembro_(t.dataset.miembro));

@@ -834,3 +834,14 @@ html[data-anu-v="libro"] body.anuario-mode main{padding-top:0;}
 @media (max-width:699px){.act-list>.act-row{flex-basis:100%;max-width:100%;}}
 
 @media (prefers-reduced-motion:reduce){.anu-detail.enter,.anu-detail.enter *,.anu-detail.enter *::after{animation:none !important;}}
+
+/* Editor de tarjeta: botones por actividad (separar / quitar) */
+.ed-grp-btns{display:flex;flex-wrap:wrap;gap:8px;margin:0 0 10px;}
+.ed-grp-btns button{flex:1 1 150px;min-height:40px;padding:0 12px;border-radius:999px;font-weight:800;font-size:13px;background:var(--anu-t1,#ece3f8);color:var(--anu-acc,#3f2168);touch-action:manipulation;}
+.ed-grp-btns button[data-quitar]{background:#fde3e8;color:#a3173a;}
+
+/* Teléfono: con 1-4 portadas, si en columna quedan más grandes, ocupan todo el ancho (una bajo otra); en zigzag cuando no llegan al ancho completo */
+.anu-grid[data-cols="1"]{flex-direction:column;flex-wrap:nowrap;align-items:center;}
+.anu-grid[data-cols="1"] .anu-card{flex:0 0 auto;width:var(--cw);max-width:100%;}
+.anu-grid[data-cols="1"][data-zz] .anu-card:nth-child(odd){align-self:flex-start;}
+.anu-grid[data-cols="1"][data-zz] .anu-card:nth-child(even){align-self:flex-end;}
