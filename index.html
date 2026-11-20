@@ -678,8 +678,8 @@
   #chambeadoresModal .trofeo-sub{text-align:center;font-size:12px;color:var(--text-dim);margin-bottom:14px;line-height:1.4;}
   .tm-ic{--is:28px;}
   /* botón único de navegación */
-  .trofeo-nav{position:sticky;bottom:-20px;margin:16px -20px -20px;padding:14px 20px 20px;background:linear-gradient(to bottom,transparent,var(--card-bg) 40%);z-index:5;}
-  .trofeo-nav-btn{display:flex;align-items:center;justify-content:center;gap:9px;width:100%;height:46px;border-radius:16px;color:#efe4ff;font-weight:900;font-size:15px;letter-spacing:.02em;background:linear-gradient(135deg,#3b2a5c 0%,#241838 100%);border:0;box-shadow:0 4px 12px rgba(0,0,0,0.35);--is:19px;cursor:pointer;-webkit-tap-highlight-color:transparent;transition:transform .15s,filter .15s;}
+  .trofeo-nav{position:sticky;bottom:-20px;margin:16px -20px -20px;padding:14px 20px 20px;background:linear-gradient(to bottom,transparent,var(--card-bg) 40%);z-index:30;}
+  .trofeo-nav-btn{display:flex;align-items:center;justify-content:center;gap:9px;width:100%;height:46px;border-radius:16px;color:#efe4ff;font-weight:900;font-size:15px;letter-spacing:.02em;background:linear-gradient(135deg,#3b2a5c 0%,#241838 100%);border:0;box-shadow:0 4px 12px rgba(0,0,0,0.35);--is:19px;cursor:pointer;touch-action:manipulation;position:relative;z-index:20;-webkit-tap-highlight-color:transparent;transition:transform .15s,filter .15s;}
   .trofeo-nav-btn:active{transform:scale(0.97);}
   .trofeo-nav-btn:hover{filter:brightness(1.15);}
   .tn-ic{display:flex;}
@@ -709,19 +709,19 @@
   .podio-col[data-chambeador-id]{cursor:pointer;}
   .podio-col[data-chambeador-id]:active .pd-av{transform:scale(0.94);}
   .pd-who{display:flex;flex-direction:column;align-items:center;width:100%;animation:pdWho .6s cubic-bezier(.3,1.5,.5,1) var(--wd,0s) backwards;}
-  .pd-crown{--is:30px;color:#ffc107;margin-bottom:-3px;animation:pdCrown .7s cubic-bezier(.3,1.6,.5,1) calc(var(--wd,0s) + .25s) backwards,pdCrownIdle 2.6s ease-in-out calc(var(--wd,0s) + 1s) infinite;}
+  .pd-crown{--is:30px;color:#FF006A;margin-bottom:-3px;animation:pdCrown .7s cubic-bezier(.3,1.6,.5,1) calc(var(--wd,0s) + .25s) backwards;}
   .pd-av{width:var(--av);height:var(--av);border-radius:50%;object-fit:cover;background:var(--card-bg-2);border:3px solid var(--mc);transition:transform .15s;}
-  .podio-col.p1 .pd-av{animation:pdFloat 3s ease-in-out calc(var(--wd,0s) + .8s) infinite;}
   .pd-name{max-width:100%;margin-top:7px;font-size:12.5px;font-weight:800;text-align:center;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
-  .pd-total{margin-top:4px;min-width:30px;text-align:center;padding:2px 10px;border-radius:999px;background:linear-gradient(90deg,var(--peach-2),var(--peach-1));color:#fff;font-weight:900;font-size:12.5px;}
+  .pd-total{margin-top:4px;min-width:30px;text-align:center;padding:2px 10px;border-radius:999px;background:var(--mc2);color:#fff;font-weight:900;font-size:12.5px;}
   .podio-col .chambeador-desglose{justify-content:center;margin-top:3px;}
-  .pd-bloque{position:relative;width:100%;height:var(--h);margin-top:9px;border-radius:12px 12px 0 0;background:linear-gradient(180deg,var(--mc1),var(--mc2));display:flex;justify-content:center;padding-top:8px;font-size:30px;font-weight:900;line-height:1;color:rgba(0,0,0,0.3);overflow:hidden;animation:pdUp .7s cubic-bezier(.2,.9,.25,1) var(--bd,0s) backwards;}
+  .pd-bloque{position:relative;width:100%;height:var(--h);margin-top:9px;border-radius:12px 12px 0 0;background:linear-gradient(180deg,var(--mc1),var(--mc2));display:flex;justify-content:center;padding-top:8px;font-size:30px;font-weight:900;line-height:1;color:rgba(255,255,255,0.6);overflow:hidden;animation:pdUp .7s cubic-bezier(.2,.9,.25,1) var(--bd,0s) backwards;}
   .pd-bloque::before{content:"";position:absolute;inset:0 auto 0 0;width:34%;background:linear-gradient(90deg,rgba(255,255,255,0.28),transparent);}
-  .podio-col.p1{--mc:#ffc107;--mc1:#ffe27a;--mc2:#d99a00;--h:132px;--av:70px;--bd:.5s;--wd:1.2s;}
-  .podio-col.p2{--mc:#cfd6e0;--mc1:#f4f6fa;--mc2:#98a4b5;--h:100px;--av:56px;--bd:.25s;--wd:.95s;}
-  .podio-col.p3{--mc:#d98a4a;--mc1:#f3b886;--mc2:#a85d1f;--h:74px;--av:56px;--bd:0s;--wd:.7s;}
+  .podio-col.p1{--mc:#FF006A;--mc1:#FF5C9D;--mc2:#FF006A;--h:132px;--av:70px;--bd:.5s;--wd:1.2s;}
+  .podio-col.p2{--mc:#B200FE;--mc1:#CF5CFF;--mc2:#B200FE;--h:100px;--av:56px;--bd:.25s;--wd:.95s;}
+  .podio-col.p3{--mc:#00B8FF;--mc1:#6ED8FF;--mc2:#00A0E0;--h:74px;--av:56px;--bd:0s;--wd:.7s;}
   .podio-col.vacio .pd-bloque{opacity:.35;}
-  .podio-conf{position:absolute;inset:0;pointer-events:none;}
+  .podio-conf,.podio-conf i{pointer-events:none;}
+  .podio-conf{position:absolute;inset:0;}
   .podio-conf i{position:absolute;top:-8px;width:7px;height:11px;border-radius:2px;background:var(--c);left:var(--x);opacity:0;animation:pdConf 2s ease-out var(--cd) backwards;}
   @keyframes pdUp{from{height:0;}}
   @keyframes pdWho{from{opacity:0;transform:translateY(-26px) scale(.6);}}
@@ -729,11 +729,11 @@
   @keyframes pdCrownIdle{0%,100%{transform:translateY(0) rotate(0);}50%{transform:translateY(-3px) rotate(4deg);}}
   @keyframes pdFloat{0%,100%{transform:translateY(0);}50%{transform:translateY(-3px);}}
   @keyframes pdConf{0%{opacity:0;transform:translate(0,0) rotate(0);}10%{opacity:1;}100%{opacity:0;transform:translate(var(--dx),300px) rotate(560deg);}}
-  @media (prefers-reduced-motion:reduce){.pd-who,.pd-crown,.pd-bloque,.podio-col.p1 .pd-av,.podio-conf i{animation:none !important;}}
+  @media (prefers-reduced-motion:reduce){.pd-who,.pd-crown,.pd-bloque,.podio-conf i{animation:none !important;}}
 
 </style>
 <link rel="stylesheet" href="styles/anuario-fonts.css?v=1">
-<link rel="stylesheet" href="styles/anuario.css?v=3.62">
+<link rel="stylesheet" href="styles/anuario.css?v=3.63">
 <style>
 
   #searchMiembros{width:100%;padding:12px 14px;border-radius:12px;border:1px solid rgba(255,255,255,0.1);background:var(--card-bg-2);color:var(--text);font-size:14px;display:block;}
@@ -1872,7 +1872,6 @@
     <!-- Vista 2: top de un periodo (o "General") -->
     <div id="chambeadoresRankingView" class="hidden">
       <h3 class="trofeo-h"><span class="th-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" class="ti"><path d="M8 21h8M12 17v4M7 4h10v5a5 5 0 0 1-10 0V4z"/><path d="M17 5h3v2a3 3 0 0 1-3 3M7 5H4v2a3 3 0 0 0 3 3"/></svg></span><span id="chambeadoresPeriodoTitulo">Chambeadores</span></h3>
-      <div id="chambeadoresPeriodo" class="trofeo-sub"></div>
       <div class="switch-pill" id="chambeadoresCategoriaSwitch" style="margin-bottom:14px;">
         <button type="button" data-val="canto"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" class="ti"><path d="M9 18V5l11-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="17" cy="16" r="3"/></svg><span>Canto</span></button>
         <button type="button" data-val="doblaje"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" class="ti"><path d="M4 14v-2a8 8 0 0 1 16 0v2"/><rect x="3" y="14" width="4" height="7" rx="2"/><rect x="17" y="14" width="4" height="7" rx="2"/></svg><span>Doblaje</span></button>
@@ -1888,7 +1887,6 @@
     <!-- Vista 5: top de un año del anuario -->
     <div id="chambeadoresAnuarioRankingView" class="hidden">
       <h3 class="trofeo-h"><span class="th-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" class="ti"><path d="M3 8l4.5 4L12 5l4.5 7L21 8l-2 11H5L3 8z"/></svg></span><span id="chambeadoresAnuarioTitulo">Anuario</span></h3>
-      <div class="trofeo-sub">Cuenta mejores canciones/doblajes, grupales y menciones honoríficas de ese anuario.</div>
       <div class="chambeadores-top" id="chambeadoresAnuarioTop"></div>
     </div>
 
@@ -1933,7 +1931,7 @@
 </div>
 
 <script src="scripts/anuario-assets.js?v=1"></script>
-<script src="scripts/anuario.js?v=3.62"></script>
+<script src="scripts/anuario.js?v=3.63"></script>
 <script>
 // Si el navegador restaura esta página desde su caché de "atrás/adelante" (bfcache), el DOM puede
 // quedar congelado a mitad de una actualización (ej. justo cuando un innerHTML se estaba
@@ -5047,7 +5045,7 @@ function categoriaDeEntrega_(e){
 
 let chambeadoresPeriodoSel_ = null; // null = "General" (todo el historial), o {id,nombre,fechaInicio,fechaFin}
 /* v3.61: íconos propios (SVG) del modal de Chambeadores */
-const TI={"trophy": "<svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2.1\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\" class=\"ti\"><path d=\"M8 21h8M12 17v4M7 4h10v5a5 5 0 0 1-10 0V4z\"/><path d=\"M17 5h3v2a3 3 0 0 1-3 3M7 5H4v2a3 3 0 0 0 3 3\"/></svg>", "mic": "<svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2.1\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\" class=\"ti\"><rect x=\"9\" y=\"3\" width=\"6\" height=\"11\" rx=\"3\"/><path d=\"M5 11a7 7 0 0 0 14 0M12 18v3M9 21h6\"/></svg>", "crown": "<svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2.1\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\" class=\"ti\"><path d=\"M3 8l4.5 4L12 5l4.5 7L21 8l-2 11H5L3 8z\"/></svg>", "note": "<svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2.1\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\" class=\"ti\"><path d=\"M9 18V5l11-2v13\"/><circle cx=\"6\" cy=\"18\" r=\"3\"/><circle cx=\"17\" cy=\"16\" r=\"3\"/></svg>", "phones": "<svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2.1\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\" class=\"ti\"><path d=\"M4 14v-2a8 8 0 0 1 16 0v2\"/><rect x=\"3\" y=\"14\" width=\"4\" height=\"7\" rx=\"2\"/><rect x=\"17\" y=\"14\" width=\"4\" height=\"7\" rx=\"2\"/></svg>", "cal": "<svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2.1\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\" class=\"ti\"><rect x=\"3\" y=\"5\" width=\"18\" height=\"16\" rx=\"3\"/><path d=\"M3 10h18M8 3v4M16 3v4\"/></svg>", "clock": "<svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2.1\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\" class=\"ti\"><circle cx=\"12\" cy=\"12\" r=\"9\"/><path d=\"M12 7v5l3 2\"/></svg>", "users": "<svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2.1\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\" class=\"ti\"><circle cx=\"9\" cy=\"8\" r=\"3.5\"/><path d=\"M2.5 20a6.5 6.5 0 0 1 13 0\"/><circle cx=\"17\" cy=\"9\" r=\"2.5\"/><path d=\"M17 14.5a5.5 5.5 0 0 1 4.5 5.5\"/></svg>", "ribbon": "<svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2.1\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\" class=\"ti\"><circle cx=\"12\" cy=\"9\" r=\"6\"/><path d=\"M8.5 14L7 22l5-3 5 3-1.5-8\"/></svg>", "plus": "<svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2.1\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\" class=\"ti\"><path d=\"M12 5v14M5 12h14\"/></svg>", "check": "<svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2.1\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\" class=\"ti\"><path d=\"M5 12.5l4.5 4.5L19 7.5\"/></svg>", "trash": "<svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2.1\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\" class=\"ti\"><path d=\"M4 7h16M9 7V4h6v3M6 7l1 13h10l1-13M10 11v6M14 11v6\"/></svg>", "back": "<svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2.1\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\" class=\"ti\"><path d=\"M15 5l-7 7 7 7\"/></svg>", "close": "<svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2.1\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\" class=\"ti\"><path d=\"M6 6l12 12M18 6L6 18\"/></svg>"};
+const TI={"studio": "<svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2.1\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\" class=\"ti\"><rect x=\"8\" y=\"2.5\" width=\"8\" height=\"12\" rx=\"4\"/><path d=\"M8 7h8M8 10h8\"/><path d=\"M5 12a7 7 0 0 0 14 0M12 19v3M8.5 22h7\"/></svg>", "trophy": "<svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2.1\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\" class=\"ti\"><path d=\"M8 21h8M12 17v4M7 4h10v5a5 5 0 0 1-10 0V4z\"/><path d=\"M17 5h3v2a3 3 0 0 1-3 3M7 5H4v2a3 3 0 0 0 3 3\"/></svg>", "mic": "<svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2.1\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\" class=\"ti\"><rect x=\"9\" y=\"3\" width=\"6\" height=\"11\" rx=\"3\"/><path d=\"M5 11a7 7 0 0 0 14 0M12 18v3M9 21h6\"/></svg>", "crown": "<svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2.1\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\" class=\"ti\"><path d=\"M3 8l4.5 4L12 5l4.5 7L21 8l-2 11H5L3 8z\"/></svg>", "note": "<svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2.1\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\" class=\"ti\"><path d=\"M9 18V5l11-2v13\"/><circle cx=\"6\" cy=\"18\" r=\"3\"/><circle cx=\"17\" cy=\"16\" r=\"3\"/></svg>", "phones": "<svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2.1\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\" class=\"ti\"><path d=\"M4 14v-2a8 8 0 0 1 16 0v2\"/><rect x=\"3\" y=\"14\" width=\"4\" height=\"7\" rx=\"2\"/><rect x=\"17\" y=\"14\" width=\"4\" height=\"7\" rx=\"2\"/></svg>", "cal": "<svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2.1\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\" class=\"ti\"><rect x=\"3\" y=\"5\" width=\"18\" height=\"16\" rx=\"3\"/><path d=\"M3 10h18M8 3v4M16 3v4\"/></svg>", "clock": "<svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2.1\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\" class=\"ti\"><circle cx=\"12\" cy=\"12\" r=\"9\"/><path d=\"M12 7v5l3 2\"/></svg>", "users": "<svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2.1\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\" class=\"ti\"><circle cx=\"9\" cy=\"8\" r=\"3.5\"/><path d=\"M2.5 20a6.5 6.5 0 0 1 13 0\"/><circle cx=\"17\" cy=\"9\" r=\"2.5\"/><path d=\"M17 14.5a5.5 5.5 0 0 1 4.5 5.5\"/></svg>", "ribbon": "<svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2.1\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\" class=\"ti\"><circle cx=\"12\" cy=\"9\" r=\"6\"/><path d=\"M8.5 14L7 22l5-3 5 3-1.5-8\"/></svg>", "plus": "<svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2.1\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\" class=\"ti\"><path d=\"M12 5v14M5 12h14\"/></svg>", "check": "<svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2.1\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\" class=\"ti\"><path d=\"M5 12.5l4.5 4.5L19 7.5\"/></svg>", "trash": "<svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2.1\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\" class=\"ti\"><path d=\"M4 7h16M9 7V4h6v3M6 7l1 13h10l1-13M10 11v6M14 11v6\"/></svg>", "back": "<svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2.1\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\" class=\"ti\"><path d=\"M15 5l-7 7 7 7\"/></svg>", "close": "<svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2.1\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\" class=\"ti\"><path d=\"M6 6l12 12M18 6L6 18\"/></svg>"};
 /* v3.60: al tocar el 🏆 se abre primero el menú (Ranking de entregas / Ranking de anuario).
    v3.61: un solo botón de navegación abajo: «Cerrar» en el menú, «Atrás» (un nivel) en las demás vistas. */
 const TROFEO_VISTAS_=["chambeadoresMenuView","chambeadoresListaView","chambeadoresRankingView","chambeadoresFormView","chambeadoresAnuarioListaView","chambeadoresAnuarioRankingView"];
@@ -5167,22 +5165,23 @@ function abrirRankingAnuario_(anio){
     parseWinnerLines(texto).forEach(w=>{
       String(w.nombre||"").split(/[,،]/).map(x=>x.trim()).filter(Boolean).forEach(nm=>{
         const m=anuMem_(nm), id=m?"m"+m.id:"n"+anuKey_(nm); if(!id||id==="n") return;
-        const o=cuenta[id]||(cuenta[id]={m,nombre:nm.replace(/@/g,""),mejores:0,menciones:0,grupales:0}); o[tipo]++;
+        const o=cuenta[id]||(cuenta[id]={m,nombre:nm.replace(/@/g,""),mejorCancion:0,mejorDoblaje:0,menciones:0,grupales:0}); o[tipo]++;
       });
     });
   };
   (DB.anuario||[]).forEach(e=>{
     let d=null; try{ d=anuFechaTarjeta_(e); }catch(_){}
     if(!d||isNaN(d)||d.getFullYear()!==anio) return;
-    sumar(e.ganadorCanto,"mejores"); sumar(e.ganadorDoblaje,"mejores");
+    sumar(e.ganadorCanto,"mejorCancion"); sumar(e.ganadorDoblaje,"mejorDoblaje");
     sumar(e.mencionesHonorificas,"menciones"); sumar(e.grupales,"grupales");
   });
-  const filas=Object.values(cuenta).map(o=>({...o,total:o.mejores+o.menciones+o.grupales}))
-    .sort((a,b)=>b.total-a.total||b.mejores-a.mejores||String(a.nombre).localeCompare(String(b.nombre))).slice(0,10);
+  /* «grupales» se cuenta por dentro (o.grupales) pero NO suma al total ni se muestra */
+  const filas=Object.values(cuenta).map(o=>({...o,total:o.mejorCancion+o.mejorDoblaje+o.menciones})).filter(o=>o.total>0)
+    .sort((a,b)=>b.total-a.total||(b.mejorCancion+b.mejorDoblaje)-(a.mejorCancion+a.mejorDoblaje)||String(a.nombre).localeCompare(String(b.nombre))).slice(0,10);
   const el=document.getElementById("chambeadoresAnuarioTop");
   if(!filas.length){ el.innerHTML=`<div style="color:var(--text-dim);font-size:13px;">Todavía no hay reconocimientos en el anuario de ${anio}.</div>`; return; }
   const dg=(ic,n,t)=>n?`<span class="dg" title="${t}">${TI[ic]}${n}</span>`:"";
-  const desg=f=>`<div class="chambeador-desglose">${dg("crown",f.mejores,"Mejores")+dg("users",f.grupales,"Grupales")+dg("ribbon",f.menciones,"Menciones honoríficas")}</div>`;
+  const desg=f=>`<div class="chambeador-desglose">${dg("crown",f.mejorCancion,"Mejor canción")+dg("studio",f.mejorDoblaje,"Mejor doblaje")+dg("ribbon",f.menciones,"Mención honorífica")}</div>`;
   const podioItems=filas.slice(0,3).map(f=>({mid:f.m?f.m.id:"",nombre:f.m?f.m.nombre:f.nombre,avatar:f.m?(f.m.avatarUrl||LOGO_DEFAULT):LOGO_DEFAULT,total:f.total,extra:desg(f)}));
   el.innerHTML=podioHTML_(podioItems)+filas.slice(3).map((f,k)=>{
     const i=k+3;
@@ -5256,7 +5255,7 @@ function fechaParaPeriodo_(e){
 }
 /* v3.62: podio animado (top 3). items: [{mid,nombre,avatar,total,extra}] en orden de puesto */
 function podioHTML_(items){
-  const orden=[2,1,3], conf=Array.from({length:18},(_,i)=>{ const c=["#ffc107","#ef0870","#7b3fc4","#2f6df0","#27b0e6","#ff7a45"][i%6];
+  const orden=[2,1,3], conf=Array.from({length:18},(_,i)=>{ const c=["#FF006A","#B200FE","#00B8FF","#FF5C9D","#CF5CFF","#6ED8FF"][i%6];
     return `<i style="--x:${6+((i*53)%88)}%;--c:${c};--dx:${((i%5)-2)*16}px;--cd:${(1.25+(i%6)*.09).toFixed(2)}s"></i>`; }).join("");
   const cols=orden.map(p=>{ const it=items[p-1];
     if(!it) return `<div class="podio-col p${p} vacio"><div class="pd-bloque"><span>${p}</span></div></div>`;
@@ -5269,9 +5268,6 @@ function podioHTML_(items){
 function renderChambeadores(){
   const p = chambeadoresPeriodoSel_;
   document.getElementById("chambeadoresPeriodoTitulo").textContent = p ? p.nombre : "General";
-  document.getElementById("chambeadoresPeriodo").textContent = p
-    ? `Contando entregas de actividades con fecha de entrega del ${fmtFecha(p.fechaInicio)} al ${fmtFecha(p.fechaFin)}.`
-    : `Contando todo el historial de entregas.`;
   const catSel = getSwitchPillValue("chambeadoresCategoriaSwitch") || "canto";
   const inicioYMD = p ? soloYMD_(p.fechaInicio) : null;
   const finYMD = p ? soloYMD_(p.fechaFin) : null;
@@ -7484,7 +7480,7 @@ function abrirStaffHub(){
     <div class="section-label" style="text-align:left;">🧩 Módulos</div>
     <div id="hubModulos" style="margin-bottom:12px;"><div class="hub-mod-vacio">Buscando módulos…</div></div>
     <button class="btn-small btn-admin" id="hubEnlaces" style="width:100%;">⚙️ Editar Enlaces</button>
-    <div id="hubVersion" style="text-align:center;margin:16px 0 4px;font-size:12px;font-weight:700;opacity:.6;">Versión 3.62</div>`;
+    <div id="hubVersion" style="text-align:center;margin:16px 0 4px;font-size:12px;font-weight:700;opacity:.6;">Versión 3.63</div>`;
   openModal("memberModal");
   cargarHubModulos();
   document.getElementById("hubCumple").onclick=()=>probarHub("testCumpleanos","Cumpleaños");
