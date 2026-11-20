@@ -4,11 +4,11 @@
  * - Las llamadas al servidor (Apps Script, Google login, GitHub API) NUNCA pasan por acá: los datos
  *   se guardan desde index.html (localStorage + IndexedDB), no desde el service worker.
  * Para forzar que todos reciban una versión nueva, sube el número de VERSION. */
-const VERSION = "v2.169"; // súbelo en CADA despliegue: es lo que dispara la ventana de «Actualizar ahora»
+const VERSION = "v2.171"; // súbelo en CADA despliegue: es lo que dispara la ventana de «Actualizar ahora»
 const SHELL_CACHE = "tph-shell-" + VERSION;
 const ASSET_CACHE = "tph-assets-v1";      // no se borra al cambiar VERSION (fotos/librerías)
 const MAX_ASSETS = 400;
-const SHELL = ["./", "./index.html", "./scripts/anuario.js?v=2.155", "./scripts/anuario-assets.js?v=1", "./styles/anuario.css?v=2.152", "./styles/anuario-fonts.css?v=1", "./manifest.json", "./icons/icon-192.png", "./icons/icon-512.png", "./icons/icon-maskable-512.png", "./icons/apple-touch-icon.png"];
+const SHELL = ["./", "./index.html", "./scripts/anuario.js?v=2.161", "./scripts/anuario-assets.js?v=1", "./styles/anuario.css?v=2.156", "./styles/anuario-fonts.css?v=1", "./manifest.json", "./icons/icon-192.png", "./icons/icon-512.png", "./icons/icon-maskable-512.png", "./icons/apple-touch-icon.png"];
 
 // Hosts que jamás se cachean (datos vivos / autenticación / escritura)
 const NO_CACHE_HOSTS = ["script.google.com", "script.googleusercontent.com", "accounts.google.com", "api.github.com", "oauth2.googleapis.com", "apis.google.com"];
@@ -40,15 +40,20 @@ async function recortarCache_(cache) {
 // Páginas: red primero (para recibir actualizaciones), con tope de 4s; si falla, copia guardada.
 async function navegacion_(req) {
   const cache = await caches.open(SHELL_CACHE);
+  // Solo la página principal se guarda como "./index.html". Los iframes (módulos, diagnóstico) también son
+  // navegaciones: antes pisaban index.html en el caché y, sin internet, la app abría el módulo en vez del Hub.
+  const path = new URL(req.url).pathname;
+  const esShell = /\/(index\.html)?$/.test(path);
+  const clave = esShell ? "./index.html" : req;
   try {
     const ctrl = new AbortController();
     const t = setTimeout(() => ctrl.abort(), 4000);
     const res = await fetch(req, { signal: ctrl.signal, cache: "no-cache" }); // revalida: nunca una página vieja del caché HTTP
     clearTimeout(t);
-    if (res && res.ok) cache.put("./index.html", res.clone());
+    if (res && res.ok) cache.put(clave, res.clone());
     return res;
   } catch (err) {
-    return (await cache.match("./index.html")) || (await cache.match("./")) || Response.error();
+    return (await cache.match(clave)) || (esShell ? await cache.match("./") : null) || Response.error();
   }
 }
 

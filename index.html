@@ -648,7 +648,7 @@
 
 </style>
 <link rel="stylesheet" href="styles/anuario-fonts.css?v=1">
-<link rel="stylesheet" href="styles/anuario.css?v=2.155">
+<link rel="stylesheet" href="styles/anuario.css?v=2.156">
 <style>
 
   #searchMiembros{width:100%;padding:12px 14px;border-radius:12px;border:1px solid rgba(255,255,255,0.1);background:var(--card-bg-2);color:var(--text);font-size:14px;display:block;}
@@ -1042,19 +1042,19 @@
 <div id="drawer">
   <div class="drawer-title">Team Peaches</div>
   <div class="social-row">
-    <a class="social-link" target="_blank" onclick="trackUI('redSocial_web')" href="https://teampeachesoff-ui.github.io/TeamPeachesOfficial/">
+    <a class="social-link" target="_blank" rel="noopener noreferrer" onclick="trackUI('redSocial_web')" href="https://teampeachesoff-ui.github.io/TeamPeachesOfficial/">
       <img src="https://raw.githubusercontent.com/TeamPeachesOff/TeamPeachesHub/main/Logos/PeachesLogo.jpeg" onerror="this.onerror=null;this.src='https://i.imgur.com/wusLyff.jpeg';" alt="Peaches"><span>Peaches</span>
     </a>
-    <a class="social-link" target="_blank" onclick="trackUI('redSocial_youtube')" href="https://youtube.com/@teampeachesoff">
+    <a class="social-link" target="_blank" rel="noopener noreferrer" onclick="trackUI('redSocial_youtube')" href="https://youtube.com/@teampeachesoff">
       <img src="https://raw.githubusercontent.com/TeamPeachesOff/TeamPeachesHub/main/Logos/YoutubeLogo.png" onerror="this.onerror=null;this.src='https://pngimg.com/uploads/youtube/youtube_PNG102352.png';" alt="YouTube"><span>YouTube</span>
     </a>
-    <a class="social-link" target="_blank" onclick="trackUI('redSocial_instagram')" href="https://www.instagram.com/team_peaches_off/">
+    <a class="social-link" target="_blank" rel="noopener noreferrer" onclick="trackUI('redSocial_instagram')" href="https://www.instagram.com/team_peaches_off/">
       <img src="https://raw.githubusercontent.com/TeamPeachesOff/TeamPeachesHub/main/Logos/InstagramLogo.png" onerror="this.onerror=null;this.src='https://pngimg.com/uploads/instagram/instagram_PNG10.png';" alt="Instagram"><span>Instagram</span>
     </a>
-    <a class="social-link" target="_blank" onclick="trackUI('redSocial_tiktok')" href="https://www.tiktok.com/@team_peaches_off">
+    <a class="social-link" target="_blank" rel="noopener noreferrer" onclick="trackUI('redSocial_tiktok')" href="https://www.tiktok.com/@team_peaches_off">
       <img src="https://raw.githubusercontent.com/TeamPeachesOff/TeamPeachesHub/main/Logos/TikTokLogo.png" onerror="this.onerror=null;this.src='https://static.vecteezy.com/system/resources/previews/016/716/450/original/tiktok-icon-free-png.png';" alt="TikTok"><span>TikTok</span>
     </a>
-    <a class="social-link" target="_blank" onclick="trackUI('redSocial_smuleGrupo')" href="https://www.smule.com/groups/1934104?utm_source=web&utm_campaign=share&utm_medium=copylink">
+    <a class="social-link" target="_blank" rel="noopener noreferrer" onclick="trackUI('redSocial_smuleGrupo')" href="https://www.smule.com/groups/1934104?utm_source=web&utm_campaign=share&utm_medium=copylink">
       <img src="https://raw.githubusercontent.com/TeamPeachesOff/TeamPeachesHub/main/Logos/SmuleLogo.png" onerror="this.onerror=null;this.src='https://blog.smule.com/wp-content/uploads/smule-icon.png';" alt="Smule"><span>Smule</span>
     </a>
     <!-- A diferencia de los demás, este no es un <a> a una URL externa: abre el modal
@@ -1831,7 +1831,7 @@
 </div>
 
 <script src="scripts/anuario-assets.js?v=1"></script>
-<script src="scripts/anuario.js?v=2.160"></script>
+<script src="scripts/anuario.js?v=2.161"></script>
 <script>
 // Si el navegador restaura esta página desde su caché de "atrás/adelante" (bfcache), el DOM puede
 // quedar congelado a mitad de una actualización (ej. justo cuando un innerHTML se estaba
@@ -2239,7 +2239,7 @@ function winnersGroupHTML(emoji,label,text,tipo,tituloActividad){
     <div class="win-group-title">${emoji} ${label}</div>
     <div class="win-row ${rowClass}">
       <div class="win-row-text"><strong>${escHtml(titulo)}</strong>${entries.map(e=>`<br>${escHtml(String(e.nombre||"").replace(/@/g,""))}`).join("")}</div>
-      ${link?`<a class="win-listen" target="_blank" href="${escAttr(link)}" title="Escuchar">🔗▶️</a>`:""}
+      ${link?`<a class="win-listen" target="_blank" rel="noopener noreferrer" href="${escUrl(link)}" title="Escuchar">🔗▶️</a>`:""}
     </div>
   </div>`;
 }
@@ -2804,7 +2804,7 @@ function streamBloqueHTML_(nombre, fecha, hora, descripcion, pasado){
     +"&details="+encodeURIComponent(quitarNegritasMd_(a.descripcion))
     +"&location="+encodeURIComponent("Server de Peaches");
   // Botón 2: descarga un archivo .ics (sirve para Apple Calendar, Outlook, Samsung, etc. — en celular normalmente se agrega con un tap)
-  return `<div class="stream-block"${pasado?' style="opacity:0.65;"':""}><div class="stream-title">📺 ${escHtml(a.streamNombre)}</div><div class="stream-time">🗓️ ${localStr}<br><span style="opacity:0.75;">(convertido a tu zona horaria: ${tz})</span></div><div class="stream-actions"><a class="btn-small btn-primary" target="_blank" href="${escAttr(gcalUrl)}">📅 Google Calendar</a><button class="btn-small btn-family" data-ics data-ics-nombre="${escAttr(a.streamNombre)}" data-ics-start="${isoStart}" data-ics-end="${isoEnd}" data-ics-desc="${escAttr(quitarNegritasMd_(a.descripcion))}">📅 Agregar a Calendario</button></div></div>`;
+  return `<div class="stream-block"${pasado?' style="opacity:0.65;"':""}><div class="stream-title">📺 ${escHtml(a.streamNombre)}</div><div class="stream-time">🗓️ ${localStr}<br><span style="opacity:0.75;">(convertido a tu zona horaria: ${tz})</span></div><div class="stream-actions"><a class="btn-small btn-primary" target="_blank" rel="noopener noreferrer" href="${escUrl(gcalUrl)}">📅 Google Calendar</a><button class="btn-small btn-family" data-ics data-ics-nombre="${escAttr(a.streamNombre)}" data-ics-start="${isoStart}" data-ics-end="${isoEnd}" data-ics-desc="${escAttr(quitarNegritasMd_(a.descripcion))}">📅 Agregar a Calendario</button></div></div>`;
 }
 function escIcs(s){ return String(s||"").replace(/\\/g,"\\\\").replace(/;/g,"\\;").replace(/,/g,"\\,").replace(/\n/g,"\\n"); }
 function descargarICS(nombre,isoStart,isoEnd,descripcion){
@@ -3665,7 +3665,7 @@ function cardHTML(a, entregasDeEsta){
   entregasDeEsta = entregasDeEsta || DB.entregas.filter(e=>String(e.idActividad)===String(a.id));
   const fechasTxt=`${fmtFecha(a.fechaInicio)} → ${fmtFecha(a.fechaFin)}`;
   return `
-  <div class="card${esTrue(a.dobleEspacio)?" doble":""}" data-id="${a.id}">
+  <div class="card${esTrue(a.dobleEspacio)?" doble":""}" data-id="${escAttr(a.id)}">
     <div class="card-top">
       <div class="card-img-wrap">${a.imagenUrl?`<img class="js-longpress" data-filename="${escAttr((a.titulo||'actividad')+'.jpg')}" src="${escAttr(a.imagenUrl)}" alt="" loading="lazy" decoding="async">`:""}</div>
       <div class="card-info">
@@ -3677,22 +3677,22 @@ function cardHTML(a, entregasDeEsta){
           ${participacionTag(a.participacion)}
         </div>
         ${(a.linkForms||a.linkUnirse||a.linkScript||botonesPersonalizadosDe(a).length)?`<div class="card-actions">
-          ${a.linkForms?`<a class="btn-small btn-primary" target="_blank" onclick="trackUI('irAEntregar')" href="${escAttr(a.linkForms)}">🎙️ Entregar</a>`:""}
-          ${a.linkUnirse?`<a class="btn-small btn-family" target="_blank" onclick="trackUI('irAUnirse')" href="${escAttr(a.linkUnirse)}">🤝 Unirse</a>`:""}
-          ${a.linkScript?`<a class="btn-small btn-family" target="_blank" onclick="trackUI('irAScript')" href="${escAttr(a.linkScript)}">📄 Script</a>`:""}
-          ${botonesPersonalizadosDe(a).map(b=>`<a class="btn-small btn-family" target="_blank" onclick="trackUI('botonPersonalizado')" href="${escAttr(b.url)}">${escHtml(b.texto)}</a>`).join("")}
+          ${a.linkForms?`<a class="btn-small btn-primary" target="_blank" rel="noopener noreferrer" onclick="trackUI('irAEntregar')" href="${escUrl(a.linkForms)}">🎙️ Entregar</a>`:""}
+          ${a.linkUnirse?`<a class="btn-small btn-family" target="_blank" rel="noopener noreferrer" onclick="trackUI('irAUnirse')" href="${escUrl(a.linkUnirse)}">🤝 Unirse</a>`:""}
+          ${a.linkScript?`<a class="btn-small btn-family" target="_blank" rel="noopener noreferrer" onclick="trackUI('irAScript')" href="${escUrl(a.linkScript)}">📄 Script</a>`:""}
+          ${botonesPersonalizadosDe(a).map(b=>`<a class="btn-small btn-family" target="_blank" rel="noopener noreferrer" onclick="trackUI('botonPersonalizado')" href="${escUrl(b.url)}">${escHtml(b.texto)}</a>`).join("")}
         </div>`:""}
         ${staffPin?`<div class="card-actions">
-          <button class="btn-small btn-bell" data-bell="${a.id}">🔔</button>
-          <button class="btn-small btn-admin" data-edit="${a.id}">✏️ Editar</button>
-          <button class="btn-small btn-danger" data-delete="${a.id}">🗑️ Borrar</button>
+          <button class="btn-small btn-bell" data-bell="${escAttr(a.id)}">🔔</button>
+          <button class="btn-small btn-admin" data-edit="${escAttr(a.id)}">✏️ Editar</button>
+          <button class="btn-small btn-danger" data-delete="${escAttr(a.id)}">🗑️ Borrar</button>
         </div>`:""}
       </div>
     </div>
     ${(a.descripcion||a.wishlist||a.streamNombre||streamsDeActividad_(a.id).length)?`
     <div class="accordion">
       <button class="accordion-toggle" data-toggle="info-${a.id}">▼ Más Info & Wishlist</button>
-      ${extraerHashtags(a.descripcion).length?`<button type="button" class="btn-small btn-family card-copy-hashtags" data-copy-hashtags="${a.id}" title="Copiar hashtags" aria-label="Copiar hashtags"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="9" y="9" width="13" height="13" rx="2.5"/><path d="M5 15H4.5A2.5 2.5 0 0 1 2 12.5v-8A2.5 2.5 0 0 1 4.5 2h8A2.5 2.5 0 0 1 15 4.5V5"/></svg></button>`:""}
+      ${extraerHashtags(a.descripcion).length?`<button type="button" class="btn-small btn-family card-copy-hashtags" data-copy-hashtags="${escAttr(a.id)}" title="Copiar hashtags" aria-label="Copiar hashtags"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="9" y="9" width="13" height="13" rx="2.5"/><path d="M5 15H4.5A2.5 2.5 0 0 1 2 12.5v-8A2.5 2.5 0 0 1 4.5 2h8A2.5 2.5 0 0 1 15 4.5V5"/></svg></button>`:""}
       <div class="accordion-body" id="info-${a.id}"></div>
     </div>`:""}
     <div class="accordion">
@@ -3701,24 +3701,24 @@ function cardHTML(a, entregasDeEsta){
         ${entregasDeEsta.length?`
         <table class="entregas-table" id="tabla-${a.id}">
           <tr><th></th><th>Persona</th><th>Canción/Escena</th><th class="col-enlace">Enlace</th>${staffPin?"<th></th>":""}</tr>
-          ${entregasDeEsta.map(e=>`<tr data-entrega-row="${e.id}">
-            <td><input autocomplete="off" type="checkbox" class="js-check-entrega hidden" data-id="${e.id}" data-act="${a.id}"></td>
+          ${entregasDeEsta.map(e=>`<tr data-entrega-row="${escAttr(e.id)}">
+            <td><input autocomplete="off" type="checkbox" class="js-check-entrega hidden" data-id="${escAttr(e.id)}" data-act="${escAttr(a.id)}"></td>
             <td class="td-persona">${avatarEntrega_(e)}<span class="ent-name">${personaEntregaHTML_(e)}</span></td>
             <td class="ent-song">${escHtml(e.detalleEntrega||"")}</td>
             <td class="col-enlace">${playBtnHTML_(e.linkGrabacion)}</td>
-            ${staffPin?`<td class="ent-adm"><div class="ent-adm-in"><button class="anuario-mini-btn" data-anuario-entrega="${a.id}" data-titulo="${escAttr(a.titulo||"")}" data-nombre="${escAttr(e.nombreUsuario||"")}" data-detalle="${escAttr(e.detalleEntrega||"")}" data-link="${escAttr(e.linkGrabacion||"")}">👑</button><button class="anuario-mini-btn" data-edit-entrega="${e.id}" title="Editar entrega">✏️</button></div></td>`:""}
+            ${staffPin?`<td class="ent-adm"><div class="ent-adm-in"><button class="anuario-mini-btn" data-anuario-entrega="${escAttr(a.id)}" data-titulo="${escAttr(a.titulo||"")}" data-nombre="${escAttr(e.nombreUsuario||"")}" data-detalle="${escAttr(e.detalleEntrega||"")}" data-link="${escAttr(e.linkGrabacion||"")}">👑</button><button class="anuario-mini-btn" data-edit-entrega="${escAttr(e.id)}" title="Editar entrega">✏️</button></div></td>`:""}
           </tr>`).join("")}
         </table>`:`<div style="color:var(--text-dim);">Todavía no hay entregas registradas.</div>`}
         ${staffPin?`
         <div class="entregas-toolbar">
-          <button class="btn-small btn-admin" data-add-entrega="${a.id}">(+) Registrar Entrega</button>
-          <button class="btn-small btn-family" data-import-entregas="${a.id}">📥 Importar Entregas</button>
-          ${entregasDeEsta.length?`<button class="btn-small btn-admin" data-asignar-entregas="${a.id}">👤 Asignar Entregas</button>`:""}
-          ${entregasDeEsta.length?`<button class="btn-small btn-danger" data-toggle-borrar="${a.id}">🗑️ Eliminar</button>`:""}
+          <button class="btn-small btn-admin" data-add-entrega="${escAttr(a.id)}">(+) Registrar Entrega</button>
+          <button class="btn-small btn-family" data-import-entregas="${escAttr(a.id)}">📥 Importar Entregas</button>
+          ${entregasDeEsta.length?`<button class="btn-small btn-admin" data-asignar-entregas="${escAttr(a.id)}">👤 Asignar Entregas</button>`:""}
+          ${entregasDeEsta.length?`<button class="btn-small btn-danger" data-toggle-borrar="${escAttr(a.id)}">🗑️ Eliminar</button>`:""}
         </div>
         <div class="entregas-toolbar hidden" id="borrar-toolbar-${a.id}">
-          <button class="btn-small btn-danger" data-confirm-borrar="${a.id}">Borrar seleccionadas (0)</button>
-          <button class="btn-small" data-cancel-borrar="${a.id}" style="background:var(--card-bg-2);color:var(--text);">Cancelar</button>
+          <button class="btn-small btn-danger" data-confirm-borrar="${escAttr(a.id)}">Borrar seleccionadas (0)</button>
+          <button class="btn-small" data-cancel-borrar="${escAttr(a.id)}" style="background:var(--card-bg-2);color:var(--text);">Cancelar</button>
         </div>`:""}
       </div>
     </div>
@@ -4029,14 +4029,14 @@ function renderMiembros(filtro=""){
   if(miembrosOrden!=="normal"){ renderMiembrosOrdenado_(filtrar); return; }
   document.getElementById("miembrosFijas").classList.remove("hidden");
   const reinas=DB.miembros.filter(m=>(esTrue(m.fundadora)||esTrue(m.lider)) && filtrar(m));
-  document.getElementById("reinasCarousel").innerHTML=reinas.length?reinas.map(m=>`<div class="member-avatar-item reina" data-member="${m.id}">${avatarImgTag(m)}<div class="m-name">${escHtml(m.nombre||"")}</div></div>`).join(""):`<div style="color:var(--text-dim);font-size:13px;">Sin resultados.</div>`;
+  document.getElementById("reinasCarousel").innerHTML=reinas.length?reinas.map(m=>`<div class="member-avatar-item reina" data-member="${escAttr(m.id)}">${avatarImgTag(m)}<div class="m-name">${escHtml(m.nombre||"")}</div></div>`).join(""):`<div style="color:var(--text-dim);font-size:13px;">Sin resultados.</div>`;
 
   const staffList=DB.miembros.filter(m=>esTrue(m.staff) && !esTrue(m.fundadora) && !esTrue(m.lider) && filtrar(m));
-  document.getElementById("staffCarousel").innerHTML=staffList.length?staffList.map(m=>`<div class="member-avatar-item" data-member="${m.id}">${avatarImgTag(m)}<div class="m-name">${escHtml(m.nombre||"")}</div></div>`).join(""):`<div style="color:var(--text-dim);font-size:13px;">Sin resultados.</div>`;
+  document.getElementById("staffCarousel").innerHTML=staffList.length?staffList.map(m=>`<div class="member-avatar-item" data-member="${escAttr(m.id)}">${avatarImgTag(m)}<div class="m-name">${escHtml(m.nombre||"")}</div></div>`).join(""):`<div style="color:var(--text-dim);font-size:13px;">Sin resultados.</div>`;
 
   const resto=DB.miembros.filter(m=>!esTrue(m.staff) && !esTrue(m.fundadora) && !esTrue(m.lider) && filtrar(m)).slice().sort((a,b)=>(a.nombre||"").localeCompare(b.nombre||""));
   document.getElementById("miembrosList").innerHTML=resto.length?resto.map(m=>`
-    <div class="member-row" data-member="${m.id}">
+    <div class="member-row" data-member="${escAttr(m.id)}">
       ${avatarImgTag(m)}
       <div class="m-info">
         <div class="m-name">${escHtml(m.nombre||"")}</div>
@@ -4066,7 +4066,7 @@ function openMemberModal(id,desdeAnuario){
       ${rolMk?`<div class="mm-frame${rolMk==="f"?" f":""}" style="--pc:${anuFrame_(m,rolMk,anuStaffIdx_(m)).c}">${anuFrame_(m,rolMk,anuStaffIdx_(m)).html}</div>`:vipWrap_(m,`<img id="memberDetailAvatar" class="js-avatar" data-filename="${escAttr((m.nombre||'miembro')+'.jpg')}" src="${escAttr(m.avatarUrl||LOGO_DEFAULT)}">`)}
       <div class="mm-name-row">
         <div style="font-weight:800;font-size:17px;">${escHtml(m.nombre||"")}</div>
-        ${staffPin?`<button class="edit-pencil" data-edit-member="${m.id}">✏️</button>`:""}
+        ${staffPin?`<button class="edit-pencil" data-edit-member="${escAttr(m.id)}">✏️</button>`:""}
       </div>
       <div class="badges-row" style="justify-content:center;">
         ${(esTrue(m.fundadora)||esTrue(m.fundador))?`<span class="badge badge-reina">👑 ${anuFundEt_(m)}</span>`:""}
@@ -4087,15 +4087,15 @@ function openMemberModal(id,desdeAnuario){
     </table>
     ${medallasHTML_(m)}
     <div class="platform-row">
-      ${m.usuarioSmule?`<a class="platform-btn" target="_blank" data-track="irASmule" data-dbl-copy="${escAttr(m.usuarioSmule)}" data-dbl-msg="Usuario de Smule copiado" title="Clic: abrir Smule · Mantener presionado o doble clic: copiar usuario" href="${escAttr(toSmuleUrl(m.usuarioSmule))}">
+      ${m.usuarioSmule?`<a class="platform-btn" target="_blank" rel="noopener noreferrer" data-track="irASmule" data-dbl-copy="${escAttr(m.usuarioSmule)}" data-dbl-msg="Usuario de Smule copiado" title="Clic: abrir Smule · Mantener presionado o doble clic: copiar usuario" href="${escUrl(toSmuleUrl(m.usuarioSmule))}">
         <img src="https://raw.githubusercontent.com/TeamPeachesOff/TeamPeachesHub/main/Logos/SmuleLogo.png" onerror="this.onerror=null;this.src='https://blog.smule.com/wp-content/uploads/smule-icon.png';"><span>Smule</span></a>`:""}
-      ${m.usuarioBandlab?`<a class="platform-btn" target="_blank" data-track="irABandlab" data-dbl-copy="${escAttr(m.usuarioBandlab)}" data-dbl-msg="Usuario de BandLab copiado" title="Clic: abrir BandLab · Mantener presionado: copiar usuario" href="${escAttr(toBandlabUrl(m.usuarioBandlab))}">
+      ${m.usuarioBandlab?`<a class="platform-btn" target="_blank" rel="noopener noreferrer" data-track="irABandlab" data-dbl-copy="${escAttr(m.usuarioBandlab)}" data-dbl-msg="Usuario de BandLab copiado" title="Clic: abrir BandLab · Mantener presionado: copiar usuario" href="${escUrl(toBandlabUrl(m.usuarioBandlab))}">
         <img src="https://raw.githubusercontent.com/TeamPeachesOff/TeamPeachesHub/main/Logos/BandLabLogo.png" onerror="this.onerror=null;this.src='https://onbukei.com/wp-content/uploads/2021/10/bandlab-music-making-studio.png';"><span>BandLab</span></a>`:""}
       ${m.usuarioDiscord?`<button class="platform-btn" title="Copiar usuario de Discord" aria-label="Copiar usuario de Discord" data-copy-discord="${escAttr(m.usuarioDiscord)}">
         <img src="https://raw.githubusercontent.com/TeamPeachesOff/TeamPeachesHub/main/Logos/DiscordLogo.webp" onerror="this.onerror=null;this.src='https://freelogopng.com/images/all_img/1691730767discord-logo-transparent.png';"><span>Copiar Discord</span></button>`:""}
-      ${m.telefono?`<a class="platform-btn" target="_blank" data-track="irAWhatsapp" data-dbl-copy="${escAttr(String(m.telefono).trim())}" data-dbl-msg="Número de WhatsApp copiado" title="Clic: abrir WhatsApp · Mantener presionado o doble clic: copiar número" href="https://wa.me/${escAttr(limpiarTelefono(m.telefono))}">
+      ${m.telefono?`<a class="platform-btn" target="_blank" rel="noopener noreferrer" data-track="irAWhatsapp" data-dbl-copy="${escAttr(String(m.telefono).trim())}" data-dbl-msg="Número de WhatsApp copiado" title="Clic: abrir WhatsApp · Mantener presionado o doble clic: copiar número" href="https://wa.me/${escAttr(limpiarTelefono(m.telefono))}">
         <img src="https://raw.githubusercontent.com/TeamPeachesOff/TeamPeachesHub/main/Logos/WhatsAppLogo.png" onerror="this.onerror=null;this.src='https://upload.wikimedia.org/wikipedia/commons/5/5e/WhatsApp_icon.png';"><span>WhatsApp</span></a>`:""}
-      ${m.usuarioInstagram?`<a class="platform-btn" target="_blank" rel="noopener" data-track="irAInstagram" data-dbl-copy="${escAttr(limpiarUsuarioInstagram(m.usuarioInstagram))}" data-dbl-msg="Usuario de Instagram copiado" title="Clic: abrir Instagram · Mantener presionado: copiar usuario" href="${escAttr(toInstagramUrl(m.usuarioInstagram))}">
+      ${m.usuarioInstagram?`<a class="platform-btn" target="_blank" rel="noopener" data-track="irAInstagram" data-dbl-copy="${escAttr(limpiarUsuarioInstagram(m.usuarioInstagram))}" data-dbl-msg="Usuario de Instagram copiado" title="Clic: abrir Instagram · Mantener presionado: copiar usuario" href="${escUrl(toInstagramUrl(m.usuarioInstagram))}">
         <img src="https://raw.githubusercontent.com/TeamPeachesOff/TeamPeachesHub/main/Logos/InstagramLogo.png" onerror="this.onerror=null;this.src='https://pngimg.com/uploads/instagram/instagram_PNG10.png';"><span>Instagram</span></a>`:""}
     </div>
     <div class="castigos-box">
@@ -4103,8 +4103,8 @@ function openMemberModal(id,desdeAnuario){
       <div class="ct-row"><span>☠️ Strike permanente</span><strong>${strikesPermanentes}</strong></div>
       <div class="ct-row"><span>⚠️ Strikes</span><strong>${strikes}</strong></div>
       <div class="ct-row"><span>📉 Faltas</span><strong>${faltas}</strong></div>
-      ${staffPin?`<div class="admin-strike-btns"><button class="btn-falta" data-falta="${m.id}">+ Falta</button><button class="btn-strike" data-strike="${m.id}">+ Strike</button><button class="btn-strike-permanente" data-strike-permanente="${m.id}">+ Permanente</button></div>
-      <button class="btn-reset-castigos" data-historial="${m.id}">📜 Historial de castigos</button>`:""}
+      ${staffPin?`<div class="admin-strike-btns"><button class="btn-falta" data-falta="${escAttr(m.id)}">+ Falta</button><button class="btn-strike" data-strike="${escAttr(m.id)}">+ Strike</button><button class="btn-strike-permanente" data-strike-permanente="${escAttr(m.id)}">+ Permanente</button></div>
+      <button class="btn-reset-castigos" data-historial="${escAttr(m.id)}">📜 Historial de castigos</button>`:""}
     </div>
     ${entregasDelMiembroHTML_(m.id)}`;
   openModal("memberModal"); bindAvatarFallbacks();
@@ -4277,7 +4277,7 @@ function miembrosDeEntrega_(e){
 // El texto original NO se borra de la hoja: lo sigue usando "Asignar automáticamente" y se puede
 // ver/editar con ✏️; solo cambia lo que se muestra. Sin asignación, se muestra el texto tal cual.
 function playBtnHTML_(url){
-  return url?`<a class="ent-play" href="${escAttr(url)}" target="_blank" title="Escuchar" aria-label="Escuchar"><svg viewBox="0 0 24 24" width="17" height="17" fill="#fff" aria-hidden="true"><path d="M8 5.5v13a1 1 0 0 0 1.5.86l10.5-6.5a1 1 0 0 0 0-1.72L9.5 4.64A1 1 0 0 0 8 5.5z"/></svg></a>`:"";
+  return url?`<a class="ent-play" href="${escUrl(url)}" target="_blank" rel="noopener noreferrer" title="Escuchar" aria-label="Escuchar"><svg viewBox="0 0 24 24" width="17" height="17" fill="#fff" aria-hidden="true"><path d="M8 5.5v13a1 1 0 0 0 1.5.86l10.5-6.5a1 1 0 0 0 0-1.72L9.5 4.64A1 1 0 0 0 8 5.5z"/></svg></a>`:"";
 }
 const ENT_SHOW_IMG="https://raw.githubusercontent.com/TeamPeachesOff/TeamPeachesHub/main/Anuario/ShowPeaches.png";
 // Cantidad de personas de la entrega si son MÁS de 3 (si no, 0). Asignadas → miembros; sin asignar → partes separadas por coma.
@@ -4341,7 +4341,7 @@ function medallaSvg_(c,t){ return `<svg viewBox="0 0 24 24" width="${t||26}" hei
 function medallasHTML_(m){
   const c=medallasDe_(m), total=medallasTotal_(m), id=escAttr(m.id);
   return `<div class="mm-medallas-wrap">
-    <div class="mm-medallas">${MEDALLAS_DEF.map(d=>{ const n=Number(c[d.id])||0; return `<button type="button" class="mm-med${n?"":" vacia"}" data-medallas="${id}" data-medalla-cat="${d.id}" title="Ver: ${escAttr(d.nombre)}"><span class="mm-med-top">${medallaSvg_(d.color)}<b>${n}</b></span><small>${escHtml(d.nombre)}</small></button>`; }).join("")}</div>
+    <div class="mm-medallas">${MEDALLAS_DEF.map(d=>{ const n=Number(c[d.id])||0; return `<button type="button" class="mm-med${n?"":" vacia"}" data-medallas="${id}" data-medalla-cat="${escAttr(d.id)}" title="Ver: ${escAttr(d.nombre)}"><span class="mm-med-top">${medallaSvg_(d.color)}<b>${n}</b></span><small>${escHtml(d.nombre)}</small></button>`; }).join("")}</div>
   </div>`;
 }
 // Ventana de medallas: "cat" = una medalla (SOLO esas menciones) o null = todas.
@@ -4359,7 +4359,7 @@ function medallaItemHTML_(it,def,mostrarEtiqueta){
   const thumb=foto?`<span class="med-thumb"><img src="${escAttr(foto)}" alt="" loading="lazy" decoding="async" onerror="this.onerror=null;this.src=LOGO_DEFAULT"></span>`:"";
   return `<div class="med-item">
     ${mostrarEtiqueta?`<div class="med-chip" style="--mc:${def.color}">${medallaSvg_(def.color,16)}<span>${escHtml(def.nombre)}</span></div>`:""}
-    <div class="med-actrow">${thumb}<span class="med-who"><b>${escHtml((act&&act.titulo)||n.titulo)}</b><small>${escHtml(w.detalle||def.nombre)}</small></span>${link?`<a class="med-play" href="${escAttr(link)}" target="_blank" rel="noopener" aria-label="Reproducir actividad" title="Reproducir actividad">▶</a>`:""}</div>
+    <div class="med-actrow">${thumb}<span class="med-who"><b>${escHtml((act&&act.titulo)||n.titulo)}</b><small>${escHtml(w.detalle||def.nombre)}</small></span>${link?`<a class="med-play" href="${escUrl(link)}" target="_blank" rel="noopener" aria-label="Reproducir actividad" title="Reproducir actividad">▶</a>`:""}</div>
   </div>`;
 }
 // Agrupa por mes y año: el encabezado del mes sale UNA vez y debajo van todas las menciones de ese mes.
@@ -4579,7 +4579,7 @@ function renderPasarLista(){
     const sinAsignar = entregas.filter(e=>!idsDeEntrega_(e).length).length;
     const abierta = pasarListaAbiertas_.has(String(a.id));
     return `<div class="pl-act-card">
-      <div class="pl-act-head" data-pl-toggle="${a.id}">
+      <div class="pl-act-head" data-pl-toggle="${escAttr(a.id)}">
         <div>
           <div class="pl-act-titulo">${escHtml(a.titulo||"")}</div>
           <div class="pl-act-sub">${entregas.length} entrega(s) · ${sinAsignar} sin asignar</div>
@@ -4598,7 +4598,7 @@ function renderPasarLista(){
             </div>
             <div class="pl-entrega-btns">
               ${e.linkGrabacion?`<button type="button" class="btn-small btn-family" data-pl-abrir="${escAttr(e.linkGrabacion)}">🔗 Abrir</button>`:""}
-              <button type="button" class="btn-small btn-admin" data-pl-asignar="${e.id}">👤 Asignar</button>
+              <button type="button" class="btn-small btn-admin" data-pl-asignar="${escAttr(e.id)}">👤 Asignar</button>
             </div>
           </div>`;
         }).join("")}
@@ -4686,7 +4686,7 @@ function renderFaltantesLista_(faltantes){
         ${esTrue(m.doblaje)?`<span class="badge badge-doblaje">🎙️ Doblaje</span>`:""}
       </div>
     </div>
-    <input type="checkbox" data-faltante="${m.id}" ${faltantesSeleccionados_.has(String(m.id))?"checked":""} style="width:20px;height:20px;flex-shrink:0;accent-color:var(--peach-2);">
+    <input type="checkbox" data-faltante="${escAttr(m.id)}" ${faltantesSeleccionados_.has(String(m.id))?"checked":""} style="width:20px;height:20px;flex-shrink:0;accent-color:var(--peach-2);">
   </label>`).join("");
   cont.querySelectorAll("[data-faltante]").forEach(chk=>chk.onchange=()=>{
     const id=String(chk.dataset.faltante);
@@ -4768,7 +4768,7 @@ function renderChipGrid_(filtro){
   const lista = (DB.miembros||[]).filter(m=>m.nombre)
     .filter(m=> !f || normalizarTexto_(m.nombre).includes(f) || normalizarTexto_(m.usuarioSmule).includes(f))
     .slice().sort((a,b)=>(a.nombre||"").localeCompare(b.nombre||""));
-  grid.innerHTML = lista.length ? lista.map(m=>`<button type="button" class="member-chip ${asignarSeleccionados_.has(String(m.id))?"sel":""}" data-chip="${m.id}">
+  grid.innerHTML = lista.length ? lista.map(m=>`<button type="button" class="member-chip ${asignarSeleccionados_.has(String(m.id))?"sel":""}" data-chip="${escAttr(m.id)}">
     <img src="${escAttr(m.avatarUrl||LOGO_DEFAULT)}" onerror="this.onerror=null;this.src='${LOGO_DEFAULT}';">${escHtml(m.nombre||"")}
   </button>`).join("") : `<div style="color:var(--text-dim);font-size:13px;">Sin resultados.</div>`;
   grid.querySelectorAll("[data-chip]").forEach(chip=>chip.onclick=()=>{
@@ -4818,7 +4818,7 @@ function renderAsignarActividad_(){
       </div>
       <div class="pl-entrega-btns">
         ${e.linkGrabacion?`<button type="button" class="btn-small btn-family" data-aa-abrir="${escAttr(e.linkGrabacion)}">🔗 Abrir</button>`:""}
-        <button type="button" class="btn-small btn-admin" data-aa-asignar="${e.id}">👤 Asignar</button>
+        <button type="button" class="btn-small btn-admin" data-aa-asignar="${escAttr(e.id)}">👤 Asignar</button>
       </div>
     </div>`;
   }).join("");
@@ -4863,7 +4863,7 @@ function renderEditChipGrid_(filtro){
   const lista = (DB.miembros||[]).filter(m=>m.nombre)
     .filter(m=>!f || normalizarTexto_(m.nombre).includes(f) || normalizarTexto_(m.usuarioSmule).includes(f))
     .slice().sort((a,b)=>(a.nombre||"").localeCompare(b.nombre||""));
-  grid.innerHTML = lista.length ? lista.map(m=>`<button type="button" class="member-chip ${editEntregaSel_.has(String(m.id))?"sel":""}" data-ee-chip="${m.id}">
+  grid.innerHTML = lista.length ? lista.map(m=>`<button type="button" class="member-chip ${editEntregaSel_.has(String(m.id))?"sel":""}" data-ee-chip="${escAttr(m.id)}">
     <img src="${escAttr(m.avatarUrl||LOGO_DEFAULT)}" onerror="this.onerror=null;this.src='${LOGO_DEFAULT}';">${escHtml(m.nombre||"")}
   </button>`).join("") : `<div style="color:var(--text-dim);font-size:13px;">Sin resultados.</div>`;
   grid.querySelectorAll("[data-ee-chip]").forEach(chip=>chip.onclick=()=>{
@@ -5627,7 +5627,7 @@ document.getElementById("searchMundo").addEventListener("input", debounce(e=>{
   if(!f){ cont.classList.add("hidden"); cont.innerHTML=""; return; }
   const resultados=miembrosConUbicacion().filter(m=>normalizar((m.nombre||"")+" "+(m.ciudadResuelta||"")).includes(f)).slice(0,8);
   cont.classList.remove("hidden");
-  cont.innerHTML=resultados.length?resultados.map(m=>`<div class="mundo-resultado-item" data-id="${m.id}">${avatarImgTag(m)}<div><div class="mr-name">${escHtml(m.nombre||"")}</div><div class="mr-city">${escHtml(m.ciudadResuelta||"")}</div></div></div>`).join(""):`<div class="mundo-resultado-item"><div class="mr-name">Sin resultados</div></div>`;
+  cont.innerHTML=resultados.length?resultados.map(m=>`<div class="mundo-resultado-item" data-id="${escAttr(m.id)}">${avatarImgTag(m)}<div><div class="mr-name">${escHtml(m.nombre||"")}</div><div class="mr-city">${escHtml(m.ciudadResuelta||"")}</div></div></div>`).join(""):`<div class="mundo-resultado-item"><div class="mr-name">Sin resultados</div></div>`;
   bindAvatarFallbacks();
   cont.querySelectorAll("[data-id]").forEach(item=>item.onclick=()=>{
     const m=DB.miembros.find(x=>String(x.id)===String(item.dataset.id));
@@ -6981,7 +6981,7 @@ function renderEntregaFormChips_(filtro){
   const lista = (DB.miembros||[]).filter(m=>m.nombre)
     .filter(m=>!f || normalizarTexto_(m.nombre).includes(f) || normalizarTexto_(m.usuarioSmule).includes(f))
     .slice().sort((a,b)=>(a.nombre||"").localeCompare(b.nombre||""));
-  grid.innerHTML = lista.length ? lista.map(m=>`<button type="button" class="member-chip ${entregaFormSel_.has(String(m.id))?"sel":""}" data-en-chip="${m.id}">
+  grid.innerHTML = lista.length ? lista.map(m=>`<button type="button" class="member-chip ${entregaFormSel_.has(String(m.id))?"sel":""}" data-en-chip="${escAttr(m.id)}">
     <img src="${escAttr(m.avatarUrl||LOGO_DEFAULT)}" onerror="this.onerror=null;this.src='${LOGO_DEFAULT}';">${escHtml(m.nombre||"")}
   </button>`).join("") : `<div style="color:var(--text-dim);font-size:13px;">Sin resultados.</div>`;
   grid.querySelectorAll("[data-en-chip]").forEach(chip=>chip.onclick=()=>{
@@ -7484,6 +7484,8 @@ function extraerHashtags(texto){
 }
 function escHtml(str){ return String(str).replace(/[&<>"']/g, s=>({"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;","'":"&#39;"}[s])); }
 function escAttr(str){ return escHtml(str); }
+// Para href: igual que escAttr, pero bloquea esquemas peligrosos (javascript:, data:, vbscript:) que escribiera alguien en un link.
+function escUrl(u){ const s=String(u==null?"":u).trim(); return /^(javascript|data|vbscript):/i.test(s.replace(/[\u0000-\u0020]+/g,"")) ? "#" : escAttr(s); }
 
 // Busca "Indicacion:" / "Indicación:" (con o sin tilde, cualquier mayuscula/minuscula) dentro de
 // la descripcion YA escapada (post escHtml, por eso no hace falta volver a escapar aca) y envuelve
@@ -7934,7 +7936,7 @@ function rangosDe_(m){ // "Soprano, Alto" cuenta como 2 rangos por separado
 }
 function capitalizar_(t){ return t.charAt(0).toUpperCase()+t.slice(1); }
 function filaMiembroOrdenHTML_(m){
-  return `<div class="member-row" data-member="${m.id}">
+  return `<div class="member-row" data-member="${escAttr(m.id)}">
     ${avatarImgTag(m)}
     <div class="m-info">
       <div class="m-name">${escHtml(m.nombre||"")}</div>

@@ -174,14 +174,20 @@ function anuFechaTarjeta_(e){
   const fechas=anuActsDe_(e,lineas).map(a=>anuFecha_(a.fechaInicio)).filter(d=>!isNaN(d)).sort((a,b)=>a-b);
   return fechas[0]||null;
 }
+/* Mensual = actividad marcada como obligatoria (⚠️ Oficial). Se toma de la propia tarjeta o de las actividades a las que pertenece. */
+function anuEsMensual_(e){
+  const ob=v=>String(v||"").trim().toLowerCase()==="obligatoria";
+  if(ob(e.participacion)) return true;
+  try{ return anuActsDe_(e,ANU_CAMPOS_.flatMap(k=>parseWinnerLines(e[k]))).some(a=>ob(a.participacion)); }catch(_){ return false; }
+}
 function anuBuild_(){
   const it=[]; (DB.anuario||[]).forEach(e=>{ const n=anuNorm_(e), d=anuFechaTarjeta_(e); if(!d) return;
-    it.push({n,anio:d.getFullYear(),mes:d.getMonth(),dia:d.getDate(),sem:["dom","lun","mar","mié","jue","vie","sáb"][d.getDay()],t:d.getTime()}); });
+    it.push({n,mensual:anuEsMensual_(n.e),anio:d.getFullYear(),mes:d.getMonth(),dia:d.getDate(),sem:["dom","lun","mar","mié","jue","vie","sáb"][d.getDay()],t:d.getTime()}); });
   const anios=[...new Set([2025,...it.map(x=>x.anio)])]; if(!it.length&&!anios.includes(new Date().getFullYear())) anios.push(new Date().getFullYear()); anios.sort((x,y)=>x-y);
   anuS.per=anios.map(y=>{
     const ms=y===2026?[...new Set([7,8,9,10,11,...it.filter(x=>x.anio===y).map(x=>x.mes)])].sort((a,b)=>a-b):Array.from({length:12},(_,i)=>i);
     const p={anio:y,titulo:String(y),tema:y===2026?"p":"o",admin:y===2025||y===2026};
-    p.cuenta=ms.map(m=>({m,items:it.filter(x=>x.anio===y&&x.mes===m).sort((a,b)=>a.t-b.t||rankCategoria(a.n.e.categoria)-rankCategoria(b.n.e.categoria))})); p.n=p.cuenta.reduce((s,c)=>s+c.items.length,0); return p; });
+    p.cuenta=ms.map(m=>({m,items:it.filter(x=>x.anio===y&&x.mes===m).sort((a,b)=>(b.mensual-a.mensual)||a.t-b.t||rankCategoria(a.n.e.categoria)-rankCategoria(b.n.e.categoria))})); p.n=p.cuenta.reduce((s,c)=>s+c.items.length,0); return p; });
 }
 const anuP_=()=>anuS.per[anuS.pi];
 const anuRows_=p=>[...(p.admin?[{k:"admin",b:"00",t:"Administradores",n:1}]:[]),...p.cuenta.map(c=>({k:p.anio+"-"+c.m,b:pad(c.m+1),t:MESES_LARGO[c.m],n:c.items.length}))];
@@ -191,9 +197,10 @@ function anuWinBadges_(e){
   return (b||m||g)?`<span class="anu-win">${b?`<i class="w1">👑 ${b} ${b===1?"Mejor":"Mejores"}</i>`:""}${m?`<i class="w2">🎖️ ${m} ${m===1?"Mención":"Menciones"}</i>`:""}${g?`<i class="w3">👥 ${g} ${g===1?"Grupal":"Grupales"}</i>`:""}</span>`:"";
 }
 function anuarioBlockHTML(x,i=0){
-  const n=x.n, im=n.imgs, r=[-1.6,1.2,-0.8,1.8][i%4], img=(s,f)=>`<img${f?` class="js-longpress" data-filename="${escAttr(n.titulo+".jpg")}"`:""} src="${escAttr(s)}" alt="" loading="lazy" decoding="async">`;
-  const pics=im.length>1?`<span class="anu-pics two">${img(im[1])}${img(im[0],1)}</span>`:`<span class="anu-pics">${im[0]?img(im[0],1):""}</span>`;
-  return `<button type="button" class="anu-card" data-anuario="${escAttr(n.e.id)}" style="--r:${r}deg;--i:${Math.min(i,10)}">${pics}<span class="anu-cb"><span class="anu-ct">${escHtml(n.titulo)}</span>${anuWinBadges_(n.e)}<span class="anu-tags">${n.tipos.map(anuTag_).join("")}<span class="anu-day">${x.dia} ${MESES_LARGO[x.mes].slice(0,3).toLowerCase()}</span></span></span></button>`;
+  /* La tarjeta ES la portada de la actividad (la portada ya trae el nombre): sin marco, textos ni etiquetas. */
+  const n=x.n, r=[-1.6,1.2,-0.8,1.8][i%4], src=n.imgs[0];
+  const pic=src?`<img class="anu-pic js-longpress" data-filename="${escAttr(n.titulo+".jpg")}" src="${escAttr(src)}" alt="${escAttr(n.titulo)}" loading="lazy" decoding="async">`:`<span class="anu-pic anu-noimg">${escHtml(n.titulo)}</span>`;
+  return `<button type="button" class="anu-card" data-anuario="${escAttr(n.e.id)}" aria-label="${escAttr(n.titulo)}" style="--r:${r}deg;--i:${Math.min(i,10)}">${pic}</button>`;
 }
 
 
