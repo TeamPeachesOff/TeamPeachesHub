@@ -730,16 +730,8 @@
   #chambeadoresModal .trofeo-share-btn:hover{filter:brightness(1.08);}
   #chambeadoresModal .trofeo-share-btn svg{flex:none;}
   #chambeadoresModal .trofeo-share-btn.hidden{display:none !important;}
-  /* v3.64: confeti de emojis (como en Competencias) DENTRO de la tarjeta del podio, ~5 s: cae con balanceo, gira y se desvanece */
-  .pcf{position:absolute;inset:0;z-index:3;pointer-events:none;overflow:hidden;}
-  .pcf b{position:absolute;top:-8px;left:var(--x);font-size:var(--sz);font-weight:400;font-style:normal;line-height:1;opacity:0;will-change:transform,opacity;animation:pcfFall var(--dur) cubic-bezier(.33,.12,.5,1) var(--del) both;}
-  @keyframes pcfFall{
-    0%{opacity:0;transform:translate3d(0,0,0) rotate(0deg) scale(.4);}
-    8%{opacity:1;transform:translate3d(calc(var(--dx)*.06),calc(var(--fall)*.05),0) rotate(calc(var(--rot)*.06)) scale(1.1);}
-    35%{opacity:1;transform:translate3d(calc(var(--dx)*.4 + var(--sw)),calc(var(--fall)*.36),0) rotate(calc(var(--rot)*.38)) scale(1);}
-    68%{opacity:.9;transform:translate3d(calc(var(--dx)*.8 - var(--sw)),calc(var(--fall)*.74),0) rotate(calc(var(--rot)*.74)) scale(.92);}
-    100%{opacity:0;transform:translate3d(var(--dx),var(--fall),0) rotate(var(--rot)) scale(.5);}
-  }
+  /* v3.65: confeti de papel dibujado en UN solo <canvas> (física real, giro 3D, sin cientos de nodos que repintar) dentro de la tarjeta del podio */
+  .pcf{position:absolute;inset:0;width:100%;height:100%;z-index:3;pointer-events:none;display:block;}
   @media (prefers-reduced-motion:reduce){.pcf{display:none;}}
   @keyframes pdUp{from{height:0;}}
   @keyframes pdWho{from{opacity:0;transform:translateY(-26px) scale(.6);}}
@@ -5256,24 +5248,98 @@ let _rankShare_=null;
 document.getElementById("chambeadoresShareBtn").onclick=()=>{ if(_rankShare_) rankCompartir_(_rankShare_); else toast("Todavía no hay nada que compartir 🍑"); };
 document.getElementById("chambeadoresAnuarioShareBtn").onclick=()=>{ if(_rankShare_) rankCompartir_(_rankShare_); else toast("Todavía no hay nada que compartir 🍑"); };
 
-/* ---------- v3.64: confeti de emojis (los mismos de Competencias; un durazno de vez en cuando) dentro del podio, ~5 s ---------- */
-let _pcfTm_=null, _pcfSt_=null;
+/* ---------- v3.65: confeti de papel en canvas dentro del podio (~5 s) ----------
+   Antes eran ~46 emojis animados con CSS: se veían chiquitos y amontonados como un bloque cayendo, y el celular se trababa
+   repintándolos. Ahora es un solo <canvas>: dos cañones de confeti salen de las esquinas, luego cae una llovizna suave.
+   Cada pieza tiene gravedad, resistencia del aire, vaivén y giro 3D (se "voltea" como papel de verdad); el tiempo va por
+   delta (si un frame se retrasa, la animación no da saltos) y se detiene sola cuando ya no queda nada. */
+let _pcfSt_=null, _pcfRaf_=null, _pcfCv_=null, _pcfPeach_=null;
+function _pcfSprite_(){                                   // 🍑 se dibuja UNA vez y se reutiliza (no se pinta texto en cada frame)
+  if(_pcfPeach_) return _pcfPeach_;
+  const c=document.createElement("canvas"), n=64; c.width=c.height=n;
+  const x=c.getContext("2d"); x.font=(n*.78)+"px 'Apple Color Emoji','Segoe UI Emoji','Noto Color Emoji',sans-serif"; x.textAlign="center"; x.textBaseline="middle"; x.fillText("🍑",n/2,n/2+2);
+  return (_pcfPeach_=c);
+}
+function peachConfettiStop_(){
+  clearTimeout(_pcfSt_); if(_pcfRaf_){ cancelAnimationFrame(_pcfRaf_); _pcfRaf_=null; }
+  if(_pcfCv_){ _pcfCv_.remove(); _pcfCv_=null; }
+}
 function peachConfetti_(retraso){
-  clearTimeout(_pcfSt_);
+  peachConfettiStop_();
   _pcfSt_=setTimeout(()=>{
     try{ if(window.matchMedia&&matchMedia("(prefers-reduced-motion:reduce)").matches) return; }catch(_){}
     const modal=document.getElementById("chambeadoresModal");
     if(!modal||!modal.classList.contains("open")) return;
     const podio=[...modal.querySelectorAll(".podio")].find(p=>p.offsetParent!==null); if(!podio) return;   // el podio que se está viendo
-    podio.querySelectorAll(".pcf").forEach(x=>x.remove()); clearTimeout(_pcfTm_);
-    const r=(a,b)=>a+Math.random()*(b-a), H=podio.clientHeight||312, pool=["✨","✨","🎉","🎉","💖","💖","🏆","✨","🎉","💖","🎊","🏆"];
-    const box=document.createElement("div"); box.className="pcf"; box.setAttribute("aria-hidden","true");
-    let h=""; for(let i=0;i<46;i++){
-      const e=pool[Math.floor(Math.random()*pool.length)], peach=(i%11===5);
-      h+=`<b style="--x:${r(2,95).toFixed(1)}%;--sz:${r(10,18).toFixed(0)}px;--dx:${r(-40,40).toFixed(0)}px;--sw:${r(-14,14).toFixed(0)}px;--rot:${r(-420,420).toFixed(0)}deg;--fall:${(H*r(.72,1.05)).toFixed(0)}px;--dur:${r(2.9,3.8).toFixed(2)}s;--del:${(i*0.026+r(0,.45)).toFixed(2)}s">${peach?"🍑":e}</b>`;
+    const W=podio.clientWidth, H=podio.clientHeight; if(!W||!H) return;
+    const dpr=Math.min(window.devicePixelRatio||1,2);
+    const cv=document.createElement("canvas"); cv.className="pcf"; cv.setAttribute("aria-hidden","true");
+    cv.width=Math.round(W*dpr); cv.height=Math.round(H*dpr);
+    podio.appendChild(cv); _pcfCv_=cv;
+    const ctx=cv.getContext("2d"); ctx.scale(dpr,dpr);
+    const R=(a,b)=>a+Math.random()*(b-a), TAU=Math.PI*2;
+    const COL=["#FF006A","#FF5C9D","#FF8FBF","#B200FE","#CF5CFF","#00B8FF","#6ED8FF","#FFD23F","#FFF1B8","#FFFFFF"];
+    const P=[];
+    const nueva=(x,y,vx,vy,espera,vida)=>{
+      const k=Math.random(), forma=k<.07?"peach":k<.20?"cinta":k<.42?"punto":"papel";
+      const w=forma==="cinta"?R(2.5,3.5):forma==="punto"?R(3.5,5.5):R(5,8.5);
+      P.push({x,y,vx,vy,t:-espera,vida,forma,w,
+        h:forma==="cinta"?R(13,20):forma==="punto"?w:R(8,13),
+        c:COL[(Math.random()*COL.length)|0],
+        rot:R(0,TAU), vr:R(-5,5),                     // giro plano
+        fl:R(0,TAU), vf:R(5,11),                      // volteo 3D (cos → aplasta la pieza como papel que gira)
+        sw:R(0,TAU), vs:R(2,4.2), as:R(14,34),        // vaivén lateral al caer
+        pr:R(.55,1)});                                // “peso” (las ligeras flotan más)
+    };
+    // cañones en las dos esquinas de arriba (salen hacia adentro y arriba) + llovizna fina que cae desde arriba
+    for(let i=0;i<26;i++){
+      const a1=R(-1.12,-.62), v1=R(380,640);                     // izquierda → derecha/arriba
+      nueva(W*.04,H*.42,Math.cos(a1)*v1,Math.sin(a1)*v1,R(0,.16),R(3.4,4.4));
+      const a2=R(-2.52,-2.02), v2=R(380,640);                    // derecha → izquierda/arriba
+      nueva(W*.96,H*.42,Math.cos(a2)*v2,Math.sin(a2)*v2,R(0,.16),R(3.4,4.4));
     }
-    box.innerHTML=h; podio.appendChild(box);
-    _pcfTm_=setTimeout(()=>box.remove(),5400);                    // retraso máx. ≈1.6 s + 3.8 s ≈ 5 s
+    for(let i=0;i<34;i++) nueva(R(.04,.96)*W,R(-30,-6),R(-18,18),R(30,90),R(.25,2.1),R(3.0,3.9));
+
+    let ult=performance.now(), tot=0;
+    const paso=ahora=>{
+      let dt=(ahora-ult)/1000; ult=ahora; if(dt>.05) dt=.05;     // un frame lento no hace “saltar” las piezas
+      tot+=dt; ctx.clearRect(0,0,W,H);
+      let vivas=0;
+      for(const q of P){
+        q.t+=dt; if(q.t<0){ vivas++; continue; }
+        if(q.t>q.vida||q.y>H+24) continue;
+        vivas++;
+        // aire: frena rápido lo disparado y limita la caída (velocidad terminal suave según el peso)
+        const arr=Math.pow(.045,dt*q.pr*.9);
+        q.vx*=arr; q.vy*=arr;                                     // arrastre
+        q.vy+=620*q.pr*dt;                                        // gravedad
+        const term=105+q.pr*85; if(q.vy>term) q.vy+=(term-q.vy)*Math.min(1,dt*7);
+        q.sw+=q.vs*dt; q.fl+=q.vf*dt; q.rot+=q.vr*dt;
+        q.x+=(q.vx+Math.cos(q.sw)*q.as)*dt; q.y+=q.vy*dt;
+        // rebote suave en las paredes para que nada se quede cortado en el borde
+        if(q.x<-12) q.x=W+10; else if(q.x>W+12) q.x=-10;
+        const nacer=Math.min(1,q.t/.12), morir=Math.min(1,Math.max(0,(q.vida-q.t)/.7));
+        const alfa=nacer*morir; if(alfa<=0) continue;
+        ctx.globalAlpha=alfa;
+        ctx.save(); ctx.translate(q.x,q.y); ctx.rotate(q.rot);
+        const vol=Math.cos(q.fl);                                  // -1..1
+        if(q.forma==="peach"){
+          const s=15*(.55+.45*Math.abs(vol)); ctx.rotate(Math.sin(q.sw)*.5-q.rot);
+          ctx.drawImage(_pcfSprite_(),-s/2,-s/2,s,s);
+        } else if(q.forma==="punto"){
+          ctx.scale(1,Math.max(.25,Math.abs(vol))); ctx.fillStyle=q.c; ctx.beginPath(); ctx.arc(0,0,q.w/2,0,TAU); ctx.fill();
+        } else {
+          ctx.scale(1,vol);                                        // el volteo 3D
+          ctx.fillStyle=q.c; ctx.fillRect(-q.w/2,-q.h/2,q.w,q.h);
+          if(vol<0){ ctx.fillStyle="rgba(0,0,0,.16)"; ctx.fillRect(-q.w/2,-q.h/2,q.w,q.h); }   // el “reverso” se ve un poco más oscuro
+        }
+        ctx.restore();
+      }
+      ctx.globalAlpha=1;
+      if(vivas>0&&tot<7&&cv.isConnected&&modal.classList.contains("open")) _pcfRaf_=requestAnimationFrame(paso);
+      else { _pcfRaf_=null; cv.remove(); if(_pcfCv_===cv) _pcfCv_=null; }
+    };
+    _pcfRaf_=requestAnimationFrame(paso);
   },retraso||0);
 }
 
@@ -7562,7 +7628,7 @@ function abrirStaffHub(){
     <div class="section-label" style="text-align:left;">🧩 Módulos</div>
     <div id="hubModulos" style="margin-bottom:12px;"><div class="hub-mod-vacio">Buscando módulos…</div></div>
     <button class="btn-small btn-admin" id="hubEnlaces" style="width:100%;">⚙️ Editar Enlaces</button>
-    <div id="hubVersion" style="text-align:center;margin:16px 0 4px;font-size:12px;font-weight:700;opacity:.6;">Versión 3.64</div>`;
+    <div id="hubVersion" style="text-align:center;margin:16px 0 4px;font-size:12px;font-weight:700;opacity:.6;">Versión 3.65</div>`;
   openModal("memberModal");
   cargarHubModulos();
   document.getElementById("hubCumple").onclick=()=>probarHub("testCumpleanos","Cumpleaños");
