@@ -561,10 +561,10 @@ function anuFitMide_(g){
     const libre1=alto-arriba-14-rg*(total-1), w1=Math.floor(Math.min(W,libre1/R.reduce((a,b)=>a+b,0)));
     if(w1>=Math.min(W,80)&&w1>=w) return {w:w1,cols:1,zz:w1<W*.88};
   }
-  /* 4 portadas en teléfono: 2 por fila con un pequeño zigzag (la columna derecha baja un poco) para que el conjunto llene todo el alto disponible */
+  /* 4 portadas en teléfono: 2 por fila con zigzag (la columna derecha baja lo que haga falta, hasta ~1 portada) para que el conjunto llene todo el alto disponible y no quede vacío abajo */
   if(!anuDesk_()&&total===4&&cards.length===4&&W>0){
     const hMax=Math.max(...R), sumR=filas.reduce((a,b)=>a+b,0);
-    let ww=wMax, off=Math.min(libre-sumR*ww,.34*ww*hMax);
+    let ww=wMax, off=Math.min(libre-sumR*ww,.95*ww*hMax);   // v3.59: el zigzag ya puede bajar hasta ~1 portada para que el conjunto llegue hasta el fondo (antes tope .34)
     if(off<.1*ww*hMax){ ww=Math.floor(Math.min(wMax,libre/(sumR+.1*hMax))); off=Math.round(.1*ww*hMax); }
     if(ww>=w) return {w:ww,cols:2,zz:false,zo:Math.max(0,Math.floor(off))};
   }
