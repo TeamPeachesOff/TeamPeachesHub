@@ -845,3 +845,6 @@ html[data-anu-v="libro"] body.anuario-mode main{padding-top:0;}
 .anu-grid[data-cols="1"] .anu-card{flex:0 0 auto;width:var(--cw);max-width:100%;}
 .anu-grid[data-cols="1"][data-zz] .anu-card:nth-child(odd){align-self:flex-start;}
 .anu-grid[data-cols="1"][data-zz] .anu-card:nth-child(even){align-self:flex-end;}
+/* 4 portadas en teléfono: zigzag suave (la columna derecha baja; la cuadrícula reserva ese espacio abajo) */
+.anu-grid[data-zig]{padding-bottom:var(--zo,0px);}
+.anu-grid[data-zig] .anu-card:nth-child(even){translate:0 var(--zo,0px);}

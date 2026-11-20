@@ -561,9 +561,17 @@ function anuFitMide_(g){
     const libre1=alto-arriba-14-rg*(total-1), w1=Math.floor(Math.min(W,libre1/R.reduce((a,b)=>a+b,0)));
     if(w1>=Math.min(W,80)&&w1>=w) return {w:w1,cols:1,zz:w1<W*.88};
   }
+  /* 4 portadas en teléfono: 2 por fila con un pequeño zigzag (la columna derecha baja un poco) para que el conjunto llene todo el alto disponible */
+  if(!anuDesk_()&&total===4&&cards.length===4&&W>0){
+    const hMax=Math.max(...R), sumR=filas.reduce((a,b)=>a+b,0);
+    let ww=wMax, off=Math.min(libre-sumR*ww,.34*ww*hMax);
+    if(off<.1*ww*hMax){ ww=Math.floor(Math.min(wMax,libre/(sumR+.1*hMax))); off=Math.round(.1*ww*hMax); }
+    if(ww>=w) return {w:ww,cols:2,zz:false,zo:Math.max(0,Math.floor(off))};
+  }
   return {w,cols:2,zz:false};
 }
-function anuFitPon_(g,r){ g.style.setProperty("--cw",r.w+"px"); g.dataset.cols=r.cols||2; if(r.zz) g.dataset.zz="1"; else delete g.dataset.zz; }
+function anuFitPon_(g,r){ g.style.setProperty("--cw",r.w+"px"); g.dataset.cols=r.cols||2; if(r.zz) g.dataset.zz="1"; else delete g.dataset.zz;
+  if(r.zo>0){ g.style.setProperty("--zo",r.zo+"px"); g.dataset.zig="1"; } else { g.style.removeProperty("--zo"); delete g.dataset.zig; } }
 function anuFit_(g,sig){
   const fin=()=>g.classList.remove("fitting");
   const imgs=[...g.querySelectorAll(":scope>.anu-card img.anu-pic")].slice(0,4);
