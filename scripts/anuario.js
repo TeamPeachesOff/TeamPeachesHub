@@ -128,7 +128,7 @@ function anuFrame_(m,rol,i){
 }
 function anuMiembro_(m,rol,i){
   const {c,et,html}=anuFrame_(m,rol,i);
-  return `<button type="button" class="anu-m${rol==="f"?" f":""}" data-miembro="${escAttr(m.id)}" style="--pc:${c};--nl:${Math.max(6,[...String(m.nombre||"")].length)}" aria-label="${et}: ${escAttr(m.nombre||"")}">${html}<span class="anu-pn">${escHtml(m.nombre||"")}</span></button>`;
+  return `<button type="button" class="anu-m${rol==="f"?" f":""}" data-miembro="${escAttr(m.id)}" style="--pc:${c};--nl:${Math.max(6,[...String(m.nombre||"")].length)};--i:${Math.min(i,14)}" aria-label="${et}: ${escAttr(m.nombre||"")}">${html}<span class="anu-pn">${escHtml(m.nombre||"")}</span></button>`;
 }
 /* Equipo de la página 00 por año. 2025 se arma con esta lista (ese año no existía el rango de admin); los demás años salen de las marcas de DB.miembros.
    Cada nombre se busca en DB.miembros para usar su foto y su ficha; si alguien no aparece ahí, igual se muestra (con la foto por defecto) para que nunca falte nadie. */
@@ -246,7 +246,7 @@ function anuActHTML_(id){
       const nombreHTML=peachys.length>3?`<div class="bst-peachys" data-peachys-toggle role="button" tabindex="0" aria-expanded="false"><span class="bst-count">${peachys.length} Peachys</span><span class="bst-full hidden">${escHtml(peachys.join(", "))}</span></div>`:`<b>${escHtml(nm||"Miembro")}</b>`;
       return `<div class="bst"><span class="bst-l">${x.l}</span><button type="button" class="bst-av"${m?` data-miembro="${escAttr(m.id)}"`:""} aria-label="${escAttr(nm)}">${ANU_CROWN}<img class="anu-fb" src="${escAttr(anuAv_(m))}" alt=""></button>${nombreHTML}<small>${escHtml(x.w.detalle||"")}</small>${x.w.link?`<a class="md-play" href="${escAttr(x.w.link)}" target="_blank" rel="noopener">Ver presentación</a>`:""}</div>`; }).join("")}</div>`;
   const fechaTxt=isNaN(f)?"":`${f.getDate()} de ${MESES_LARGO[f.getMonth()].toLowerCase()} ${f.getFullYear()}`;
-  return `<div class="act-pg"><div class="act-h">${n.imgs.length?`<span class="act-ps"><img class="js-longpress" data-filename="${escAttr(n.titulo+".jpg")}" src="${escAttr(n.imgs[0])}" alt=""></span>`:""}<div><h2>${escHtml(n.titulo)}</h2><div class="md-meta"><span>${fechaTxt}</span>${n.tipos.map(anuTag_).join("")}</div></div></div>
+  return `<div class="act-pg"><div class="act-h"><div><h2>${escHtml(n.titulo)}</h2><div class="md-meta"><span>${fechaTxt}</span>${n.tipos.map(anuTag_).join("")}</div></div></div>
     ${grupL.length?`<h3 class="act-sec">👥 Grupales</h3>${bstHTML(grupL)}`:""}
     ${bestOnly.length?`<h3 class="act-sec">👑 Lo mejor de la actividad</h3>${bstHTML(bestOnly)}`:(grupL.length?"":`<p class="md-empty" style="text-align:center">Todavía sin ganadores asignados.</p>`)}
     ${mens.length?`<h3 class="act-sec">🎖️ Menciones honoríficas</h3><div class="act-list">${mens.map(w=>anuRowW_(w)).join("")}</div>`:""}
@@ -545,7 +545,11 @@ function anuFit_(g,sig){
     .catch(fin);
 }
 function anuDet_(){
-  const p=anuP_(), d=$a("anuDet"); d.className=`anu-detail t-${p.tema}`; let h="";
+  const p=anuP_(), d=$a("anuDet"); let h="";
+  /* «enter» solo se pone cuando se ENTRA a una página distinta (un mes, Administradores, una actividad, otro año): ahí los elementos aparecen con animación.
+     Si el libro solo se vuelve a dibujar (refresco de datos en segundo plano) no se repite, para que nada parpadee. */
+  { const sig=(anuS.act?"a"+anuS.act:anuS.key?"k"+anuS.key:"i")+"|"+p.anio, entra=sig!==anuS.animSig; anuS.animSig=sig;
+    d.className=`anu-detail t-${p.tema}${entra?" enter":""}`; }
   if(anuS.act) h=anuActHTML_(anuS.act);
   else if(anuS.key==="admin") h=anuAdminHTML_();
   else if(anuS.key){ const [y,m]=anuS.key.split("-").map(Number), c=p.cuenta.find(c=>c.m===m), n=c.items.length;
