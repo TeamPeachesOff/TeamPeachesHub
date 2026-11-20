@@ -730,19 +730,17 @@
   #chambeadoresModal .trofeo-share-btn:hover{filter:brightness(1.08);}
   #chambeadoresModal .trofeo-share-btn svg{flex:none;}
   #chambeadoresModal .trofeo-share-btn.hidden{display:none !important;}
-  /* v3.64: lluvia de duraznos (~5 s, se desvanece al caer). Capa fija por encima del modal, sin interceptar toques. */
-  #peachRain{position:fixed;inset:0;z-index:2000;pointer-events:none;overflow:hidden;}
-  #peachRain .pc-p{position:absolute;top:-48px;left:var(--x);width:var(--sz);height:var(--sz);background:var(--pc-img) center/contain no-repeat;opacity:0;will-change:transform,opacity;animation:peachFall var(--dur) cubic-bezier(.32,.1,.5,1) var(--del) both;filter:drop-shadow(0 3px 4px rgba(120,20,60,.28));}
-  #peachRain .pc-s{position:absolute;left:var(--x);top:var(--y);width:var(--sz);height:var(--sz);opacity:0;background:var(--pc-star) center/contain no-repeat;animation:peachSpark 1.5s ease-out var(--del) both;}
-  @keyframes peachFall{
+  /* v3.64: confeti de emojis (como en Competencias) DENTRO de la tarjeta del podio, ~5 s: cae con balanceo, gira y se desvanece */
+  .pcf{position:absolute;inset:0;z-index:3;pointer-events:none;overflow:hidden;}
+  .pcf b{position:absolute;top:-8px;left:var(--x);font-size:var(--sz);font-weight:400;font-style:normal;line-height:1;opacity:0;will-change:transform,opacity;animation:pcfFall var(--dur) cubic-bezier(.33,.12,.5,1) var(--del) both;}
+  @keyframes pcfFall{
     0%{opacity:0;transform:translate3d(0,0,0) rotate(0deg) scale(.4);}
-    9%{opacity:1;transform:translate3d(calc(var(--dx)*.08),7vh,0) rotate(calc(var(--rot)*.08)) scale(1.08);}
-    32%{opacity:1;transform:translate3d(calc(var(--dx)*.4 + var(--sw)),calc(var(--fall)*.34),0) rotate(calc(var(--rot)*.36)) scale(1);}
-    62%{opacity:.95;transform:translate3d(calc(var(--dx)*.78 - var(--sw)),calc(var(--fall)*.68),0) rotate(calc(var(--rot)*.7)) scale(.94);}
-    100%{opacity:0;transform:translate3d(var(--dx),var(--fall),0) rotate(var(--rot)) scale(.55);}
+    8%{opacity:1;transform:translate3d(calc(var(--dx)*.06),calc(var(--fall)*.05),0) rotate(calc(var(--rot)*.06)) scale(1.1);}
+    35%{opacity:1;transform:translate3d(calc(var(--dx)*.4 + var(--sw)),calc(var(--fall)*.36),0) rotate(calc(var(--rot)*.38)) scale(1);}
+    68%{opacity:.9;transform:translate3d(calc(var(--dx)*.8 - var(--sw)),calc(var(--fall)*.74),0) rotate(calc(var(--rot)*.74)) scale(.92);}
+    100%{opacity:0;transform:translate3d(var(--dx),var(--fall),0) rotate(var(--rot)) scale(.5);}
   }
-  @keyframes peachSpark{0%{opacity:0;transform:scale(.2) rotate(0deg);}35%{opacity:1;transform:scale(1) rotate(40deg);}100%{opacity:0;transform:scale(.3) rotate(110deg);}}
-  @media (prefers-reduced-motion:reduce){#peachRain{display:none;}}
+  @media (prefers-reduced-motion:reduce){.pcf{display:none;}}
   @keyframes pdUp{from{height:0;}}
   @keyframes pdWho{from{opacity:0;transform:translateY(-26px) scale(.6);}}
   @keyframes pdCrown{from{opacity:0;transform:translateY(-34px) rotate(-30deg) scale(.5);}}
@@ -5258,28 +5256,24 @@ let _rankShare_=null;
 document.getElementById("chambeadoresShareBtn").onclick=()=>{ if(_rankShare_) rankCompartir_(_rankShare_); else toast("Todavía no hay nada que compartir 🍑"); };
 document.getElementById("chambeadoresAnuarioShareBtn").onclick=()=>{ if(_rankShare_) rankCompartir_(_rankShare_); else toast("Todavía no hay nada que compartir 🍑"); };
 
-/* ---------- v3.64: lluvia de duraznos (~5 s) que cae, gira y se desvanece. Sirve para cualquier ranking con podio. ---------- */
-const PEACH_IMG_="url(\"data:image/svg+xml;utf8,"+encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64"><defs><radialGradient id="g" cx=".34" cy=".3" r=".85"><stop offset="0" stop-color="#ffd9c2"/><stop offset=".5" stop-color="#ff93a8"/><stop offset="1" stop-color="#ec4a7b"/></radialGradient></defs><path d="M32 15C19 8 5 17 5 35c0 14 12 25 27 25s27-11 27-25C59 17 45 8 32 15z" fill="url(#g)"/><path d="M32 15c-2 12-2 28 0 44" stroke="#d93b6a" stroke-width="2" fill="none" opacity=".45" stroke-linecap="round"/><ellipse cx="20" cy="31" rx="4.6" ry="9" fill="#fff" opacity=".3" transform="rotate(18 20 31)"/><path d="M32 15c1-7 8-12 16-10-1 7-8 12-16 10z" fill="#4fb36e"/><path d="M33 14c4-3 8-5 12-6" stroke="#2f8a4d" stroke-width="1.4" fill="none" opacity=".6" stroke-linecap="round"/></svg>')+"\")";
-const PEACH_STAR_="url(\"data:image/svg+xml;utf8,"+encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32"><path d="M16 1l3.6 10.4L30 15l-10.4 3.6L16 31l-3.6-12.4L2 15l10.4-3.6z" fill="#ffd54a"/><path d="M16 7l1.8 6.2L24 15l-6.2 1.8L16 23l-1.8-6.2L8 15l6.2-1.8z" fill="#fff6c9"/></svg>')+"\")";
-let _peachTm_=null, _peachSt_=null;
+/* ---------- v3.64: confeti de emojis (los mismos de Competencias; un durazno de vez en cuando) dentro del podio, ~5 s ---------- */
+let _pcfTm_=null, _pcfSt_=null;
 function peachConfetti_(retraso){
-  clearTimeout(_peachSt_);
-  _peachSt_=setTimeout(()=>{
+  clearTimeout(_pcfSt_);
+  _pcfSt_=setTimeout(()=>{
     try{ if(window.matchMedia&&matchMedia("(prefers-reduced-motion:reduce)").matches) return; }catch(_){}
     const modal=document.getElementById("chambeadoresModal");
-    if(!modal||!modal.classList.contains("open")) return;          // solo si el ranking sigue a la vista
-    const viejo=document.getElementById("peachRain"); if(viejo) viejo.remove(); clearTimeout(_peachTm_);
-    const r=(a,b)=>a+Math.random()*(b-a), box=document.createElement("div"); box.id="peachRain"; box.setAttribute("aria-hidden","true");
-    box.style.setProperty("--pc-img",PEACH_IMG_); box.style.setProperty("--pc-star",PEACH_STAR_);
-    const narrow=window.innerWidth<600, N=narrow?30:46; let h="";
-    for(let i=0;i<N;i++){
-      h+=`<i class="pc-p" style="--x:${r(1,95).toFixed(1)}vw;--sz:${r(22,46).toFixed(0)}px;--dx:${r(-80,80).toFixed(0)}px;--sw:${r(-28,28).toFixed(0)}px;--rot:${r(-460,460).toFixed(0)}deg;--fall:${r(64,100).toFixed(0)}vh;--dur:${r(3.2,3.9).toFixed(2)}s;--del:${r(0,1.1).toFixed(2)}s"></i>`;
+    if(!modal||!modal.classList.contains("open")) return;
+    const podio=[...modal.querySelectorAll(".podio")].find(p=>p.offsetParent!==null); if(!podio) return;   // el podio que se está viendo
+    podio.querySelectorAll(".pcf").forEach(x=>x.remove()); clearTimeout(_pcfTm_);
+    const r=(a,b)=>a+Math.random()*(b-a), H=podio.clientHeight||312, pool=["✨","✨","🎉","🎉","💖","💖","🏆","✨","🎉","💖","🎊","🏆"];
+    const box=document.createElement("div"); box.className="pcf"; box.setAttribute("aria-hidden","true");
+    let h=""; for(let i=0;i<46;i++){
+      const e=pool[Math.floor(Math.random()*pool.length)], peach=(i%11===5);
+      h+=`<b style="--x:${r(2,95).toFixed(1)}%;--sz:${r(10,18).toFixed(0)}px;--dx:${r(-40,40).toFixed(0)}px;--sw:${r(-14,14).toFixed(0)}px;--rot:${r(-420,420).toFixed(0)}deg;--fall:${(H*r(.72,1.05)).toFixed(0)}px;--dur:${r(2.9,3.8).toFixed(2)}s;--del:${(i*0.026+r(0,.45)).toFixed(2)}s">${peach?"🍑":e}</b>`;
     }
-    for(let i=0;i<12;i++){
-      h+=`<b class="pc-s" style="--x:${r(4,94).toFixed(1)}vw;--y:${r(6,70).toFixed(1)}vh;--sz:${r(12,22).toFixed(0)}px;--del:${r(.2,3.2).toFixed(2)}s"></b>`;
-    }
-    box.innerHTML=h; document.body.appendChild(box);
-    _peachTm_=setTimeout(()=>{ box.remove(); },5400);                // 1.1 s de retraso máx. + 3.9 s de caída ≈ 5 s
+    box.innerHTML=h; podio.appendChild(box);
+    _pcfTm_=setTimeout(()=>box.remove(),5400);                    // retraso máx. ≈1.6 s + 3.8 s ≈ 5 s
   },retraso||0);
 }
 
