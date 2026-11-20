@@ -108,13 +108,13 @@
     .anu-arc{position:absolute;inset:0;width:100%;height:100%;overflow:visible;z-index:3;pointer-events:none;}
     .anu-arc text{font:400 25px 'Lilita One','Caveat Brush',sans-serif;}
     .anu-arc .t1{fill:#fff;stroke:#fff;stroke-width:13;stroke-linejoin:round;}
-    .anu-arc .t2{fill:#fff;stroke:#f81e8e;stroke-width:8;stroke-linejoin:round;paint-order:stroke;}
+    .anu-arc .t2{fill:#fff;stroke:var(--pc,#f81e8e);stroke-width:8;stroke-linejoin:round;paint-order:stroke;}
     .anu-crown{position:absolute;z-index:2;top:-33%;left:23%;width:54%;}
     .anu-crown2{position:absolute;z-index:2;top:-54%;left:1%;width:98%;overflow:visible;transform:rotate(-3deg);pointer-events:none;}
     .anu-rol{position:absolute;z-index:4;left:50%;top:-12%;width:70%;overflow:visible;transform:rotate(21deg);pointer-events:none;}
     .anu-rol text{font:400 31px 'Lilita One',var(--f-disp);}
     .anu-rol .t1{fill:#fff;stroke:#fff;stroke-width:13;stroke-linejoin:round;}
-    .anu-rol .t2{fill:#fff;stroke:#f81e8e;stroke-width:8;stroke-linejoin:round;paint-order:stroke;}
+    .anu-rol .t2{fill:#fff;stroke:var(--pc,#f81e8e);stroke-width:8;stroke-linejoin:round;paint-order:stroke;}
     .anu-pn{position:relative;z-index:3;display:block;left:50%;transform:translateX(-50%);width:max-content;margin:-10% 0 0;white-space:nowrap;text-align:center;font:400 min(clamp(16px,4.6vw,22px),calc(var(--mw)*2/var(--nl,10)))/1.2 'Kaushan Script',var(--f-disp);color:var(--pc);-webkit-text-stroke:5px #fff;paint-order:stroke fill;filter:drop-shadow(0 0 1px #fff) drop-shadow(0 1px 1px rgba(40,10,60,.25));}
     .det-h.sm{justify-content:center;text-align:center;}
     .det-h.sm h2{flex:none;font:400 clamp(28px,7vw,42px)/1.05 'Lilita One',var(--f-disp);letter-spacing:.02em;}
@@ -711,7 +711,7 @@ html.anu-x-hide #anuScene .sc-26{opacity:0;transition:none;}
 /* Listas de entregas/menciones: 2 por fila (3 en pantallas anchas) y la última fila centrada (5 → 2, 2 y 1) */
 .act-list{display:flex;flex-wrap:wrap;justify-content:center;gap:10px;}
 .act-list>.act-row{flex:0 0 calc((100% - 10px)/2);max-width:calc((100% - 10px)/2);min-width:0;box-sizing:border-box;}
-@media (min-width:700px){.act-list>.act-row{flex-basis:calc((100% - 20px)/3);max-width:calc((100% - 20px)/3);}}
+/* pantallas anchas: máximo 2 por fila (en teléfono, 1) */
 .bst-peachys[data-peachys-toggle]{cursor:pointer;-webkit-tap-highlight-color:transparent;}
 .bst-peachys[data-peachys-toggle]:focus-visible{outline:2px solid #ffb300;outline-offset:3px;border-radius:8px;}
 

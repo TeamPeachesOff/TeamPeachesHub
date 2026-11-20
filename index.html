@@ -648,7 +648,7 @@
 
 </style>
 <link rel="stylesheet" href="styles/anuario-fonts.css?v=1">
-<link rel="stylesheet" href="styles/anuario.css?v=2.173">
+<link rel="stylesheet" href="styles/anuario.css?v=3.55">
 <style>
 
   #searchMiembros{width:100%;padding:12px 14px;border-radius:12px;border:1px solid rgba(255,255,255,0.1);background:var(--card-bg-2);color:var(--text);font-size:14px;display:block;}
@@ -1831,7 +1831,7 @@
 </div>
 
 <script src="scripts/anuario-assets.js?v=1"></script>
-<script src="scripts/anuario.js?v=2.173"></script>
+<script src="scripts/anuario.js?v=3.55"></script>
 <script>
 // Si el navegador restaura esta página desde su caché de "atrás/adelante" (bfcache), el DOM puede
 // quedar congelado a mitad de una actualización (ej. justo cuando un innerHTML se estaba
@@ -7263,7 +7263,8 @@ function abrirStaffHub(){
     </div>
     <div class="section-label" style="text-align:left;">🧩 Módulos</div>
     <div id="hubModulos" style="margin-bottom:12px;"><div class="hub-mod-vacio">Buscando módulos…</div></div>
-    <button class="btn-small btn-admin" id="hubEnlaces" style="width:100%;">⚙️ Editar Enlaces</button>`;
+    <button class="btn-small btn-admin" id="hubEnlaces" style="width:100%;">⚙️ Editar Enlaces</button>
+    <div id="hubVersion" style="text-align:center;margin:16px 0 4px;font-size:12px;font-weight:700;opacity:.6;">Versión 3.55</div>`;
   openModal("memberModal");
   cargarHubModulos();
   document.getElementById("hubCumple").onclick=()=>probarHub("testCumpleanos","Cumpleaños");

@@ -121,8 +121,13 @@ const anuIsF_=m=>esTrue(m.fundadora)||esTrue(m.fundador);
 const anuFundEt_=m=>(anuKey_(m.nombre).includes("eryck")||(esTrue(m.fundador)&&!esTrue(m.fundadora)))?"Fundador":"Fundadora";
 const anuRolDe_=m=>anuIsF_(m)?"f":esTrue(m.lider)?"a":esTrue(m.staff)?"s":null;
 function anuStaffIdx_(m){ const q=anuEquipo_((anuP_()||{}).anio), o=[...q.f,...q.s]; return Math.max(0,o.findIndex(x=>String(x.id)===String(m.id))); }
+/* Color favorito de cada integrante del equipo (manda sobre el color de la base de datos). Se busca por el nombre sin símbolos ni mayúsculas. */
+const ANU_COLOR_FAV_=[["alix","#ff1493"],["eryck","#7b3fc4"],["demon","#f472b6"],["anacoffee","#2f6df0"],["ragna","#e0252d"],["rcc39","#27b0e6"],["rec","#27b0e6",1],
+  ["cazador","#e0252d",2],["cami","#27b0e6",2],["wagner","#7b3fc4"],["krys","#7b3fc4"]]; /* 1 = nombre exacto · 2 = debe empezar así */
+const anuColorFav_=nm=>{ const k=anuKey_(nm); if(!k) return null;
+  const h=ANU_COLOR_FAV_.find(([t,,md])=>md===1?k===t:md===2?k.startsWith(t):k.includes(t)); return h?h[1]:null; };
 function anuFrame_(m,rol,i){
-  const c=m.color||(rol==="f"?"#d6277f":ANU_COLORES[i%ANU_COLORES.length]);
+  const c=anuColorFav_(m.nombre)||m.color||(rol==="f"?"#d6277f":ANU_COLORES[i%ANU_COLORES.length]);
   const et=rol==="f"?anuFundEt_(m):"Staff"; /* todos los que no son fundadores son Staff (ya no hay rótulo aparte de Admin) */
   return {c,et,html:`<span class="anu-av">${rol==="f"?"":anuSprout_()}${anuWreath_(c)}${avatarImgTag(m)}${rol==="f"?ANU_CROWN2+anuArc_("m"+m.id,et.toUpperCase()):anuRol_("m"+m.id,et)}</span>`};
 }
