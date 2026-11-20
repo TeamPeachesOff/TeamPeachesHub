@@ -654,13 +654,13 @@
   .trofeo-menu-btn::after{content:"";position:absolute;top:0;left:-60%;width:38%;height:100%;background:linear-gradient(100deg,transparent,rgba(255,255,255,0.3),transparent);transform:skewX(-20deg);animation:trofeoBrillo 4.2s ease-in-out infinite;pointer-events:none;}
   .trofeo-menu-btn.tm-anuario::after{animation-delay:1.4s;}
   @keyframes trofeoBrillo{0%,55%{left:-60%}100%{left:130%}}
-  .tm-entregas{background:linear-gradient(135deg,#ef0870 0%,#ff7a45 100%);border:2px solid #ffd700;box-shadow:0 6px 18px rgba(239,8,112,0.35),0 0 0 1px rgba(255,215,0,0.25) inset;}
-  .tm-anuario{background:linear-gradient(135deg,#5b2a9e 0%,#d6277f 100%);border:2px solid #ffd700;box-shadow:0 6px 18px rgba(120,50,170,0.4),0 0 0 1px rgba(255,215,0,0.25) inset;}
+  .tm-entregas{background:linear-gradient(135deg,#ef0870 0%,#ff7a45 100%);border:0;box-shadow:0 5px 14px rgba(239,8,112,0.28);}
+  .tm-anuario{background:linear-gradient(135deg,#5b2a9e 0%,#d6277f 100%);border:0;box-shadow:0 5px 14px rgba(120,50,170,0.3);}
   .tm-ic{flex:none;width:52px;height:52px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:27px;background:rgba(255,255,255,0.2);box-shadow:inset 0 0 0 2px rgba(255,255,255,0.45);}
   .tm-tx{flex:1;min-width:0;font-size:19px;font-weight:900;letter-spacing:.01em;line-height:1.15;text-shadow:0 2px 6px rgba(0,0,0,0.3);}
   .tm-arrow{flex:none;width:11px;height:11px;border-right:3.5px solid rgba(255,255,255,0.9);border-top:3.5px solid rgba(255,255,255,0.9);border-radius:2px;transform:rotate(45deg);margin-right:4px;}
   .anu-yr-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px;margin-top:14px;}
-  .anu-yr-btn{position:relative;container-type:inline-size;aspect-ratio:1/1;width:100%;padding:0;border-radius:22px;overflow:hidden;border:2.5px solid #ffd700;background:var(--paper,#fcf5ef);box-shadow:0 6px 16px rgba(0,0,0,0.35),0 0 10px rgba(255,193,7,0.45);cursor:pointer;-webkit-tap-highlight-color:transparent;transition:transform .15s;}
+  .anu-yr-btn{position:relative;container-type:inline-size;aspect-ratio:1/1;width:100%;padding:0;border-radius:22px;overflow:hidden;border:0;background:var(--paper,#fcf5ef);box-shadow:0 5px 14px rgba(0,0,0,0.35);cursor:pointer;-webkit-tap-highlight-color:transparent;transition:transform .15s;}
   .anu-yr-btn:active{transform:scale(0.95);}
   .ayb-art{position:absolute;inset:0;pointer-events:none;--s:calc(100cqw / 1456 * 1.3);}
   .ayb-art img{position:absolute;display:block;height:auto;max-width:none;user-select:none;-webkit-user-drag:none;}
@@ -671,60 +671,69 @@
   .ayb-ytxt{font-family:'Caveat Brush','Segoe Script','Brush Script MT',cursive;font-size:30cqw;line-height:1;color:#3b1d6e;letter-spacing:.02em;-webkit-text-stroke:7px #fff;paint-order:stroke fill;text-shadow:0 3px 8px rgba(0,0,0,0.2);}
   .chambeador-desglose{font-size:11px;color:var(--text-dim);font-weight:600;margin-top:2px;}
 
-  /* v3.61: modal de Chambeadores decorado (íconos propios, sin emojis), botón único Atrás/Cerrar */
-  #chambeadoresModal .modal-box{background:radial-gradient(110% 55% at 50% 0%,rgba(255,193,7,0.16),transparent 62%),radial-gradient(90% 50% at 100% 100%,rgba(239,8,112,0.14),transparent 60%),var(--card-bg);border:1.5px solid rgba(255,215,0,0.4);box-shadow:0 12px 40px rgba(0,0,0,0.55),0 0 22px rgba(255,193,7,0.18);padding-top:22px;}
+  /* v3.62: modal de Chambeadores — íconos propios, sin bordes dorados ni brillos de fondo; podio animado */
   #chambeadoresModal svg.ti{display:block;width:var(--is,20px);height:var(--is,20px);flex:none;}
-  #chambeadoresModal .trofeo-h{display:flex;align-items:center;justify-content:center;gap:10px;margin:2px 0 6px;font-size:21px;font-weight:900;color:#ffd75e;text-shadow:0 2px 10px rgba(255,193,7,0.35);}
-  #chambeadoresModal .th-ic{--is:19px;width:36px;height:36px;border-radius:50%;display:flex;align-items:center;justify-content:center;background:radial-gradient(circle at 30% 30%,#4a3514,#1a1020 78%);border:2px solid #ffd700;box-shadow:0 0 10px rgba(255,193,7,0.6);color:#ffd700;}
+  #chambeadoresModal .trofeo-h{display:flex;align-items:center;justify-content:center;gap:10px;margin:2px 0 6px;font-size:21px;font-weight:900;color:var(--peach-2);}
+  #chambeadoresModal .th-ic{--is:19px;width:36px;height:36px;border-radius:50%;display:flex;align-items:center;justify-content:center;background:linear-gradient(135deg,var(--peach-2),var(--peach-1));color:#fff;}
   #chambeadoresModal .trofeo-sub{text-align:center;font-size:12px;color:var(--text-dim);margin-bottom:14px;line-height:1.4;}
   .tm-ic{--is:28px;}
-  .tm-ic svg{filter:drop-shadow(0 1px 3px rgba(0,0,0,0.3));}
   /* botón único de navegación */
   .trofeo-nav{position:sticky;bottom:-20px;margin:16px -20px -20px;padding:14px 20px 20px;background:linear-gradient(to bottom,transparent,var(--card-bg) 40%);z-index:5;}
-  .trofeo-nav-btn{position:relative;overflow:hidden;display:flex;align-items:center;justify-content:center;gap:9px;width:100%;height:46px;border-radius:16px;color:#ffe27a;font-weight:900;font-size:15px;letter-spacing:.02em;background:linear-gradient(135deg,#3a2c12 0%,#1a1020 85%);border:2px solid #ffd700;box-shadow:0 4px 14px rgba(0,0,0,0.4),0 0 10px rgba(255,193,7,0.35);--is:19px;cursor:pointer;-webkit-tap-highlight-color:transparent;transition:transform .15s,filter .15s;}
+  .trofeo-nav-btn{display:flex;align-items:center;justify-content:center;gap:9px;width:100%;height:46px;border-radius:16px;color:#efe4ff;font-weight:900;font-size:15px;letter-spacing:.02em;background:linear-gradient(135deg,#3b2a5c 0%,#241838 100%);border:0;box-shadow:0 4px 12px rgba(0,0,0,0.35);--is:19px;cursor:pointer;-webkit-tap-highlight-color:transparent;transition:transform .15s,filter .15s;}
   .trofeo-nav-btn:active{transform:scale(0.97);}
-  .trofeo-nav-btn:hover{filter:brightness(1.12);}
-  .trofeo-nav-btn::after{content:"";position:absolute;top:0;left:-60%;width:36%;height:100%;background:linear-gradient(100deg,transparent,rgba(255,226,122,0.28),transparent);transform:skewX(-20deg);animation:trofeoBrillo 4.2s ease-in-out 2.8s infinite;pointer-events:none;}
+  .trofeo-nav-btn:hover{filter:brightness(1.15);}
   .tn-ic{display:flex;}
-  /* botones de acción del formulario / agregar periodo */
-  #chambeadoresModal .trofeo-act-btn{display:flex;align-items:center;justify-content:center;gap:8px;width:100%;height:44px;margin-top:12px;border-radius:14px;color:#fff;font-weight:800;font-size:14px;background:linear-gradient(135deg,#5b2a9e,#d6277f);border:1.5px solid #ffd700;box-shadow:0 4px 12px rgba(120,50,170,0.35);--is:18px;cursor:pointer;transition:transform .15s;}
+  #chambeadoresModal .trofeo-act-btn{display:flex;align-items:center;justify-content:center;gap:8px;width:100%;height:44px;margin-top:12px;border-radius:14px;color:#fff;font-weight:800;font-size:14px;background:linear-gradient(135deg,#5b2a9e,#d6277f);border:0;box-shadow:0 4px 12px rgba(120,50,170,0.3);--is:18px;cursor:pointer;transition:transform .15s;}
   #chambeadoresModal .trofeo-act-btn:active{transform:scale(0.97);}
   #chambeadoresModal .trofeo-act-btn.hidden{display:none !important;}
   /* lista de periodos */
   #chambeadoresModal .chambeadores-periodos-list{gap:10px;margin-top:12px;}
-  #chambeadoresModal .chambeadores-periodo-btn{position:relative;overflow:hidden;justify-content:flex-start;gap:12px;padding:11px 14px;border-radius:16px;background:linear-gradient(135deg,rgba(255,255,255,0.08),rgba(255,255,255,0.02)),var(--card-bg-2);border:1.5px solid rgba(255,215,0,0.32);transition:transform .15s,filter .15s;}
+  #chambeadoresModal .chambeadores-periodo-btn{justify-content:flex-start;gap:12px;padding:11px 14px;border-radius:16px;border:1px solid rgba(255,255,255,0.08);transition:transform .15s,filter .15s;}
   #chambeadoresModal .chambeadores-periodo-btn:hover{filter:brightness(1.1);}
-  .cp-ic{--is:20px;flex:none;width:42px;height:42px;border-radius:50%;display:flex;align-items:center;justify-content:center;background:radial-gradient(circle at 30% 30%,#4a3514,#1a1020 78%);border:2px solid #ffd700;color:#ffd700;box-shadow:0 0 9px rgba(255,193,7,0.45);}
+  .cp-ic{--is:20px;flex:none;width:42px;height:42px;border-radius:50%;display:flex;align-items:center;justify-content:center;background:rgba(255,255,255,0.08);color:var(--peach-2);}
   .cp-tx{flex:1;min-width:0;}
-  .cp-arrow{flex:none;width:9px;height:9px;border-right:3px solid #ffd700;border-top:3px solid #ffd700;border-radius:2px;transform:rotate(45deg);margin-right:3px;opacity:.85;}
+  .cp-arrow{flex:none;width:9px;height:9px;border-right:3px solid var(--text-dim);border-top:3px solid var(--text-dim);border-radius:2px;transform:rotate(45deg);margin-right:3px;}
   #chambeadoresModal .chambeadores-periodo-nombre{font-size:15px;}
-  #chambeadoresModal .chambeadores-periodo-btn[data-periodo="general"]{background:linear-gradient(135deg,#ef0870,#ff7a45);border-color:#ffd700;color:#fff;box-shadow:0 4px 14px rgba(239,8,112,0.3);}
+  #chambeadoresModal .chambeadores-periodo-btn[data-periodo="general"]{background:linear-gradient(135deg,#ef0870,#ff7a45);border-color:transparent;color:#fff;}
   #chambeadoresModal .chambeadores-periodo-btn[data-periodo="general"] .chambeadores-periodo-sub{color:rgba(255,255,255,0.88);}
-  #chambeadoresModal .chambeadores-periodo-btn[data-periodo="general"] .cp-ic{background:rgba(255,255,255,0.2);border-color:rgba(255,255,255,0.55);color:#fff;box-shadow:none;}
+  #chambeadoresModal .chambeadores-periodo-btn[data-periodo="general"] .cp-ic{background:rgba(255,255,255,0.2);color:#fff;}
   #chambeadoresModal .chambeadores-periodo-btn[data-periodo="general"] .cp-arrow{border-color:#fff;}
   #chambeadoresModal .chambeadores-periodo-del{--is:17px;width:34px;height:34px;display:flex;align-items:center;justify-content:center;border-radius:50%;background:rgba(255,255,255,0.07);color:var(--text-dim);}
   /* switch Canto / Doblaje */
-  #chambeadoresCategoriaSwitch{border:1.5px solid rgba(255,215,0,0.35);}
   #chambeadoresCategoriaSwitch button{display:flex;align-items:center;justify-content:center;gap:7px;--is:16px;}
-  /* filas del top */
-  #chambeadoresModal .chambeadores-top{gap:9px;}
-  #chambeadoresModal .chambeador-row{gap:11px;padding:9px 12px;border-radius:16px;background:linear-gradient(135deg,rgba(255,255,255,0.08),rgba(255,255,255,0.02)),var(--card-bg-2);border:1.5px solid rgba(255,255,255,0.09);}
-  #chambeadoresModal .chambeador-row img{width:42px;height:42px;border:2px solid rgba(255,255,255,0.28);}
-  #chambeadoresModal .chambeador-row.top1{border-color:#ffd700;background:linear-gradient(135deg,rgba(255,215,0,0.24),rgba(255,215,0,0.04)),var(--card-bg-2);box-shadow:0 0 14px rgba(255,193,7,0.3);} #chambeadoresModal .chambeador-row.top1 img{border-color:#ffd700;}
-  #chambeadoresModal .chambeador-row.top2{border-color:#cfd6e0;background:linear-gradient(135deg,rgba(207,214,224,0.2),rgba(207,214,224,0.03)),var(--card-bg-2);} #chambeadoresModal .chambeador-row.top2 img{border-color:#cfd6e0;}
-  #chambeadoresModal .chambeador-row.top3{border-color:#d98a4a;background:linear-gradient(135deg,rgba(217,138,74,0.22),rgba(217,138,74,0.03)),var(--card-bg-2);} #chambeadoresModal .chambeador-row.top3 img{border-color:#d98a4a;}
-  #chambeadoresModal .chambeador-puesto{width:auto;}
-  .pz{display:flex;align-items:center;justify-content:center;width:28px;height:28px;border-radius:50%;font-weight:900;font-size:13px;background:var(--card-bg);color:var(--text-dim);border:1.5px solid rgba(255,255,255,0.18);}
-  .pz.p1{background:linear-gradient(135deg,#ffe27a,#d99a00);color:#4a3000;border-color:#fff2b0;box-shadow:0 0 8px rgba(255,193,7,0.6);}
-  .pz.p2{background:linear-gradient(135deg,#f4f6fa,#98a4b5);color:#2d3440;border-color:#fff;}
-  .pz.p3{background:linear-gradient(135deg,#f3b886,#a85d1f);color:#3d1f08;border-color:#ffd9b8;}
-  #chambeadoresModal .chambeador-total{min-width:34px;text-align:center;padding:4px 11px;border-radius:999px;background:linear-gradient(90deg,var(--peach-2),var(--peach-1));color:#fff;font-weight:900;}
   .chambeador-desglose{display:flex;flex-wrap:wrap;gap:2px 10px;}
   .chambeador-desglose .dg{display:inline-flex;align-items:center;gap:4px;--is:12px;}
+  /* ===== PODIO animado (top 3 de cualquier ranking). El estado BASE es el final; las animaciones solo parten de "from". ===== */
+  .podio{position:relative;display:flex;align-items:flex-end;justify-content:center;gap:8px;min-height:312px;padding:6px 2px 0;margin-bottom:14px;overflow:hidden;}
+  .podio-col{flex:1 1 0;min-width:0;max-width:114px;display:flex;flex-direction:column;align-items:center;-webkit-tap-highlight-color:transparent;}
+  .podio-col[data-chambeador-id]{cursor:pointer;}
+  .podio-col[data-chambeador-id]:active .pd-av{transform:scale(0.94);}
+  .pd-who{display:flex;flex-direction:column;align-items:center;width:100%;animation:pdWho .6s cubic-bezier(.3,1.5,.5,1) var(--wd,0s) backwards;}
+  .pd-crown{--is:30px;color:#ffc107;margin-bottom:-3px;animation:pdCrown .7s cubic-bezier(.3,1.6,.5,1) calc(var(--wd,0s) + .25s) backwards,pdCrownIdle 2.6s ease-in-out calc(var(--wd,0s) + 1s) infinite;}
+  .pd-av{width:var(--av);height:var(--av);border-radius:50%;object-fit:cover;background:var(--card-bg-2);border:3px solid var(--mc);transition:transform .15s;}
+  .podio-col.p1 .pd-av{animation:pdFloat 3s ease-in-out calc(var(--wd,0s) + .8s) infinite;}
+  .pd-name{max-width:100%;margin-top:7px;font-size:12.5px;font-weight:800;text-align:center;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+  .pd-total{margin-top:4px;min-width:30px;text-align:center;padding:2px 10px;border-radius:999px;background:linear-gradient(90deg,var(--peach-2),var(--peach-1));color:#fff;font-weight:900;font-size:12.5px;}
+  .podio-col .chambeador-desglose{justify-content:center;margin-top:3px;}
+  .pd-bloque{position:relative;width:100%;height:var(--h);margin-top:9px;border-radius:12px 12px 0 0;background:linear-gradient(180deg,var(--mc1),var(--mc2));display:flex;justify-content:center;padding-top:8px;font-size:30px;font-weight:900;line-height:1;color:rgba(0,0,0,0.3);overflow:hidden;animation:pdUp .7s cubic-bezier(.2,.9,.25,1) var(--bd,0s) backwards;}
+  .pd-bloque::before{content:"";position:absolute;inset:0 auto 0 0;width:34%;background:linear-gradient(90deg,rgba(255,255,255,0.28),transparent);}
+  .podio-col.p1{--mc:#ffc107;--mc1:#ffe27a;--mc2:#d99a00;--h:132px;--av:70px;--bd:.5s;--wd:1.2s;}
+  .podio-col.p2{--mc:#cfd6e0;--mc1:#f4f6fa;--mc2:#98a4b5;--h:100px;--av:56px;--bd:.25s;--wd:.95s;}
+  .podio-col.p3{--mc:#d98a4a;--mc1:#f3b886;--mc2:#a85d1f;--h:74px;--av:56px;--bd:0s;--wd:.7s;}
+  .podio-col.vacio .pd-bloque{opacity:.35;}
+  .podio-conf{position:absolute;inset:0;pointer-events:none;}
+  .podio-conf i{position:absolute;top:-8px;width:7px;height:11px;border-radius:2px;background:var(--c);left:var(--x);opacity:0;animation:pdConf 2s ease-out var(--cd) backwards;}
+  @keyframes pdUp{from{height:0;}}
+  @keyframes pdWho{from{opacity:0;transform:translateY(-26px) scale(.6);}}
+  @keyframes pdCrown{from{opacity:0;transform:translateY(-34px) rotate(-30deg) scale(.5);}}
+  @keyframes pdCrownIdle{0%,100%{transform:translateY(0) rotate(0);}50%{transform:translateY(-3px) rotate(4deg);}}
+  @keyframes pdFloat{0%,100%{transform:translateY(0);}50%{transform:translateY(-3px);}}
+  @keyframes pdConf{0%{opacity:0;transform:translate(0,0) rotate(0);}10%{opacity:1;}100%{opacity:0;transform:translate(var(--dx),300px) rotate(560deg);}}
+  @media (prefers-reduced-motion:reduce){.pd-who,.pd-crown,.pd-bloque,.podio-col.p1 .pd-av,.podio-conf i{animation:none !important;}}
 
 </style>
 <link rel="stylesheet" href="styles/anuario-fonts.css?v=1">
-<link rel="stylesheet" href="styles/anuario.css?v=3.61">
+<link rel="stylesheet" href="styles/anuario.css?v=3.62">
 <style>
 
   #searchMiembros{width:100%;padding:12px 14px;border-radius:12px;border:1px solid rgba(255,255,255,0.1);background:var(--card-bg-2);color:var(--text);font-size:14px;display:block;}
@@ -1924,7 +1933,7 @@
 </div>
 
 <script src="scripts/anuario-assets.js?v=1"></script>
-<script src="scripts/anuario.js?v=3.61"></script>
+<script src="scripts/anuario.js?v=3.62"></script>
 <script>
 // Si el navegador restaura esta página desde su caché de "atrás/adelante" (bfcache), el DOM puede
 // quedar congelado a mitad de una actualización (ej. justo cuando un innerHTML se estaba
@@ -5172,13 +5181,15 @@ function abrirRankingAnuario_(anio){
     .sort((a,b)=>b.total-a.total||b.mejores-a.mejores||String(a.nombre).localeCompare(String(b.nombre))).slice(0,10);
   const el=document.getElementById("chambeadoresAnuarioTop");
   if(!filas.length){ el.innerHTML=`<div style="color:var(--text-dim);font-size:13px;">Todavía no hay reconocimientos en el anuario de ${anio}.</div>`; return; }
-  el.innerHTML=filas.map((f,i)=>{
-    const dg=(ic,n,t)=>n?`<span class="dg" title="${t}">${TI[ic]}${n}</span>`:"";
-    const partes=dg("crown",f.mejores,"Mejores")+dg("users",f.grupales,"Grupales")+dg("ribbon",f.menciones,"Menciones honoríficas");
-    return `<div class="chambeador-row${i<3?" top"+(i+1):""}"${f.m?` data-chambeador-id="${escAttr(String(f.m.id))}" role="button" tabindex="0"`:""}>
-      <div class="chambeador-puesto"><span class="pz p${i<3?i+1:0}">${i+1}</span></div>
+  const dg=(ic,n,t)=>n?`<span class="dg" title="${t}">${TI[ic]}${n}</span>`:"";
+  const desg=f=>`<div class="chambeador-desglose">${dg("crown",f.mejores,"Mejores")+dg("users",f.grupales,"Grupales")+dg("ribbon",f.menciones,"Menciones honoríficas")}</div>`;
+  const podioItems=filas.slice(0,3).map(f=>({mid:f.m?f.m.id:"",nombre:f.m?f.m.nombre:f.nombre,avatar:f.m?(f.m.avatarUrl||LOGO_DEFAULT):LOGO_DEFAULT,total:f.total,extra:desg(f)}));
+  el.innerHTML=podioHTML_(podioItems)+filas.slice(3).map((f,k)=>{
+    const i=k+3;
+    return `<div class="chambeador-row"${f.m?` data-chambeador-id="${escAttr(String(f.m.id))}" role="button" tabindex="0"`:""}>
+      <div class="chambeador-puesto">${i+1}</div>
       <img src="${escAttr(f.m?(f.m.avatarUrl||LOGO_DEFAULT):LOGO_DEFAULT)}" onerror="this.onerror=null;this.src='${LOGO_DEFAULT}';">
-      <div class="chambeador-nombre">${escHtml(f.m?f.m.nombre:f.nombre)}<div class="chambeador-desglose">${partes}</div></div>
+      <div class="chambeador-nombre">${escHtml(f.m?f.m.nombre:f.nombre)}${desg(f)}</div>
       <div class="chambeador-total">${f.total}</div>
     </div>`;
   }).join("");
@@ -5243,6 +5254,18 @@ function fechaParaPeriodo_(e){
   const act = DB.actividades && DB.actividades.find(a=>String(a.id)===String(e.idActividad));
   return (act && act.fechaFin) ? act.fechaFin : e.fecha;
 }
+/* v3.62: podio animado (top 3). items: [{mid,nombre,avatar,total,extra}] en orden de puesto */
+function podioHTML_(items){
+  const orden=[2,1,3], conf=Array.from({length:18},(_,i)=>{ const c=["#ffc107","#ef0870","#7b3fc4","#2f6df0","#27b0e6","#ff7a45"][i%6];
+    return `<i style="--x:${6+((i*53)%88)}%;--c:${c};--dx:${((i%5)-2)*16}px;--cd:${(1.25+(i%6)*.09).toFixed(2)}s"></i>`; }).join("");
+  const cols=orden.map(p=>{ const it=items[p-1];
+    if(!it) return `<div class="podio-col p${p} vacio"><div class="pd-bloque"><span>${p}</span></div></div>`;
+    return `<div class="podio-col p${p}"${it.mid?` data-chambeador-id="${escAttr(String(it.mid))}" role="button" tabindex="0"`:""}>
+      <div class="pd-who">${p===1?`<span class="pd-crown">${TI.crown}</span>`:""}<img class="pd-av" src="${escAttr(it.avatar)}" alt="" onerror="this.onerror=null;this.src='${LOGO_DEFAULT}';">
+        <div class="pd-name">${escHtml(it.nombre)}</div><div class="pd-total">${it.total}</div>${it.extra||""}</div>
+      <div class="pd-bloque"><span>${p}</span></div></div>`; }).join("");
+  return `<div class="podio">${cols}${items[0]?`<div class="podio-conf" aria-hidden="true">${conf}</div>`:""}</div>`;
+}
 function renderChambeadores(){
   const p = chambeadoresPeriodoSel_;
   document.getElementById("chambeadoresPeriodoTitulo").textContent = p ? p.nombre : "General";
@@ -5264,10 +5287,12 @@ function renderChambeadores(){
   const filas = Object.keys(conteo).map(id=>({id,total:conteo[id]})).sort((a,b)=>b.total-a.total).slice(0,10);
   const el=document.getElementById("chambeadoresTop");
   if(!filas.length){ el.innerHTML=`<div style="color:var(--text-dim);font-size:13px;">Todavía no hay entregas asignadas en esta categoría${p?" para este periodo":""}.</div>`; return; }
-  el.innerHTML = filas.map((f,i)=>{
-    const m=DB.miembros.find(x=>String(x.id)===f.id);
-    return `<div class="chambeador-row${i<3?" top"+(i+1):""}"${m?` data-chambeador-id="${escAttr(String(m.id))}" role="button" tabindex="0"`:""}>
-      <div class="chambeador-puesto"><span class="pz p${i<3?i+1:0}">${i+1}</span></div>
+  const podioItems=filas.slice(0,3).map(f=>{ const m=DB.miembros.find(x=>String(x.id)===f.id);
+    return {mid:m?m.id:"",nombre:m?m.nombre:"(miembro ya no existe)",avatar:m?(m.avatarUrl||LOGO_DEFAULT):LOGO_DEFAULT,total:f.total}; });
+  el.innerHTML = podioHTML_(podioItems) + filas.slice(3).map((f,k)=>{
+    const i=k+3, m=DB.miembros.find(x=>String(x.id)===f.id);
+    return `<div class="chambeador-row"${m?` data-chambeador-id="${escAttr(String(m.id))}" role="button" tabindex="0"`:""}>
+      <div class="chambeador-puesto">${i+1}</div>
       <img src="${escAttr(m?(m.avatarUrl||LOGO_DEFAULT):LOGO_DEFAULT)}" onerror="this.onerror=null;this.src='${LOGO_DEFAULT}';">
       <div class="chambeador-nombre">${escHtml(m?m.nombre:"(miembro ya no existe)")}</div>
       <div class="chambeador-total">${f.total}</div>
@@ -7459,7 +7484,7 @@ function abrirStaffHub(){
     <div class="section-label" style="text-align:left;">🧩 Módulos</div>
     <div id="hubModulos" style="margin-bottom:12px;"><div class="hub-mod-vacio">Buscando módulos…</div></div>
     <button class="btn-small btn-admin" id="hubEnlaces" style="width:100%;">⚙️ Editar Enlaces</button>
-    <div id="hubVersion" style="text-align:center;margin:16px 0 4px;font-size:12px;font-weight:700;opacity:.6;">Versión 3.61</div>`;
+    <div id="hubVersion" style="text-align:center;margin:16px 0 4px;font-size:12px;font-weight:700;opacity:.6;">Versión 3.62</div>`;
   openModal("memberModal");
   cargarHubModulos();
   document.getElementById("hubCumple").onclick=()=>probarHub("testCumpleanos","Cumpleaños");
