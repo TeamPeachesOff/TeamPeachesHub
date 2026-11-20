@@ -371,6 +371,9 @@ function brClean(){
 }
 function applyRemote(str,newRev){
   const t=parseT(str),old=S;
+  /* v3.66: si el servidor TIENE un torneo pero este navegador no logra leerlo, se avisa (antes se veía como «sin torneo» y nadie sabía por qué). No se borra nada: el servidor conserva todo. */
+  if(str&&str!=="null"&&!t){bannerMsg="⚠️ No se pudo leer el torneo guardado (versión "+newRev+"). No se sobrescribió nada; avisa al staff técnico.";try{renderBanner()}catch(e){}}
+  else if(bannerMsg&&/No se pudo leer el torneo/.test(bannerMsg)){bannerMsg="";try{renderBanner()}catch(e){}}
   if(t){
     if(old){
       const latest=old.view===old.rounds.length-1;
@@ -421,37 +424,53 @@ function markDirty(){
   dirty=true;lastChange=Date.now();setStatus("pending");cacheSave(true);
   clearTimeout(flushT);flushT=setTimeout(flush,400);
 }
+let resolving=false,failN=0;
+function clearOffBanner(){if(bannerMsg&&/^⚠️ Sin conexión/.test(bannerMsg)){bannerMsg="";try{renderBanner()}catch(e){}}}
 async function flush(ka){
-  if(saving||!dirty)return;
+  if(saving||!dirty||resolving)return;
   const estado=ser(S);
-  if(estado.length>MAXLEN){toast("⚠️ El torneo es demasiado grande para guardarse");return}
+  if(estado.length>MAXLEN){lastErr="El torneo es demasiado grande para guardarse ("+estado.length+" de "+MAXLEN+" caracteres)";setStatus("error");toast("⚠️ "+lastErr,6500);return}
   saving=true;dirty=false;
-  const r=await call({action:"guardarTorneo",baseRev:rev,estado},ka===true);
+  /* keepalive solo si el cuerpo cabe holgado en el límite de 64 KB que impone el navegador a esas peticiones (si no, el guardado al salir fallaba como «sin conexión») */
+  const r=await call({action:"guardarTorneo",baseRev:rev,estado},ka===true&&estado.length<40000);
   saving=false;
-  if(r&&r.ok){rev=r.rev;baseStr=estado;if(dirty)flush();else{cacheSave(false);setStatus("saved")}return}
+  if(r&&r.ok){failN=0;clearOffBanner();rev=r.rev;baseStr=estado;if(dirty)flush();else{cacheSave(false);setStatus("saved")}return}
   dirty=true;
-  if(r&&r.conflict){await resolveConflict(r);return}
+  if(r&&r.conflict){failN=0;await resolveConflict(r);return}
   lastErr=(r&&r.error)||"";
+  if(r&&r.grande){setStatus("error");toast("⚠️ "+lastErr,6500);return}   /* reintentar no sirve: se avisa y se espera el siguiente cambio */
   if(/sesi[oó]n/i.test(lastErr)){setStatus("session");toast("🔑 Tu sesión de staff venció. Inicia sesión de nuevo en la app: tus cambios están guardados en este navegador y se subirán solos.",6500);clearTimeout(flushT);flushT=setTimeout(flush,15000);return}
   if(lastErr==="Módulo desactivado"){setStatus("error");toast("🧩 El módulo fue desactivado.");return}
   setStatus(r&&r.network?"offline":"error");
-  clearTimeout(flushT);flushT=setTimeout(flush,r&&r.network?4000:8000);
+  /* reintento con espera creciente (4/8 s → hasta 60 s) para no martillar al servidor durante una caída larga; con jitter para que no reintenten todos a la vez */
+  failN++;const base=(r&&r.network)?4000:(r&&r.busy)?3000:8000;
+  const wait=Math.round(Math.min(60000,base*Math.pow(1.6,Math.min(failN-1,6)))*(0.85+Math.random()*0.3));
+  clearTimeout(flushT);flushT=setTimeout(flush,wait);
 }
 async function resolveConflict(r){
+  /* v3.66: mientras se resuelve un conflicto (puede haber un diálogo abierto) flush() no se reentra: antes un clic extra abría un segundo diálogo encima */
+  resolving=true;let again=false;
+  try{again=await resolveConflict_(r)}finally{resolving=false}
+  if(again)flush();
+}
+async function resolveConflict_(r){
   const local=ser(S),remote=r.estado==null?"null":r.estado;
+  /* v3.66: «respuesta perdida». Si el guardado SÍ llegó al servidor pero la respuesta se perdió (señal débil, timeout de 30 s), el reintento choca
+     con su propia versión: el servidor ya tiene EXACTAMENTE lo mismo que yo. No hay nada que combinar ni que preguntar: se da por guardado. */
+  if(remote===local){applyRemote(remote,r.rev);dirty=false;cacheSave(false);setStatus("saved");refresh();return false}
   const merged=mergeStates(baseStr,local,remote);
   if(merged!==null){
     const same=merged===JSON.stringify(JSON.parse(remote));
     applyRemote(remote,r.rev);
     if(!same){
       const t=parseT(merged);
-      if(t){t.view=S?S.view:0;t.phase=S?S.phase:"swiss";S=t;brClean();dirty=true;cacheSave(true);refresh();toast("🔄 Se combinaron tus cambios con los de otro staff");flush();return}
+      if(t){t.view=S?S.view:0;t.phase=S?S.phase:"swiss";S=t;brClean();dirty=true;cacheSave(true);refresh();toast("🔄 Se combinaron tus cambios con los de otro staff");return true}
     }
-    dirty=false;setStatus("saved");refresh();return;
+    dirty=false;setStatus("saved");refresh();return false;
   }
   const keep=await dlg({title:"Otro staff cambió el torneo",msg:"Mientras trabajabas, otro staff reemplazó o eliminó este torneo. ¿Qué versión quieres conservar? La base de datos guarda el historial de ambas.",ok:"Mantener la mía",no:"Cargar la suya"});
-  if(keep){rev=r.rev;baseStr=remote;dirty=true;flush()}
-  else{applyRemote(remote,r.rev);dirty=false;setStatus("saved");refresh()}
+  if(keep){rev=r.rev;baseStr=remote;dirty=true;return true}
+  else{applyRemote(remote,r.rev);dirty=false;setStatus("saved");refresh();return false}
 }
 
 let pollT=null;
@@ -468,6 +487,7 @@ async function poll(){
     else if(r&&r.ok){
       if(!r.sinCambios&&r.rev>rev&&!dirty&&!saving){applyRemote(r.estado,r.rev);lastChange=Date.now();refresh()}
       if((sync==="offline"||sync==="error")&&!dirty&&!saving)setStatus("saved");
+      clearOffBanner();
     }else if(r&&r.network&&!dirty&&!saving)setStatus("offline");
   }finally{polling=false}
 }
