@@ -647,7 +647,7 @@
   .chambeadores-volver-btn{background:var(--card-bg-2);border:1px solid rgba(255,255,255,0.1);color:var(--text-dim);}
 
   /* v3.60: 🏆 menú de dos botones + botones de año del Ranking de anuario */
-  .trofeo-menu{display:flex;flex-direction:column;gap:14px;padding:30px 2px 6px;}
+  .trofeo-menu{display:flex;flex-direction:column;gap:14px;padding:2px 0 0;}
   .trofeo-menu-btn{position:relative;overflow:hidden;display:flex;align-items:center;gap:14px;width:100%;padding:18px 18px;border-radius:20px;color:#fff;text-align:left;cursor:pointer;-webkit-tap-highlight-color:transparent;transition:transform .15s,filter .15s;}
   .trofeo-menu-btn:active{transform:scale(0.97);}
   .trofeo-menu-btn:hover{filter:brightness(1.08);}
@@ -669,11 +669,62 @@
   .ayb-year{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;pointer-events:none;}
   .ayb-yimg{width:62%;height:auto;filter:drop-shadow(0 2px 4px rgba(0,0,0,0.25));}
   .ayb-ytxt{font-family:'Caveat Brush','Segoe Script','Brush Script MT',cursive;font-size:30cqw;line-height:1;color:#3b1d6e;letter-spacing:.02em;-webkit-text-stroke:7px #fff;paint-order:stroke fill;text-shadow:0 3px 8px rgba(0,0,0,0.2);}
-  .chambeador-desglose{font-size:11px;color:var(--text-dim);font-weight:600;margin-top:1px;}
+  .chambeador-desglose{font-size:11px;color:var(--text-dim);font-weight:600;margin-top:2px;}
+
+  /* v3.61: modal de Chambeadores decorado (íconos propios, sin emojis), botón único Atrás/Cerrar */
+  #chambeadoresModal .modal-box{background:radial-gradient(110% 55% at 50% 0%,rgba(255,193,7,0.16),transparent 62%),radial-gradient(90% 50% at 100% 100%,rgba(239,8,112,0.14),transparent 60%),var(--card-bg);border:1.5px solid rgba(255,215,0,0.4);box-shadow:0 12px 40px rgba(0,0,0,0.55),0 0 22px rgba(255,193,7,0.18);padding-top:22px;}
+  #chambeadoresModal svg.ti{display:block;width:var(--is,20px);height:var(--is,20px);flex:none;}
+  #chambeadoresModal .trofeo-h{display:flex;align-items:center;justify-content:center;gap:10px;margin:2px 0 6px;font-size:21px;font-weight:900;color:#ffd75e;text-shadow:0 2px 10px rgba(255,193,7,0.35);}
+  #chambeadoresModal .th-ic{--is:19px;width:36px;height:36px;border-radius:50%;display:flex;align-items:center;justify-content:center;background:radial-gradient(circle at 30% 30%,#4a3514,#1a1020 78%);border:2px solid #ffd700;box-shadow:0 0 10px rgba(255,193,7,0.6);color:#ffd700;}
+  #chambeadoresModal .trofeo-sub{text-align:center;font-size:12px;color:var(--text-dim);margin-bottom:14px;line-height:1.4;}
+  .tm-ic{--is:28px;}
+  .tm-ic svg{filter:drop-shadow(0 1px 3px rgba(0,0,0,0.3));}
+  /* botón único de navegación */
+  .trofeo-nav{position:sticky;bottom:-20px;margin:16px -20px -20px;padding:14px 20px 20px;background:linear-gradient(to bottom,transparent,var(--card-bg) 40%);z-index:5;}
+  .trofeo-nav-btn{position:relative;overflow:hidden;display:flex;align-items:center;justify-content:center;gap:9px;width:100%;height:46px;border-radius:16px;color:#ffe27a;font-weight:900;font-size:15px;letter-spacing:.02em;background:linear-gradient(135deg,#3a2c12 0%,#1a1020 85%);border:2px solid #ffd700;box-shadow:0 4px 14px rgba(0,0,0,0.4),0 0 10px rgba(255,193,7,0.35);--is:19px;cursor:pointer;-webkit-tap-highlight-color:transparent;transition:transform .15s,filter .15s;}
+  .trofeo-nav-btn:active{transform:scale(0.97);}
+  .trofeo-nav-btn:hover{filter:brightness(1.12);}
+  .trofeo-nav-btn::after{content:"";position:absolute;top:0;left:-60%;width:36%;height:100%;background:linear-gradient(100deg,transparent,rgba(255,226,122,0.28),transparent);transform:skewX(-20deg);animation:trofeoBrillo 4.2s ease-in-out 2.8s infinite;pointer-events:none;}
+  .tn-ic{display:flex;}
+  /* botones de acción del formulario / agregar periodo */
+  #chambeadoresModal .trofeo-act-btn{display:flex;align-items:center;justify-content:center;gap:8px;width:100%;height:44px;margin-top:12px;border-radius:14px;color:#fff;font-weight:800;font-size:14px;background:linear-gradient(135deg,#5b2a9e,#d6277f);border:1.5px solid #ffd700;box-shadow:0 4px 12px rgba(120,50,170,0.35);--is:18px;cursor:pointer;transition:transform .15s;}
+  #chambeadoresModal .trofeo-act-btn:active{transform:scale(0.97);}
+  #chambeadoresModal .trofeo-act-btn.hidden{display:none !important;}
+  /* lista de periodos */
+  #chambeadoresModal .chambeadores-periodos-list{gap:10px;margin-top:12px;}
+  #chambeadoresModal .chambeadores-periodo-btn{position:relative;overflow:hidden;justify-content:flex-start;gap:12px;padding:11px 14px;border-radius:16px;background:linear-gradient(135deg,rgba(255,255,255,0.08),rgba(255,255,255,0.02)),var(--card-bg-2);border:1.5px solid rgba(255,215,0,0.32);transition:transform .15s,filter .15s;}
+  #chambeadoresModal .chambeadores-periodo-btn:hover{filter:brightness(1.1);}
+  .cp-ic{--is:20px;flex:none;width:42px;height:42px;border-radius:50%;display:flex;align-items:center;justify-content:center;background:radial-gradient(circle at 30% 30%,#4a3514,#1a1020 78%);border:2px solid #ffd700;color:#ffd700;box-shadow:0 0 9px rgba(255,193,7,0.45);}
+  .cp-tx{flex:1;min-width:0;}
+  .cp-arrow{flex:none;width:9px;height:9px;border-right:3px solid #ffd700;border-top:3px solid #ffd700;border-radius:2px;transform:rotate(45deg);margin-right:3px;opacity:.85;}
+  #chambeadoresModal .chambeadores-periodo-nombre{font-size:15px;}
+  #chambeadoresModal .chambeadores-periodo-btn[data-periodo="general"]{background:linear-gradient(135deg,#ef0870,#ff7a45);border-color:#ffd700;color:#fff;box-shadow:0 4px 14px rgba(239,8,112,0.3);}
+  #chambeadoresModal .chambeadores-periodo-btn[data-periodo="general"] .chambeadores-periodo-sub{color:rgba(255,255,255,0.88);}
+  #chambeadoresModal .chambeadores-periodo-btn[data-periodo="general"] .cp-ic{background:rgba(255,255,255,0.2);border-color:rgba(255,255,255,0.55);color:#fff;box-shadow:none;}
+  #chambeadoresModal .chambeadores-periodo-btn[data-periodo="general"] .cp-arrow{border-color:#fff;}
+  #chambeadoresModal .chambeadores-periodo-del{--is:17px;width:34px;height:34px;display:flex;align-items:center;justify-content:center;border-radius:50%;background:rgba(255,255,255,0.07);color:var(--text-dim);}
+  /* switch Canto / Doblaje */
+  #chambeadoresCategoriaSwitch{border:1.5px solid rgba(255,215,0,0.35);}
+  #chambeadoresCategoriaSwitch button{display:flex;align-items:center;justify-content:center;gap:7px;--is:16px;}
+  /* filas del top */
+  #chambeadoresModal .chambeadores-top{gap:9px;}
+  #chambeadoresModal .chambeador-row{gap:11px;padding:9px 12px;border-radius:16px;background:linear-gradient(135deg,rgba(255,255,255,0.08),rgba(255,255,255,0.02)),var(--card-bg-2);border:1.5px solid rgba(255,255,255,0.09);}
+  #chambeadoresModal .chambeador-row img{width:42px;height:42px;border:2px solid rgba(255,255,255,0.28);}
+  #chambeadoresModal .chambeador-row.top1{border-color:#ffd700;background:linear-gradient(135deg,rgba(255,215,0,0.24),rgba(255,215,0,0.04)),var(--card-bg-2);box-shadow:0 0 14px rgba(255,193,7,0.3);} #chambeadoresModal .chambeador-row.top1 img{border-color:#ffd700;}
+  #chambeadoresModal .chambeador-row.top2{border-color:#cfd6e0;background:linear-gradient(135deg,rgba(207,214,224,0.2),rgba(207,214,224,0.03)),var(--card-bg-2);} #chambeadoresModal .chambeador-row.top2 img{border-color:#cfd6e0;}
+  #chambeadoresModal .chambeador-row.top3{border-color:#d98a4a;background:linear-gradient(135deg,rgba(217,138,74,0.22),rgba(217,138,74,0.03)),var(--card-bg-2);} #chambeadoresModal .chambeador-row.top3 img{border-color:#d98a4a;}
+  #chambeadoresModal .chambeador-puesto{width:auto;}
+  .pz{display:flex;align-items:center;justify-content:center;width:28px;height:28px;border-radius:50%;font-weight:900;font-size:13px;background:var(--card-bg);color:var(--text-dim);border:1.5px solid rgba(255,255,255,0.18);}
+  .pz.p1{background:linear-gradient(135deg,#ffe27a,#d99a00);color:#4a3000;border-color:#fff2b0;box-shadow:0 0 8px rgba(255,193,7,0.6);}
+  .pz.p2{background:linear-gradient(135deg,#f4f6fa,#98a4b5);color:#2d3440;border-color:#fff;}
+  .pz.p3{background:linear-gradient(135deg,#f3b886,#a85d1f);color:#3d1f08;border-color:#ffd9b8;}
+  #chambeadoresModal .chambeador-total{min-width:34px;text-align:center;padding:4px 11px;border-radius:999px;background:linear-gradient(90deg,var(--peach-2),var(--peach-1));color:#fff;font-weight:900;}
+  .chambeador-desglose{display:flex;flex-wrap:wrap;gap:2px 10px;}
+  .chambeador-desglose .dg{display:inline-flex;align-items:center;gap:4px;--is:12px;}
 
 </style>
 <link rel="stylesheet" href="styles/anuario-fonts.css?v=1">
-<link rel="stylesheet" href="styles/anuario.css?v=3.60">
+<link rel="stylesheet" href="styles/anuario.css?v=3.61">
 <style>
 
   #searchMiembros{width:100%;padding:12px 14px;border-radius:12px;border:1px solid rgba(255,255,255,0.1);background:var(--card-bg-2);color:var(--text);font-size:14px;display:block;}
@@ -1794,59 +1845,55 @@
      periodos nuevos (nombre + fecha inicio + fecha fin) y borrar los que ya no sirvan — ver
      agregarPeriodo/eliminarPeriodo en Code.gs. Reemplaza la temporada única manual de v22/v23. -->
 <div class="modal-overlay" id="chambeadoresModal">
-  <div class="modal-box"><button class="modal-close" data-close="chambeadoresModal">✕</button>
+  <div class="modal-box">
 
-    <!-- Vista 0 (v3.60): menú con los dos rankings (sin título) -->
+    <!-- Vista 0 (v3.61): menú con los dos rankings (sin título). Sin ✕: abajo hay un solo botón (Cerrar en el menú / Atrás en las demás vistas). -->
     <div id="chambeadoresMenuView" class="trofeo-menu">
-      <button type="button" class="trofeo-menu-btn tm-entregas" id="tmEntregasBtn"><span class="tm-ic">🎙️</span><span class="tm-tx">Ranking de entregas</span><i class="tm-arrow" aria-hidden="true"></i></button>
-      <button type="button" class="trofeo-menu-btn tm-anuario" id="tmAnuarioBtn"><span class="tm-ic">👑</span><span class="tm-tx">Ranking de anuario</span><i class="tm-arrow" aria-hidden="true"></i></button>
+      <button type="button" class="trofeo-menu-btn tm-entregas" id="tmEntregasBtn"><span class="tm-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" class="ti"><rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5 11a7 7 0 0 0 14 0M12 18v3M9 21h6"/></svg></span><span class="tm-tx">Ranking de entregas</span><i class="tm-arrow" aria-hidden="true"></i></button>
+      <button type="button" class="trofeo-menu-btn tm-anuario" id="tmAnuarioBtn"><span class="tm-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" class="ti"><path d="M3 8l4.5 4L12 5l4.5 7L21 8l-2 11H5L3 8z"/></svg></span><span class="tm-tx">Ranking de anuario</span><i class="tm-arrow" aria-hidden="true"></i></button>
     </div>
 
     <!-- Vista 1: lista de periodos (Ranking de entregas) -->
     <div id="chambeadoresListaView" class="hidden">
-      <button type="button" class="btn-small chambeadores-volver-btn" id="menuDesdeListaBtn">⬅ Menú</button>
-      <h3 style="margin-top:10px;">🏆 Chambeadores</h3>
+      <h3 class="trofeo-h"><span class="th-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" class="ti"><path d="M8 21h8M12 17v4M7 4h10v5a5 5 0 0 1-10 0V4z"/><path d="M17 5h3v2a3 3 0 0 1-3 3M7 5H4v2a3 3 0 0 0 3 3"/></svg></span><span>Chambeadores</span></h3>
       <div class="chambeadores-periodos-list" id="chambeadoresPeriodosList"></div>
-      <button type="button" class="btn-small btn-family hidden" id="agregarPeriodoBtn" style="width:100%;margin-top:12px;">➕ Agregar periodo</button>
+      <button type="button" class="trofeo-act-btn hidden" id="agregarPeriodoBtn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" class="ti"><path d="M12 5v14M5 12h14"/></svg><span>Agregar periodo</span></button>
     </div>
 
     <!-- Vista 2: top de un periodo (o "General") -->
     <div id="chambeadoresRankingView" class="hidden">
-      <button type="button" class="btn-small chambeadores-volver-btn" id="volverPeriodosBtn">⬅ Periodos</button>
-      <h3 id="chambeadoresPeriodoTitulo" style="margin-top:10px;">🏆 Chambeadores</h3>
-      <div id="chambeadoresPeriodo" style="font-size:12px;color:var(--text-dim);margin-bottom:12px;"></div>
-      <!-- v23: antes se mostraban Canto y Doblaje apilados a la vez; ahora es un switch excluyente
-           (uno u otro, nunca ambos) para que el top se lea de un vistazo. -->
+      <h3 class="trofeo-h"><span class="th-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" class="ti"><path d="M8 21h8M12 17v4M7 4h10v5a5 5 0 0 1-10 0V4z"/><path d="M17 5h3v2a3 3 0 0 1-3 3M7 5H4v2a3 3 0 0 0 3 3"/></svg></span><span id="chambeadoresPeriodoTitulo">Chambeadores</span></h3>
+      <div id="chambeadoresPeriodo" class="trofeo-sub"></div>
       <div class="switch-pill" id="chambeadoresCategoriaSwitch" style="margin-bottom:14px;">
-        <button type="button" data-val="canto">🎤 Canto</button>
-        <button type="button" data-val="doblaje">🎙️ Doblaje</button>
+        <button type="button" data-val="canto"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" class="ti"><path d="M9 18V5l11-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="17" cy="16" r="3"/></svg><span>Canto</span></button>
+        <button type="button" data-val="doblaje"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" class="ti"><path d="M4 14v-2a8 8 0 0 1 16 0v2"/><rect x="3" y="14" width="4" height="7" rx="2"/><rect x="17" y="14" width="4" height="7" rx="2"/></svg><span>Doblaje</span></button>
       </div>
       <div class="chambeadores-top" id="chambeadoresTop"></div>
     </div>
 
-    <!-- Vista 4 (v3.60): Ranking de anuario — un botón por año (piezas de la portada + solo el año) -->
+    <!-- Vista 4: Ranking de anuario — un botón por año (piezas de la portada + solo el año) -->
     <div id="chambeadoresAnuarioListaView" class="hidden">
-      <button type="button" class="btn-small chambeadores-volver-btn" id="menuDesdeAnuarioBtn">⬅ Menú</button>
       <div class="anu-yr-grid" id="chambeadoresAnuarioAnios"></div>
     </div>
 
-    <!-- Vista 5 (v3.60): top de un año del anuario -->
+    <!-- Vista 5: top de un año del anuario -->
     <div id="chambeadoresAnuarioRankingView" class="hidden">
-      <button type="button" class="btn-small chambeadores-volver-btn" id="volverAniosBtn">⬅ Años</button>
-      <h3 id="chambeadoresAnuarioTitulo" style="margin-top:10px;">👑 Anuario</h3>
-      <div style="font-size:12px;color:var(--text-dim);margin-bottom:12px;">Cuenta mejores canciones/doblajes, grupales y menciones honoríficas de ese anuario.</div>
+      <h3 class="trofeo-h"><span class="th-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" class="ti"><path d="M3 8l4.5 4L12 5l4.5 7L21 8l-2 11H5L3 8z"/></svg></span><span id="chambeadoresAnuarioTitulo">Anuario</span></h3>
+      <div class="trofeo-sub">Cuenta mejores canciones/doblajes, grupales y menciones honoríficas de ese anuario.</div>
       <div class="chambeadores-top" id="chambeadoresAnuarioTop"></div>
     </div>
 
     <!-- Vista 3 (Staff): formulario para agregar un periodo nuevo -->
     <div id="chambeadoresFormView" class="hidden">
-      <button type="button" class="btn-small chambeadores-volver-btn" id="cancelarPeriodoBtn">⬅ Cancelar</button>
-      <h3 style="margin-top:10px;">➕ Agregar periodo</h3>
+      <h3 class="trofeo-h"><span class="th-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" class="ti"><path d="M12 5v14M5 12h14"/></svg></span><span>Agregar periodo</span></h3>
       <div class="form-group"><label>Nombre del periodo (ej: 2026)</label><input autocomplete="off" type="text" id="per_nombre" placeholder="2026"></div>
       <div class="form-group"><label>Fecha inicio</label><input autocomplete="off" type="date" id="per_inicio"></div>
       <div class="form-group"><label>Fecha fin</label><input autocomplete="off" type="date" id="per_fin"></div>
-      <button type="button" class="btn-small btn-family" id="guardarPeriodoBtn" style="width:100%;">💾 Guardar periodo</button>
+      <button type="button" class="trofeo-act-btn" id="guardarPeriodoBtn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" class="ti"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg><span>Guardar periodo</span></button>
     </div>
+
+    <!-- Botón único de navegación: «Cerrar» en el menú, «Atrás» en cualquier otra vista -->
+    <div class="trofeo-nav"><button type="button" class="trofeo-nav-btn" id="trofeoNavBtn"><span class="tn-ic"></span><span class="tn-tx">Cerrar</span></button></div>
   </div>
 </div>
 
@@ -1877,7 +1924,7 @@
 </div>
 
 <script src="scripts/anuario-assets.js?v=1"></script>
-<script src="scripts/anuario.js?v=3.60"></script>
+<script src="scripts/anuario.js?v=3.61"></script>
 <script>
 // Si el navegador restaura esta página desde su caché de "atrás/adelante" (bfcache), el DOM puede
 // quedar congelado a mitad de una actualización (ej. justo cuando un innerHTML se estaba
@@ -4990,12 +5037,25 @@ function categoriaDeEntrega_(e){
 }
 
 let chambeadoresPeriodoSel_ = null; // null = "General" (todo el historial), o {id,nombre,fechaInicio,fechaFin}
-/* v3.60: al tocar el 🏆 se abre primero el menú (Ranking de entregas / Ranking de anuario) */
+/* v3.61: íconos propios (SVG) del modal de Chambeadores */
+const TI={"trophy": "<svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2.1\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\" class=\"ti\"><path d=\"M8 21h8M12 17v4M7 4h10v5a5 5 0 0 1-10 0V4z\"/><path d=\"M17 5h3v2a3 3 0 0 1-3 3M7 5H4v2a3 3 0 0 0 3 3\"/></svg>", "mic": "<svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2.1\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\" class=\"ti\"><rect x=\"9\" y=\"3\" width=\"6\" height=\"11\" rx=\"3\"/><path d=\"M5 11a7 7 0 0 0 14 0M12 18v3M9 21h6\"/></svg>", "crown": "<svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2.1\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\" class=\"ti\"><path d=\"M3 8l4.5 4L12 5l4.5 7L21 8l-2 11H5L3 8z\"/></svg>", "note": "<svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2.1\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\" class=\"ti\"><path d=\"M9 18V5l11-2v13\"/><circle cx=\"6\" cy=\"18\" r=\"3\"/><circle cx=\"17\" cy=\"16\" r=\"3\"/></svg>", "phones": "<svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2.1\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\" class=\"ti\"><path d=\"M4 14v-2a8 8 0 0 1 16 0v2\"/><rect x=\"3\" y=\"14\" width=\"4\" height=\"7\" rx=\"2\"/><rect x=\"17\" y=\"14\" width=\"4\" height=\"7\" rx=\"2\"/></svg>", "cal": "<svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2.1\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\" class=\"ti\"><rect x=\"3\" y=\"5\" width=\"18\" height=\"16\" rx=\"3\"/><path d=\"M3 10h18M8 3v4M16 3v4\"/></svg>", "clock": "<svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2.1\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\" class=\"ti\"><circle cx=\"12\" cy=\"12\" r=\"9\"/><path d=\"M12 7v5l3 2\"/></svg>", "users": "<svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2.1\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\" class=\"ti\"><circle cx=\"9\" cy=\"8\" r=\"3.5\"/><path d=\"M2.5 20a6.5 6.5 0 0 1 13 0\"/><circle cx=\"17\" cy=\"9\" r=\"2.5\"/><path d=\"M17 14.5a5.5 5.5 0 0 1 4.5 5.5\"/></svg>", "ribbon": "<svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2.1\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\" class=\"ti\"><circle cx=\"12\" cy=\"9\" r=\"6\"/><path d=\"M8.5 14L7 22l5-3 5 3-1.5-8\"/></svg>", "plus": "<svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2.1\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\" class=\"ti\"><path d=\"M12 5v14M5 12h14\"/></svg>", "check": "<svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2.1\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\" class=\"ti\"><path d=\"M5 12.5l4.5 4.5L19 7.5\"/></svg>", "trash": "<svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2.1\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\" class=\"ti\"><path d=\"M4 7h16M9 7V4h6v3M6 7l1 13h10l1-13M10 11v6M14 11v6\"/></svg>", "back": "<svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2.1\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\" class=\"ti\"><path d=\"M15 5l-7 7 7 7\"/></svg>", "close": "<svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2.1\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\" class=\"ti\"><path d=\"M6 6l12 12M18 6L6 18\"/></svg>"};
+/* v3.60: al tocar el 🏆 se abre primero el menú (Ranking de entregas / Ranking de anuario).
+   v3.61: un solo botón de navegación abajo: «Cerrar» en el menú, «Atrás» (un nivel) en las demás vistas. */
 const TROFEO_VISTAS_=["chambeadoresMenuView","chambeadoresListaView","chambeadoresRankingView","chambeadoresFormView","chambeadoresAnuarioListaView","chambeadoresAnuarioRankingView"];
+const TROFEO_PADRE_={chambeadoresListaView:"chambeadoresMenuView",chambeadoresRankingView:"chambeadoresListaView",chambeadoresFormView:"chambeadoresListaView",chambeadoresAnuarioListaView:"chambeadoresMenuView",chambeadoresAnuarioRankingView:"chambeadoresAnuarioListaView"};
+let trofeoVistaActual_="chambeadoresMenuView";
 function trofeoVista_(id){
+  trofeoVistaActual_=id;
   TROFEO_VISTAS_.forEach(v=>document.getElementById(v).classList.toggle("hidden", v!==id));
+  const menu=id==="chambeadoresMenuView", nav=document.getElementById("trofeoNavBtn");
+  nav.querySelector(".tn-ic").innerHTML=menu?TI.close:TI.back;
+  nav.querySelector(".tn-tx").textContent=menu?"Cerrar":"Atrás";
   const bx=document.querySelector("#chambeadoresModal .modal-box"); if(bx) bx.scrollTop=0;
 }
+document.getElementById("trofeoNavBtn").onclick=()=>{
+  const padre=TROFEO_PADRE_[trofeoVistaActual_];
+  if(padre) trofeoVista_(padre); else closeModal("chambeadoresModal");
+};
 function abrirChambeadores(){
   trofeoVista_("chambeadoresMenuView");
   openModal("chambeadoresModal");
@@ -5018,13 +5078,16 @@ function renderListaPeriodos_(){
   const el = document.getElementById("chambeadoresPeriodosList");
   const periodos = periodosOrdenados_();
   let html = `<button type="button" class="chambeadores-periodo-btn" data-periodo="general">
-      <span><span class="chambeadores-periodo-nombre">🌐 General</span>
-      <div class="chambeadores-periodo-sub">Todo el historial</div></span>
+      <span class="cp-ic">${TI.clock}</span>
+      <span class="cp-tx"><span class="chambeadores-periodo-nombre">General</span>
+      <div class="chambeadores-periodo-sub">Todo el historial</div></span><i class="cp-arrow" aria-hidden="true"></i>
     </button>`;
   html += periodos.map(p=>`<button type="button" class="chambeadores-periodo-btn" data-periodo="${escAttr(p.id)}">
-      <span><span class="chambeadores-periodo-nombre">${escHtml(p.nombre)}</span>
+      <span class="cp-ic">${TI.cal}</span>
+      <span class="cp-tx"><span class="chambeadores-periodo-nombre">${escHtml(p.nombre)}</span>
       <div class="chambeadores-periodo-sub">${fmtFecha(p.fechaInicio)} – ${fmtFecha(p.fechaFin)}</div></span>
-      ${nivel==="staff" ? `<span class="chambeadores-periodo-del" data-del-periodo="${escAttr(p.id)}" title="Eliminar periodo">🗑️</span>` : ``}
+      ${nivel==="staff" ? `<span class="chambeadores-periodo-del" data-del-periodo="${escAttr(p.id)}" title="Eliminar periodo">${TI.trash}</span>` : ``}
+      <i class="cp-arrow" aria-hidden="true"></i>
     </button>`).join("");
   el.innerHTML = html;
   if(!periodos.length && nivel!=="staff"){
@@ -5041,14 +5104,10 @@ function renderListaPeriodos_(){
     if(r.ok){ toast("Periodo eliminado"); await cargarDatos(); renderListaPeriodos_(); } else toast("Error: "+(r.error||""));
   }));
 }
-document.getElementById("volverPeriodosBtn").onclick = mostrarListaPeriodos_;
 
 /* ---------- v3.60: menú del 🏆 + Ranking de anuario ---------- */
 document.getElementById("tmEntregasBtn").onclick = mostrarListaPeriodos_;
 document.getElementById("tmAnuarioBtn").onclick = mostrarAniosRanking_;
-document.getElementById("menuDesdeListaBtn").onclick = ()=>trofeoVista_("chambeadoresMenuView");
-document.getElementById("menuDesdeAnuarioBtn").onclick = ()=>trofeoVista_("chambeadoresMenuView");
-document.getElementById("volverAniosBtn").onclick = ()=>trofeoVista_("chambeadoresAnuarioListaView");
 
 function anuRankAnios_(){
   const ys=new Set([2025,2026]);
@@ -5093,7 +5152,7 @@ function mostrarAniosRanking_(){
 }
 function abrirRankingAnuario_(anio){
   trofeoVista_("chambeadoresAnuarioRankingView");
-  document.getElementById("chambeadoresAnuarioTitulo").textContent=`👑 Anuario ${anio}`;
+  document.getElementById("chambeadoresAnuarioTitulo").textContent=`Anuario ${anio}`;
   const cuenta={};
   const sumar=(texto,tipo)=>{
     parseWinnerLines(texto).forEach(w=>{
@@ -5114,10 +5173,10 @@ function abrirRankingAnuario_(anio){
   const el=document.getElementById("chambeadoresAnuarioTop");
   if(!filas.length){ el.innerHTML=`<div style="color:var(--text-dim);font-size:13px;">Todavía no hay reconocimientos en el anuario de ${anio}.</div>`; return; }
   el.innerHTML=filas.map((f,i)=>{
-    const medalla=i===0?"🥇":i===1?"🥈":i===2?"🥉":String(i+1);
-    const partes=[f.mejores?`👑 ${f.mejores}`:"",f.grupales?`👥 ${f.grupales}`:"",f.menciones?`🎖️ ${f.menciones}`:""].filter(Boolean).join(" · ");
-    return `<div class="chambeador-row"${f.m?` data-chambeador-id="${escAttr(String(f.m.id))}" role="button" tabindex="0"`:""}>
-      <div class="chambeador-puesto">${medalla}</div>
+    const dg=(ic,n,t)=>n?`<span class="dg" title="${t}">${TI[ic]}${n}</span>`:"";
+    const partes=dg("crown",f.mejores,"Mejores")+dg("users",f.grupales,"Grupales")+dg("ribbon",f.menciones,"Menciones honoríficas");
+    return `<div class="chambeador-row${i<3?" top"+(i+1):""}"${f.m?` data-chambeador-id="${escAttr(String(f.m.id))}" role="button" tabindex="0"`:""}>
+      <div class="chambeador-puesto"><span class="pz p${i<3?i+1:0}">${i+1}</span></div>
       <img src="${escAttr(f.m?(f.m.avatarUrl||LOGO_DEFAULT):LOGO_DEFAULT)}" onerror="this.onerror=null;this.src='${LOGO_DEFAULT}';">
       <div class="chambeador-nombre">${escHtml(f.m?f.m.nombre:f.nombre)}<div class="chambeador-desglose">${partes}</div></div>
       <div class="chambeador-total">${f.total}</div>
@@ -5138,10 +5197,8 @@ document.getElementById("agregarPeriodoBtn").onclick=()=>{
   document.getElementById("per_nombre").value="";
   document.getElementById("per_inicio").value="";
   document.getElementById("per_fin").value="";
-  document.getElementById("chambeadoresListaView").classList.add("hidden");
-  document.getElementById("chambeadoresFormView").classList.remove("hidden");
+  trofeoVista_("chambeadoresFormView");
 };
-document.getElementById("cancelarPeriodoBtn").onclick = mostrarListaPeriodos_;
 document.getElementById("guardarPeriodoBtn").onclick=async()=>{
   const nombre = document.getElementById("per_nombre").value.trim();
   const fechaInicio = document.getElementById("per_inicio").value;
@@ -5157,8 +5214,7 @@ document.getElementById("guardarPeriodoBtn").onclick=async()=>{
 // ---------- Vista 2: top del periodo elegido (o "General") ----------
 function abrirRankingPeriodo_(periodoId){
   chambeadoresPeriodoSel_ = periodoId==="general" ? null : (DB.periodos||[]).find(p=>String(p.id)===String(periodoId)) || null;
-  document.getElementById("chambeadoresListaView").classList.add("hidden");
-  document.getElementById("chambeadoresRankingView").classList.remove("hidden");
+  trofeoVista_("chambeadoresRankingView");
   if(!getSwitchPillValue("chambeadoresCategoriaSwitch")) setSwitchPill("chambeadoresCategoriaSwitch","canto");
   renderChambeadores();
 }
@@ -5189,7 +5245,7 @@ function fechaParaPeriodo_(e){
 }
 function renderChambeadores(){
   const p = chambeadoresPeriodoSel_;
-  document.getElementById("chambeadoresPeriodoTitulo").textContent = p ? `🏆 ${p.nombre}` : "🏆 General";
+  document.getElementById("chambeadoresPeriodoTitulo").textContent = p ? p.nombre : "General";
   document.getElementById("chambeadoresPeriodo").textContent = p
     ? `Contando entregas de actividades con fecha de entrega del ${fmtFecha(p.fechaInicio)} al ${fmtFecha(p.fechaFin)}.`
     : `Contando todo el historial de entregas.`;
@@ -5210,9 +5266,8 @@ function renderChambeadores(){
   if(!filas.length){ el.innerHTML=`<div style="color:var(--text-dim);font-size:13px;">Todavía no hay entregas asignadas en esta categoría${p?" para este periodo":""}.</div>`; return; }
   el.innerHTML = filas.map((f,i)=>{
     const m=DB.miembros.find(x=>String(x.id)===f.id);
-    const medalla = i===0?"🥇":i===1?"🥈":i===2?"🥉":String(i+1);
-    return `<div class="chambeador-row"${m?` data-chambeador-id="${escAttr(String(m.id))}" role="button" tabindex="0"`:""}>
-      <div class="chambeador-puesto">${medalla}</div>
+    return `<div class="chambeador-row${i<3?" top"+(i+1):""}"${m?` data-chambeador-id="${escAttr(String(m.id))}" role="button" tabindex="0"`:""}>
+      <div class="chambeador-puesto"><span class="pz p${i<3?i+1:0}">${i+1}</span></div>
       <img src="${escAttr(m?(m.avatarUrl||LOGO_DEFAULT):LOGO_DEFAULT)}" onerror="this.onerror=null;this.src='${LOGO_DEFAULT}';">
       <div class="chambeador-nombre">${escHtml(m?m.nombre:"(miembro ya no existe)")}</div>
       <div class="chambeador-total">${f.total}</div>
@@ -7404,7 +7459,7 @@ function abrirStaffHub(){
     <div class="section-label" style="text-align:left;">🧩 Módulos</div>
     <div id="hubModulos" style="margin-bottom:12px;"><div class="hub-mod-vacio">Buscando módulos…</div></div>
     <button class="btn-small btn-admin" id="hubEnlaces" style="width:100%;">⚙️ Editar Enlaces</button>
-    <div id="hubVersion" style="text-align:center;margin:16px 0 4px;font-size:12px;font-weight:700;opacity:.6;">Versión 3.60</div>`;
+    <div id="hubVersion" style="text-align:center;margin:16px 0 4px;font-size:12px;font-weight:700;opacity:.6;">Versión 3.61</div>`;
   openModal("memberModal");
   cargarHubModulos();
   document.getElementById("hubCumple").onclick=()=>probarHub("testCumpleanos","Cumpleaños");
