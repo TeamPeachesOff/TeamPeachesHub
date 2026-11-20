@@ -646,9 +646,34 @@
   .chambeadores-periodo-del:active{transform:scale(0.85);}
   .chambeadores-volver-btn{background:var(--card-bg-2);border:1px solid rgba(255,255,255,0.1);color:var(--text-dim);}
 
+  /* v3.60: 🏆 menú de dos botones + botones de año del Ranking de anuario */
+  .trofeo-menu{display:flex;flex-direction:column;gap:14px;padding:30px 2px 6px;}
+  .trofeo-menu-btn{position:relative;overflow:hidden;display:flex;align-items:center;gap:14px;width:100%;padding:18px 18px;border-radius:20px;color:#fff;text-align:left;cursor:pointer;-webkit-tap-highlight-color:transparent;transition:transform .15s,filter .15s;}
+  .trofeo-menu-btn:active{transform:scale(0.97);}
+  .trofeo-menu-btn:hover{filter:brightness(1.08);}
+  .trofeo-menu-btn::after{content:"";position:absolute;top:0;left:-60%;width:38%;height:100%;background:linear-gradient(100deg,transparent,rgba(255,255,255,0.3),transparent);transform:skewX(-20deg);animation:trofeoBrillo 4.2s ease-in-out infinite;pointer-events:none;}
+  .trofeo-menu-btn.tm-anuario::after{animation-delay:1.4s;}
+  @keyframes trofeoBrillo{0%,55%{left:-60%}100%{left:130%}}
+  .tm-entregas{background:linear-gradient(135deg,#ef0870 0%,#ff7a45 100%);border:2px solid #ffd700;box-shadow:0 6px 18px rgba(239,8,112,0.35),0 0 0 1px rgba(255,215,0,0.25) inset;}
+  .tm-anuario{background:linear-gradient(135deg,#5b2a9e 0%,#d6277f 100%);border:2px solid #ffd700;box-shadow:0 6px 18px rgba(120,50,170,0.4),0 0 0 1px rgba(255,215,0,0.25) inset;}
+  .tm-ic{flex:none;width:52px;height:52px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:27px;background:rgba(255,255,255,0.2);box-shadow:inset 0 0 0 2px rgba(255,255,255,0.45);}
+  .tm-tx{flex:1;min-width:0;font-size:19px;font-weight:900;letter-spacing:.01em;line-height:1.15;text-shadow:0 2px 6px rgba(0,0,0,0.3);}
+  .tm-arrow{flex:none;width:11px;height:11px;border-right:3.5px solid rgba(255,255,255,0.9);border-top:3.5px solid rgba(255,255,255,0.9);border-radius:2px;transform:rotate(45deg);margin-right:4px;}
+  .anu-yr-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px;margin-top:14px;}
+  .anu-yr-btn{position:relative;container-type:inline-size;aspect-ratio:1/1;width:100%;padding:0;border-radius:22px;overflow:hidden;border:2.5px solid #ffd700;background:var(--paper,#fcf5ef);box-shadow:0 6px 16px rgba(0,0,0,0.35),0 0 10px rgba(255,193,7,0.45);cursor:pointer;-webkit-tap-highlight-color:transparent;transition:transform .15s;}
+  .anu-yr-btn:active{transform:scale(0.95);}
+  .ayb-art{position:absolute;inset:0;pointer-events:none;--s:calc(100cqw / 1456 * 1.3);}
+  .ayb-art img{position:absolute;display:block;height:auto;max-width:none;user-select:none;-webkit-user-drag:none;}
+  .ayb-art .ayb-p{width:calc(var(--s) * var(--pw,700));}
+  .ayb-it{left:calc(var(--s)*-34);top:calc(var(--s)*-40);} .ayb-ib{left:calc(var(--s)*-28);bottom:calc(var(--s)*-10);} .ayb-dt{right:calc(var(--s)*-26);top:calc(var(--s)*-34);} .ayb-db{right:calc(var(--s)*-34);bottom:calc(var(--s)*-10);}
+  .ayb-year{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;pointer-events:none;}
+  .ayb-yimg{width:62%;height:auto;filter:drop-shadow(0 2px 4px rgba(0,0,0,0.25));}
+  .ayb-ytxt{font-family:'Caveat Brush','Segoe Script','Brush Script MT',cursive;font-size:30cqw;line-height:1;color:#3b1d6e;letter-spacing:.02em;-webkit-text-stroke:7px #fff;paint-order:stroke fill;text-shadow:0 3px 8px rgba(0,0,0,0.2);}
+  .chambeador-desglose{font-size:11px;color:var(--text-dim);font-weight:600;margin-top:1px;}
+
 </style>
 <link rel="stylesheet" href="styles/anuario-fonts.css?v=1">
-<link rel="stylesheet" href="styles/anuario.css?v=3.59">
+<link rel="stylesheet" href="styles/anuario.css?v=3.60">
 <style>
 
   #searchMiembros{width:100%;padding:12px 14px;border-radius:12px;border:1px solid rgba(255,255,255,0.1);background:var(--card-bg-2);color:var(--text);font-size:14px;display:block;}
@@ -1771,9 +1796,16 @@
 <div class="modal-overlay" id="chambeadoresModal">
   <div class="modal-box"><button class="modal-close" data-close="chambeadoresModal">✕</button>
 
-    <!-- Vista 1: lista de periodos -->
-    <div id="chambeadoresListaView">
-      <h3>🏆 Chambeadores</h3>
+    <!-- Vista 0 (v3.60): menú con los dos rankings (sin título) -->
+    <div id="chambeadoresMenuView" class="trofeo-menu">
+      <button type="button" class="trofeo-menu-btn tm-entregas" id="tmEntregasBtn"><span class="tm-ic">🎙️</span><span class="tm-tx">Ranking de entregas</span><i class="tm-arrow" aria-hidden="true"></i></button>
+      <button type="button" class="trofeo-menu-btn tm-anuario" id="tmAnuarioBtn"><span class="tm-ic">👑</span><span class="tm-tx">Ranking de anuario</span><i class="tm-arrow" aria-hidden="true"></i></button>
+    </div>
+
+    <!-- Vista 1: lista de periodos (Ranking de entregas) -->
+    <div id="chambeadoresListaView" class="hidden">
+      <button type="button" class="btn-small chambeadores-volver-btn" id="menuDesdeListaBtn">⬅ Menú</button>
+      <h3 style="margin-top:10px;">🏆 Chambeadores</h3>
       <div class="chambeadores-periodos-list" id="chambeadoresPeriodosList"></div>
       <button type="button" class="btn-small btn-family hidden" id="agregarPeriodoBtn" style="width:100%;margin-top:12px;">➕ Agregar periodo</button>
     </div>
@@ -1790,6 +1822,20 @@
         <button type="button" data-val="doblaje">🎙️ Doblaje</button>
       </div>
       <div class="chambeadores-top" id="chambeadoresTop"></div>
+    </div>
+
+    <!-- Vista 4 (v3.60): Ranking de anuario — un botón por año (piezas de la portada + solo el año) -->
+    <div id="chambeadoresAnuarioListaView" class="hidden">
+      <button type="button" class="btn-small chambeadores-volver-btn" id="menuDesdeAnuarioBtn">⬅ Menú</button>
+      <div class="anu-yr-grid" id="chambeadoresAnuarioAnios"></div>
+    </div>
+
+    <!-- Vista 5 (v3.60): top de un año del anuario -->
+    <div id="chambeadoresAnuarioRankingView" class="hidden">
+      <button type="button" class="btn-small chambeadores-volver-btn" id="volverAniosBtn">⬅ Años</button>
+      <h3 id="chambeadoresAnuarioTitulo" style="margin-top:10px;">👑 Anuario</h3>
+      <div style="font-size:12px;color:var(--text-dim);margin-bottom:12px;">Cuenta mejores canciones/doblajes, grupales y menciones honoríficas de ese anuario.</div>
+      <div class="chambeadores-top" id="chambeadoresAnuarioTop"></div>
     </div>
 
     <!-- Vista 3 (Staff): formulario para agregar un periodo nuevo -->
@@ -1831,7 +1877,7 @@
 </div>
 
 <script src="scripts/anuario-assets.js?v=1"></script>
-<script src="scripts/anuario.js?v=3.59"></script>
+<script src="scripts/anuario.js?v=3.60"></script>
 <script>
 // Si el navegador restaura esta página desde su caché de "atrás/adelante" (bfcache), el DOM puede
 // quedar congelado a mitad de una actualización (ej. justo cuando un innerHTML se estaba
@@ -4944,8 +4990,14 @@ function categoriaDeEntrega_(e){
 }
 
 let chambeadoresPeriodoSel_ = null; // null = "General" (todo el historial), o {id,nombre,fechaInicio,fechaFin}
+/* v3.60: al tocar el 🏆 se abre primero el menú (Ranking de entregas / Ranking de anuario) */
+const TROFEO_VISTAS_=["chambeadoresMenuView","chambeadoresListaView","chambeadoresRankingView","chambeadoresFormView","chambeadoresAnuarioListaView","chambeadoresAnuarioRankingView"];
+function trofeoVista_(id){
+  TROFEO_VISTAS_.forEach(v=>document.getElementById(v).classList.toggle("hidden", v!==id));
+  const bx=document.querySelector("#chambeadoresModal .modal-box"); if(bx) bx.scrollTop=0;
+}
 function abrirChambeadores(){
-  mostrarListaPeriodos_();
+  trofeoVista_("chambeadoresMenuView");
   openModal("chambeadoresModal");
 }
 document.getElementById("chambeadoresTrofeoBtn").onclick=abrirChambeadores;
@@ -4958,9 +5010,7 @@ function periodosOrdenados_(){
   return (DB.periodos||[]).slice().sort((a,b)=> new Date(b.fechaInicio||0) - new Date(a.fechaInicio||0));
 }
 function mostrarListaPeriodos_(){
-  document.getElementById("chambeadoresFormView").classList.add("hidden");
-  document.getElementById("chambeadoresRankingView").classList.add("hidden");
-  document.getElementById("chambeadoresListaView").classList.remove("hidden");
+  trofeoVista_("chambeadoresListaView");
   document.getElementById("agregarPeriodoBtn").classList.toggle("hidden", nivel!=="staff");
   renderListaPeriodos_();
 }
@@ -4992,6 +5042,96 @@ function renderListaPeriodos_(){
   }));
 }
 document.getElementById("volverPeriodosBtn").onclick = mostrarListaPeriodos_;
+
+/* ---------- v3.60: menú del 🏆 + Ranking de anuario ---------- */
+document.getElementById("tmEntregasBtn").onclick = mostrarListaPeriodos_;
+document.getElementById("tmAnuarioBtn").onclick = mostrarAniosRanking_;
+document.getElementById("menuDesdeListaBtn").onclick = ()=>trofeoVista_("chambeadoresMenuView");
+document.getElementById("menuDesdeAnuarioBtn").onclick = ()=>trofeoVista_("chambeadoresMenuView");
+document.getElementById("volverAniosBtn").onclick = ()=>trofeoVista_("chambeadoresAnuarioListaView");
+
+function anuRankAnios_(){
+  const ys=new Set([2025,2026]);
+  (DB.anuario||[]).forEach(e=>{ try{ const d=anuFechaTarjeta_(e); if(d&&!isNaN(d)) ys.add(d.getFullYear()); }catch(_){} });
+  return [...ys].sort((a,b)=>a-b);
+}
+/* Botón cuadrado de un año: piezas de la portada de ese año (sin título ni durazno) + SOLO el año */
+function anuYearBtnHTML_(anio,t){
+  const B=t&&t._b, c=t&&t.capas, e=t&&t.escena;
+  let art="", paper=(typeof anuColor_==="function")?anuColor_(t):"#fcf5ef", artStyle="";
+  if(c){
+    const cb=B+(c.carpeta||"capas/"), E=c.esquinas||{};
+    art=["it","ib","dt","db"].filter(k=>E[k]).map(k=>`<img class="ayb-p ayb-${k}" src="${cb}${k}.webp" alt="" draggable="false" style="--pw:${E[k].w}">`).join("");
+  } else if(e){
+    const eb=B+(e.carpeta||"escena/"), g=e.v||e.h;
+    if(g&&g.piezas){
+      const k=v=>`calc(var(--u)*${v})`;
+      artStyle=`--u:calc(100cqw / ${g.ancho||100});`;
+      art=(e.orden||[]).filter(n=>g.piezas[n]).map(n=>{ const p=g.piezas[n]; let r=`width:${k(p.w)};`;
+        if(p.l!=null) r+=`left:${k(p.l)};`; if(p.r!=null) r+=`right:${k(p.r)};`;
+        if(p.t!=null) r+=`top:${k(p.t)};`; if(p.b!=null) r+=`bottom:${k(p.b)};`;
+        if(p.m!=null) r+=`top:calc(50% + ${k(p.m)});`;
+        return `<img src="${eb}${n}.webp" alt="" draggable="false" style="${r}">`; }).join("");
+    }
+  }
+  const yr = (t&&t.anioImg) ? `<img class="ayb-yimg" src="${B+t.anioImg}" alt="${anio}" draggable="false">` : `<span class="ayb-ytxt">${anio}</span>`;
+  return {paper, html:`<span class="ayb-art" style="${artStyle}">${art}</span><span class="ayb-year">${yr}</span>`};
+}
+function mostrarAniosRanking_(){
+  trofeoVista_("chambeadoresAnuarioListaView");
+  const el=document.getElementById("chambeadoresAnuarioAnios");
+  const anios=anuRankAnios_();
+  el.innerHTML=anios.map(y=>`<button type="button" class="anu-yr-btn" data-anio="${y}" aria-label="Anuario ${y}"><span class="ayb-year"><span class="ayb-ytxt">${y}</span></span></button>`).join("");
+  el.querySelectorAll("[data-anio]").forEach(b=>b.onclick=()=>abrirRankingAnuario_(Number(b.dataset.anio)));
+  anios.forEach(y=>{
+    let p; try{ p=anuTema_(y); }catch(_){ p=Promise.resolve(null); }
+    Promise.resolve(p).catch(()=>null).then(t=>{
+      const b=el.querySelector(`[data-anio="${y}"]`); if(!b) return;
+      const r=anuYearBtnHTML_(y,t); b.style.setProperty("--paper",r.paper); b.innerHTML=r.html;
+    });
+  });
+}
+function abrirRankingAnuario_(anio){
+  trofeoVista_("chambeadoresAnuarioRankingView");
+  document.getElementById("chambeadoresAnuarioTitulo").textContent=`👑 Anuario ${anio}`;
+  const cuenta={};
+  const sumar=(texto,tipo)=>{
+    parseWinnerLines(texto).forEach(w=>{
+      String(w.nombre||"").split(/[,،]/).map(x=>x.trim()).filter(Boolean).forEach(nm=>{
+        const m=anuMem_(nm), id=m?"m"+m.id:"n"+anuKey_(nm); if(!id||id==="n") return;
+        const o=cuenta[id]||(cuenta[id]={m,nombre:nm.replace(/@/g,""),mejores:0,menciones:0,grupales:0}); o[tipo]++;
+      });
+    });
+  };
+  (DB.anuario||[]).forEach(e=>{
+    let d=null; try{ d=anuFechaTarjeta_(e); }catch(_){}
+    if(!d||isNaN(d)||d.getFullYear()!==anio) return;
+    sumar(e.ganadorCanto,"mejores"); sumar(e.ganadorDoblaje,"mejores");
+    sumar(e.mencionesHonorificas,"menciones"); sumar(e.grupales,"grupales");
+  });
+  const filas=Object.values(cuenta).map(o=>({...o,total:o.mejores+o.menciones+o.grupales}))
+    .sort((a,b)=>b.total-a.total||b.mejores-a.mejores||String(a.nombre).localeCompare(String(b.nombre))).slice(0,10);
+  const el=document.getElementById("chambeadoresAnuarioTop");
+  if(!filas.length){ el.innerHTML=`<div style="color:var(--text-dim);font-size:13px;">Todavía no hay reconocimientos en el anuario de ${anio}.</div>`; return; }
+  el.innerHTML=filas.map((f,i)=>{
+    const medalla=i===0?"🥇":i===1?"🥈":i===2?"🥉":String(i+1);
+    const partes=[f.mejores?`👑 ${f.mejores}`:"",f.grupales?`👥 ${f.grupales}`:"",f.menciones?`🎖️ ${f.menciones}`:""].filter(Boolean).join(" · ");
+    return `<div class="chambeador-row"${f.m?` data-chambeador-id="${escAttr(String(f.m.id))}" role="button" tabindex="0"`:""}>
+      <div class="chambeador-puesto">${medalla}</div>
+      <img src="${escAttr(f.m?(f.m.avatarUrl||LOGO_DEFAULT):LOGO_DEFAULT)}" onerror="this.onerror=null;this.src='${LOGO_DEFAULT}';">
+      <div class="chambeador-nombre">${escHtml(f.m?f.m.nombre:f.nombre)}<div class="chambeador-desglose">${partes}</div></div>
+      <div class="chambeador-total">${f.total}</div>
+    </div>`;
+  }).join("");
+  el.querySelectorAll("[data-chambeador-id]").forEach(fila=>{
+    const abrir=()=>{
+      openMemberModal(fila.dataset.chambeadorId);
+      if(document.getElementById("memberModal").classList.contains("open")) document.getElementById("memberModal").classList.add("sobre-chambeadores");
+    };
+    fila.onclick=abrir;
+    fila.onkeydown=e=>{ if(e.key==="Enter"||e.key===" "){ e.preventDefault(); abrir(); } };
+  });
+}
 
 // ---------- Vista 3 (Staff): agregar periodo ----------
 document.getElementById("agregarPeriodoBtn").onclick=()=>{
@@ -7264,7 +7404,7 @@ function abrirStaffHub(){
     <div class="section-label" style="text-align:left;">🧩 Módulos</div>
     <div id="hubModulos" style="margin-bottom:12px;"><div class="hub-mod-vacio">Buscando módulos…</div></div>
     <button class="btn-small btn-admin" id="hubEnlaces" style="width:100%;">⚙️ Editar Enlaces</button>
-    <div id="hubVersion" style="text-align:center;margin:16px 0 4px;font-size:12px;font-weight:700;opacity:.6;">Versión 3.59</div>`;
+    <div id="hubVersion" style="text-align:center;margin:16px 0 4px;font-size:12px;font-weight:700;opacity:.6;">Versión 3.60</div>`;
   openModal("memberModal");
   cargarHubModulos();
   document.getElementById("hubCumple").onclick=()=>probarHub("testCumpleanos","Cumpleaños");
