@@ -76,12 +76,13 @@
 
   /* ---------- Preferencias (se recuerdan en este dispositivo) ---------- */
   const LS="tph_rangoPiano_v1";
-  const est={orden:"tesitura",nota:"ES",sonido:true,sel:null};   // sel: id del miembro seleccionado (o null)
+  const est={orden:"tesitura",nota:"ES",sonido:true,ref:true,sel:null,exp:new Set(),cer:new Set()};   // exp: subtipos desplegados · cer: grupos plegados (solo esta sesión)   // sel: id del miembro seleccionado (o null)
   try{ const p=JSON.parse(localStorage.getItem(LS)||"{}");
     if(["tesitura","voz","az"].indexOf(p.orden)>=0) est.orden=p.orden;
     if(p.nota==="EN"||p.nota==="ES") est.nota=p.nota;
-    if(p.sonido===false) est.sonido=false; }catch(e){}
-  const guardar=()=>{ try{ localStorage.setItem(LS,JSON.stringify({orden:est.orden,nota:est.nota,sonido:est.sonido})); }catch(e){} };
+    if(p.sonido===false) est.sonido=false;
+    if(p.ref===false) est.ref=false; }catch(e){}
+  const guardar=()=>{ try{ localStorage.setItem(LS,JSON.stringify({orden:est.orden,nota:est.nota,sonido:est.sonido,ref:est.ref})); }catch(e){} };
 
   /* ---------- Sonido: sintetizado con WebAudio (sin archivos). Suena la tecla que se toca. ---------- */
   let ac=null, bus=null;
@@ -159,12 +160,13 @@
               <button type="button" data-o="voz" title="Soprano, Mezzosoprano, Contralto, Tenor, Barítono, Bajo">Tipo de voz</button>
               <button type="button" data-o="az" title="Orden alfabético">A–Z</button>
             </div>
+            <button type="button" class="rp-ref" id="rpRef" aria-pressed="true" title="Mostrar u ocultar los rangos de referencia de cada tipo de voz"><i></i>Referencia</button>
             <button type="button" class="rp-snd" id="rpSnd" aria-pressed="true" title="Sonido de las teclas"></button>
             <button type="button" class="rp-switch" id="rpNota" role="switch" title="Cambiar nombres de notas: C D E… / Do Re Mi…">
               <span class="rp-sw-l">C</span><span class="rp-sw-l">Do</span><i class="rp-sw-thumb"></i>
             </button>
           </div>
-          <button type="button" class="rp-x" data-rp-close aria-label="Cerrar">✕</button>
+          <button type="button" class="rp-x" data-rp-close aria-label="Cerrar"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 5L19 19M19 5L5 19"/></svg></button>
         </div>
         <div class="rp-scroll" id="rpScroll"></div>
       </div>`;
@@ -176,12 +178,16 @@
       if(e.target.closest("[data-rp-close]")){ cerrar(); return; }
       const o=e.target.closest("[data-o]");
       if(o){ if(est.orden!==o.dataset.o){ est.orden=o.dataset.o; guardar(); pintar(true); } return; }
+      if(e.target.closest("#rpRef")){ est.ref=!est.ref; guardar(); pintarRef(); return; }
+      const rf=e.target.closest("[data-rp-ref]");                  // tocar la línea de referencia = desplegar / plegar sus subtipos
+      if(rf){ const g=rf.closest(".rp-g"), k=g.dataset.g; if(est.exp.has(k)) est.exp.delete(k); else est.exp.add(k); g.classList.toggle("ex",est.exp.has(k)); return; }
+      const gh=e.target.closest(".rp-gb,.rp-gc");                  // tocar el encabezado = ocultar / mostrar a todos los de ese tipo
+      if(gh){ const g=gh.closest(".rp-g"), k=g.dataset.g; if(est.cer.has(k)) est.cer.delete(k); else est.cer.add(k); g.classList.toggle("cerr",est.cer.has(k)); return; }
       if(e.target.closest("#rpSnd")){ est.sonido=!est.sonido; guardar(); pintarSnd(); if(est.sonido) tocar(60); return; }
       if(e.target.closest("#rpNota")){ est.nota=est.nota==="ES"?"EN":"ES"; guardar(); pintar(true); return; }
       const it=e.target.closest("[data-rp-id]"); if(!it) return;
       const id=String(it.dataset.rpId);
       if(lpHecho){ lpHecho=false; return; }                       // venía de mantener presionado: la tarjeta ya se abrió
-      if(e.target.closest(".rp-l")){ lastTap=null; abrirTarjeta(id); return; }   // el nombre abre la tarjeta directo
       const ahora=Date.now();
       if(lastTap && lastTap.id===id && ahora-lastTap.t<400){ lastTap=null; abrirTarjeta(id); return; }   // doble toque
       lastTap={id,t:ahora};
@@ -198,15 +204,18 @@
     scroller.addEventListener("pointermove",e=>{ if(lp && Math.hypot(e.clientX-lp.x,e.clientY-lp.y)>9) lpOff(); });
     ["pointerup","pointercancel","pointerleave"].forEach(ev=>scroller.addEventListener(ev,lpOff));
     scroller.addEventListener("contextmenu",e=>{ if(e.target.closest(".rp-row")) e.preventDefault(); });
-    /* tocar una tecla = escucharla. En celular solo suena si fue un toque (no un arrastre para desplazar). */
-    let pd=null;
+    /* tocar una tecla = escucharla; con el dedo/mouse presionado, al arrastrar van sonando las teclas que cruzas (glissando) */
+    let press=null;
     scroller.addEventListener("pointerdown",e=>{
-      const k=e.target.closest(".rp-piano [data-m]");
-      if(!k){ pd=null; return; }
-      if(e.pointerType==="mouse"){ pulsar(k); pd=null; } else pd={k,x:e.clientX,y:e.clientY};
+      const k=e.target.closest(".rp-piano [data-m]"); if(!k) return;
+      press={id:e.pointerId,last:k}; pulsar(k);
     });
-    scroller.addEventListener("pointerup",e=>{ if(pd && Math.hypot(e.clientX-pd.x,e.clientY-pd.y)<9) pulsar(pd.k); pd=null; });
-    scroller.addEventListener("pointercancel",()=>{ pd=null; });
+    scroller.addEventListener("pointermove",e=>{
+      if(!press||e.pointerId!==press.id) return;
+      const el=document.elementFromPoint(e.clientX,e.clientY), k=el&&el.closest&&el.closest(".rp-piano [data-m]");
+      if(k&&k!==press.last){ press.last=k; pulsar(k); }
+    });
+    ["pointerup","pointercancel"].forEach(ev=>window.addEventListener(ev,e=>{ if(press&&e.pointerId===press.id) press=null; }));
     window.addEventListener("resize",()=>{ if(overlay) anchoNombre(); });
     overlay.addEventListener("keydown",e=>{
       if(!(e.target.matches && e.target.matches(".rp-row"))) return;
@@ -227,6 +236,10 @@
     k.classList.add("hit"); setTimeout(()=>k.classList.remove("hit"),170);
     infoEl.innerHTML=`${est.sonido?"🔊":"🔇"} <b>${nombreNota(n,est.nota)}</b> · ${Math.round(hz(n))} Hz`;
     clearTimeout(infoT); infoT=setTimeout(()=>resaltar(false),1500);
+  }
+  function pintarRef(){
+    const b=overlay.querySelector("#rpRef"); if(b){ b.classList.toggle("on",est.ref); b.setAttribute("aria-pressed",est.ref?"true":"false"); }
+    const l=scroller.querySelector(".rp-lanes"); if(l) l.classList.toggle("noref",!est.ref);
   }
   function pintarSnd(){
     const b=overlay.querySelector("#rpSnd"); if(!b) return;
@@ -315,16 +328,14 @@
     if(gen===colorGen && est.sel) resaltar(false);   // si hay alguien seleccionado, las teclas toman su color final
   }
 
-  /* ---------- Fila: nombre fijo a la izquierda de la ventana · franja de color con la tesitura anclada a su izquierda ·
-   * tipo(s) de voz justo a la derecha de la franja ---------- */
+  /* ---------- Fila: nombre fijo a la izquierda de la ventana · franja de color con el tipo de voz anclado a su extremo izquierdo
+   * y la tesitura anclada a su extremo derecho ---------- */
   const TOT=52;
   function filaHTML(x){
     const m=x.m, s=inicioU(x.lo), n=finU(x.hi)-inicioU(x.lo);
-    const voz=rangosDeM(m).join(" · ")||"—";
-    const flip=(s+n)>TOT-9;     // si la franja llega muy a la derecha, el tipo de voz pasa a su izquierda
+    const voz=rangosDeM(m).join(" · ");
     return `<div class="rp-row" role="button" tabindex="0" data-rp-id="${escAttr(m.id)}" style="--vc:${colorDe(x)};--s:${s};--n:${n}" title="${escAttr(m.nombre||"")}">
-      <div class="rp-band"><span class="rp-t">${nombreNota(x.lo,est.nota)} – ${nombreNota(x.hi,est.nota)}</span></div>
-      <span class="rp-v${flip?" flip":""}">${escHtml(voz)}</span>
+      <div class="rp-band"><span class="rp-vt">${escHtml(voz)}</span><span class="rp-t">${nombreNota(x.lo,est.nota)} – ${nombreNota(x.hi,est.nota)}</span></div>
       <div class="rp-line"><div class="rp-l">${avatarImgTag(m)}<span class="rp-cn">${escHtml(m.nombre||"")}</span></div></div>
     </div>`;
   }
@@ -334,13 +345,14 @@
   function refHTML(v){
     const ln=(r,top,cls,txt)=>{
       const s=inicioU(r.lo), w=finU(r.hi)-inicioU(r.lo), flip=(s+w)>TOT-10;
-      return `<i class="rp-rb ${cls}" style="top:${top}px;--s:${s};--n:${w}"></i>`+
-        `<span class="rp-rt ${cls}${flip?" flip":""}" style="top:${top-6}px;--s:${s};--n:${w}">${txt}</span>`;
+      const d=cls==="main"?" data-rp-ref":"";
+      return `<i class="rp-rb ${cls}"${d} style="top:${top}px;--s:${s};--n:${w}"></i>`+
+        `<span class="rp-rt ${cls}${flip?" flip":""}"${d} style="top:${top-6}px;--s:${s};--n:${w}">${txt}</span>`;
     };
     const rng=r=>nombreNota(r.lo,est.nota)+" – "+nombreNota(r.hi,est.nota);
     let h=ln(v,13,"main",rng(v));
     v.s.forEach((r,i)=>{ h+=ln(r,34+i*15,"sub",escHtml(r.t)+" · "+rng(r)); });
-    return h;
+    return `<div class="rp-refs">${h}</div>`;
   }
   const altoGrupo=v=>30+(v?v.s.length*15+4:0);
   function contenidoHTML(){
@@ -361,13 +373,16 @@
     } else if(est.orden==="voz"){
       d.grupos.forEach(g=>{
         const v=g.k?VOZ[g.k]:null;
-        cuerpo+=`<div class="rp-group" style="--vc:${g.color};height:${altoGrupo(v)}px">${v?refHTML(v):""}<b class="rp-gb">${g.titulo}</b><em class="rp-gc">${g.items.length}</em></div>`;
+        const key=g.k||"_otros";
+        cuerpo+=`<section class="rp-g${est.cer.has(key)?" cerr":""}${est.exp.has(key)?" ex":""}" data-g="${key}" style="--vc:${g.color};--hx:${altoGrupo(v)}px">
+          <div class="rp-group">${v?refHTML(v):""}<b class="rp-gb">${g.titulo}</b><em class="rp-gc">${g.items.length}</em></div>`;
         g.items.forEach(x=>{ cuerpo+=filaHTML(x); });
+        cuerpo+=`</section>`;
       });
     } else {
       d.lista.forEach(x=>{ cuerpo+=filaHTML(x); });
     }
-    return `<div class="rp-stage">${piano}<div class="rp-lanes">${cuerpo}</div></div>`;
+    return `<div class="rp-stage">${piano}<div class="rp-lanes${est.ref?"":" noref"}">${cuerpo}</div></div>`;
   }
 
   /* ---------- Selección / resaltado en el piano ---------- */
@@ -380,7 +395,7 @@
     const x={m,lo:Math.min(lo,hi),hi:Math.max(lo,hi),color:k?VOZ[k].c:COLOR_OTRO};
     x.color=colorDe(x); return x;
   }
-  const INFO_BASE="Tecla: la escuchas · Rango: 1 toque lo señala; 2 toques, nombre o mantener = tarjeta";
+  const INFO_BASE="Teclas: toca o arrastra para escuchar · Rango: 1 toque lo señala; 2 toques o mantener = tarjeta";
   function resaltar(mover){
     if(!overlay) return;
     overlay.querySelectorAll(".rp-w.on,.rp-b.on").forEach(el=>{ el.classList.remove("on"); el.style.removeProperty("--vc"); });
@@ -406,9 +421,10 @@
     scroller.innerHTML=contenidoHTML();
     overlay.querySelectorAll(".rp-seg button").forEach(b=>b.classList.toggle("on",b.dataset.o===est.orden));
     const sw=overlay.querySelector("#rpNota"); sw.dataset.n=est.nota; sw.setAttribute("aria-checked",est.nota==="ES"?"true":"false");
-    pintarSnd();
+    pintarSnd(); overlay.dataset.o=est.orden;
     if(conservarScroll){ scroller.scrollLeft=sl; scroller.scrollTop=st; }
     bindAvatarFallbacks();
+    pintarRef();
     resaltar(false);   // al repintar (cambiar orden / notación) no se mueve la vista
     pintarColores(datosPiano().lista);
   }
@@ -443,7 +459,7 @@
       if(cont.querySelector("[data-rp-abrir]")) return;
       const b=document.createElement("button");
       b.type="button"; b.className="orden-opcion"; b.setAttribute("data-rp-abrir","1");
-      b.innerHTML=`<span>🎹</span>Piano de rangos vocales (pantalla completa)`;
+      b.innerHTML=`<span>🎹</span>Piano de rangos vocales`;
       b.onclick=()=>{ closeModal("miembrosOrdenModal"); abrir(); };
       const ref=cont.querySelector('[data-orden="rango"]');
       if(ref) ref.insertAdjacentElement("afterend",b); else cont.appendChild(b);

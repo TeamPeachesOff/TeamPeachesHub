@@ -62,10 +62,24 @@
 #rangoPianoModal .rp-switch[data-n="ES"] .rp-sw-l:nth-child(2){color:#fff;}
 #rangoPianoModal .rp-switch[data-n="ES"] .rp-sw-thumb{transform:translateX(100%);}
 
-#rangoPianoModal .rp-x{width:38px;height:38px;border-radius:50%;background:rgba(255,255,255,.1);color:#fff;font-size:18px;
-  flex:none;transition:background .2s,transform .12s;}
-#rangoPianoModal .rp-x:hover{background:rgba(239,8,112,.45);}
-#rangoPianoModal .rp-x:active{transform:scale(.9);}
+/* Cerrar: solo una X marcada, sin botón */
+#rangoPianoModal .rp-x{position:relative;width:44px;height:44px;flex:none;padding:0;background:transparent;display:grid;place-items:center;
+  -webkit-tap-highlight-color:transparent;}
+#rangoPianoModal .rp-x svg{width:26px;height:26px;fill:none;stroke:#fff;stroke-width:3.6;stroke-linecap:round;
+  filter:drop-shadow(0 0 6px rgba(239,8,112,.9)) drop-shadow(0 0 14px rgba(239,8,112,.45));
+  transition:transform .28s cubic-bezier(.3,1.5,.5,1),stroke .2s,filter .2s;}
+#rangoPianoModal .rp-x:hover svg,#rangoPianoModal .rp-x:focus-visible svg{transform:rotate(90deg) scale(1.15);stroke:#ff8fb1;}
+#rangoPianoModal .rp-x:active svg{transform:rotate(90deg) scale(.88);}
+
+/* Botón Referencia (solo en el orden por tipo de voz) */
+#rangoPianoModal .rp-ref{display:inline-flex;align-items:center;gap:8px;height:38px;padding:0 16px 0 12px;border-radius:999px;
+  background:rgba(0,0,0,.32);color:var(--rp-dim);font-weight:800;font-size:13px;white-space:nowrap;
+  box-shadow:inset 0 0 0 1px rgba(255,255,255,.1);transition:background .2s,color .2s,transform .12s,box-shadow .2s;}
+#rangoPianoModal .rp-ref i{width:10px;height:10px;border-radius:50%;background:rgba(255,255,255,.25);transition:background .2s,box-shadow .2s;}
+#rangoPianoModal .rp-ref.on{background:linear-gradient(90deg,var(--rp-pink),var(--rp-peach));color:#fff;box-shadow:0 4px 14px rgba(239,8,112,.4);}
+#rangoPianoModal .rp-ref.on i{background:#fff;box-shadow:0 0 8px #fff;}
+#rangoPianoModal .rp-ref:active{transform:scale(.95);}
+#rangoPianoModal:not([data-o="voz"]) .rp-ref{display:none;}
 
 /* ---------- Área con scroll vertical + horizontal ---------- */
 #rangoPianoModal .rp-scroll{flex:1;min-height:0;overflow:auto;overscroll-behavior:contain;-webkit-overflow-scrolling:touch;
@@ -108,7 +122,8 @@
 /* tecla pulsada (suena) */
 #rangoPianoModal .rp-w.hit{transform:translateY(3px);filter:brightness(.93);}
 #rangoPianoModal .rp-b.hit{transform:translateY(2px);filter:brightness(1.5);}
-#rangoPianoModal .rp-piano [data-m]{cursor:pointer;touch-action:pan-x pan-y;}
+#rangoPianoModal .rp-piano,#rangoPianoModal .rp-piano [data-m]{touch-action:none;}
+#rangoPianoModal .rp-piano [data-m]{cursor:pointer;}
 
 /* ---------- Filas: una por miembro con notas exactas ---------- */
 #rangoPianoModal{--rp-namew:150px;}
@@ -125,18 +140,18 @@
   background:linear-gradient(180deg,rgba(255,255,255,.34),rgba(255,255,255,0) 55%,rgba(0,0,0,.1));}
 #rangoPianoModal .rp-row:hover .rp-band,#rangoPianoModal .rp-row:focus-visible .rp-band{filter:brightness(1.1);}
 #rangoPianoModal .rp-row.sel .rp-band{filter:brightness(1.12);box-shadow:0 0 0 2px #fff,0 0 18px var(--vc);}
-/* tesitura: anclada a la izquierda de la franja (si te desplazas, se queda visible dentro de ella, sin pisar el nombre) */
-#rangoPianoModal .rp-t{position:sticky;left:calc(16px + var(--rp-namew) + 6px);display:inline-block;padding:0 12px;line-height:28px;
-  font-weight:900;font-size:12px;color:#1a1020;white-space:nowrap;font-variant-numeric:tabular-nums;}
-/* tipo de voz: a la derecha de la franja */
-#rangoPianoModal .rp-v{position:absolute;top:0;left:calc(var(--kw) * (var(--s) + var(--n)) + 10px);line-height:30px;
-  font-weight:800;font-size:11.5px;color:var(--vc);white-space:nowrap;pointer-events:none;text-shadow:0 1px 3px rgba(0,0,0,.7);}
-#rangoPianoModal .rp-v.flip{left:auto;right:calc(100% - var(--kw) * var(--s) + 10px);}
+/* dentro de la franja: tipo de voz anclado al extremo izquierdo, tesitura anclada al extremo derecho.
+   Si te desplazas, cada uno se queda visible dentro de su franja (el de la izquierda sin pisar el nombre). */
+#rangoPianoModal .rp-band{display:flex;align-items:center;justify-content:space-between;gap:10px;}
+#rangoPianoModal .rp-vt{position:sticky;left:calc(16px + var(--rp-namew) + 8px);flex:0 1 auto;min-width:0;padding-left:14px;
+  overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-weight:900;font-size:11.5px;line-height:28px;color:#1a1020;z-index:1;}
+#rangoPianoModal .rp-t{position:sticky;right:16px;flex:none;padding-right:14px;white-space:nowrap;font-weight:900;font-size:12px;line-height:28px;
+  color:#1a1020;font-variant-numeric:tabular-nums;z-index:1;}
 /* nombre: fijo a la izquierda de la ventana */
 #rangoPianoModal .rp-line{position:sticky;left:16px;z-index:3;box-sizing:border-box;height:100%;width:var(--rp-namew);
   display:flex;align-items:center;pointer-events:none;}
 #rangoPianoModal .rp-l{display:flex;align-items:center;gap:8px;min-width:0;max-width:100%;padding:3px 12px 3px 4px;border-radius:999px;
-  background:rgba(26,16,32,.72);box-shadow:0 2px 8px rgba(0,0,0,.35);pointer-events:auto;}
+  background:rgba(26,16,32,.72);box-shadow:0 2px 8px rgba(0,0,0,.35);}
 #rangoPianoModal .rp-row{-webkit-touch-callout:none;-webkit-user-select:none;user-select:none;}
 #rangoPianoModal .rp-row img.js-avatar{width:24px;height:24px;border-radius:50%;object-fit:cover;flex:none;display:block;
   box-shadow:0 0 0 2px var(--vc);transition:box-shadow .5s;}
@@ -144,20 +159,33 @@
 #rangoPianoModal .rp-cn{font-weight:800;font-size:12.5px;color:#fff;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
 
 /* ---------- Encabezados de grupo / letra / vacío ---------- */
-#rangoPianoModal .rp-group{position:relative;display:flex;justify-content:space-between;align-items:flex-start;width:calc(var(--kw) * 52);margin-top:14px;}
+#rangoPianoModal .rp-g{position:relative;}
+#rangoPianoModal .rp-group{position:relative;display:flex;justify-content:space-between;align-items:flex-start;width:calc(var(--kw) * 52);
+  margin-top:14px;height:30px;transition:height .28s ease;}
+#rangoPianoModal .rp-lanes:not(.noref) .rp-g.ex:not(.cerr) .rp-group{height:var(--hx);}
+#rangoPianoModal .rp-gb,#rangoPianoModal .rp-gc{cursor:pointer;-webkit-user-select:none;user-select:none;}
 #rangoPianoModal .rp-gb{position:sticky;left:16px;z-index:4;align-self:flex-start;padding:6px 14px;border-radius:12px;background-color:var(--vc);
-  background-image:linear-gradient(180deg,rgba(255,255,255,.34),rgba(0,0,0,.14));color:#1a1020;font-size:14px;font-weight:900;box-shadow:0 6px 16px rgba(0,0,0,.4);}
+  background-image:linear-gradient(180deg,rgba(255,255,255,.34),rgba(0,0,0,.14));color:#1a1020;font-size:14px;font-weight:900;box-shadow:0 6px 16px rgba(0,0,0,.4);
+  transition:filter .2s,opacity .2s;}
 /* cantidad de personas: pegada al borde derecho de la ventana */
 #rangoPianoModal .rp-gc{position:sticky;right:16px;z-index:4;align-self:flex-start;font-style:normal;font-size:12px;font-weight:900;color:#fff;
   padding:6px 11px;border-radius:999px;background:rgba(26,16,32,.85);box-shadow:inset 0 0 0 1px var(--vc);}
-/* rango de referencia del tipo de voz (discreto) y sus subtipos */
+#rangoPianoModal .rp-g.cerr .rp-gb{filter:saturate(.45);opacity:.7;}
+#rangoPianoModal .rp-g.cerr .rp-row{display:none;}
+/* rango de referencia del tipo de voz (discreto). Los subtipos están ocultos hasta tocar la línea principal */
+#rangoPianoModal .rp-refs{display:contents;}
+#rangoPianoModal .rp-lanes.noref .rp-refs{display:none;}
 #rangoPianoModal .rp-rb{position:absolute;left:calc(var(--kw) * var(--s));width:calc(var(--kw) * var(--n));border-radius:3px;background:var(--vc);pointer-events:none;}
-#rangoPianoModal .rp-rb.main{height:5px;opacity:.5;}
-#rangoPianoModal .rp-rb.sub{height:3px;opacity:.3;}
+#rangoPianoModal .rp-rb.main{height:5px;opacity:.5;pointer-events:auto;cursor:pointer;}
+#rangoPianoModal .rp-rb.main::before{content:"";position:absolute;left:0;right:0;top:-9px;bottom:-9px;}   /* zona de toque más grande que la línea */
+#rangoPianoModal .rp-rb.sub{height:3px;opacity:0;visibility:hidden;transition:opacity .25s,visibility .25s;}
 #rangoPianoModal .rp-rt{position:absolute;left:calc(var(--kw) * (var(--s) + var(--n)) + 8px);white-space:nowrap;pointer-events:none;line-height:16px;font-weight:800;color:var(--vc);}
 #rangoPianoModal .rp-rt.flip{left:auto;right:calc(100% - var(--kw) * var(--s) + 8px);}
-#rangoPianoModal .rp-rt.main{font-size:11px;opacity:.8;}
-#rangoPianoModal .rp-rt.sub{font-size:10px;opacity:.55;}
+#rangoPianoModal .rp-rt.main{font-size:11px;opacity:.8;pointer-events:auto;cursor:pointer;}
+#rangoPianoModal .rp-rt.sub{font-size:10px;opacity:0;visibility:hidden;transition:opacity .25s,visibility .25s;}
+#rangoPianoModal .rp-g.ex:not(.cerr) .rp-rb.sub{opacity:.3;visibility:visible;}
+#rangoPianoModal .rp-g.ex:not(.cerr) .rp-rt.sub{opacity:.55;visibility:visible;}
+#rangoPianoModal .rp-g.cerr .rp-rb.sub,#rangoPianoModal .rp-g.cerr .rp-rt.sub{opacity:0;visibility:hidden;}
 #rangoPianoModal .rp-letter{position:sticky;left:16px;display:flex;align-items:center;gap:10px;width:min(calc(100vw - 48px),calc(var(--kw) * 52));
   margin-top:16px;font-weight:900;font-size:15px;color:var(--rp-peach);}
 #rangoPianoModal .rp-letter::after{content:"";flex:1;height:1px;background:linear-gradient(90deg,rgba(255,143,177,.4),transparent);}
@@ -170,11 +198,12 @@
   #rangoPianoModal .rp-piano-wrap{position:relative;}
 }
 @media (max-width:640px){
-  #rangoPianoModal .rp-head{gap:8px 10px;padding-left:12px;padding-right:12px;}
-  #rangoPianoModal .rp-title{flex:1 1 100%;order:1;}
-  #rangoPianoModal .rp-x{order:0;margin-left:auto;}
-  #rangoPianoModal .rp-ctrls{order:2;width:100%;justify-content:space-between;}
+  #rangoPianoModal .rp-head{gap:8px 8px;padding-left:12px;padding-right:6px;}
+  #rangoPianoModal .rp-title{flex:1 1 0;order:0;min-width:0;}
+  #rangoPianoModal .rp-x{order:1;}
+  #rangoPianoModal .rp-ctrls{order:2;width:100%;justify-content:flex-start;gap:8px;}
   #rangoPianoModal .rp-seg button{padding:8px 10px;font-size:12px;}
+  #rangoPianoModal .rp-ref{padding:0 12px 0 10px;font-size:12px;}
   #rangoPianoModal .rp-info{max-width:calc(100vw - 80px);}
 }
 @media (prefers-reduced-motion:reduce){
