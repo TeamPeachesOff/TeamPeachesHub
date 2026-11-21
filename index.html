@@ -744,6 +744,7 @@
 </style>
 <link rel="stylesheet" href="styles/anuario-fonts.css?v=1">
 <link rel="stylesheet" href="styles/anuario.css?v=3.64">
+<link rel="stylesheet" href="styles/rango-piano.css?v=2">
 <style>
 
   #searchMiembros{width:100%;padding:12px 14px;border-radius:12px;border:1px solid rgba(255,255,255,0.1);background:var(--card-bg-2);color:var(--text);font-size:14px;display:block;}
@@ -1446,6 +1447,13 @@
       <div class="form-group"><label>Usuario Instagram (sin @ ni link, opcional)</label><input autocomplete="off" type="text" id="me_instagram" placeholder="usuario exacto"></div>
       <div class="form-group"><label>Teléfono (WhatsApp, ej: 50688888888)</label><input autocomplete="off" type="text" id="me_telefono"></div>
       <div class="form-group"><label>Rango vocal</label><input autocomplete="off" type="text" id="me_rango"></div>
+      <div class="form-group"><label>Notas exactas (opcional)</label>
+        <div style="display:flex;gap:8px;">
+          <input autocomplete="off" type="text" id="me_notaBaja" placeholder="Más baja: C3 o Do3" style="flex:1;min-width:0;">
+          <input autocomplete="off" type="text" id="me_notaAlta" placeholder="Más alta: A5 o La5" style="flex:1;min-width:0;">
+        </div>
+        <div style="font-size:11.5px;color:var(--text-dim);margin-top:5px;">Para el piano de rangos vocales: solo aparece si registras las dos. Acepta C o Do, # y b (ej: F#3, Sib2).</div>
+      </div>
       <div class="form-group"><label>Cumpleaños</label><input autocomplete="off" type="date" id="me_cumple"></div>
       <div class="form-group"><label>Miembro desde</label><input autocomplete="off" type="date" id="me_ingreso"></div>
       <div class="form-group"><label>¿Número de generación? (ej: 3, o 0 para Fundadora)</label><input autocomplete="off" type="number" id="me_generacion" min="0" step="1" placeholder="3"></div>
@@ -6027,6 +6035,8 @@ function openMemberEditForm(id){
   document.getElementById("me_instagram").value=m?m.usuarioInstagram||"":"";
   document.getElementById("me_telefono").value=m?m.telefono||"":"";
   document.getElementById("me_rango").value=m?m.rangoVocal||"":"";
+  document.getElementById("me_notaBaja").value=m?m.notaBaja||"":"";
+  document.getElementById("me_notaAlta").value=m?m.notaAlta||"":"";
   document.getElementById("me_cumple").value=m?toDateInputCumple(m.cumpleanos):"";
   document.getElementById("me_ingreso").value=m?toDateInput(m.fechaIngreso):"";
   document.getElementById("me_generacion").value=m?(m.generacionNum!==undefined&&m.generacionNum!==null?m.generacionNum:""):"";
@@ -6060,6 +6070,20 @@ document.getElementById("memberEditForm").addEventListener("submit", async(e)=>{
   const roles=getToggleGroupValues("me_rolesToggle");
   const rango=getToggleGroupValues("me_rangoToggle");
   const especial=getToggleGroupValues("me_especialToggle");
+  // Notas exactas (opcionales): se aceptan C/Do, # y b; se guardan en formato inglés ("C#4"). Vacías = no aparece en el piano.
+  let notaBaja="", notaAlta="";
+  {
+    const rb=document.getElementById("me_notaBaja").value.trim(), ra=document.getElementById("me_notaAlta").value.trim();
+    if(rb||ra){
+      const P=window.tphParseNota, C=window.tphNotaCanon;
+      if(typeof P==="function"){
+        const nb=rb?P(rb):null, na=ra?P(ra):null;
+        if((rb&&nb===null)||(ra&&na===null)){ btn.disabled=false; toast("Nota no válida. Usa por ejemplo C3, Do3, F#3 o Sib2 (entre A0 y C8)",4500); return; }
+        if(nb!==null&&na!==null&&nb>na){ btn.disabled=false; toast("La nota más baja no puede ser más alta que la otra",4500); return; }
+        notaBaja=nb!==null?C(nb):""; notaAlta=na!==null?C(na):"";
+      } else { notaBaja=rb; notaAlta=ra; }
+    }
+  }
   const id=document.getElementById("me_id").value;
   const data={
     nombre: document.getElementById("me_nombre").value,
@@ -6070,6 +6094,8 @@ document.getElementById("memberEditForm").addEventListener("submit", async(e)=>{
     usuarioInstagram: limpiarUsuarioInstagram(document.getElementById("me_instagram").value),
     telefono: document.getElementById("me_telefono").value,
     rangoVocal: document.getElementById("me_rango").value,
+    notaBaja: notaBaja,
+    notaAlta: notaAlta,
     cumpleanos: document.getElementById("me_cumple").value,
     fechaIngreso: document.getElementById("me_ingreso").value,
     generacionNum: document.getElementById("me_generacion").value,
@@ -7628,7 +7654,7 @@ function abrirStaffHub(){
     <div class="section-label" style="text-align:left;">🧩 Módulos</div>
     <div id="hubModulos" style="margin-bottom:12px;"><div class="hub-mod-vacio">Buscando módulos…</div></div>
     <button class="btn-small btn-admin" id="hubEnlaces" style="width:100%;">⚙️ Editar Enlaces</button>
-    <div id="hubVersion" style="text-align:center;margin:16px 0 4px;font-size:12px;font-weight:700;opacity:.6;">Versión 3.66</div>`;
+    <div id="hubVersion" style="text-align:center;margin:16px 0 4px;font-size:12px;font-weight:700;opacity:.6;">Versión 3.67</div>`;
   openModal("memberModal");
   cargarHubModulos();
   document.getElementById("hubCumple").onclick=()=>probarHub("testCumpleanos","Cumpleaños");
@@ -8705,5 +8731,6 @@ document.getElementById("miembrosContarBtn").onclick=()=>{
   }
 })();
 </script>
+<script src="scripts/rango-piano.js?v=2"></script>
 </body>
 </html>
