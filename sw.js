@@ -8,7 +8,7 @@ const VERSION = "v3.67"; // súbelo en CADA despliegue: es lo que dispara la ven
 const SHELL_CACHE = "tph-shell-" + VERSION;
 const ASSET_CACHE = "tph-assets-v1";      // no se borra al cambiar VERSION (fotos/librerías)
 const MAX_ASSETS = 400;
-const SHELL = ["./", "./index.html", "./scripts/anuario.js?v=3.64", "./scripts/anuario-assets.js?v=1", "./styles/anuario.css?v=3.64", "./styles/anuario-fonts.css?v=1", "./scripts/rango-piano.js?v=2", "./styles/rango-piano.css?v=2", "./manifest.json", "./icons/icon-192.png", "./icons/icon-512.png", "./icons/icon-maskable-512.png", "./icons/apple-touch-icon.png"];
+const SHELL = ["./", "./index.html", "./scripts/anuario.js?v=3.64", "./scripts/anuario-assets.js?v=1", "./styles/anuario.css?v=3.64", "./styles/anuario-fonts.css?v=1", "./scripts/rango-piano.js?v=3", "./styles/rango-piano.css?v=3", "./manifest.json", "./icons/icon-192.png", "./icons/icon-512.png", "./icons/icon-maskable-512.png", "./icons/apple-touch-icon.png"];
 
 // Hosts que jamás se cachean (datos vivos / autenticación / escritura)
 const NO_CACHE_HOSTS = ["script.google.com", "script.googleusercontent.com", "accounts.google.com", "api.github.com", "oauth2.googleapis.com", "apis.google.com"];

@@ -136,13 +136,11 @@
       const o=e.target.closest("[data-o]");
       if(o){ if(est.orden!==o.dataset.o){ est.orden=o.dataset.o; guardar(); pintar(true); } return; }
       if(e.target.closest("#rpNota")){ est.nota=est.nota==="ES"?"EN":"ES"; guardar(); pintar(true); return; }
-      const prof=e.target.closest("[data-rp-prof]");
-      if(prof){ e.stopPropagation(); openMemberModal(prof.dataset.rpProf); return; }
       const it=e.target.closest("[data-rp-id]");
-      if(it){ alternar(it.dataset.rpId); return; }
+      if(it){ est.sel=String(it.dataset.rpId); resaltar(true); openMemberModal(it.dataset.rpId); return; }   // tocar la fila = ver la tarjeta del miembro
     });
     overlay.addEventListener("keydown",e=>{
-      if((e.key==="Enter"||e.key===" ") && e.target.matches && e.target.matches(".rp-chip")){ e.preventDefault(); e.target.click(); }
+      if((e.key==="Enter"||e.key===" ") && e.target.matches && e.target.matches(".rp-row")){ e.preventDefault(); e.target.click(); }
     });
     document.addEventListener("keydown",e=>{
       if(e.key!=="Escape" || !overlay.classList.contains("open")) return;
@@ -165,20 +163,82 @@
     return `<div class="rp-piano" role="img" aria-label="Piano de 88 teclas">${h}</div>`;
   }
 
-  function chipHTML(x,pildoras){
-    const m=x.m;
-    const pills=pildoras?`<div class="rp-pills">${rangosDeM(m).map(r=>{ const k=claveVoz(r); return `<span class="rp-pill" style="--vc:${k?VOZ[k].c:COLOR_OTRO}">${escHtml(r)}</span>`; }).join("")}</div>`:"";
-    return `<div class="rp-chip" role="button" tabindex="0" data-rp-id="${escAttr(m.id)}" style="--vc:${x.color}">
-      ${avatarImgTag(m)}
-      <div class="rp-ci"><div class="rp-cn">${escHtml(m.nombre||"")}</div><div class="rp-notes">${nombreNota(x.lo,est.nota)} – ${nombreNota(x.hi,est.nota)}</div>${pills}</div>
-      <button type="button" class="rp-prof" data-rp-prof="${escAttr(m.id)}" aria-label="Ver perfil de ${escAttr(m.nombre||"")}" title="Ver perfil">↗</button>
-    </div>`;
+  /* ---------- Color a partir de la foto de perfil ----------
+   * Se saca el color dominante "vivo" de la foto y se suaviza (sin tonos oscuros ni apagados).
+   * Si el servidor de la imagen no permite leerla (CORS) o la foto es gris, se usa el color del tipo de voz. */
+  const LS_COL="tph_rangoPiano_colores_v1";
+  const colorCache=new Map();
+  try{ const o=JSON.parse(localStorage.getItem(LS_COL)||"{}"); Object.keys(o).forEach(k=>colorCache.set(k,o[k])); }catch(e){}
+  const guardarColores=()=>{ try{ const o={}; colorCache.forEach((v,k)=>{ if(v) o[k]=v; }); localStorage.setItem(LS_COL,JSON.stringify(o)); }catch(e){} };
+  const urlAvatar=m=>(m&&m.avatarUrl)||(typeof LOGO_DEFAULT!=="undefined"?LOGO_DEFAULT:"");
+  const colorDe=x=>colorCache.get(urlAvatar(x.m))||x.color;
+
+  function rgb2hsl(r,g,b){
+    r/=255; g/=255; b/=255; const mx=Math.max(r,g,b), mn=Math.min(r,g,b), l=(mx+mn)/2, d=mx-mn;
+    if(!d) return [0,0,l];
+    const sa=l>.5?d/(2-mx-mn):d/(mx+mn);
+    let h=mx===r?(g-b)/d+(g<b?6:0):mx===g?(b-r)/d+2:(r-g)/d+4;
+    return [h*60,sa,l];
   }
-  function filaHTML(x,pildoras){
-    const s=inicioU(x.lo), n=finU(x.hi)-inicioU(x.lo);
-    return `<div class="rp-row" style="--vc:${x.color};--s:${s};--n:${n}">
-      <button type="button" class="rp-track" data-rp-id="${escAttr(x.m.id)}" aria-label="${escAttr(x.m.nombre||"")}: ${nombreNota(x.lo,est.nota)} a ${nombreNota(x.hi,est.nota)}"></button>
-      ${chipHTML(x,pildoras)}
+  function hsl2hex(h,sa,l){
+    const c=(1-Math.abs(2*l-1))*sa, x=c*(1-Math.abs((h/60)%2-1)), mm=l-c/2;
+    const [r,g,b]=h<60?[c,x,0]:h<120?[x,c,0]:h<180?[0,c,x]:h<240?[0,x,c]:h<300?[x,0,c]:[c,0,x];
+    return "#"+[r,g,b].map(v=>Math.round((v+mm)*255).toString(16).padStart(2,"0")).join("");
+  }
+  function colorDeImagen(url){
+    return new Promise(res=>{
+      if(!url) return res(null);
+      const im=new Image(); im.crossOrigin="anonymous";
+      im.onload=()=>{
+        try{
+          const S=32, cv=document.createElement("canvas"); cv.width=cv.height=S;
+          const cx=cv.getContext("2d",{willReadFrequently:true}); cx.drawImage(im,0,0,S,S);
+          const px=cx.getImageData(0,0,S,S).data, bins=Array.from({length:24},()=>({w:0,h:0,sa:0}));
+          for(let i=0;i<px.length;i+=4){
+            if(px[i+3]<200) continue;
+            const [h,sa,l]=rgb2hsl(px[i],px[i+1],px[i+2]);
+            if(sa<.2||l<.16||l>.93) continue;                       // fuera grises, negros y blancos
+            const w=sa*(1-Math.abs(l-.5)*1.1), bn=bins[Math.floor(h/15)%24];
+            bn.w+=w; bn.h+=h*w; bn.sa+=sa*w;
+          }
+          const best=bins.reduce((a,b)=>b.w>a.w?b:a);
+          if(best.w<=0) return res(null);
+          const h=best.h/best.w, sa=Math.min(.82,Math.max(.5,best.sa/best.w));
+          res(hsl2hex(h,sa,.66));                                   // luminosidad fija: agradable y legible
+        }catch(e){ res(null); }                                     // imagen "tainted" (sin CORS)
+      };
+      im.onerror=()=>res(null);
+      im.src=url;
+    });
+  }
+  let colorGen=0;
+  async function pintarColores(lista){
+    const gen=++colorGen;
+    const urls=[...new Set(lista.map(x=>urlAvatar(x.m)))].filter(u=>u&&!colorCache.has(u));
+    for(let i=0;i<urls.length;i+=6){
+      await Promise.all(urls.slice(i,i+6).map(async u=>{
+        const c=await colorDeImagen(u); colorCache.set(u,c||"");
+        if(gen!==colorGen||!overlay) return;
+        if(c) lista.forEach(x=>{ if(urlAvatar(x.m)===u){
+          overlay.querySelectorAll(`.rp-row[data-rp-id="${CSS.escape(String(x.m.id))}"]`).forEach(r=>r.style.setProperty("--vc",c));
+        }});
+      }));
+    }
+    guardarColores();
+    if(gen===colorGen && est.sel) resaltar(false);   // si hay alguien seleccionado, las teclas toman su color final
+  }
+
+  /* ---------- Fila: una sola línea. Foto + nombre (izq) · tipo de voz (centro) · tesitura (der) ---------- */
+  function filaHTML(x){
+    const m=x.m, s=inicioU(x.lo), n=finU(x.hi)-inicioU(x.lo);
+    const voz=rangosDeM(m).join(" · ")||"—";
+    return `<div class="rp-row" role="button" tabindex="0" data-rp-id="${escAttr(m.id)}" style="--vc:${colorDe(x)};--s:${s};--n:${n}" title="${escAttr(m.nombre||"")}">
+      <i class="rp-band"></i>
+      <div class="rp-line">
+        <div class="rp-l">${avatarImgTag(m)}<span class="rp-cn">${escHtml(m.nombre||"")}</span></div>
+        <div class="rp-c">${escHtml(voz)}</div>
+        <div class="rp-r">${nombreNota(x.lo,est.nota)} – ${nombreNota(x.hi,est.nota)}</div>
+      </div>
     </div>`;
   }
 
@@ -189,27 +249,23 @@
       return `<div class="rp-stage">${piano}<div class="rp-empty">🎹 Todavía nadie tiene notas exactas registradas${d.total?` (0 de ${d.total} miembros)`:""}.<br>
         Agrégalas en <b>Editar miembro → Notas exactas</b> (nota más baja y más alta) y aparecerán aquí.</div></div>`;
     }
-    const conteo=`${d.lista.length} de ${d.total} miembros tienen notas registradas`;
-    let hint, cuerpo="";
+    let cuerpo="";
     if(est.orden==="az"){
-      hint=`Orden alfabético · ${conteo}`;
       let letra="";
       d.lista.forEach(x=>{
         const L=(normalizar(x.m.nombre).trim().charAt(0)||"#").toUpperCase(), l=/[A-Z]/.test(L)?L:"#";
         if(l!==letra){ letra=l; cuerpo+=`<div class="rp-letter">${l}</div>`; }
-        cuerpo+=filaHTML(x,true);
+        cuerpo+=filaHTML(x);
       });
     } else if(est.orden==="voz"){
-      hint=`Tipo de voz · Soprano → Mezzosoprano → Contralto → Tenor → Barítono → Bajo · ${conteo}`;
       d.grupos.forEach(g=>{
         cuerpo+=`<div class="rp-group" style="--vc:${g.color}"><b>${g.titulo}</b><em>${g.items.length}</em></div>`;
-        g.items.forEach(x=>{ cuerpo+=filaHTML(x,false); });
+        g.items.forEach(x=>{ cuerpo+=filaHTML(x); });
       });
     } else {
-      hint=`Tesitura · de la nota más grave a la más aguda · ${conteo}`;
-      d.lista.forEach(x=>{ cuerpo+=filaHTML(x,true); });
+      d.lista.forEach(x=>{ cuerpo+=filaHTML(x); });
     }
-    return `<div class="rp-stage">${piano}<div class="rp-hint">${hint}</div><div class="rp-lanes">${cuerpo}</div></div>`;
+    return `<div class="rp-stage">${piano}<div class="rp-lanes">${cuerpo}</div></div>`;
   }
 
   /* ---------- Selección / resaltado en el piano ---------- */
@@ -219,13 +275,14 @@
     if(!m) return null;
     const lo=parseNota(m.notaBaja), hi=parseNota(m.notaAlta); if(lo===null||hi===null) return null;
     const k=rangosDeM(m).map(claveVoz).filter(Boolean)[0]||null;
-    return {m,lo:Math.min(lo,hi),hi:Math.max(lo,hi),color:k?VOZ[k].c:COLOR_OTRO};
+    const x={m,lo:Math.min(lo,hi),hi:Math.max(lo,hi),color:k?VOZ[k].c:COLOR_OTRO};
+    x.color=colorDe(x); return x;
   }
-  const INFO_BASE="Toca un miembro para ver sus notas sobre el piano";
+  const INFO_BASE="Toca a un miembro para ver su tarjeta";
   function resaltar(mover){
     if(!overlay) return;
     overlay.querySelectorAll(".rp-w.on,.rp-b.on").forEach(el=>{ el.classList.remove("on"); el.style.removeProperty("--vc"); });
-    overlay.querySelectorAll(".rp-track.sel,.rp-chip.sel").forEach(el=>el.classList.remove("sel"));
+    overlay.querySelectorAll(".rp-row.sel").forEach(el=>el.classList.remove("sel"));
     const x=datosSel();
     if(!x){ est.sel=null; infoEl.textContent=INFO_BASE; return; }
     for(let n=x.lo;n<=x.hi;n++){
@@ -240,7 +297,6 @@
       scroller.scrollTo({left:Math.max(0,centro-scroller.clientWidth/2),behavior:"smooth"});
     }
   }
-  function alternar(id){ est.sel=(String(est.sel)===String(id))?null:String(id); resaltar(true); }
 
   /* ---------- Pintar ---------- */
   function pintar(conservarScroll){
@@ -251,6 +307,7 @@
     if(conservarScroll){ scroller.scrollLeft=sl; scroller.scrollTop=st; }
     bindAvatarFallbacks();
     resaltar(false);   // al repintar (cambiar orden / notación) no se mueve la vista
+    pintarColores(datosPiano().lista);
   }
 
   /* ---------- Abrir / cerrar ---------- */

@@ -100,44 +100,37 @@
 #rangoPianoModal .rp-b.on{transform:translateY(1px);}
 @keyframes rpKey{0%{opacity:0}100%{opacity:.78}}
 
-/* ---------- Indicación y filas (una por miembro con notas exactas) ---------- */
-#rangoPianoModal .rp-hint{position:sticky;left:16px;width:max-content;max-width:calc(100vw - 48px);margin:6px 0 4px;
-  font-size:12px;font-weight:700;color:var(--rp-dim);letter-spacing:.2px;}
-#rangoPianoModal .rp-lanes{position:relative;width:calc(var(--kw) * 52);padding-bottom:10px;
+/* ---------- Filas: una línea delgada por miembro con notas exactas ---------- */
+#rangoPianoModal .rp-lanes{position:relative;width:calc(var(--kw) * 52);padding:6px 0 10px;
   background-image:linear-gradient(90deg,rgba(255,255,255,.075) 0,rgba(255,255,255,.075) 1px,transparent 1px);
   background-size:calc(var(--kw) * 7) 100%;background-repeat:repeat-x;background-position:calc(var(--kw) * 2) 0;}
-#rangoPianoModal .rp-row{position:relative;padding:12px 0 2px;--s:0;--n:52;}
-/* barra con el rango REAL de la persona, alineada con las teclas */
-#rangoPianoModal .rp-track{display:block;box-sizing:border-box;height:12px;padding:0;
-  margin-left:calc(var(--kw) * var(--s));width:calc(var(--kw) * var(--n));max-width:calc(var(--kw) * 52);
-  border-radius:999px;background-color:var(--vc);background-image:linear-gradient(180deg,rgba(255,255,255,.4),rgba(0,0,0,.15));
-  box-shadow:0 0 12px -2px var(--vc),0 3px 8px rgba(0,0,0,.4);transition:box-shadow .2s,transform .12s,filter .2s;}
-#rangoPianoModal .rp-track:hover{filter:brightness(1.1);}
-#rangoPianoModal .rp-track.sel{box-shadow:0 0 0 2px #fff,0 0 22px var(--vc),0 3px 8px rgba(0,0,0,.4);transform:scaleY(1.25);}
-#rangoPianoModal .rp-row .rp-chip{margin-top:7px;width:236px;
-  margin-left:min(calc(var(--kw) * var(--s)),calc(var(--kw) * 52 - 236px));}
-
-/* ---------- Miembros ---------- */
-#rangoPianoModal .rp-chip{position:relative;display:flex;align-items:center;gap:9px;min-width:0;padding:7px 8px;
-  border-radius:13px;background:var(--rp-card);border:1px solid rgba(255,255,255,.07);cursor:pointer;color:#fbeaf2;
-  transition:transform .12s,border-color .2s,box-shadow .2s,background .2s;}
-#rangoPianoModal .rp-chip:hover{background:var(--rp-card2);}
-#rangoPianoModal .rp-chip:active{transform:scale(.98);}
-#rangoPianoModal .rp-chip.sel{border-color:var(--vc,var(--rp-peach));background:var(--rp-card2);
-  box-shadow:0 0 0 1px var(--vc,var(--rp-peach)),0 0 18px -2px var(--vc,var(--rp-peach));}
-#rangoPianoModal .rp-chip img.js-avatar{width:40px;height:40px;border-radius:50%;object-fit:cover;flex:none;display:block;}
-#rangoPianoModal .rp-chip .vip-wrap{flex:none;}
-#rangoPianoModal .rp-ci{min-width:0;flex:1;}
-#rangoPianoModal .rp-cn{font-weight:800;font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
-#rangoPianoModal .rp-notes{font-size:12px;font-weight:800;color:var(--vc);margin-top:1px;white-space:nowrap;}
-#rangoPianoModal .rp-pills{display:flex;gap:4px;margin-top:4px;flex-wrap:wrap;}
-#rangoPianoModal .rp-pill{font-size:10.5px;font-weight:800;padding:1px 8px;border-radius:999px;background:var(--vc);color:#1a1020;}
-#rangoPianoModal .rp-prof{flex:none;width:26px;height:26px;border-radius:50%;background:rgba(255,255,255,.09);color:#fff;
-  font-size:13px;line-height:1;display:flex;align-items:center;justify-content:center;transition:background .2s;}
-#rangoPianoModal .rp-prof:hover{background:var(--rp-pink);}
+#rangoPianoModal .rp-row{position:relative;height:32px;margin-top:5px;--s:0;--n:52;cursor:pointer;outline:none;}
+#rangoPianoModal .rp-row::before{content:"";position:absolute;inset:0;border-radius:10px;background:rgba(255,255,255,.035);transition:background .2s,box-shadow .2s;}
+#rangoPianoModal .rp-row:hover::before,#rangoPianoModal .rp-row:focus-visible::before{background:rgba(255,255,255,.075);}
+#rangoPianoModal .rp-row.sel::before{background:rgba(255,255,255,.09);box-shadow:0 0 0 1px var(--vc);}
+/* franja con el rango REAL de la persona, alineada con las teclas; su color sale de la foto de perfil */
+#rangoPianoModal .rp-band{position:absolute;top:0;bottom:0;left:calc(var(--kw) * var(--s));width:calc(var(--kw) * var(--n));max-width:calc(var(--kw) * 52);
+  border-radius:10px;pointer-events:none;transition:filter .2s;}
+#rangoPianoModal .rp-band::before{content:"";position:absolute;inset:0;border-radius:10px;background:var(--vc);opacity:.5;transition:background .5s;}
+#rangoPianoModal .rp-band::after{content:"";position:absolute;left:0;right:0;bottom:0;height:3px;border-radius:3px;background:var(--vc);
+  box-shadow:0 0 10px var(--vc);transition:background .5s,box-shadow .5s;}
+#rangoPianoModal .rp-row.sel .rp-band{filter:brightness(1.18);}
+/* contenido de la línea: no se desplaza con el scroll horizontal, siempre queda a la vista */
+#rangoPianoModal .rp-line{position:sticky;left:16px;z-index:1;box-sizing:border-box;height:100%;
+  width:min(calc(100vw - 48px),calc(var(--kw) * 52));padding:0 12px 0 8px;
+  display:grid;grid-template-columns:minmax(0,1fr) auto minmax(0,1fr);align-items:center;gap:10px;pointer-events:none;
+  text-shadow:0 1px 3px rgba(0,0,0,.65);}
+#rangoPianoModal .rp-l{display:flex;align-items:center;gap:8px;min-width:0;}
+#rangoPianoModal .rp-row img.js-avatar{width:24px;height:24px;border-radius:50%;object-fit:cover;flex:none;display:block;
+  box-shadow:0 0 0 2px var(--vc);transition:box-shadow .5s;}
+#rangoPianoModal .rp-row .vip-wrap{flex:none;}
+#rangoPianoModal .rp-cn{font-weight:800;font-size:12.5px;color:#fff;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+#rangoPianoModal .rp-c{justify-self:center;max-width:42vw;padding:2px 11px;border-radius:999px;background:rgba(26,16,32,.6);
+  font-weight:800;font-size:11.5px;color:#fff;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;text-shadow:none;}
+#rangoPianoModal .rp-r{justify-self:end;font-weight:900;font-size:12px;color:#fff;white-space:nowrap;font-variant-numeric:tabular-nums;}
 
 /* ---------- Encabezados de grupo / letra / vacío ---------- */
-#rangoPianoModal .rp-group{position:sticky;left:16px;display:flex;align-items:center;gap:10px;width:max-content;margin:18px 0 0;
+#rangoPianoModal .rp-group{position:sticky;left:16px;display:flex;align-items:center;gap:10px;width:max-content;margin:14px 0 0;
   padding:6px 14px;border-radius:12px;background-color:var(--vc);background-image:linear-gradient(180deg,rgba(255,255,255,.34),rgba(0,0,0,.14));
   color:#1a1020;box-shadow:0 6px 16px rgba(0,0,0,.4);}
 #rangoPianoModal .rp-group b{font-size:14px;font-weight:900;}
