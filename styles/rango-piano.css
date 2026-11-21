@@ -136,7 +136,8 @@
 #rangoPianoModal .rp-line{position:sticky;left:16px;z-index:3;box-sizing:border-box;height:100%;width:var(--rp-namew);
   display:flex;align-items:center;pointer-events:none;}
 #rangoPianoModal .rp-l{display:flex;align-items:center;gap:8px;min-width:0;max-width:100%;padding:3px 12px 3px 4px;border-radius:999px;
-  background:rgba(26,16,32,.72);box-shadow:0 2px 8px rgba(0,0,0,.35);}
+  background:rgba(26,16,32,.72);box-shadow:0 2px 8px rgba(0,0,0,.35);pointer-events:auto;}
+#rangoPianoModal .rp-row{-webkit-touch-callout:none;-webkit-user-select:none;user-select:none;}
 #rangoPianoModal .rp-row img.js-avatar{width:24px;height:24px;border-radius:50%;object-fit:cover;flex:none;display:block;
   box-shadow:0 0 0 2px var(--vc);transition:box-shadow .5s;}
 #rangoPianoModal .rp-row .vip-wrap{flex:none;}

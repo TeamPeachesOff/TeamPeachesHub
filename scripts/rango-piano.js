@@ -178,9 +178,26 @@
       if(o){ if(est.orden!==o.dataset.o){ est.orden=o.dataset.o; guardar(); pintar(true); } return; }
       if(e.target.closest("#rpSnd")){ est.sonido=!est.sonido; guardar(); pintarSnd(); if(est.sonido) tocar(60); return; }
       if(e.target.closest("#rpNota")){ est.nota=est.nota==="ES"?"EN":"ES"; guardar(); pintar(true); return; }
-      const it=e.target.closest("[data-rp-id]");
-      if(it){ est.sel=String(it.dataset.rpId); resaltar(true); openMemberModal(it.dataset.rpId); return; }   // tocar la fila = ver la tarjeta del miembro
+      const it=e.target.closest("[data-rp-id]"); if(!it) return;
+      const id=String(it.dataset.rpId);
+      if(lpHecho){ lpHecho=false; return; }                       // venía de mantener presionado: la tarjeta ya se abrió
+      if(e.target.closest(".rp-l")){ lastTap=null; abrirTarjeta(id); return; }   // el nombre abre la tarjeta directo
+      const ahora=Date.now();
+      if(lastTap && lastTap.id===id && ahora-lastTap.t<400){ lastTap=null; abrirTarjeta(id); return; }   // doble toque
+      lastTap={id,t:ahora};
+      est.sel=id; resaltar(true);                                  // un toque en la zona de color = señalar su rango en el piano
     });
+    /* mantener presionado cualquier zona de la línea = abrir la tarjeta */
+    let lp=null, lpHecho=false, lastTap=null;
+    const lpOff=()=>{ if(lp){ clearTimeout(lp.t); lp=null; } };
+    scroller.addEventListener("pointerdown",e=>{
+      const it=e.target.closest(".rp-row"); lpOff(); if(!it) return;
+      const id=String(it.dataset.rpId), x=e.clientX, y=e.clientY;
+      lp={x,y,t:setTimeout(()=>{ lp=null; lpHecho=true; lastTap=null; abrirTarjeta(id); },520)};
+    });
+    scroller.addEventListener("pointermove",e=>{ if(lp && Math.hypot(e.clientX-lp.x,e.clientY-lp.y)>9) lpOff(); });
+    ["pointerup","pointercancel","pointerleave"].forEach(ev=>scroller.addEventListener(ev,lpOff));
+    scroller.addEventListener("contextmenu",e=>{ if(e.target.closest(".rp-row")) e.preventDefault(); });
     /* tocar una tecla = escucharla. En celular solo suena si fue un toque (no un arrastre para desplazar). */
     let pd=null;
     scroller.addEventListener("pointerdown",e=>{
@@ -192,7 +209,9 @@
     scroller.addEventListener("pointercancel",()=>{ pd=null; });
     window.addEventListener("resize",()=>{ if(overlay) anchoNombre(); });
     overlay.addEventListener("keydown",e=>{
-      if((e.key==="Enter"||e.key===" ") && e.target.matches && e.target.matches(".rp-row")){ e.preventDefault(); e.target.click(); }
+      if(!(e.target.matches && e.target.matches(".rp-row"))) return;
+      if(e.key==="Enter"){ e.preventDefault(); abrirTarjeta(String(e.target.dataset.rpId)); }
+      else if(e.key===" "){ e.preventDefault(); est.sel=String(e.target.dataset.rpId); resaltar(true); }
     });
     document.addEventListener("keydown",e=>{
       if(e.key!=="Escape" || !overlay.classList.contains("open")) return;
@@ -201,6 +220,7 @@
     });
   }
 
+  function abrirTarjeta(id){ est.sel=String(id); resaltar(true); openMemberModal(id); }
   let infoT=0;
   function pulsar(k){
     const n=parseInt(k.dataset.m,10); tocar(n);
@@ -360,7 +380,7 @@
     const x={m,lo:Math.min(lo,hi),hi:Math.max(lo,hi),color:k?VOZ[k].c:COLOR_OTRO};
     x.color=colorDe(x); return x;
   }
-  const INFO_BASE="Toca una tecla para escucharla · toca a un miembro para ver su tarjeta";
+  const INFO_BASE="Tecla: la escuchas · Rango: 1 toque lo señala; 2 toques, nombre o mantener = tarjeta";
   function resaltar(mover){
     if(!overlay) return;
     overlay.querySelectorAll(".rp-w.on,.rp-b.on").forEach(el=>{ el.classList.remove("on"); el.style.removeProperty("--vc"); });
