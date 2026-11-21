@@ -139,16 +139,17 @@
   background:linear-gradient(180deg,rgba(255,255,255,.34),rgba(255,255,255,0) 55%,rgba(0,0,0,.1));}
 #rangoPianoModal .rp-row:hover .rp-band,#rangoPianoModal .rp-row:focus-visible .rp-band{filter:brightness(1.1);}
 #rangoPianoModal .rp-row.sel .rp-band{filter:brightness(1.12);box-shadow:0 0 0 2px #fff,0 0 18px var(--vc);}
-/* dentro de la franja: tipo de voz anclado al extremo izquierdo, tesitura anclada al extremo derecho.
-   Si te desplazas, cada uno se queda visible dentro de su franja (el de la izquierda sin pisar el nombre). */
+/* dentro de la franja: tipo de voz anclado al extremo izquierdo y tesitura al extremo derecho DE LA BARRA (no se deslizan).
+   Si no hay espacio, el JS (ajustarEtiquetas) oculta la que estorbe en vez de solaparla. */
 #rangoPianoModal .rp-band{display:flex;align-items:center;justify-content:space-between;gap:10px;}
-#rangoPianoModal .rp-vt{position:sticky;left:calc(16px + var(--rp-namew) + 8px);flex:0 1 auto;min-width:0;padding-left:14px;
-  overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-weight:900;font-size:11.5px;line-height:28px;color:#1a1020;z-index:1;}
-#rangoPianoModal .rp-t{position:sticky;right:64px;flex:none;padding-right:14px;white-space:nowrap;font-weight:900;font-size:12px;line-height:28px;
-  color:#1a1020;font-variant-numeric:tabular-nums;z-index:1;}
+#rangoPianoModal .rp-vt{flex:0 1 auto;min-width:0;padding-left:14px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;
+  font-weight:900;font-size:11.5px;line-height:28px;color:#1a1020;transition:opacity .15s;}
+#rangoPianoModal .rp-t{flex:none;padding-right:14px;white-space:nowrap;font-weight:900;font-size:12px;line-height:28px;
+  color:#1a1020;font-variant-numeric:tabular-nums;transition:opacity .15s;}
+#rangoPianoModal .rp-vt.oc,#rangoPianoModal .rp-t.oc{opacity:0;}
 /* semitonos que cubre: pegado al borde derecho de la ventana (igual que la cantidad en el encabezado de tipo de voz) */
 #rangoPianoModal .rp-st{position:sticky;right:16px;z-index:3;flex:none;min-width:26px;box-sizing:border-box;text-align:center;font-style:normal;font-size:12px;font-weight:900;
-  color:#fff;padding:4px 9px;border-radius:999px;background:rgba(26,16,32,.85);box-shadow:inset 0 0 0 1px var(--vc);font-variant-numeric:tabular-nums;pointer-events:none;}
+  color:#fff;padding:4px 9px;border-radius:999px;background:rgba(26,16,32,.85);font-variant-numeric:tabular-nums;pointer-events:none;}
 /* nombre: fijo a la izquierda de la ventana */
 #rangoPianoModal .rp-line{position:sticky;left:16px;z-index:3;box-sizing:border-box;height:100%;width:var(--rp-namew);
   display:flex;align-items:center;pointer-events:none;}

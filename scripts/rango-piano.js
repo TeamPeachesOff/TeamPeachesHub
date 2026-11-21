@@ -155,16 +155,16 @@
             <div><h3>Rango vocal</h3><p class="rp-info" id="rpInfo"></p></div>
           </div>
           <div class="rp-ctrls">
+            <button type="button" class="rp-ref" id="rpRef" aria-pressed="true" title="Mostrar u ocultar los rangos de referencia de cada tipo de voz"><i></i>Referencia</button>
             <div class="rp-seg" role="group" aria-label="Orden">
               <button type="button" data-o="tesitura" title="De la nota más grave a la más aguda">Tesitura</button>
               <button type="button" data-o="voz" title="Soprano, Mezzosoprano, Contralto, Tenor, Barítono, Bajo">Tipo de voz</button>
               <button type="button" data-o="az" title="Orden alfabético">A–Z</button>
             </div>
-            <button type="button" class="rp-snd" id="rpSnd" aria-pressed="true" title="Sonido de las teclas"></button>
-            <button type="button" class="rp-ref" id="rpRef" aria-pressed="true" title="Mostrar u ocultar los rangos de referencia de cada tipo de voz"><i></i>Referencia</button>
             <button type="button" class="rp-switch" id="rpNota" role="switch" title="Cambiar nombres de notas: C D E… / Do Re Mi…">
               <span class="rp-sw-l">C</span><span class="rp-sw-l">Do</span><i class="rp-sw-thumb"></i>
             </button>
+            <button type="button" class="rp-snd" id="rpSnd" aria-pressed="true" title="Sonido de las teclas"></button>
           </div>
           <button type="button" class="rp-x" data-rp-close aria-label="Cerrar"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 5L19 19M19 5L5 19"/></svg></button>
         </div>
@@ -172,6 +172,9 @@
       </div>`;
     document.body.appendChild(overlay);
     scroller=overlay.querySelector("#rpScroll");
+    let rafE=0; const progEt=()=>{ if(!rafE) rafE=requestAnimationFrame(()=>{ rafE=0; ajustarEtiquetas(); }); };
+    scroller.addEventListener("scroll",progEt,{passive:true});
+    window.addEventListener("resize",progEt);
     infoEl=overlay.querySelector("#rpInfo");
 
     overlay.addEventListener("click",e=>{
@@ -236,6 +239,24 @@
     k.classList.add("hit"); setTimeout(()=>k.classList.remove("hit"),170);
     infoEl.innerHTML=`${est.sonido?"🔊":"🔇"} <b>${nombreNota(n,est.nota)}</b> · ${Math.round(hz(n))} Hz`;
     clearTimeout(infoT); infoT=setTimeout(()=>resaltar(false),1500);
+  }
+  /* Las etiquetas de dentro de la barra (tipo de voz a la izquierda, tesitura a la derecha) quedan ancladas a los extremos de SU barra
+   * y no se deslizan. Si al desplazarte no queda espacio (borde de la ventana, el nombre fijo, la pastilla de semitonos
+   * o la otra etiqueta), esa etiqueta se oculta en vez de solaparse. */
+  function ajustarEtiquetas(){
+    if(!scroller) return;
+    const sr=scroller.getBoundingClientRect(), M=6;
+    const cruza=(a,b)=>a.left<b.right+M && a.right>b.left-M;
+    scroller.querySelectorAll(".rp-row").forEach(row=>{
+      if(!row.offsetParent) return;
+      const vt=row.querySelector(".rp-vt"), t=row.querySelector(".rp-t"), nm=row.querySelector(".rp-l"), st=row.querySelector(".rp-st");
+      const nr=nm.getBoundingClientRect(), str=st.getBoundingClientRect();
+      const fuera=r=>r.left<sr.left+2||r.right>sr.right-2;
+      let tr=t.getBoundingClientRect(), hideT=fuera(tr)||cruza(tr,nr)||cruza(tr,str);
+      let hideV=false;
+      if(vt.textContent){ const vr=vt.getBoundingClientRect(); hideV=fuera(vr)||cruza(vr,nr)||cruza(vr,str)||(!hideT&&cruza(vr,tr)); }
+      t.classList.toggle("oc",hideT); vt.classList.toggle("oc",hideV);
+    });
   }
   function pintarRef(){
     const b=overlay.querySelector("#rpRef"); if(b){ b.classList.toggle("on",est.ref); b.setAttribute("aria-pressed",est.ref?"true":"false"); }
@@ -429,7 +450,7 @@
     scroller.innerHTML=contenidoHTML();
     overlay.querySelectorAll(".rp-seg button").forEach(b=>b.classList.toggle("on",b.dataset.o===est.orden));
     const sw=overlay.querySelector("#rpNota"); sw.dataset.n=est.nota; sw.setAttribute("aria-checked",est.nota==="ES"?"true":"false");
-    pintarSnd(); overlay.dataset.ord=est.orden;
+    pintarSnd(); overlay.dataset.ord=est.orden; requestAnimationFrame(ajustarEtiquetas);
     if(conservarScroll){ scroller.scrollLeft=sl; scroller.scrollTop=st; }
     bindAvatarFallbacks();
     pintarRef();
