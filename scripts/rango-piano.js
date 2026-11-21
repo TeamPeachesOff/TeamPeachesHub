@@ -24,17 +24,24 @@
 
   /* ---------- Tipos de voz y su tesitura de referencia (notas MIDI) ----------
    * Están en orden de tesitura: de la más grave a la más aguda. */
+  /* s = subtipos (rangos de referencia aproximados; ajústalos aquí si quieres otros) */
   const VOCES=[
-    {k:"bajo",         t:"Bajo",         lo:40, hi:64, c:"#ff8a4c"},   // Mi2  – Mi4
-    {k:"baritono",     t:"Barítono",     lo:45, hi:69, c:"#ffcb57"},   // La2  – La4
-    {k:"tenor",        t:"Tenor",        lo:48, hi:72, c:"#3fd6c4"},   // Do3  – Do5
-    {k:"contralto",    t:"Contralto",    lo:53, hi:77, c:"#6fa8ff"},   // Fa3  – Fa5
-    {k:"mezzosoprano", t:"Mezzosoprano", lo:57, hi:81, c:"#c77dff"},   // La3  – La5
-    {k:"soprano",      t:"Soprano",      lo:60, hi:84, c:"#ff6fa5"}    // Do4  – Do6
+    {k:"bajo",         t:"Bajo",         lo:40, hi:64, c:"#ff7a2e", s:[   // Mi2 – Mi4
+      {t:"Bajo profundo",lo:36,hi:60},{t:"Bajo cantante",lo:40,hi:64},{t:"Bajo bufo",lo:41,hi:65}]},
+    {k:"baritono",     t:"Barítono",     lo:45, hi:69, c:"#ffc61a", s:[   // La2 – La4
+      {t:"Bajo-barítono",lo:41,hi:65},{t:"Barítono",lo:45,hi:69},{t:"Barítono lírico",lo:47,hi:71}]},
+    {k:"tenor",        t:"Tenor",        lo:48, hi:72, c:"#1fe3c9", s:[   // Do3 – Do5
+      {t:"Baritenor",lo:47,hi:69},{t:"Tenor dramático",lo:48,hi:70},{t:"Tenor lírico",lo:48,hi:72},{t:"Tenor ligero",lo:50,hi:74}]},
+    {k:"contralto",    t:"Contralto",    lo:53, hi:77, c:"#4d9bff", s:[   // Fa3 – Fa5
+      {t:"Contralto dramático",lo:52,hi:76},{t:"Contralto lírico",lo:53,hi:77}]},
+    {k:"mezzosoprano", t:"Mezzosoprano", lo:57, hi:81, c:"#c05cff", s:[   // La3 – La5
+      {t:"Mezzo dramático",lo:55,hi:82},{t:"Mezzo lírico",lo:57,hi:81}]},
+    {k:"soprano",      t:"Soprano",      lo:60, hi:84, c:"#ff4d9a", s:[   // Do4 – Do6
+      {t:"Soprano dramático",lo:57,hi:84},{t:"Soprano lírico",lo:60,hi:84},{t:"Soprano ligero",lo:60,hi:89}]}
   ];
   const ORDEN_VOZ=["soprano","mezzosoprano","contralto","tenor","baritono","bajo"];  // orden pedido
   const VOZ=Object.fromEntries(VOCES.map(v=>[v.k,v]));
-  const COLOR_OTRO="#b9a3c9";
+  const COLOR_OTRO="#c9a8e6";
 
   /* "Alto" se agrupa con Contralto; "Mezzo" con Mezzosoprano. Lo demás va a "Otros". */
   function claveVoz(raw){
@@ -69,11 +76,44 @@
 
   /* ---------- Preferencias (se recuerdan en este dispositivo) ---------- */
   const LS="tph_rangoPiano_v1";
-  const est={orden:"tesitura",nota:"ES",sel:null};   // sel: id del miembro seleccionado (o null)
+  const est={orden:"tesitura",nota:"ES",sonido:true,sel:null};   // sel: id del miembro seleccionado (o null)
   try{ const p=JSON.parse(localStorage.getItem(LS)||"{}");
     if(["tesitura","voz","az"].indexOf(p.orden)>=0) est.orden=p.orden;
-    if(p.nota==="EN"||p.nota==="ES") est.nota=p.nota; }catch(e){}
-  const guardar=()=>{ try{ localStorage.setItem(LS,JSON.stringify({orden:est.orden,nota:est.nota})); }catch(e){} };
+    if(p.nota==="EN"||p.nota==="ES") est.nota=p.nota;
+    if(p.sonido===false) est.sonido=false; }catch(e){}
+  const guardar=()=>{ try{ localStorage.setItem(LS,JSON.stringify({orden:est.orden,nota:est.nota,sonido:est.sonido})); }catch(e){} };
+
+  /* ---------- Sonido: sintetizado con WebAudio (sin archivos). Suena la tecla que se toca. ---------- */
+  let ac=null, bus=null;
+  function audio(){
+    if(!ac){
+      const C=window.AudioContext||window.webkitAudioContext; if(!C) return null;
+      try{ ac=new C(); }catch(e){ return null; }
+      const comp=ac.createDynamicsCompressor(), g=ac.createGain(); g.gain.value=.55;
+      comp.connect(g); g.connect(ac.destination); bus=comp;
+    }
+    if(ac.state==="suspended") ac.resume();
+    return ac;
+  }
+  const hz=n=>440*Math.pow(2,(n-69)/12);
+  function tocar(n){
+    if(!est.sonido) return;
+    const a=audio(); if(!a) return;
+    const t=a.currentTime, f=hz(n), dur=Math.max(1.2,3-(n-21)/40);
+    const env=a.createGain(), lp=a.createBiquadFilter();
+    lp.type="lowpass"; lp.Q.value=.4;
+    lp.frequency.setValueAtTime(Math.min(f*9,10000),t); lp.frequency.exponentialRampToValueAtTime(Math.max(f*2.2,400),t+.7);
+    env.gain.setValueAtTime(0,t); env.gain.linearRampToValueAtTime(.5/(1+f/1400),t+.006);
+    env.gain.exponentialRampToValueAtTime(.0008,t+dur);
+    [[1,1,"sine"],[2,.45,"sine"],[3,.22,"sine"],[4,.12,"triangle"],[6,.05,"sine"]].forEach(p=>{
+      if(f*p[0]>12000) return;
+      const o=a.createOscillator(), g=a.createGain();
+      o.type=p[2]; o.frequency.value=f*p[0]; o.detune.value=(Math.random()-.5)*4;
+      g.gain.value=p[1]; o.connect(g); g.connect(env);
+      o.start(t); o.stop(t+dur+.05);
+    });
+    env.connect(lp); lp.connect(bus);
+  }
 
   /* ---------- Datos ----------
    * Solo entran al piano los miembros con notaBaja Y notaAlta válidas. El resto no se muestra. */
@@ -119,6 +159,7 @@
               <button type="button" data-o="voz" title="Soprano, Mezzosoprano, Contralto, Tenor, Barítono, Bajo">Tipo de voz</button>
               <button type="button" data-o="az" title="Orden alfabético">A–Z</button>
             </div>
+            <button type="button" class="rp-snd" id="rpSnd" aria-pressed="true" title="Sonido de las teclas"></button>
             <button type="button" class="rp-switch" id="rpNota" role="switch" title="Cambiar nombres de notas: C D E… / Do Re Mi…">
               <span class="rp-sw-l">C</span><span class="rp-sw-l">Do</span><i class="rp-sw-thumb"></i>
             </button>
@@ -135,10 +176,21 @@
       if(e.target.closest("[data-rp-close]")){ cerrar(); return; }
       const o=e.target.closest("[data-o]");
       if(o){ if(est.orden!==o.dataset.o){ est.orden=o.dataset.o; guardar(); pintar(true); } return; }
+      if(e.target.closest("#rpSnd")){ est.sonido=!est.sonido; guardar(); pintarSnd(); if(est.sonido) tocar(60); return; }
       if(e.target.closest("#rpNota")){ est.nota=est.nota==="ES"?"EN":"ES"; guardar(); pintar(true); return; }
       const it=e.target.closest("[data-rp-id]");
       if(it){ est.sel=String(it.dataset.rpId); resaltar(true); openMemberModal(it.dataset.rpId); return; }   // tocar la fila = ver la tarjeta del miembro
     });
+    /* tocar una tecla = escucharla. En celular solo suena si fue un toque (no un arrastre para desplazar). */
+    let pd=null;
+    scroller.addEventListener("pointerdown",e=>{
+      const k=e.target.closest(".rp-piano [data-m]");
+      if(!k){ pd=null; return; }
+      if(e.pointerType==="mouse"){ pulsar(k); pd=null; } else pd={k,x:e.clientX,y:e.clientY};
+    });
+    scroller.addEventListener("pointerup",e=>{ if(pd && Math.hypot(e.clientX-pd.x,e.clientY-pd.y)<9) pulsar(pd.k); pd=null; });
+    scroller.addEventListener("pointercancel",()=>{ pd=null; });
+    window.addEventListener("resize",()=>{ if(overlay) anchoNombre(); });
     overlay.addEventListener("keydown",e=>{
       if((e.key==="Enter"||e.key===" ") && e.target.matches && e.target.matches(".rp-row")){ e.preventDefault(); e.target.click(); }
     });
@@ -148,6 +200,21 @@
       cerrar();
     });
   }
+
+  let infoT=0;
+  function pulsar(k){
+    const n=parseInt(k.dataset.m,10); tocar(n);
+    k.classList.add("hit"); setTimeout(()=>k.classList.remove("hit"),170);
+    infoEl.innerHTML=`${est.sonido?"🔊":"🔇"} <b>${nombreNota(n,est.nota)}</b> · ${Math.round(hz(n))} Hz`;
+    clearTimeout(infoT); infoT=setTimeout(()=>resaltar(false),1500);
+  }
+  function pintarSnd(){
+    const b=overlay.querySelector("#rpSnd"); if(!b) return;
+    b.textContent=est.sonido?"🔊":"🔇"; b.setAttribute("aria-pressed",est.sonido?"true":"false"); b.classList.toggle("off",!est.sonido);
+  }
+  /* ancho de la columna del nombre (fija a la izquierda de la ventana); también define el margen al abrir */
+  let anchoNom=150;
+  function anchoNombre(){ anchoNom=Math.round(Math.min(190,Math.max(120,window.innerWidth*.34))); overlay.style.setProperty("--rp-namew",anchoNom+"px"); }
 
   function pianoHTML(){
     let h="";
@@ -166,7 +233,7 @@
   /* ---------- Color a partir de la foto de perfil ----------
    * Se saca el color dominante "vivo" de la foto y se suaviza (sin tonos oscuros ni apagados).
    * Si el servidor de la imagen no permite leerla (CORS) o la foto es gris, se usa el color del tipo de voz. */
-  const LS_COL="tph_rangoPiano_colores_v1";
+  const LS_COL="tph_rangoPiano_colores_v2";   // v2: paleta más viva (se recalcula)
   const colorCache=new Map();
   try{ const o=JSON.parse(localStorage.getItem(LS_COL)||"{}"); Object.keys(o).forEach(k=>colorCache.set(k,o[k])); }catch(e){}
   const guardarColores=()=>{ try{ const o={}; colorCache.forEach((v,k)=>{ if(v) o[k]=v; }); localStorage.setItem(LS_COL,JSON.stringify(o)); }catch(e){} };
@@ -203,8 +270,8 @@
           }
           const best=bins.reduce((a,b)=>b.w>a.w?b:a);
           if(best.w<=0) return res(null);
-          const h=best.h/best.w, sa=Math.min(.82,Math.max(.5,best.sa/best.w));
-          res(hsl2hex(h,sa,.66));                                   // luminosidad fija: agradable y legible
+          const h=best.h/best.w, sa=Math.min(.95,Math.max(.7,best.sa/best.w*1.12));
+          res(hsl2hex(h,sa,.6));                                    // luminosidad fija: viva pero no chillona
         }catch(e){ res(null); }                                     // imagen "tainted" (sin CORS)
       };
       im.onerror=()=>res(null);
@@ -228,20 +295,34 @@
     if(gen===colorGen && est.sel) resaltar(false);   // si hay alguien seleccionado, las teclas toman su color final
   }
 
-  /* ---------- Fila: una sola línea. Foto + nombre (izq) · tipo de voz (centro) · tesitura (der) ---------- */
+  /* ---------- Fila: nombre fijo a la izquierda de la ventana · franja de color con la tesitura anclada a su izquierda ·
+   * tipo(s) de voz justo a la derecha de la franja ---------- */
+  const TOT=52;
   function filaHTML(x){
     const m=x.m, s=inicioU(x.lo), n=finU(x.hi)-inicioU(x.lo);
     const voz=rangosDeM(m).join(" · ")||"—";
+    const flip=(s+n)>TOT-9;     // si la franja llega muy a la derecha, el tipo de voz pasa a su izquierda
     return `<div class="rp-row" role="button" tabindex="0" data-rp-id="${escAttr(m.id)}" style="--vc:${colorDe(x)};--s:${s};--n:${n}" title="${escAttr(m.nombre||"")}">
-      <i class="rp-band"></i>
-      <div class="rp-line">
-        <div class="rp-l">${avatarImgTag(m)}<span class="rp-cn">${escHtml(m.nombre||"")}</span></div>
-        <div class="rp-c">${escHtml(voz)}</div>
-        <div class="rp-r">${nombreNota(x.lo,est.nota)} – ${nombreNota(x.hi,est.nota)}</div>
-      </div>
+      <div class="rp-band"><span class="rp-t">${nombreNota(x.lo,est.nota)} – ${nombreNota(x.hi,est.nota)}</span></div>
+      <span class="rp-v${flip?" flip":""}">${escHtml(voz)}</span>
+      <div class="rp-line"><div class="rp-l">${avatarImgTag(m)}<span class="rp-cn">${escHtml(m.nombre||"")}</span></div></div>
     </div>`;
   }
 
+  /* Encabezado de grupo (orden por tipo de voz): badge a la izquierda, cantidad a la derecha de la ventana
+   * y, en el espacio de en medio, de dónde a dónde va ese tipo de voz (y sus subtipos), de forma discreta. */
+  function refHTML(v){
+    const ln=(r,top,cls,txt)=>{
+      const s=inicioU(r.lo), w=finU(r.hi)-inicioU(r.lo), flip=(s+w)>TOT-10;
+      return `<i class="rp-rb ${cls}" style="top:${top}px;--s:${s};--n:${w}"></i>`+
+        `<span class="rp-rt ${cls}${flip?" flip":""}" style="top:${top-6}px;--s:${s};--n:${w}">${txt}</span>`;
+    };
+    const rng=r=>nombreNota(r.lo,est.nota)+" – "+nombreNota(r.hi,est.nota);
+    let h=ln(v,13,"main",rng(v));
+    v.s.forEach((r,i)=>{ h+=ln(r,34+i*15,"sub",escHtml(r.t)+" · "+rng(r)); });
+    return h;
+  }
+  const altoGrupo=v=>30+(v?v.s.length*15+4:0);
   function contenidoHTML(){
     const d=datosPiano();
     const piano=`<div class="rp-piano-wrap">${pianoHTML()}</div>`;
@@ -259,7 +340,8 @@
       });
     } else if(est.orden==="voz"){
       d.grupos.forEach(g=>{
-        cuerpo+=`<div class="rp-group" style="--vc:${g.color}"><b>${g.titulo}</b><em>${g.items.length}</em></div>`;
+        const v=g.k?VOZ[g.k]:null;
+        cuerpo+=`<div class="rp-group" style="--vc:${g.color};height:${altoGrupo(v)}px">${v?refHTML(v):""}<b class="rp-gb">${g.titulo}</b><em class="rp-gc">${g.items.length}</em></div>`;
         g.items.forEach(x=>{ cuerpo+=filaHTML(x); });
       });
     } else {
@@ -278,7 +360,7 @@
     const x={m,lo:Math.min(lo,hi),hi:Math.max(lo,hi),color:k?VOZ[k].c:COLOR_OTRO};
     x.color=colorDe(x); return x;
   }
-  const INFO_BASE="Toca a un miembro para ver su tarjeta";
+  const INFO_BASE="Toca una tecla para escucharla · toca a un miembro para ver su tarjeta";
   function resaltar(mover){
     if(!overlay) return;
     overlay.querySelectorAll(".rp-w.on,.rp-b.on").forEach(el=>{ el.classList.remove("on"); el.style.removeProperty("--vc"); });
@@ -304,6 +386,7 @@
     scroller.innerHTML=contenidoHTML();
     overlay.querySelectorAll(".rp-seg button").forEach(b=>b.classList.toggle("on",b.dataset.o===est.orden));
     const sw=overlay.querySelector("#rpNota"); sw.dataset.n=est.nota; sw.setAttribute("aria-checked",est.nota==="ES"?"true":"false");
+    pintarSnd();
     if(conservarScroll){ scroller.scrollLeft=sl; scroller.scrollTop=st; }
     bindAvatarFallbacks();
     resaltar(false);   // al repintar (cambiar orden / notación) no se mueve la vista
@@ -313,15 +396,19 @@
   /* ---------- Abrir / cerrar ---------- */
   function abrir(){
     if(!overlay) construir();
-    est.sel=null;
+    est.sel=null; anchoNombre();
     openModal("rangoPianoModal");
     scroller.scrollTo(0,0);
     pintar(false);
-    // al abrir se centra en el Do central (Do4), que es donde viven la mayoría de las voces
+    // al abrir se acomoda desde la nota más grave registrada (sin mostrar octavas bajas de más),
+    // dejando un margen igual a la columna de nombres para que no los tape. Si no hay nadie, se centra en el Do central.
     requestAnimationFrame(()=>{
       const w=overlay.querySelector('.rp-w[data-m="60"]'); if(!w) return;
-      const kw=w.getBoundingClientRect().width;
-      scroller.scrollLeft=Math.max(0,16+(blancaIdx[60]+.5)*kw-scroller.clientWidth/2);
+      const kw=w.getBoundingClientRect().width, lista=datosPiano().lista;
+      if(lista.length){
+        const lo=Math.min.apply(null,lista.map(x=>x.lo));
+        scroller.scrollLeft=Math.max(0,inicioU(lo)*kw-anchoNom-12);
+      } else scroller.scrollLeft=Math.max(0,16+(blancaIdx[60]+.5)*kw-scroller.clientWidth/2);
     });
   }
   function cerrar(){ closeModal("rangoPianoModal"); }

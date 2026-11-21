@@ -43,6 +43,12 @@
 #rangoPianoModal .rp-seg button.on{background:linear-gradient(90deg,var(--rp-pink),var(--rp-peach));color:#fff;
   box-shadow:0 4px 14px rgba(239,8,112,.4);}
 
+/* Botón de sonido */
+#rangoPianoModal .rp-snd{width:38px;height:38px;border-radius:50%;background:rgba(0,0,0,.32);color:#fff;font-size:17px;flex:none;
+  box-shadow:inset 0 0 0 1px rgba(255,255,255,.1);transition:background .2s,transform .12s,opacity .2s;}
+#rangoPianoModal .rp-snd:active{transform:scale(.9);}
+#rangoPianoModal .rp-snd.off{opacity:.55;}
+
 /* Botón C / Do (interruptor estilizado) */
 #rangoPianoModal .rp-switch{position:relative;display:grid;grid-template-columns:1fr 1fr;align-items:center;
   width:96px;height:38px;padding:0;border-radius:999px;background:rgba(0,0,0,.32);
@@ -92,49 +98,65 @@
 #rangoPianoModal .rp-w.c .rp-n{color:var(--rp-pink);font-size:calc(var(--kw) * .3);}
 /* tecla dentro del rango seleccionado */
 #rangoPianoModal .rp-w.on::after,#rangoPianoModal .rp-b.on::after{content:"";position:absolute;inset:0;border-radius:inherit;
-  background:var(--vc);opacity:.78;pointer-events:none;animation:rpKey .35s ease both;}
-#rangoPianoModal .rp-b.on::after{opacity:.9;}
+  background:var(--vc);opacity:.88;pointer-events:none;animation:rpKey .35s ease both;}
+#rangoPianoModal .rp-b.on::after{opacity:.95;}
 #rangoPianoModal .rp-w.on .rp-n{color:#1a1020;}
 #rangoPianoModal .rp-b.on .rp-n{color:#fff;}
 #rangoPianoModal .rp-w.on{transform:translateY(2px);}
 #rangoPianoModal .rp-b.on{transform:translateY(1px);}
-@keyframes rpKey{0%{opacity:0}100%{opacity:.78}}
+@keyframes rpKey{0%{opacity:0}100%{opacity:.88}}
+/* tecla pulsada (suena) */
+#rangoPianoModal .rp-w.hit{transform:translateY(3px);filter:brightness(.93);}
+#rangoPianoModal .rp-b.hit{transform:translateY(2px);filter:brightness(1.5);}
+#rangoPianoModal .rp-piano [data-m]{cursor:pointer;touch-action:pan-x pan-y;}
 
-/* ---------- Filas: una línea delgada por miembro con notas exactas ---------- */
-#rangoPianoModal .rp-lanes{position:relative;width:calc(var(--kw) * 52);padding:6px 0 10px;
+/* ---------- Filas: una por miembro con notas exactas ---------- */
+#rangoPianoModal{--rp-namew:150px;}
+#rangoPianoModal .rp-lanes{position:relative;width:calc(var(--kw) * 52);padding:4px 0 10px;
   background-image:linear-gradient(90deg,rgba(255,255,255,.075) 0,rgba(255,255,255,.075) 1px,transparent 1px);
   background-size:calc(var(--kw) * 7) 100%;background-repeat:repeat-x;background-position:calc(var(--kw) * 2) 0;}
-#rangoPianoModal .rp-row{position:relative;height:32px;margin-top:5px;--s:0;--n:52;cursor:pointer;outline:none;}
-#rangoPianoModal .rp-row::before{content:"";position:absolute;inset:0;border-radius:10px;background:rgba(255,255,255,.035);transition:background .2s,box-shadow .2s;}
-#rangoPianoModal .rp-row:hover::before,#rangoPianoModal .rp-row:focus-visible::before{background:rgba(255,255,255,.075);}
-#rangoPianoModal .rp-row.sel::before{background:rgba(255,255,255,.09);box-shadow:0 0 0 1px var(--vc);}
+/* sin fondo ni sombreado detrás de la fila: solo la franja de color flotando sobre las guías de octava */
+#rangoPianoModal .rp-row{position:relative;height:30px;margin-top:6px;--s:0;--n:52;cursor:pointer;outline:none;}
 /* franja con el rango REAL de la persona, alineada con las teclas; su color sale de la foto de perfil */
-#rangoPianoModal .rp-band{position:absolute;top:0;bottom:0;left:calc(var(--kw) * var(--s));width:calc(var(--kw) * var(--n));max-width:calc(var(--kw) * 52);
-  border-radius:10px;pointer-events:none;transition:filter .2s;}
-#rangoPianoModal .rp-band::before{content:"";position:absolute;inset:0;border-radius:10px;background:var(--vc);opacity:.5;transition:background .5s;}
-#rangoPianoModal .rp-band::after{content:"";position:absolute;left:0;right:0;bottom:0;height:3px;border-radius:3px;background:var(--vc);
-  box-shadow:0 0 10px var(--vc);transition:background .5s,box-shadow .5s;}
-#rangoPianoModal .rp-row.sel .rp-band{filter:brightness(1.18);}
-/* contenido de la línea: no se desplaza con el scroll horizontal, siempre queda a la vista */
-#rangoPianoModal .rp-line{position:sticky;left:16px;z-index:1;box-sizing:border-box;height:100%;
-  width:min(calc(100vw - 48px),calc(var(--kw) * 52));padding:0 12px 0 8px;
-  display:grid;grid-template-columns:minmax(0,1fr) auto minmax(0,1fr);align-items:center;gap:10px;pointer-events:none;
-  text-shadow:0 1px 3px rgba(0,0,0,.65);}
-#rangoPianoModal .rp-l{display:flex;align-items:center;gap:8px;min-width:0;}
+#rangoPianoModal .rp-band{position:absolute;top:1px;bottom:1px;left:calc(var(--kw) * var(--s));width:calc(var(--kw) * var(--n));max-width:calc(var(--kw) * 52);
+  border-radius:999px;background:var(--vc);transition:background .5s,box-shadow .25s,filter .2s;
+  box-shadow:0 3px 14px -5px var(--vc);}
+#rangoPianoModal .rp-band::after{content:"";position:absolute;inset:0;border-radius:inherit;pointer-events:none;
+  background:linear-gradient(180deg,rgba(255,255,255,.34),rgba(255,255,255,0) 55%,rgba(0,0,0,.1));}
+#rangoPianoModal .rp-row:hover .rp-band,#rangoPianoModal .rp-row:focus-visible .rp-band{filter:brightness(1.1);}
+#rangoPianoModal .rp-row.sel .rp-band{filter:brightness(1.12);box-shadow:0 0 0 2px #fff,0 0 18px var(--vc);}
+/* tesitura: anclada a la izquierda de la franja (si te desplazas, se queda visible dentro de ella, sin pisar el nombre) */
+#rangoPianoModal .rp-t{position:sticky;left:calc(16px + var(--rp-namew) + 6px);display:inline-block;padding:0 12px;line-height:28px;
+  font-weight:900;font-size:12px;color:#1a1020;white-space:nowrap;font-variant-numeric:tabular-nums;}
+/* tipo de voz: a la derecha de la franja */
+#rangoPianoModal .rp-v{position:absolute;top:0;left:calc(var(--kw) * (var(--s) + var(--n)) + 10px);line-height:30px;
+  font-weight:800;font-size:11.5px;color:var(--vc);white-space:nowrap;pointer-events:none;text-shadow:0 1px 3px rgba(0,0,0,.7);}
+#rangoPianoModal .rp-v.flip{left:auto;right:calc(100% - var(--kw) * var(--s) + 10px);}
+/* nombre: fijo a la izquierda de la ventana */
+#rangoPianoModal .rp-line{position:sticky;left:16px;z-index:3;box-sizing:border-box;height:100%;width:var(--rp-namew);
+  display:flex;align-items:center;pointer-events:none;}
+#rangoPianoModal .rp-l{display:flex;align-items:center;gap:8px;min-width:0;max-width:100%;padding:3px 12px 3px 4px;border-radius:999px;
+  background:rgba(26,16,32,.72);box-shadow:0 2px 8px rgba(0,0,0,.35);}
 #rangoPianoModal .rp-row img.js-avatar{width:24px;height:24px;border-radius:50%;object-fit:cover;flex:none;display:block;
   box-shadow:0 0 0 2px var(--vc);transition:box-shadow .5s;}
 #rangoPianoModal .rp-row .vip-wrap{flex:none;}
 #rangoPianoModal .rp-cn{font-weight:800;font-size:12.5px;color:#fff;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
-#rangoPianoModal .rp-c{justify-self:center;max-width:42vw;padding:2px 11px;border-radius:999px;background:rgba(26,16,32,.6);
-  font-weight:800;font-size:11.5px;color:#fff;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;text-shadow:none;}
-#rangoPianoModal .rp-r{justify-self:end;font-weight:900;font-size:12px;color:#fff;white-space:nowrap;font-variant-numeric:tabular-nums;}
 
 /* ---------- Encabezados de grupo / letra / vacío ---------- */
-#rangoPianoModal .rp-group{position:sticky;left:16px;display:flex;align-items:center;gap:10px;width:max-content;margin:14px 0 0;
-  padding:6px 14px;border-radius:12px;background-color:var(--vc);background-image:linear-gradient(180deg,rgba(255,255,255,.34),rgba(0,0,0,.14));
-  color:#1a1020;box-shadow:0 6px 16px rgba(0,0,0,.4);}
-#rangoPianoModal .rp-group b{font-size:14px;font-weight:900;}
-#rangoPianoModal .rp-group em{font-style:normal;font-size:12px;font-weight:900;background:rgba(26,16,32,.82);color:#fff;padding:1px 9px;border-radius:999px;}
+#rangoPianoModal .rp-group{position:relative;display:flex;justify-content:space-between;align-items:flex-start;width:calc(var(--kw) * 52);margin-top:14px;}
+#rangoPianoModal .rp-gb{position:sticky;left:16px;z-index:4;align-self:flex-start;padding:6px 14px;border-radius:12px;background-color:var(--vc);
+  background-image:linear-gradient(180deg,rgba(255,255,255,.34),rgba(0,0,0,.14));color:#1a1020;font-size:14px;font-weight:900;box-shadow:0 6px 16px rgba(0,0,0,.4);}
+/* cantidad de personas: pegada al borde derecho de la ventana */
+#rangoPianoModal .rp-gc{position:sticky;right:16px;z-index:4;align-self:flex-start;font-style:normal;font-size:12px;font-weight:900;color:#fff;
+  padding:6px 11px;border-radius:999px;background:rgba(26,16,32,.85);box-shadow:inset 0 0 0 1px var(--vc);}
+/* rango de referencia del tipo de voz (discreto) y sus subtipos */
+#rangoPianoModal .rp-rb{position:absolute;left:calc(var(--kw) * var(--s));width:calc(var(--kw) * var(--n));border-radius:3px;background:var(--vc);pointer-events:none;}
+#rangoPianoModal .rp-rb.main{height:5px;opacity:.5;}
+#rangoPianoModal .rp-rb.sub{height:3px;opacity:.3;}
+#rangoPianoModal .rp-rt{position:absolute;left:calc(var(--kw) * (var(--s) + var(--n)) + 8px);white-space:nowrap;pointer-events:none;line-height:16px;font-weight:800;color:var(--vc);}
+#rangoPianoModal .rp-rt.flip{left:auto;right:calc(100% - var(--kw) * var(--s) + 8px);}
+#rangoPianoModal .rp-rt.main{font-size:11px;opacity:.8;}
+#rangoPianoModal .rp-rt.sub{font-size:10px;opacity:.55;}
 #rangoPianoModal .rp-letter{position:sticky;left:16px;display:flex;align-items:center;gap:10px;width:min(calc(100vw - 48px),calc(var(--kw) * 52));
   margin-top:16px;font-weight:900;font-size:15px;color:var(--rp-peach);}
 #rangoPianoModal .rp-letter::after{content:"";flex:1;height:1px;background:linear-gradient(90deg,rgba(255,143,177,.4),transparent);}
