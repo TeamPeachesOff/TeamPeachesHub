@@ -79,7 +79,7 @@
 #rangoPianoModal .rp-ref.on{background:linear-gradient(90deg,var(--rp-pink),var(--rp-peach));color:#fff;box-shadow:0 4px 14px rgba(239,8,112,.4);}
 #rangoPianoModal .rp-ref.on i{background:#fff;box-shadow:0 0 8px #fff;}
 #rangoPianoModal .rp-ref:active{transform:scale(.95);}
-#rangoPianoModal:not([data-o="voz"]) .rp-ref{display:none;}
+#rangoPianoModal:not([data-ord="voz"]) .rp-ref{display:none;}
 
 /* ---------- Área con scroll vertical + horizontal ---------- */
 #rangoPianoModal .rp-scroll{flex:1;min-height:0;overflow:auto;overscroll-behavior:contain;-webkit-overflow-scrolling:touch;
@@ -128,9 +128,8 @@
 /* ---------- Filas: una por miembro con notas exactas ---------- */
 #rangoPianoModal{--rp-namew:150px;}
 #rangoPianoModal .rp-lanes{position:relative;width:calc(var(--kw) * 52);padding:4px 0 10px;
-  background-image:linear-gradient(90deg,rgba(255,255,255,.075) 0,rgba(255,255,255,.075) 1px,transparent 1px);
-  background-size:calc(var(--kw) * 7) 100%;background-repeat:repeat-x;background-position:calc(var(--kw) * 2) 0;}
-/* sin fondo ni sombreado detrás de la fila: solo la franja de color flotando sobre las guías de octava */
+  }
+/* sin fondo, sombreado ni guías: solo la franja de color */
 #rangoPianoModal .rp-row{position:relative;height:30px;margin-top:6px;--s:0;--n:52;cursor:pointer;outline:none;}
 /* franja con el rango REAL de la persona, alineada con las teclas; su color sale de la foto de perfil */
 #rangoPianoModal .rp-band{position:absolute;top:1px;bottom:1px;left:calc(var(--kw) * var(--s));width:calc(var(--kw) * var(--n));max-width:calc(var(--kw) * 52);

@@ -160,8 +160,8 @@
               <button type="button" data-o="voz" title="Soprano, Mezzosoprano, Contralto, Tenor, Barítono, Bajo">Tipo de voz</button>
               <button type="button" data-o="az" title="Orden alfabético">A–Z</button>
             </div>
-            <button type="button" class="rp-ref" id="rpRef" aria-pressed="true" title="Mostrar u ocultar los rangos de referencia de cada tipo de voz"><i></i>Referencia</button>
             <button type="button" class="rp-snd" id="rpSnd" aria-pressed="true" title="Sonido de las teclas"></button>
+            <button type="button" class="rp-ref" id="rpRef" aria-pressed="true" title="Mostrar u ocultar los rangos de referencia de cada tipo de voz"><i></i>Referencia</button>
             <button type="button" class="rp-switch" id="rpNota" role="switch" title="Cambiar nombres de notas: C D E… / Do Re Mi…">
               <span class="rp-sw-l">C</span><span class="rp-sw-l">Do</span><i class="rp-sw-thumb"></i>
             </button>
@@ -421,7 +421,7 @@
     scroller.innerHTML=contenidoHTML();
     overlay.querySelectorAll(".rp-seg button").forEach(b=>b.classList.toggle("on",b.dataset.o===est.orden));
     const sw=overlay.querySelector("#rpNota"); sw.dataset.n=est.nota; sw.setAttribute("aria-checked",est.nota==="ES"?"true":"false");
-    pintarSnd(); overlay.dataset.o=est.orden;
+    pintarSnd(); overlay.dataset.ord=est.orden;
     if(conservarScroll){ scroller.scrollLeft=sl; scroller.scrollTop=st; }
     bindAvatarFallbacks();
     pintarRef();
