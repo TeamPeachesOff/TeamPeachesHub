@@ -266,7 +266,7 @@
   /* ---------- Color a partir de la foto de perfil ----------
    * Se saca el color dominante "vivo" de la foto y se suaviza (sin tonos oscuros ni apagados).
    * Si el servidor de la imagen no permite leerla (CORS) o la foto es gris, se usa el color del tipo de voz. */
-  const LS_COL="tph_rangoPiano_colores_v2";   // v2: paleta más viva (se recalcula)
+  const LS_COL="tph_rangoPiano_colores_v3";   // v3: nuevo método de color (se recalcula)
   const colorCache=new Map();
   try{ const o=JSON.parse(localStorage.getItem(LS_COL)||"{}"); Object.keys(o).forEach(k=>colorCache.set(k,o[k])); }catch(e){}
   const guardarColores=()=>{ try{ const o={}; colorCache.forEach((v,k)=>{ if(v) o[k]=v; }); localStorage.setItem(LS_COL,JSON.stringify(o)); }catch(e){} };
@@ -293,17 +293,24 @@
         try{
           const S=32, cv=document.createElement("canvas"); cv.width=cv.height=S;
           const cx=cv.getContext("2d",{willReadFrequently:true}); cx.drawImage(im,0,0,S,S);
-          const px=cx.getImageData(0,0,S,S).data, bins=Array.from({length:24},()=>({w:0,h:0,sa:0}));
+          const px=cx.getImageData(0,0,S,S).data, NB=36, bins=Array.from({length:NB},()=>({w:0,x:0,y:0,sa:0}));
           for(let i=0;i<px.length;i+=4){
             if(px[i+3]<200) continue;
             const [h,sa,l]=rgb2hsl(px[i],px[i+1],px[i+2]);
-            if(sa<.2||l<.16||l>.93) continue;                       // fuera grises, negros y blancos
-            const w=sa*(1-Math.abs(l-.5)*1.1), bn=bins[Math.floor(h/15)%24];
-            bn.w+=w; bn.h+=h*w; bn.sa+=sa*w;
+            if(sa<.28||l<.16||l>.93) continue;                      // fuera grises, negros y blancos
+            let w=sa*sa*(1-Math.abs(l-.5)*1.1);                     // gana lo más saturado (pelo, ropa, fondo de color)
+            if(h>=6&&h<=50&&sa<.78&&l>.3) w*=.18;                   // tonos de piel: casi no cuentan
+            const bn=bins[Math.floor(h/(360/NB))%NB], r=h*Math.PI/180;
+            bn.w+=w; bn.x+=Math.cos(r)*w; bn.y+=Math.sin(r)*w; bn.sa+=sa*w;
           }
-          const best=bins.reduce((a,b)=>b.w>a.w?b:a);
-          if(best.w<=0) return res(null);
-          const h=best.h/best.w, sa=Math.min(.95,Math.max(.7,best.sa/best.w*1.12));
+          // se suaviza con los tonos vecinos y se elige el tono dominante
+          let bi=-1, bs=0;
+          for(let k=0;k<NB;k++){ const sc=bins[k].w+.6*(bins[(k+NB-1)%NB].w+bins[(k+1)%NB].w); if(sc>bs){ bs=sc; bi=k; } }
+          if(bi<0||bs<=0) return res(null);
+          let X=0,Y=0,W=0,SA=0;
+          [-1,0,1].forEach(d=>{ const b=bins[(bi+d+NB)%NB]; X+=b.x; Y+=b.y; W+=b.w; SA+=b.sa; });
+          if(W<=0) return res(null);
+          const h=(Math.atan2(Y,X)*180/Math.PI+360)%360, sa=Math.min(.95,Math.max(.7,SA/W*1.12));
           res(hsl2hex(h,sa,.6));                                    // luminosidad fija: viva pero no chillona
         }catch(e){ res(null); }                                     // imagen "tainted" (sin CORS)
       };
@@ -337,6 +344,7 @@
     return `<div class="rp-row" role="button" tabindex="0" data-rp-id="${escAttr(m.id)}" style="--vc:${colorDe(x)};--s:${s};--n:${n}" title="${escAttr(m.nombre||"")}">
       <div class="rp-band"><span class="rp-vt">${escHtml(voz)}</span><span class="rp-t">${nombreNota(x.lo,est.nota)} – ${nombreNota(x.hi,est.nota)}</span></div>
       <div class="rp-line"><div class="rp-l">${avatarImgTag(m)}<span class="rp-cn">${escHtml(m.nombre||"")}</span></div></div>
+      <em class="rp-st" title="${x.hi-x.lo} semitonos" aria-label="${x.hi-x.lo} semitonos">${x.hi-x.lo}</em>
     </div>`;
   }
 

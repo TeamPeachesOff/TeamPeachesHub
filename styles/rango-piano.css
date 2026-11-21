@@ -130,7 +130,7 @@
 #rangoPianoModal .rp-lanes{position:relative;width:calc(var(--kw) * 52);padding:4px 0 10px;
   }
 /* sin fondo, sombreado ni guías: solo la franja de color */
-#rangoPianoModal .rp-row{position:relative;height:30px;margin-top:6px;--s:0;--n:52;cursor:pointer;outline:none;}
+#rangoPianoModal .rp-row{position:relative;display:flex;align-items:center;justify-content:space-between;height:30px;margin-top:6px;--s:0;--n:52;cursor:pointer;outline:none;}
 /* franja con el rango REAL de la persona, alineada con las teclas; su color sale de la foto de perfil */
 #rangoPianoModal .rp-band{position:absolute;top:1px;bottom:1px;left:calc(var(--kw) * var(--s));width:calc(var(--kw) * var(--n));max-width:calc(var(--kw) * 52);
   border-radius:999px;background:var(--vc);transition:background .5s,box-shadow .25s,filter .2s;
@@ -144,8 +144,11 @@
 #rangoPianoModal .rp-band{display:flex;align-items:center;justify-content:space-between;gap:10px;}
 #rangoPianoModal .rp-vt{position:sticky;left:calc(16px + var(--rp-namew) + 8px);flex:0 1 auto;min-width:0;padding-left:14px;
   overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-weight:900;font-size:11.5px;line-height:28px;color:#1a1020;z-index:1;}
-#rangoPianoModal .rp-t{position:sticky;right:16px;flex:none;padding-right:14px;white-space:nowrap;font-weight:900;font-size:12px;line-height:28px;
+#rangoPianoModal .rp-t{position:sticky;right:64px;flex:none;padding-right:14px;white-space:nowrap;font-weight:900;font-size:12px;line-height:28px;
   color:#1a1020;font-variant-numeric:tabular-nums;z-index:1;}
+/* semitonos que cubre: pegado al borde derecho de la ventana (igual que la cantidad en el encabezado de tipo de voz) */
+#rangoPianoModal .rp-st{position:sticky;right:16px;z-index:3;flex:none;min-width:26px;box-sizing:border-box;text-align:center;font-style:normal;font-size:12px;font-weight:900;
+  color:#fff;padding:4px 9px;border-radius:999px;background:rgba(26,16,32,.85);box-shadow:inset 0 0 0 1px var(--vc);font-variant-numeric:tabular-nums;pointer-events:none;}
 /* nombre: fijo a la izquierda de la ventana */
 #rangoPianoModal .rp-line{position:sticky;left:16px;z-index:3;box-sizing:border-box;height:100%;width:var(--rp-namew);
   display:flex;align-items:center;pointer-events:none;}
