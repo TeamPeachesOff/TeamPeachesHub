@@ -1238,6 +1238,7 @@
     </div>
     <div class="hidden" id="memberToolsRow4" style="display:flex;gap:10px;margin-bottom:14px;">
       <button class="btn-small btn-family" id="pasarListaBtn" style="flex:1;">🗒️ Participación</button>
+      <button class="btn-small btn-family" id="compartirFaltasBtn" style="flex:1;">📸 Compartir Faltas</button>
     </div>
     <div id="miembrosFijas">
       <div class="section-label">👑 Reinas Peachy</div>
@@ -1756,7 +1757,8 @@
     <h3>❌ Poner falta a los que faltan</h3>
     <div id="faltantesInfo" style="font-size:13px;color:var(--text-dim);margin-bottom:10px;"></div>
     <div id="faltantesLista" style="display:flex;flex-direction:column;gap:6px;max-height:50vh;overflow-y:auto;"></div>
-    <div class="modal-actions" style="display:flex;gap:8px;margin-top:14px;">
+    <div class="modal-actions" style="display:flex;flex-wrap:wrap;gap:8px;margin-top:14px;">
+      <button type="button" class="btn-small btn-update" id="faltantesCopiarBtn" style="flex:1 1 100%;">📋 Copiar users de los marcados</button>
       <button type="button" class="btn-small" id="faltantesTodosBtn" style="background:var(--card-bg-2);color:var(--text);flex:1;">Desmarcar todos</button>
       <button type="button" class="btn-small btn-danger" id="faltantesConfirmarBtn" style="flex:1;">Confirmar faltas</button>
     </div>
@@ -4751,23 +4753,58 @@ function ponerFaltaALosQueFaltan_(idActividad){
 function ponerFaltaMulti_(idsActividades){
   const acts = idsActividades.map(id=>DB.actividades.find(x=>String(x.id)===String(id))).filter(Boolean);
   if(!acts.length) return;
-  const idSet = new Set(acts.map(a=>String(a.id)));
-  const asignadosIds = new Set();
-  DB.entregas.filter(e=>idSet.has(String(e.idActividad)))
-    .forEach(e=>idsDeEntrega_(e).forEach(id=>asignadosIds.add(String(id))));
-  const cats = acts.map(a=>a.categoria==="canto"||a.categoria==="doblaje"?a.categoria:null);
-  const titulos = acts.map(a=>a.titulo||"").join(" + ");
-  const faltantes = (DB.miembros||[]).filter(m=>{
-    if(!m.nombre || asignadosIds.has(String(m.id))) return false;
-    return cats.some(c=> c===null || (c==="canto"?esTrue(m.canto):esTrue(m.doblaje)));
-  }).slice().sort((a,b)=>(a.nombre||"").localeCompare(b.nombre||""));
-  if(!faltantes.length){ toast("Nadie falta: todos tienen una entrega asignada 🎉"); return; }
-  faltantesActividadActual_ = { idActividad: acts.map(a=>a.id).join(","), titulo: titulos };
-  faltantesSeleccionados_ = new Set(faltantes.map(m=>String(m.id)));
-  document.getElementById("faltantesInfo").textContent = `${faltantes.length} miembro(s) sin entrega en "${titulos}". Desmarcá a quien ya justificó antes de confirmar.`;
-  renderFaltantesLista_(faltantes);
-  document.getElementById("faltantesTodosBtn").textContent = "Desmarcar todos";
+  faltantesActividadActual_ = { idActividad: acts.map(a=>a.id).join(","), ids: acts.map(a=>String(a.id)), titulo: acts.map(a=>a.titulo||"").join(" + ") };
+  const r=calcFaltantes_();
+  if(!r.pendientes.length && !r.conPrevia.length){ toast("Nadie falta: todos tienen una entrega asignada 🎉"); return; }
+  pintarFaltantes_(true);
   openModal("faltantesModal");
+}
+/* ----- Una sola falta por actividad, y reversible -----
+   Cada falta del lote queda en el historial con el motivo «Sin entrega en: <actividad(es)>». Con eso, si se vuelve a pasar lista de
+   una (o varias) de esas actividades, quien ya tiene una falta registrada de ellas NO vuelve a sumar: sale como «ya tiene falta»
+   y en vez del check aparece «Quitar falta», que borra ese registro del historial (el backend revierte el conteo). */
+const FALTA_MOTIVO_RE_ = /^\s*Sin entrega en:\s*/i;
+function faltaTitulosDeMotivo_(motivo){
+  const t=String(motivo||""); if(!FALTA_MOTIVO_RE_.test(t)) return [];
+  const resto=t.replace(FALTA_MOTIVO_RE_,"").trim();
+  return [resto,...resto.split(/\s+\+\s+/)].map(normalizarTexto_).filter(Boolean);
+}
+function faltasPreviasDe_(titulos){            // Map idMiembro -> registros de falta que tocan alguna de esas actividades
+  const sel=new Set(titulos.map(normalizarTexto_).filter(Boolean)), map=new Map();
+  (DB.historialCastigos||[]).forEach(x=>{
+    if(String(x.tipo)!=="falta") return;
+    if(!faltaTitulosDeMotivo_(x.motivo).some(t=>sel.has(t))) return;
+    const k=String(x.idMiembro); if(!map.has(k)) map.set(k,[]); map.get(k).push(x);
+  });
+  return map;
+}
+function calcFaltantes_(){
+  const f=faltantesActividadActual_;
+  const acts=f.ids.map(id=>DB.actividades.find(x=>String(x.id)===String(id))).filter(Boolean);
+  const idSet=new Set(acts.map(a=>String(a.id)));
+  const asignados=new Set();
+  DB.entregas.filter(e=>idSet.has(String(e.idActividad))).forEach(e=>idsDeEntrega_(e).forEach(id=>asignados.add(String(id))));
+  const cats=acts.map(a=>a.categoria==="canto"||a.categoria==="doblaje"?a.categoria:null);
+  const previas=faltasPreviasDe_(acts.map(a=>a.titulo||""));
+  const orden=(a,b)=>(a.nombre||"").localeCompare(b.nombre||"");
+  const pendientes=(DB.miembros||[]).filter(m=>{
+    if(!m.nombre || asignados.has(String(m.id)) || previas.has(String(m.id))) return false;
+    return cats.some(c=> c===null || (c==="canto"?esTrue(m.canto):esTrue(m.doblaje)));
+  }).sort(orden);
+  const conPrevia=(DB.miembros||[]).filter(m=>m.nombre && previas.has(String(m.id))).sort(orden);
+  return { pendientes, conPrevia, previas };
+}
+function pintarFaltantes_(reset){
+  const r=calcFaltantes_(), f=faltantesActividadActual_;
+  const ids=new Set(r.pendientes.map(m=>String(m.id)));
+  faltantesSeleccionados_ = reset ? ids : new Set([...faltantesSeleccionados_].filter(id=>ids.has(id)));
+  document.getElementById("faltantesInfo").textContent =
+    (r.pendientes.length ? `${r.pendientes.length} miembro(s) sin entrega en "${f.titulo}". Desmarcá a quien ya justificó antes de confirmar.` : `Nadie más falta en "${f.titulo}".`)
+    + (r.conPrevia.length ? ` ${r.conPrevia.length} ya tiene(n) su falta de esta actividad (no se les suma otra).` : "");
+  renderFaltantesLista_(r.pendientes, r.conPrevia.map(m=>({m, regs:r.previas.get(String(m.id))})));
+  const hay=r.pendientes.length>0;
+  const tb=document.getElementById("faltantesTodosBtn"); tb.textContent="Desmarcar todos"; tb.disabled=!hay; tb.style.opacity=hay?"":".45";
+  const cb=document.getElementById("faltantesConfirmarBtn"); cb.disabled=!hay; cb.style.opacity=hay?"":".45";
 }
 function _ponerFaltaLegacy_(idActividad){
   const a = DB.actividades.find(x=>String(x.id)===String(idActividad));
@@ -4796,22 +4833,44 @@ function _ponerFaltaLegacy_(idActividad){
   document.getElementById("faltantesTodosBtn").textContent = "Desmarcar todos";
   openModal("faltantesModal");
 }
-function renderFaltantesLista_(faltantes){
+function renderFaltantesLista_(faltantes, conPrevia){
+  conPrevia = conPrevia||[];
   const cont=document.getElementById("faltantesLista");
-  cont.innerHTML = faltantes.map(m=>`<label class="member-row" style="cursor:pointer;">
+  const badges=m=>`<div class="badges-row">
+        ${esTrue(m.canto)?`<span class="badge badge-canto">🎤 Canto</span>`:""}
+        ${esTrue(m.doblaje)?`<span class="badge badge-doblaje">🎙️ Doblaje</span>`:""}
+      </div>`;
+  let h = faltantes.map(m=>`<label class="member-row" style="cursor:pointer;">
     ${avatarImgTag(m)}
     <div class="m-info" style="flex:1;">
       <div class="m-name">${escHtml(m.nombre||"")}</div>
-      <div class="badges-row">
-        ${esTrue(m.canto)?`<span class="badge badge-canto">🎤 Canto</span>`:""}
-        ${esTrue(m.doblaje)?`<span class="badge badge-doblaje">🎙️ Doblaje</span>`:""}
-      </div>
+      ${badges(m)}
     </div>
     <input type="checkbox" data-faltante="${escAttr(m.id)}" ${faltantesSeleccionados_.has(String(m.id))?"checked":""} style="width:20px;height:20px;flex-shrink:0;accent-color:var(--peach-2);">
   </label>`).join("");
+  if(conPrevia.length){
+    h += `<div style="font-size:12px;font-weight:800;color:var(--text-dim);margin:10px 2px 2px;">📉 Ya tienen falta de esta actividad (${conPrevia.length})</div>`;
+    h += conPrevia.map(({m,regs})=>`<div class="member-row" style="opacity:.95;">
+      ${avatarImgTag(m)}
+      <div class="m-info" style="flex:1;">
+        <div class="m-name">${escHtml(m.nombre||"")}</div>
+        <div style="font-size:11.5px;color:var(--text-dim);">Falta ya registrada${regs&&regs[0]&&regs[0].fecha?` · ${escHtml(fmtFechaHC_(regs[0].fecha))}`:""}</div>
+      </div>
+      <button type="button" class="btn-small btn-danger" data-quitar-falta="${escAttr(m.id)}" style="flex-shrink:0;padding:7px 12px;">Quitar falta</button>
+    </div>`).join("");
+  }
+  cont.innerHTML = h;
   cont.querySelectorAll("[data-faltante]").forEach(chk=>chk.onchange=()=>{
     const id=String(chk.dataset.faltante);
     if(chk.checked) faltantesSeleccionados_.add(id); else faltantesSeleccionados_.delete(id);
+  });
+  cont.querySelectorAll("[data-quitar-falta]").forEach(b=>b.onclick=async()=>{
+    const id=String(b.dataset.quitarFalta), item=conPrevia.find(x=>String(x.m.id)===id); if(!item) return;
+    if(!await confirmarAccion(`¿Quitarle a ${item.m.nombre||"este miembro"} la falta de "${faltantesActividadActual_.titulo}"? Se borra del historial y se le resta.`)) return;
+    const r=await apiPost({action:"deleteHistorialCastigos", idMiembro:id, ids:item.regs.map(x=>String(x.id))}, "Quitando falta...");
+    if(!r.ok){ toast("Error: "+(r.error||"")); return; }
+    toast("Falta quitada ✅");
+    await cargarDatos(); pintarFaltantes_(false); renderPasarLista();
   });
   bindAvatarFallbacks();
 }
@@ -4852,9 +4911,20 @@ document.getElementById("faltantesTodosBtn").onclick=()=>{
   });
   document.getElementById("faltantesTodosBtn").textContent = marcarTodos ? "Desmarcar todos" : "Marcar todos";
 };
+document.getElementById("faltantesCopiarBtn").onclick=()=>{
+  const ms=(DB.miembros||[]).filter(m=>faltantesSeleccionados_.has(String(m.id)));
+  if(!ms.length){ toast("No hay nadie marcado."); return; }
+  const lineas=ms.map(m=>String(m.usuarioSmule||"").trim()||String(m.nombre||"").trim()).filter(Boolean);
+  vipCopiar_(lineas.join("\n"), `Copiados ${lineas.length} user(s) ✅`);
+};
 document.getElementById("faltantesConfirmarBtn").onclick=async()=>{
   if(!faltantesActividadActual_) return;
-  const ids=[...faltantesSeleccionados_];
+  let ids=[...faltantesSeleccionados_];
+  if(faltantesActividadActual_.ids){                                   // jamás sumar una segunda falta de la misma actividad
+    const ya=faltasPreviasDe_(faltantesActividadActual_.ids.map(id=>{ const a=DB.actividades.find(x=>String(x.id)===id); return a?a.titulo||"":""; }));
+    const antes=ids.length; ids=ids.filter(id=>!ya.has(String(id)));
+    if(ids.length<antes) toast(`${antes-ids.length} ya tenía(n) falta de esta actividad: se omitieron`);
+  }
   if(!ids.length){ toast("No dejaste a nadie marcado."); return; }
   if(!await confirmarAccion(`Se le va a sumar UNA falta a ${ids.length} miembro(s) en "${faltantesActividadActual_.titulo}". ¿Continuar?`)) return;
   const r = await apiPost({action:"addFaltasMultiples", ids, motivo:`Sin entrega en: ${faltantesActividadActual_.titulo}`}, "Registrando faltas...");
@@ -8732,5 +8802,6 @@ document.getElementById("miembrosContarBtn").onclick=()=>{
 })();
 </script>
 <script src="scripts/rango-piano.js?v=10"></script>
+<script src="scripts/compartir-faltas.js?v=1"></script>
 </body>
 </html>
