@@ -1540,11 +1540,19 @@
         <div class="upload-status" id="af_linkFormsStatus" style="text-align:left;"></div>
       </div>
       <div class="form-group" style="background:var(--card-bg-2);padding:10px;border-radius:12px;">
-        <label style="color:var(--peach-2);">🔄 Sincronizar entregas desde el formulario (solo agrega, nunca borra)</label>
-        <input autocomplete="off" type="text" id="af_syncHoja" placeholder="Link de la hoja (vacío = la ligada al formulario elegido arriba)" style="margin-bottom:8px;">
-        <input autocomplete="off" type="text" id="af_syncTexto" placeholder="Texto de la columna B (el mismo que se escribe en el formulario)">
+        <label style="color:var(--peach-2);">🔄 Conectar con formulario (solo agrega entregas, nunca borra)</label>
+        <select id="af_syncHojaSel">
+          <option value="CFG_HOJA_ENTREGA_OFICIAL_CANTO_LINK">Canto Oficial</option>
+          <option value="CFG_HOJA_ENTREGA_SEMANAL_CANTO_LINK">Canto Semanal</option>
+          <option value="CFG_HOJA_ENTREGA_OFICIAL_DOBLAJE_LINK">Doblaje Oficial</option>
+          <option value="CFG_HOJA_ENTREGA_SEMANAL_DOBLAJE_LINK">Doblaje Semanal</option>
+          <option value="nuevo">Nuevo Enlace</option>
+        </select>
+        <input autocomplete="off" type="text" id="af_syncHoja" placeholder="https://docs.google.com/spreadsheets/d/..." style="margin-top:6px;">
+        <input autocomplete="off" type="text" id="af_syncTexto" placeholder="Texto de la columna B (parecido al del formulario, ≥90%)" style="margin-top:6px;">
+        <input type="hidden" id="af_syncActivo" value="1">
         <button type="button" class="btn-small btn-family" id="af_syncAhora" style="width:100%;margin-top:8px;">🔄 Sincronizar ahora</button>
-        <div class="upload-status" id="af_syncStatus" style="text-align:left;">La hoja debe estar compartida como «Cualquier persona con el enlace: lector». Se leen las filas cuya columna B sea ese texto y solo se añaden las entregas nuevas.</div>
+        <div class="upload-status" id="af_syncStatus" style="text-align:left;">Elige la hoja de respuestas (se define en Editar Enlaces) y escribe el texto que se pone en la columna B del formulario. Se añaden solo las entregas nuevas. Para apagarlo o encenderlo usa el botón «🔗 Formulario» de la tarjeta.</div>
       </div>
       <div class="form-group"><label>Link para unirse (Smule, si es grupal)</label><input autocomplete="off" type="text" id="af_linkUnirse"></div>
       <div class="form-group">
@@ -3821,6 +3829,7 @@ function cardHTML(a, entregasDeEsta){
         </div>`:""}
         ${staffPin?`<div class="card-actions">
           <button class="btn-small btn-bell" data-bell="${escAttr(a.id)}">🔔</button>
+          ${(()=>{ const sy=syncFormDe_(a); return sy&&sy.texto?`<button class="btn-small ${sy.activo?"btn-family":"btn-admin"}" data-sync-toggle="${escAttr(a.id)}" title="Conexión de entregas con el formulario: ${sy.activo?"encendida":"apagada"}. Toca para ${sy.activo?"apagarla":"encenderla"}">🔗 Formulario: ${sy.activo?"ON":"OFF"}</button>`:""; })()}
           <button class="btn-small btn-admin" data-edit="${escAttr(a.id)}">✏️ Editar</button>
           <button class="btn-small btn-danger" data-delete="${escAttr(a.id)}">🗑️ Borrar</button>
         </div>`:""}
@@ -3885,6 +3894,7 @@ function attachCardEvents(){
   });
   document.querySelectorAll("[data-edit]").forEach(btn=>btn.onclick=()=>openActivityForm(btn.dataset.edit, false));
   document.querySelectorAll("[data-delete]").forEach(btn=>btn.onclick=()=>borrarActividad(btn.dataset.delete));
+  document.querySelectorAll("[data-sync-toggle]").forEach(btn=>btn.onclick=()=>alternarSyncForm_(btn.dataset.syncToggle));
   document.querySelectorAll("[data-bell]").forEach(btn=>btn.onclick=()=>probarRecordatorio(btn.dataset.bell));
   document.querySelectorAll("[data-copy-hashtags]").forEach(btn=>btn.onclick=()=>copiarHashtagsDeActividad(btn.dataset.copyHashtags));
   document.querySelectorAll("[data-add-entrega]").forEach(btn=>btn.onclick=()=>openEntregaForm(btn.dataset.addEntrega));
@@ -6810,7 +6820,7 @@ function openActivityForm(id, esAnuarioItem){
   document.getElementById("af_scriptFile").value=""; document.getElementById("af_scriptStatus").textContent="";
   document.getElementById("af_customButtons").innerHTML="";
   botonesPersonalizadosDe(a||{}).forEach(agregarFilaBotonPersonalizado);
-  { const sy=syncFormDe_(a||{}); document.getElementById("af_syncHoja").value=sy?sy.hoja:(localStorage.getItem("tph_syncHoja")||""); document.getElementById("af_syncTexto").value=sy?sy.texto:""; document.getElementById("af_syncStatus").textContent=""; }
+  cargarSyncEnForm_(a||{});
   setSwitchPill("af_categoriaSwitch", a?(a.categoria||""):"");
   setSwitchPill("af_participacionSwitch", a?(a.participacion||"opcional"):"opcional");
   setSwitchPill("af_dobleSwitch", (a && esTrue(a.dobleEspacio)) ? "1" : "0");
@@ -6984,13 +6994,61 @@ function hojaAncladaDe_(linkForms, claveForm){
   for(const k of ks){ const h=(enl[HOJA_DE_FORM_[k]]||"")||loc[HOJA_DE_FORM_[k]]||""; if(h) return h; }
   return "";
 }
+const NOMBRES_HOJA_FORM_={CFG_HOJA_ENTREGA_OFICIAL_CANTO_LINK:"Canto Oficial",CFG_HOJA_ENTREGA_SEMANAL_CANTO_LINK:"Canto Semanal",CFG_HOJA_ENTREGA_OFICIAL_DOBLAJE_LINK:"Doblaje Oficial",CFG_HOJA_ENTREGA_SEMANAL_DOBLAJE_LINK:"Doblaje Semanal"};
+// URL de la hoja ligada a una clave (Editar Enlaces → «Hoja de respuestas»); si el backend aún no la guarda, la de este navegador
+function hojaUrlDeClave_(k){ const enl=enlacesStaff||{}; return (k&&((enl[k]||"")||hojasAncladasLocal_()[k]))||""; }
 function syncFormDe_(a){
-  try{ const b=JSON.parse(a&&a.botonesPersonalizados||"[]"); const x=Array.isArray(b)&&b.find(v=>v&&v.sync); return x?{hoja:String(x.hoja||""),texto:String(x.texto||"")}:null; }catch(_){ return null; }
+  try{ const b=JSON.parse(a&&a.botonesPersonalizados||"[]"); const x=Array.isArray(b)&&b.find(v=>v&&v.sync); return x?{hoja:String(x.hoja||""),hojaClave:String(x.hojaClave||""),texto:String(x.texto||""),activo:x.activo!==false}:null; }catch(_){ return null; }
 }
+// Selector de hoja (igual que el de enlace de entrega: 4 definidos + Nuevo Enlace)
+function sincronizarSelectorHoja_(){
+  const sel=document.getElementById("af_syncHojaSel"), inp=document.getElementById("af_syncHoja"), esNuevo=sel.value==="nuevo";
+  Array.from(sel.options).forEach(o=>{ if(o.value!=="nuevo") o.textContent=NOMBRES_HOJA_FORM_[o.value]+(hojaUrlDeClave_(o.value)?"":" (sin configurar)"); });
+  if(!esNuevo) inp.value=hojaUrlDeClave_(sel.value);
+  inp.readOnly=!esNuevo; inp.style.opacity=esNuevo?"1":"0.7";
+}
+function cargarSyncEnForm_(a){
+  const sy=syncFormDe_(a), sel=document.getElementById("af_syncHojaSel"), inp=document.getElementById("af_syncHoja");
+  document.getElementById("af_syncTexto").value=sy?sy.texto:"";
+  document.getElementById("af_syncActivo").value=(!sy||sy.activo)?"1":"0";
+  document.getElementById("af_syncStatus").textContent="";
+  if(sy&&sy.hojaClave&&NOMBRES_HOJA_FORM_[sy.hojaClave]) sel.value=sy.hojaClave;
+  else if(sy&&sy.hoja){ sel.value="nuevo"; inp.value=sy.hoja; }
+  else{ const f=document.getElementById("af_linkFormsSel").value; sel.value=HOJA_DE_FORM_[f]||"CFG_HOJA_ENTREGA_OFICIAL_CANTO_LINK"; }
+  sincronizarSelectorHoja_();
+}
+document.getElementById("af_syncHojaSel").addEventListener("change",()=>{
+  const sel=document.getElementById("af_syncHojaSel"); if(sel.value==="nuevo"){ document.getElementById("af_syncHoja").value=""; }
+  sincronizarSelectorHoja_(); if(sel.value==="nuevo") document.getElementById("af_syncHoja").focus();
+});
+// si aún no hay texto de conexión, al cambiar el formulario de entrega se sugiere su hoja
+document.getElementById("af_linkFormsSel").addEventListener("change",()=>{
+  const f=document.getElementById("af_linkFormsSel").value;
+  if(!document.getElementById("af_syncTexto").value.trim()&&HOJA_DE_FORM_[f]){ document.getElementById("af_syncHojaSel").value=HOJA_DE_FORM_[f]; sincronizarSelectorHoja_(); }
+});
 function leerSyncForm_(){
-  const hoja=document.getElementById("af_syncHoja").value.trim(), texto=document.getElementById("af_syncTexto").value.trim();
-  if(hoja) { try{ localStorage.setItem("tph_syncHoja",hoja); }catch(_){} }
-  return texto?[{sync:true,hoja,texto}]:[];
+  const sel=document.getElementById("af_syncHojaSel").value, texto=document.getElementById("af_syncTexto").value.trim(), activo=document.getElementById("af_syncActivo").value!=="0";
+  if(!texto) return [];
+  if(sel==="nuevo"){ const hoja=document.getElementById("af_syncHoja").value.trim(); return hoja?[{sync:true,activo,hoja,hojaClave:"",texto}]:[]; }
+  return [{sync:true,activo,hoja:"",hojaClave:sel,texto}];
+}
+// «Texto parecido al del formulario»: se compara sin tildes/mayúsculas/signos y se acepta desde 90 % de parecido (distancia de Levenshtein)
+function normSync_(s){ return String(s==null?"":s).normalize("NFD").replace(/[̀-ͯ]/g,"").toLowerCase().replace(/[^a-z0-9]/g,""); }
+function similitudTxt_(x,y){
+  x=normSync_(x); y=normSync_(y); if(!x||!y) return 0; if(x===y) return 1;
+  const m=x.length, n=y.length; if(Math.abs(m-n)/Math.max(m,n)>0.1) return 0;
+  let prev=Array.from({length:n+1},(_,j)=>j);
+  for(let i=1;i<=m;i++){ const cur=[i]; for(let j=1;j<=n;j++) cur[j]=Math.min(prev[j]+1,cur[j-1]+1,prev[j-1]+(x[i-1]===y[j-1]?0:1)); prev=cur; }
+  return 1-prev[n]/Math.max(m,n);
+}
+async function alternarSyncForm_(id){
+  const a=(DB.actividades||[]).find(x=>String(x.id)===String(id)); if(!a) return;
+  let arr; try{ arr=JSON.parse(a.botonesPersonalizados||"[]"); if(!Array.isArray(arr)) arr=[]; }catch(_){ arr=[]; }
+  const x=arr.find(v=>v&&v.sync); if(!x){ toast("Esta actividad no tiene conexión a formulario"); return; }
+  x.activo=(x.activo===false);   // alterna: encendido ↔ apagado
+  const r=await apiPost({action:"editActividad",data:{id:a.id,botonesPersonalizados:JSON.stringify(arr)}},"Guardando…");
+  if(r&&r.ok){ toast(x.activo?"🔗 Conexión al formulario activada":"⏸️ Conexión al formulario apagada"); await cargarDatos(); if(x.activo){ syncFormUlt_[a.id]=0; autoSyncForms_(); } }
+  else toast("Error: "+((r&&r.error)||""));
 }
 function csvParse_(t){
   const filas=[]; let f=[], c="", q=false;
@@ -7018,13 +7076,13 @@ let syncFormEnCurso_=false;
 async function sincronizarEntregasForm_(act, silencioso){
   const sy=syncFormDe_(act); if(!sy||!sy.texto) return {ok:false,error:"Falta el texto de la columna B"};
   if(!enlacesStaff&&nivel==="staff"){ try{ await cargarEnlacesStaff(true); }catch(_){} }
-  sy.hoja=sy.hoja||hojaAncladaDe_(act.linkForms); if(!sy.hoja) return {ok:false,error:"Falta la hoja de respuestas (ponla aquí o en Editar Enlaces)"};
+  sy.hoja=sy.hoja||hojaUrlDeClave_(sy.hojaClave)||hojaAncladaDe_(act.linkForms); if(!sy.hoja) return {ok:false,error:"Falta la hoja de respuestas (defínela en Editar Enlaces o elige «Nuevo Enlace»)"};
   if(syncFormEnCurso_) return {ok:false,error:"Ya hay una sincronización en curso"};
   syncFormEnCurso_=true;
   try{
     // 1) El servidor (Code.gs v17) lee la hoja con la cuenta del script, serializa con un candado y no necesita que la hoja sea pública.
     try{
-      const rs=await apiPost({action:"sincronizarEntregasForm",idActividad:String(act.id),hoja:sy.hoja,texto:sy.texto},"",true);
+      const rs=await apiPost({action:"sincronizarEntregasForm",idActividad:String(act.id),hoja:sy.hoja,hojaClave:sy.hojaClave,texto:sy.texto,forzar:!silencioso},"",true);
       if(rs&&rs.ok){ if(rs.nuevas) await cargarDatos(); return {ok:true,nuevas:rs.nuevas||0,errores:0,total:rs.total||0}; }
       if(rs&&/en curso/i.test(rs.error||"")) return {ok:false,error:rs.error};
     }catch(_){}
@@ -7036,8 +7094,9 @@ async function sincronizarEntregasForm_(act, silencioso){
     let cEnl=col([],"enlace","link","grabaci","url");
     let cUsu=col([cEnl],"usuario","nombre","user","smule");
     let cDet=col([cEnl,cUsu],"escena","cancion","detalle","titulo","tema");
-    const clave=normalizarTexto_(sy.texto);
-    const coinciden=filas.slice(1).filter(f=>{ const b=normalizarTexto_(f[1]); return b&&(b===clave); });
+    // cada fila solo cuenta para la actividad cuyo texto se parece MÁS (evita mezclar «Junio» con «Julio»)
+    const otros=(DB.actividades||[]).filter(x=>String(x.id)!==String(act.id)).map(syncFormDe_).filter(z=>z&&z.texto).map(z=>z.texto);
+    const coinciden=filas.slice(1).filter(f=>{ const sm=similitudTxt_(f[1],sy.texto); return sm>=0.9&&otros.every(o=>similitudTxt_(f[1],o)<=sm); });
     const ya=new Set((DB.entregas||[]).filter(e=>String(e.idActividad)===String(act.id)).map(e=>normalizarTexto_(e.nombreUsuario)+"|"+normalizarTexto_(e.linkGrabacion||e.detalleEntrega)));
     let nuevas=0, errores=0, n=0;
     for(const f of coinciden){
@@ -7059,13 +7118,13 @@ async function sincronizarEntregasForm_(act, silencioso){
 }
 document.getElementById("af_syncAhora").onclick=async()=>{
   const st=document.getElementById("af_syncStatus"), id=document.getElementById("af_id").value;
-  const hoja=document.getElementById("af_syncHoja").value.trim(), texto=document.getElementById("af_syncTexto").value.trim();
+  const cfg=leerSyncForm_()[0];
   if(!id){ st.textContent="Guarda primero la actividad y luego sincroniza."; return; }
-  if(!texto){ st.textContent="Pon el texto de la columna B."; return; }
-  if(!hoja&&!hojaAncladaDe_(document.getElementById("af_linkForms").value,document.getElementById("af_linkFormsSel").value)){ st.textContent="Pon el link de la hoja (o guárdalo en Editar Enlaces junto al formulario)."; return; }
+  if(!cfg){ st.textContent="Pon el texto de la columna B (y el link si elegiste «Nuevo Enlace»)."; return; }
+  if(!cfg.hoja&&!hojaUrlDeClave_(cfg.hojaClave)){ st.textContent="Esa hoja aún no está configurada: ponla en Editar Enlaces → «Hoja de respuestas»."; return; }
   const act=(DB.actividades||[]).find(a=>String(a.id)===String(id)); if(!act){ st.textContent="No encontré la actividad."; return; }
   st.textContent="Sincronizando…";
-  const r=await sincronizarEntregasForm_(Object.assign({},act,{linkForms:document.getElementById("af_linkForms").value,botonesPersonalizados:JSON.stringify([{sync:true,hoja,texto}])}));
+  const r=await sincronizarEntregasForm_(Object.assign({},act,{linkForms:document.getElementById("af_linkForms").value,botonesPersonalizados:JSON.stringify([Object.assign({},cfg,{activo:true})])}));
   st.textContent=r.ok?(`Listo ✅ ${r.nuevas} entrega(s) nueva(s) de ${r.total} fila(s) con ese texto.`+(r.errores?` ${r.errores} con error.`:"")+" Recuerda Guardar para conservar la configuración."):("⚠️ "+r.error);
 };
 /* Automático: cuando alguien de Staff tiene la página abierta, cada ~5 min revisa las actividades con sincronización y agrega lo nuevo. */
@@ -7073,7 +7132,7 @@ const syncFormUlt_={};
 async function autoSyncForms_(){
   if(nivel!=="staff"||document.visibilityState!=="visible"||syncFormEnCurso_||!DB||!Array.isArray(DB.actividades)) return;
   for(const a of DB.actividades){
-    const sy=syncFormDe_(a); if(!sy||!sy.texto) continue;
+    const sy=syncFormDe_(a); if(!sy||!sy.texto||!sy.activo) continue;   // apagada desde la tarjeta: no se sincroniza
     if(Date.now()-(syncFormUlt_[a.id]||0)<300000) continue;
     syncFormUlt_[a.id]=Date.now();
     const r=await sincronizarEntregasForm_(a,true);
@@ -8944,6 +9003,6 @@ document.getElementById("miembrosContarBtn").onclick=()=>{
 </script>
 <script src="scripts/rango-piano.js?v=10"></script>
 <script src="scripts/compartir-faltas.js?v=1"></script>
-<script src="scripts/reproducir-todo.js?v=10"></script>
+<script src="scripts/reproducir-todo.js?v=11"></script>
 </body>
 </html>

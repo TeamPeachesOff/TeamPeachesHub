@@ -36,13 +36,16 @@
   .pa-top{grid-column:1/-1;display:flex;align-items:center;gap:8px;padding:6px 12px;}
   .pa-count{flex:none;padding:4px 11px;border-radius:999px;background:linear-gradient(90deg,var(--peach-2,#ef0870),var(--peach-1,#ff8fb1));font-weight:900;font-size:12px;}
   .pa-act{flex:1;min-width:0;font-size:13px;line-height:1.2;font-weight:800;color:rgba(255,255,255,.8);display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;}
-  .pa-x{flex:none;width:34px;height:34px;border-radius:50%;background:rgba(255,255,255,.08);color:#fff;display:grid;place-items:center;cursor:pointer;}
+  .pa-x{flex:none;position:relative;width:36px;height:36px;padding:0;border:0;background:transparent;color:#fff;display:grid;place-items:center;cursor:pointer;-webkit-tap-highlight-color:transparent;}
+  .pa-x svg{width:20px;height:20px;fill:none;stroke:#fff;stroke-width:3.6;stroke-linecap:round;filter:drop-shadow(0 0 5px rgba(239,8,112,.9)) drop-shadow(0 0 11px rgba(239,8,112,.45));transition:transform .28s cubic-bezier(.3,1.5,.5,1),stroke .2s;}
+  .pa-x:hover svg,.pa-x:focus-visible svg{transform:rotate(90deg) scale(1.15);stroke:#ff8fb1;}
+  .pa-x:active svg{transform:rotate(90deg) scale(.88);}
   .pa-x svg,.pa-ico svg{display:block;}
   .pa-main{grid-column:1;grid-row:2;min-width:0;min-height:0;overflow-y:auto;padding:0 18px 18px 20px;}
   .pa-col{width:min(100%,max(300px,calc((100vh - 230px)*16/9)));margin-left:auto;margin-right:auto;}
   .pa-player{position:relative;width:100%;aspect-ratio:16/9;background:#000;border-radius:16px;overflow:hidden;box-shadow:0 14px 40px rgba(0,0,0,.5);}
   .pa-media{position:absolute;inset:0;}
-  .pa-media iframe{position:absolute;inset:0;width:100%;height:100%;border:0;}
+  .pa-media iframe{position:absolute;left:0;top:0;width:100%;height:100%;max-width:100%;max-height:100%;border:0;display:block;}
   .pa-media video{position:absolute;inset:0;width:100%;height:100%;object-fit:contain;background:#000;}
   .pa-poster{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;background:#1a0f24 center/cover no-repeat;}
   .pa-poster::before{content:"";position:absolute;inset:0;background:inherit;filter:blur(26px) brightness(.55);transform:scale(1.2);}
@@ -124,9 +127,10 @@
   .pa-root.mini .pa-msg small{display:none;}
   @supports (height:100dvh){ .pa-root:not(.mini){height:100dvh;bottom:auto;} }
   @media (max-width:860px){
-    .pa-root{grid-template-columns:minmax(0,1fr);grid-template-rows:auto auto auto;align-content:start;overflow-y:auto;overflow-x:hidden;-webkit-overflow-scrolling:touch;}
+    .pa-root{display:flex;flex-direction:column;flex-wrap:nowrap;overflow-y:auto;overflow-x:hidden;-webkit-overflow-scrolling:touch;}
+    .pa-root>.pa-top,.pa-root>.pa-main,.pa-root>.pa-queue{flex:none;width:100%;box-sizing:border-box;}
     .pa-top{padding:4px 8px;}
-    .pa-main{grid-column:1;grid-row:2;overflow:visible;padding:0;}
+    .pa-main{overflow:visible;padding:0;min-height:auto;}
     .pa-col{width:100%;margin:0;}
     .pa-player{border-radius:0;box-shadow:none;}
     .pa-ctl{grid-template-columns:minmax(0,1fr) auto;grid-template-areas:"c c" "l r";gap:6px 10px;margin-top:10px;padding:0 12px;}
@@ -135,10 +139,33 @@
     .pa-ctl .pa-r{grid-area:r;}
     .pa-vr{width:100%;max-width:150px;}
     .pa-info{padding:0 14px;}
-    .pa-queue{grid-column:1;grid-row:3;border-left:0;border-top:1px solid rgba(255,255,255,.1);margin-top:12px;}
-    .pa-qlist{overflow:visible;}
+    .pa-name span{min-width:0;overflow-wrap:anywhere;}
+    .pa-queue{border-left:0;border-top:1px solid rgba(255,255,255,.1);margin-top:14px;min-height:auto;}
+    .pa-qlist{overflow:visible;flex:none;}
     .pa-root.mini{display:block;overflow:visible;}
   }
+  .pa-info{overflow-wrap:anywhere;}
+  .pa-player{contain:layout paint;}
+  /* ----- aviso de descarga (centro de la pantalla) ----- */
+  .pa-dlov{position:fixed;inset:0;z-index:4000;display:grid;place-items:center;padding:20px;background:rgba(10,5,16,.72);backdrop-filter:blur(7px);-webkit-backdrop-filter:blur(7px);animation:padlIn .22s ease-out;}
+  @keyframes padlIn{from{opacity:0}to{opacity:1}}
+  .pa-dlc{width:min(100%,340px);padding:26px 22px 20px;border-radius:24px;text-align:center;color:#fff;background:linear-gradient(180deg,#2a1638,#1a0f24);border:1px solid rgba(255,255,255,.12);box-shadow:0 24px 70px rgba(0,0,0,.65);animation:padlPop .4s cubic-bezier(.2,1.4,.4,1);}
+  @keyframes padlPop{from{transform:scale(.82);opacity:0}to{transform:scale(1);opacity:1}}
+  .pa-dlk{width:92px;height:92px;margin:0 auto 14px;display:block;overflow:visible;}
+  .pa-dlk circle{fill:none;stroke:var(--pk);stroke-width:5;stroke-linecap:round;stroke-dasharray:289;stroke-dashoffset:289;transform:rotate(-90deg);transform-origin:50% 50%;animation:padlC .65s .1s cubic-bezier(.65,0,.35,1) forwards;}
+  .pa-dlk path{fill:none;stroke:var(--pk);stroke-width:6;stroke-linecap:round;stroke-linejoin:round;stroke-dasharray:60;stroke-dashoffset:60;animation:padlC .4s .65s cubic-bezier(.65,0,.35,1) forwards;}
+  .pa-dlk .pa-dlg{fill:var(--pk);stroke:none;opacity:0;transform-origin:50% 50%;animation:padlG .6s .7s ease-out;}
+  @keyframes padlC{to{stroke-dashoffset:0}}
+  @keyframes padlG{0%{opacity:.35;transform:scale(.6)}100%{opacity:0;transform:scale(1.5)}}
+  .pa-dlt{font-weight:900;font-size:19px;}
+  .pa-dls{margin-top:6px;font-size:14px;font-weight:700;color:rgba(255,255,255,.85);}
+  .pa-dlm{margin-top:3px;font-size:12.5px;font-weight:600;color:rgba(255,255,255,.6);}
+  .pa-dlbar{margin:16px 4px 14px;height:4px;border-radius:999px;background:rgba(255,255,255,.14);overflow:hidden;}
+  .pa-dlbar i{display:block;height:100%;width:0;background:var(--pk);animation:padlB 2.4s linear forwards;}
+  @keyframes padlB{to{width:100%}}
+  .pa-dlb{display:flex;gap:8px;justify-content:center;}
+  .pa-dlb a,.pa-dlb button{flex:1;display:flex;align-items:center;justify-content:center;border:0;font-family:inherit;line-height:1.1;padding:12px;border-radius:999px;font-weight:900;font-size:13.5px;color:#fff;text-decoration:none;cursor:pointer;background:rgba(255,255,255,.1);}
+  .pa-dlb a{background:var(--pk);}
   `;
   document.head.appendChild(st);
 
@@ -280,7 +307,7 @@
     up:'<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20V4M6 10l6-6 6 6"/></svg>',
     fs:'<svg viewBox="0 0 24 24" width="21" height="21" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5"/></svg>',
     fsx:'<svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M9 4v5H4M15 4v5h5M9 20v-5H4M15 20v-5h5"/></svg>',
-    x:'<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="3.2" stroke-linecap="round"><path d="M5 5l14 14M19 5L5 19"/></svg>'
+    x:'<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 5L19 19M19 5L5 19"/></svg>'
   };
   const POSTER_DEF=()=>(typeof ENT_SHOW_IMG!=="undefined"?ENT_SHOW_IMG:"");
   const nombreDe=e=>{ try{
@@ -307,10 +334,18 @@
     const a=(DB.actividades||[]).find(x=>String(x.id)===String(idAct));
     lanzar(items,a?a.titulo||"":"");
   }
+  /* velocidad: se abren las conexiones a YouTube / SoundCloud antes de pedir el primer video */
+  function precalentar(items){
+    try{
+      const hosts=new Set(); items.forEach(it=>{ if(it.k.t==="yt"){ hosts.add("https://www.youtube.com"); hosts.add("https://i.ytimg.com"); } else if(it.k.t==="sc") hosts.add("https://w.soundcloud.com"); });
+      hosts.forEach(h=>{ if(document.head.querySelector('link[data-pa-pc="'+h+'"]')) return; const l=document.createElement("link"); l.rel="preconnect"; l.href=h; l.setAttribute("data-pa-pc",h); document.head.appendChild(l); });
+    }catch(_){}
+  }
   function lanzar(items,tit){
     if(!items.length){ tst("No hay entregas con enlace para reproducir."); return; }
     if(root) cerrar();
-    tituloAct=tit||""; cola=items; idx=-1; estado=new Map(); vivo=true; abrir(); ir(0,1); verificarTodo(tok0());
+    tituloAct=tit||""; cola=items; idx=-1; estado=new Map(); vivo=true; abrir(); ir(0,1); const c0=tok0(); setTimeout(()=>{ if(cola===c0&&vivo) verificarTodo(c0); },700);
+    precalentar(items);
   }
   /* Entregas de un miembro (con enlace). cats: canto|doblaje|ambas · first: cuál categoría va primero si es «ambas» ·
      ord: asc = más viejo primero, desc = más nuevo primero (la fecha real es la de la actividad, igual que en la tarjeta). */
@@ -434,7 +469,7 @@
   const probeMedia=(it)=>new Promise(res=>{
     const el=document.createElement(it.k.t==="video"?"video":"audio"); el.preload="metadata"; let d=false;
     const f=v=>{ if(!d){ d=true; try{ el.removeAttribute("src"); el.load(); }catch(_){} res(v); } };
-    el.onloadedmetadata=()=>f("ok"); el.onerror=()=>f("roto"); setTimeout(()=>f(null),9000); el.src=it.k.src;
+    el.onloadedmetadata=()=>f("ok"); el.onerror=()=>f("roto"); setTimeout(()=>f(null),6000); el.src=it.k.src;
   });
   /* Qué se puede comprobar de verdad desde el navegador: audio/video directos (se intenta cargar), YouTube y SoundCloud (su servicio oEmbed
      responde 404 si el video/pista se borró). Drive, BandLab, Smule y otros NO se pueden comprobar (el navegador lo impide): se quedan sin marca. */
@@ -445,83 +480,36 @@
       let url=null; if(k.t==="yt") url="https://www.youtube.com/oembed?format=json&url="+encodeURIComponent("https://www.youtube.com/watch?v="+k.id);
       if(k.t==="sc") url="https://soundcloud.com/oembed?format=json&url="+encodeURIComponent(k.src);
       if(!url) return null;
-      const r=await fetchT(url,8000);
+      const r=await fetchT(url,5000);
       if(r.ok) return "ok"; if(r.status===404) return "roto"; if(r.status===401||r.status===403) return k.t==="yt"?"limit":"roto";
     }catch(_){}
     return null;   // sin respuesta (bloqueo del navegador, sin internet…): no se marca nada
   }
   async function verificarTodo(c){
-    const pend=cola.map((it,i)=>i), N=3;
+    const pend=cola.map((it,i)=>i).sort((x,y)=>Math.abs(x-idx)-Math.abs(y-idx)), N=6;
     await Promise.all(Array.from({length:N},async()=>{
       while(pend.length && cola===c && vivo){ const it=cola[pend.shift()]; if(!it||estado.has(String(it.e.id))) continue; const v=await chequear(it); if(cola!==c||!vivo) return; if(v){ marcar(it,v); if(v==="roto"&&cola[idx]===it&&root&&!root.querySelector(".pa-msg")) falla(tok,"roto"); } }
     }));
   }
 
-  /* ---------- Smule / BandLab: sacar la URL directa del archivo ----------
-     1) el servidor (Apps Script, acción resolverMedia)  2) respaldo en el navegador: se lee la página/API pública a través de un
-     «lector» con CORS y se busca el .m4a/.mp4/.mp3. El archivo en sí se reproduce con <audio>/<video> (eso no necesita CORS). */
-  const LECTORES=[
-    u=>"https://api.allorigins.win/raw?url="+encodeURIComponent(u),
-    u=>"https://corsproxy.io/?url="+encodeURIComponent(u),
-    u=>"https://api.codetabs.com/v1/proxy/?quest="+encodeURIComponent(u)
-  ];
+  /* ---------- BandLab: pedir al servidor (Apps Script, acción resolverMedia) el archivo y si la pista existe. Smule ya no se intenta. ---------- */
   async function conTiempo(url,ms,opts){
     const ac=new AbortController(), t=setTimeout(()=>ac.abort(),ms);
     try{ return await fetch(url,Object.assign({signal:ac.signal},opts||{})); } finally{ clearTimeout(t); }
-  }
-  async function leerPagina(u,comoJson){
-    for(const f of LECTORES){
-      try{
-        const r=await conTiempo(f(u),9000); if(!r.ok) continue;
-        const tx=await r.text(); if(!tx||tx.length<20) continue;
-        if(comoJson){ try{ return JSON.parse(tx); }catch(_){ continue; } }
-        return tx;
-      }catch(_){}
-    }
-    return null;
-  }
-  const EXT_MEDIA=/\.(m4a|mp3|aac|mp4|m4v|webm|ogg|opus|wav)(\?|#|$)/i;
-  const limpiaUrl=u=>String(u||"").replace(/\\u002F/gi,"/").replace(/\\\//g,"/").replace(/&amp;/g,"&").replace(/\\u0026/g,"&").trim();
-  const tipoPorUrl=u=>/\.(mp4|m4v|webm)(\?|#|$)/i.test(u)?"video":"audio";
-  function mediaEnTexto(tx){
-    if(!tx) return null;
-    const meta=n=>{ const m=tx.match(new RegExp('<meta[^>]+(?:property|name)=["\']'+n+'["\'][^>]+content=["\']([^"\']+)["\']','i'))||tx.match(new RegExp('<meta[^>]+content=["\']([^"\']+)["\'][^>]+(?:property|name)=["\']'+n+'["\']','i')); return m?limpiaUrl(m[1]):null; };
-    for(const n of ["og:audio","og:audio:secure_url","og:video","og:video:secure_url","twitter:player:stream"]){ const u=meta(n); if(u&&/^https?:/i.test(u)&&EXT_MEDIA.test(u)) return {url:u,tipo:tipoPorUrl(u)}; }
-    const re=/https?:(?:\\?\/){2}[^"'\s<>\\]+(?:\\\/[^"'\s<>\\]+)*\.(?:m4a|mp3|aac|mp4|m4v|webm)(?:\?[^"'\s<>\\]*)?/gi;
-    const hall=(tx.match(re)||[]).map(limpiaUrl).filter(u=>/^https?:\/\/[^/]+\//i.test(u));
-    const prefer=hall.find(u=>/smule\.com|bandlab|bnlb|cdn/i.test(u))||hall[0];
-    return prefer?{url:prefer,tipo:tipoPorUrl(prefer)}:null;
-  }
-  function mediaEnJson(o,prof){
-    if(!o||typeof o!=="object"||(prof||0)>8) return null;
-    const claves=["audioUrl","mp3Url","m4aUrl","downloadUrl","videoUrl","mediaUrl","url","src"];
-    for(const k of claves){ const v=o[k]; if(typeof v==="string"&&/^https?:/i.test(v)&&EXT_MEDIA.test(v)) return {url:v,tipo:tipoPorUrl(v)}; }
-    for(const k of Object.keys(o)){ const r=mediaEnJson(o[k],(prof||0)+1); if(r) return r; }
-    return null;
-  }
-  async function resolverEnNavegador(it){
-    const k=it.k, u=String(it.url||"").trim();
-    if(k.t==="bandlab"){
-      for(const ep of ["posts","revisions","tracks"]){
-        const j=await leerPagina("https://www.bandlab.com/api/v1.3/"+ep+"/"+encodeURIComponent(k.id),true);
-        const r=mediaEnJson(j); if(r) return r;
-      }
-    }
-    const tx=await leerPagina(u,false);
-    return mediaEnTexto(tx);
   }
   async function resolverMedia(it){
     if(it.media!==undefined) return it.media;
     let med=null;
     try{
       if(typeof apiPost==="function"){
-        const r=await apiPost({action:"resolverMedia",url:it.url,clave:(typeof memberPin!=="undefined"&&memberPin)?memberPin:""},"",true);
+        const r=await Promise.race([apiPost({action:"resolverMedia",url:it.url,clave:(typeof memberPin!=="undefined"&&memberPin)?memberPin:""},"",true),new Promise(res=>setTimeout(()=>res(null),7000))]);
         if(r&&r.ok&&r.url) med={url:r.url,tipo:r.tipo==="video"?"video":"audio"};
+        else if(r&&typeof r.existe==="boolean") it.existe=r.existe;   // BandLab: el servidor sabe si la pista existe
       }
     }catch(_){}
     // YouTube no ofrece un archivo descargable al reproductor embebido. Solo se acepta una URL directa
     // si el backend ya configurado la devuelve; no se extrae desde reproductores ni proxies públicos.
-    if(!med&&it.k.t!=="yt"){ try{ med=await resolverEnNavegador(it); }catch(_){ med=null; } }
+    // (sin respaldo en el navegador: los «lectores» públicos eran lentos y casi nunca funcionaban con Smule/BandLab)
     if(med){
       try{ const murl=new URL(med.url); if(!/^https?:$/.test(murl.protocol)||!["audio","video"].includes(med.tipo)) med=null; }
       catch(_){ med=null; }
@@ -537,8 +525,8 @@
       if(it.k.t==="audio") return /\.(mp3|m4a|aac|wav|ogg|oga|opus|flac)$/i.test(p.pathname);
       if(it.k.t==="video") return /\.(mp4|webm|mov|m4v)$/i.test(p.pathname);
       if(it.k.t==="drive") return p.hostname.toLowerCase()==="drive.google.com"&&!!it.k.id;
-      if(it.k.t==="yt") return !!it.media&&["youtube.com","www.youtube.com","m.youtube.com","youtu.be","youtube-nocookie.com","www.youtube-nocookie.com"].includes(p.hostname.toLowerCase());
-      if(it.k.t==="smule") return !!it.media&&(/(^|\.)smule\.com$/i.test(p.hostname))&&p.pathname!=="/";
+      if(it.k.t==="yt") return ["youtube.com","www.youtube.com","m.youtube.com","youtu.be","youtube-nocookie.com","www.youtube-nocookie.com"].includes(p.hostname.toLowerCase());
+      if(it.k.t==="smule") return (/(^|\.)smule\.com$/i.test(p.hostname))&&p.pathname!=="/";
       if(it.k.t==="bandlab") return !!it.media&&(/(^|\.)bandlab\.com$/i.test(p.hostname))&&!!it.k.id;
     }catch(_){}
     return false;
@@ -547,8 +535,42 @@
   function guardarBlob(blob,nombre){
     const u=URL.createObjectURL(blob), a=document.createElement("a"); a.href=u; a.download=nombre; document.body.appendChild(a); a.click(); a.remove(); setTimeout(()=>URL.revokeObjectURL(u),30000);
   }
+  /* Smule y YouTube no dan un archivo descargable desde aquí: se copia el enlace, se avisa en el centro de la pantalla y se abre
+     un descargador externo para que solo pegues el enlace. */
+  const DESCARGADORES={
+    smule:{nombre:"Smule",color:"#4B41DB",url:"https://smuledownloader.online/"},
+    yt:{nombre:"YouTube",color:"#FF0133",url:"https://id.yt1z.net/en/"}
+  };
+  async function copiarTexto(t){
+    try{ if(navigator.clipboard&&window.isSecureContext){ await navigator.clipboard.writeText(t); return true; } }catch(_){}
+    try{ const ta=document.createElement("textarea"); ta.value=t; ta.setAttribute("readonly",""); ta.style.cssText="position:fixed;left:-9999px;top:0;opacity:0"; document.body.appendChild(ta); ta.select(); ta.setSelectionRange(0,t.length); const ok=document.execCommand("copy"); ta.remove(); return !!ok; }catch(_){ return false; }
+  }
+  async function avisoDescarga(it){
+    const d=DESCARGADORES[it.k.t]; if(!d) return;
+    const ok=await copiarTexto(it.url);
+    const old=document.querySelector(".pa-dlov"); if(old) old.remove();
+    const ov=document.createElement("div"); ov.className="pa-dlov"; ov.style.setProperty("--pk",d.color); ov.setAttribute("role","dialog"); ov.setAttribute("aria-label","Redirigiendo a descarga");
+    ov.innerHTML=`<div class="pa-dlc">
+      <svg class="pa-dlk" viewBox="0 0 100 100" aria-hidden="true"><circle class="pa-dlg" cx="50" cy="50" r="46"/><circle cx="50" cy="50" r="46"/><path d="M30 52l14 14 27-29"/></svg>
+      <div class="pa-dlt">${ok?"¡Enlace copiado!":"Copia el enlace"}</div>
+      <div class="pa-dls">Redirigiendo a descarga de ${esc(d.nombre)}…</div>
+      <div class="pa-dlm">${ok?"Pégalo en la página que se abrirá":"No pude copiarlo solo: mantén presionado el enlace del reproductor"}</div>
+      <div class="pa-dlbar"><i></i></div>
+      <div class="pa-dlb"><button type="button" class="pa-dlx">Cancelar</button><a href="${esc(d.url)}" target="_blank" rel="noopener noreferrer" class="pa-dlgo">Ir ahora</a></div></div>`;
+    document.body.appendChild(ov);
+    let t=null; const cerrarAv=()=>{ clearTimeout(t); ov.remove(); };
+    ov.querySelector(".pa-dlx").onclick=cerrarAv;
+    ov.querySelector(".pa-dlgo").onclick=()=>{ clearTimeout(t); setTimeout(()=>ov.remove(),300); };
+    ov.onclick=e=>{ if(e.target===ov) cerrarAv(); };
+    t=setTimeout(()=>{   // con «noopener» el navegador no dice si bloqueó la ventana: se deja el aviso unos segundos con el botón «Ir ahora»
+      try{ window.open(d.url,"_blank","noopener,noreferrer"); }catch(_){}
+      const m=ov.querySelector(".pa-dlm"); if(m) m.textContent="Si no se abrió la página, toca «Ir ahora»";
+      t=setTimeout(()=>ov.remove(),7000);
+    },2500);
+  }
   async function descargar(){
     const it=cola[idx]; if(!puedeDescargar(it)) return; const k=it.k; let url=null;
+    if(k.t==="smule"||k.t==="yt"){ avisoDescarga(it); return; }
     if(k.t==="audio"||k.t==="video") url=k.src;
     else if(k.t==="drive") url="https://drive.google.com/uc?export=download&id="+k.id;
     else{
@@ -560,17 +582,10 @@
     const ext=(String(url).split(/[?#]/)[0].match(/\.(mp3|m4a|aac|wav|ogg|oga|opus|flac|mp4|webm|mov|m4v)$/i)||[])[1];
     const base=limpiaNombre(nombreDe(it.e)+" - "+(it.e.detalleEntrega||it.titulo||"entrega"))||"entrega";
     const nombre=ext?base+"."+ext.toLowerCase():base;
-    if(k.t!=="drive"){   // 1) si el servidor del archivo lo permite (CORS), se guarda con buen nombre sin salir del Hub
+    if(k.t!=="drive"){   // si el servidor del archivo lo permite (CORS), se guarda con buen nombre sin salir del Hub
       try{ const r=await conTiempo(url,60000,{mode:"cors"}); if(r.ok){ guardarBlob(await r.blob(),nombre); tst("Descarga lista"); return; } }catch(_){}
-      // 1b) Smule/BandLab casi nunca dan CORS: se baja a través del lector y se guarda como archivo (sin abrir ningún recuadro)
-      if(k.t==="smule"||k.t==="bandlab"){
-        tst("Descargando…");
-        for(const f of LECTORES){
-          try{ const r=await conTiempo(f(url),120000); if(r.ok){ const b=await r.blob(); if(b.size>2048&&!/text\/html/i.test(b.type)){ guardarBlob(b,nombre); tst("Descarga lista"); return; } } }catch(_){}
-        }
-      }
     }
-    const a=document.createElement("a"); a.href=url; a.target="_blank"; a.rel="noopener noreferrer"; if(k.t!=="drive") a.download=nombre;   // 2) respaldo: que lo maneje el navegador
+    const a=document.createElement("a"); a.href=url; a.target="_blank"; a.rel="noopener noreferrer"; if(k.t!=="drive") a.download=nombre;   // respaldo: que lo maneje el navegador
     document.body.appendChild(a); a.click(); a.remove();
     tst(k.t==="drive"?"Si Drive pide confirmación, acéptala en la pestaña que se abrió.":"Si se abrió el archivo en vez de bajarse, usa «Guardar como» en esa pestaña.");
   }
@@ -599,13 +614,19 @@
     if(estado.get(String(e.id))==="roto"){ falla(mi,"roto"); return; }
 
     const sig=()=>{ if(mi===tok) ir(idx+1,1); };
-    const frame=(src)=>{ const f=document.createElement("iframe"); f.src=src; f.allow="autoplay; encrypted-media; clipboard-write; fullscreen"; f.setAttribute("allowfullscreen",""); media.appendChild(f); return f; };
+    const frame=(src)=>{
+      const f=document.createElement("iframe"); f.allow="autoplay; encrypted-media; clipboard-write; fullscreen"; f.setAttribute("allowfullscreen",""); f.setAttribute("loading","eager");
+      const pl=q(".pa-player"), aj=()=>{ if(!pl||!f.isConnected||pl.classList.contains("fx")) return; const w=pl.clientWidth, h=pl.clientHeight; if(w&&h){ f.style.width=w+"px"; f.style.height=h+"px"; } };
+      media.appendChild(f); aj(); f.src=src;
+      if(window.ResizeObserver&&pl){ const ro=new ResizeObserver(aj); ro.observe(pl); f._ro=ro; }
+      return f;
+    };
     const poster=()=>{ const p=document.createElement("div"); p.className="pa-poster"; p.style.backgroundImage=`url("${fotoDe(e).replace(/"/g,"%22")}")`; p.innerHTML=`<img alt="" src="${esc(fotoDe(e))}">`; media.appendChild(p); };
 
     /* reproductor propio (audio/video directo, o el archivo que resolvió el servidor para Smule/BandLab) */
     const nativo=(tipo,src,aviso,alFallar)=>{
       if(tipo==="audio") poster();
-      const el=document.createElement(tipo); el.autoplay=true; el.playsInline=true; el.src=src; if(tipo==="audio") el.style.display="none"; media.appendChild(el);
+      const el=document.createElement(tipo); el.autoplay=true; el.playsInline=true; el.preload="auto"; el.src=src; if(tipo==="audio") el.style.display="none"; media.appendChild(el);
       cur={el}; prog.hidden=false; time.hidden=false;
       el.onplay=()=>setPlaying(true); el.onpause=()=>{ if(!el.ended) setPlaying(false); }; el.onended=sig;
       el.ontimeupdate=()=>{ prog.firstElementChild.style.width=(el.duration?100*el.currentTime/el.duration:0)+"%"; time.textContent=fmtT(el.currentTime)+" / "+fmtT(el.duration); };
@@ -613,10 +634,11 @@
       aplicarVol();
 
     };
-    /* Smule / BandLab: primero se intenta sacar el archivo; si no se puede, se vuelve a lo de antes (iframe de BandLab / botón Abrir) */
+    /* Smule: no se puede incrustar ni sacar el archivo → botón «Abrir» al instante (sin esperar).
+       BandLab: se comprueba el enlace; si carga se reproduce (archivo propio, o su reproductor si el servidor confirma que existe); si no, botón «Abrir». */
     const sinArchivo=()=>{
       media.innerHTML=""; prog.hidden=true; time.hidden=true; cur=null; setPlaying(false);
-      if(k.t==="bandlab"){
+      if(k.t==="bandlab"&&it.existe===true){
         frame(`https://www.bandlab.com/embed/?id=${k.id}&blur=false`);
       }else{
         poster(); falla(mi,"manual");
@@ -644,8 +666,10 @@
       onMsg=(ev,d)=>{ if(ev.source!==f.contentWindow||!d) return; if(d.method==="ready"){ reg(); aplicarVol(); } else if(d.method==="finish") sig(); else if(d.method==="play") setPlaying(true); else if(d.method==="pause") setPlaying(false); };
     }else if(k.t==="drive"){
       frame(`https://drive.google.com/file/d/${k.id}/preview`);
-    }else if(k.t==="bandlab"||k.t==="smule"){
-      const ld=document.createElement("div"); ld.className="pa-msg"; ld.innerHTML='<span class="pa-spin"></span><div>Buscando el archivo…</div>'; media.appendChild(ld);
+    }else if(k.t==="smule"){
+      poster(); falla(mi,"manual");
+    }else if(k.t==="bandlab"){
+      const ld=document.createElement("div"); ld.className="pa-msg"; ld.innerHTML='<span class="pa-spin"></span><div>Revisando el enlace…</div>'; media.appendChild(ld);
       resolverMedia(it).then(r=>{
         if(mi!==tok||!root) return;
         q(".pa-dl").hidden=!puedeDescargar(it);
