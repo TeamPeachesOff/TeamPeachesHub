@@ -13,6 +13,8 @@
   st.textContent=`
   .card-play-all.card-copy-hashtags{width:auto;padding:0 13px 0 14px;border-radius:15px;gap:7px;font-size:12px;font-weight:800;white-space:nowrap;cursor:pointer;}
   .card-play-all[hidden]{display:none!important;}
+  .card-play-all .pa-ls{display:none;}
+  @media (max-width:640px){ .card-play-all .pa-lf{display:none;} .card-play-all .pa-ls{display:inline;} }
   .card-play-all svg{display:block;flex:none;}
   .accordion.pa-has .accordion-toggle[data-toggle^="entregas-"]{padding-right:170px;}
   .pa-menu{position:fixed;z-index:3500;width:248px;max-width:calc(100vw - 20px);padding:8px;border-radius:16px;background:#2a1638;border:1px solid rgba(255,255,255,.12);box-shadow:0 16px 40px rgba(0,0,0,.55);display:flex;flex-direction:column;gap:5px;}
@@ -31,10 +33,10 @@
   /* ----- reproductor grande (estilo YouTube) ----- */
   .pa-root{position:fixed;inset:0;z-index:3000;display:grid;grid-template-columns:minmax(0,1fr) 380px;grid-template-rows:auto minmax(0,1fr);overflow:hidden;
     background:linear-gradient(180deg,#1d1128,#120a19);color:#fff;font-family:inherit;}
-  .pa-top{grid-column:1/-1;display:flex;align-items:center;gap:10px;padding:10px 16px;}
+  .pa-top{grid-column:1/-1;display:flex;align-items:center;gap:8px;padding:6px 12px;}
   .pa-count{flex:none;padding:4px 11px;border-radius:999px;background:linear-gradient(90deg,var(--peach-2,#ef0870),var(--peach-1,#ff8fb1));font-weight:900;font-size:12px;}
-  .pa-act{flex:1;min-width:0;font-size:13px;font-weight:800;color:rgba(255,255,255,.75);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
-  .pa-x{flex:none;width:38px;height:38px;border-radius:50%;background:rgba(255,255,255,.08);color:#fff;display:grid;place-items:center;cursor:pointer;}
+  .pa-act{flex:1;min-width:0;font-size:13px;line-height:1.2;font-weight:800;color:rgba(255,255,255,.8);display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;}
+  .pa-x{flex:none;width:34px;height:34px;border-radius:50%;background:rgba(255,255,255,.08);color:#fff;display:grid;place-items:center;cursor:pointer;}
   .pa-x svg,.pa-ico svg{display:block;}
   .pa-main{grid-column:1;grid-row:2;min-width:0;min-height:0;overflow-y:auto;padding:0 18px 18px 20px;}
   .pa-col{width:min(100%,max(300px,calc((100vh - 230px)*16/9)));margin-left:auto;margin-right:auto;}
@@ -81,12 +83,18 @@
   .pa-name{font-weight:900;font-size:18px;display:flex;align-items:center;gap:10px;min-width:0;}
   .pa-name img{width:34px;height:34px;border-radius:50%;object-fit:cover;flex:none;}
   .pa-song{margin-top:4px;font-size:14px;color:rgba(255,255,255,.72);}
-  .pa-note{margin-top:8px;font-size:12px;color:rgba(255,255,255,.5);}
+  .pa-note{display:none!important;}
+  .pa-fsx{display:none;position:absolute;top:8px;right:8px;z-index:6;width:38px;height:38px;border-radius:50%;background:rgba(0,0,0,.55);color:#fff;place-items:center;cursor:pointer;}
+  .pa-fsx svg{display:block;}
+  .pa-root.fakefs .pa-fsx,.pa-player:fullscreen .pa-fsx,.pa-player:-webkit-full-screen .pa-fsx{display:grid;}
+  .pa-player:fullscreen,.pa-player:-webkit-full-screen{width:100vw;height:100vh;aspect-ratio:auto;border-radius:0;}
+  .pa-root.fakefs .pa-player{position:fixed;inset:0;z-index:5;width:100vw;height:100vh;aspect-ratio:auto;border-radius:0;}
+  @supports (height:100dvh){ .pa-root.fakefs .pa-player{height:100dvh;} }
   /* panel de cola (derecha) */
   .pa-queue{grid-column:2;grid-row:2;display:flex;flex-direction:column;min-height:0;border-left:1px solid rgba(255,255,255,.1);background:rgba(0,0,0,.18);}
   .pa-qh{padding:12px 16px;font-weight:900;font-size:14px;display:flex;justify-content:space-between;gap:8px;}
   .pa-qh span{font-weight:700;color:rgba(255,255,255,.55);font-size:12px;}
-  .pa-qlist{flex:1;min-height:0;overflow-y:auto;padding:0 10px 14px;display:flex;flex-direction:column;gap:6px;}
+  .pa-qlist{flex:1;min-height:0;overflow-y:auto;padding:0 10px calc(28px + env(safe-area-inset-bottom,0px));display:flex;flex-direction:column;gap:6px;}
   .pa-qi{display:flex;align-items:center;gap:10px;width:100%;text-align:left;padding:8px 10px;border-radius:12px;background:rgba(255,255,255,.05);color:#fff;cursor:pointer;}
   .pa-qi:hover{background:rgba(255,255,255,.1);}
   .pa-qi.now{background:linear-gradient(90deg,rgba(239,8,112,.45),rgba(255,143,177,.22));box-shadow:inset 0 0 0 1px rgba(255,143,177,.5);}
@@ -114,12 +122,20 @@
   .pa-root.mini.ov .pa-miniov{display:flex;}
   .pa-root.mini .pa-msg{font-size:11.5px;padding:8px;gap:6px;}
   .pa-root.mini .pa-msg small{display:none;}
-  @media (max-width:520px){ .pa-vb{display:none;} .pa-vr{width:100%;max-width:96px;} }
+  @supports (height:100dvh){ .pa-root:not(.mini){height:100dvh;bottom:auto;} }
   @media (max-width:860px){
-    .pa-root{grid-template-columns:1fr;grid-template-rows:auto auto auto;overflow-y:auto;}
-    .pa-main{grid-column:1;grid-row:2;overflow:visible;padding:0 12px 12px;}
-    .pa-col{width:100%;}
-    .pa-queue{grid-column:1;grid-row:3;border-left:0;border-top:1px solid rgba(255,255,255,.1);}
+    .pa-root{grid-template-columns:minmax(0,1fr);grid-template-rows:auto auto auto;align-content:start;overflow-y:auto;overflow-x:hidden;-webkit-overflow-scrolling:touch;}
+    .pa-top{padding:4px 8px;}
+    .pa-main{grid-column:1;grid-row:2;overflow:visible;padding:0;}
+    .pa-col{width:100%;margin:0;}
+    .pa-player{border-radius:0;box-shadow:none;}
+    .pa-ctl{grid-template-columns:minmax(0,1fr) auto;grid-template-areas:"c c" "l r";gap:6px 10px;margin-top:10px;padding:0 12px;}
+    .pa-ctl .pa-center{grid-area:c;justify-self:center;}
+    .pa-ctl .pa-l{grid-area:l;}
+    .pa-ctl .pa-r{grid-area:r;}
+    .pa-vr{width:100%;max-width:150px;}
+    .pa-info{padding:0 14px;}
+    .pa-queue{grid-column:1;grid-row:3;border-left:0;border-top:1px solid rgba(255,255,255,.1);margin-top:12px;}
     .pa-qlist{overflow:visible;}
     .pa-root.mini{display:block;overflow:visible;}
   }
@@ -139,7 +155,7 @@
       if(!show){ if(b && !b.hidden) b.hidden=true; if(acc.classList.contains("pa-has")) acc.classList.remove("pa-has"); return; }
       if(!b){
         b=document.createElement("button"); b.type="button"; b.className="btn-small btn-family card-copy-hashtags card-play-all";
-        b.setAttribute("aria-label","Reproducir todas las entregas"); b.innerHTML=`Reproducir Todo ${PLAY_SVG}`;
+        b.setAttribute("aria-label","Reproducir todas las entregas"); b.innerHTML=`<span class="pa-lf">Reproducir Todo</span><span class="pa-ls">Todo</span>${PLAY_SVG}`;
         b.dataset.paAct=tg.dataset.toggle.replace("entregas-","");
         acc.appendChild(b);
       }
@@ -251,6 +267,8 @@
     both:'<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l9 5-9 5-9-5 9-5z"/><path d="M3 13l9 5 9-5"/></svg>',
     dn:'<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M12 4v16M6 14l6 6 6-6"/></svg>',
     up:'<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20V4M6 10l6-6 6 6"/></svg>',
+    fs:'<svg viewBox="0 0 24 24" width="21" height="21" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5"/></svg>',
+    fsx:'<svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M9 4v5H4M15 4v5h5M9 20v-5H4M15 20v-5h5"/></svg>',
     x:'<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="3.2" stroke-linecap="round"><path d="M5 5l14 14M19 5L5 19"/></svg>'
   };
   const POSTER_DEF=()=>(typeof ENT_SHOW_IMG!=="undefined"?ENT_SHOW_IMG:"");
@@ -303,13 +321,13 @@
       <div class="pa-top"><span class="pa-count"></span><span class="pa-act"></span><button type="button" class="pa-x" aria-label="Cerrar reproductor">${IC.x}</button></div>
       <div class="pa-main"><div class="pa-col">
         <div class="pa-player"><div class="pa-media"></div><div class="pa-prog" hidden><i></i></div><span class="pa-time" hidden></span>
-          <div class="pa-shield"></div>
+          <div class="pa-shield"></div><button type="button" class="pa-fsx" aria-label="Salir de pantalla completa">${IC.fsx}</button>
           <div class="pa-miniov"><button type="button" class="pa-ico big pa-mpause" aria-label="Pausa"></button><button type="button" class="pa-ico pa-mmax" aria-label="Maximizar">${IC.max}</button></div>
         </div>
         <div class="pa-ctl">
           <div class="pa-l"><div class="pa-vol"><button type="button" class="pa-vb" aria-label="Silenciar"></button><input type="range" class="pa-vr" min="0" max="100" step="1" aria-label="Volumen"></div></div>
           <div class="pa-center"><button type="button" class="pa-ico pa-prev" aria-label="Anterior">${IC.prev}</button><button type="button" class="pa-ico big pa-pause" aria-label="Pausa"></button><button type="button" class="pa-ico pa-next" aria-label="Siguiente">${IC.next}</button></div>
-          <div class="pa-r"><button type="button" class="pa-ib pa-dl" title="Descargar" aria-label="Descargar" hidden>${IC.dl}</button><a class="pa-ib pa-open" target="_blank" rel="noopener noreferrer" title="Abrir enlace" aria-label="Abrir enlace">${IC.open}</a><button type="button" class="pa-ib pa-min" title="Minimizar" aria-label="Minimizar">${IC.min}</button></div>
+          <div class="pa-r"><button type="button" class="pa-ib pa-dl" title="Descargar" aria-label="Descargar" hidden>${IC.dl}</button><a class="pa-ib pa-open" target="_blank" rel="noopener noreferrer" title="Abrir enlace" aria-label="Abrir enlace">${IC.open}</a><button type="button" class="pa-ib pa-fs" title="Pantalla completa" aria-label="Pantalla completa">${IC.fs}</button><button type="button" class="pa-ib pa-min" title="Minimizar" aria-label="Minimizar">${IC.min}</button></div>
         </div>
         <div class="pa-info"><div class="pa-name"></div><div class="pa-song"></div><div class="pa-note"></div></div>
       </div></div>
@@ -321,6 +339,7 @@
     q(".pa-next").onclick=()=>{ dir=1; ir(idx+1,1); };
     q(".pa-pause").onclick=q(".pa-mpause").onclick=alternar;
     q(".pa-min").onclick=()=>minimizar(true);
+    q(".pa-fs").onclick=q(".pa-fsx").onclick=pantallaCompleta;
     q(".pa-dl").onclick=descargar;
     q(".pa-vr").oninput=e=>{ vol=+e.target.value; muted=false; try{ localStorage.setItem("pa-vol",String(vol)); }catch(_){} aplicarVol(); };
     q(".pa-vb").onclick=()=>{ if(muted||vol===0){ muted=false; if(vol===0) vol=50; } else muted=true; aplicarVol(); };
@@ -338,6 +357,20 @@
     });
     q(".pa-qc").textContent=cola.length+" entrega"+(cola.length===1?"":"s");
     pintarPausa(); aplicarVol();
+  }
+  /* pantalla completa del recuadro del video: nativa si el navegador deja; si no (iPhone), video nativo o «pantalla completa simulada» */
+  function pantallaCompleta(){
+    if(!root) return;
+    const p=root.querySelector(".pa-player"), d=document;
+    if(root.classList.contains("fakefs")){ root.classList.remove("fakefs"); return; }
+    if(d.fullscreenElement||d.webkitFullscreenElement){ try{ (d.exitFullscreen||d.webkitExitFullscreen).call(d); }catch(_){} return; }
+    const falso=()=>{
+      if(cur&&cur.el&&cur.el.tagName==="VIDEO"&&cur.el.webkitEnterFullscreen){ try{ cur.el.webkitEnterFullscreen(); return; }catch(_){} }
+      root.classList.add("fakefs");
+    };
+    const rf=p.requestFullscreen||p.webkitRequestFullscreen;
+    if(!rf){ falso(); return; }
+    try{ const r=rf.call(p); if(r&&r.catch) r.catch(falso); }catch(_){ falso(); }
   }
   function minimizar(v){ if(!root) return; root.classList.toggle("mini",v); root.classList.remove("ov"); }
   function cerrar(){
@@ -549,17 +582,15 @@
       el.ontimeupdate=()=>{ prog.firstElementChild.style.width=(el.duration?100*el.currentTime/el.duration:0)+"%"; time.textContent=fmtT(el.currentTime)+" / "+fmtT(el.duration); };
       el.onerror=()=>{ if(mi===tok){ if(alFallar) alFallar(); else { marcar(it,"roto"); falla(mi,"roto"); } } };
       aplicarVol();
-      note.textContent=aviso;
+
     };
     /* Smule / BandLab: primero se intenta sacar el archivo; si no se puede, se vuelve a lo de antes (iframe de BandLab / botón Abrir) */
     const sinArchivo=()=>{
       media.innerHTML=""; prog.hidden=true; time.hidden=true; cur=null; setPlaying(false);
       if(k.t==="bandlab"){
         frame(`https://www.bandlab.com/embed/?id=${k.id}&blur=false`);
-        note.textContent="BandLab no avisa cuándo termina ni permite pausar desde aquí: usa Siguiente. Si sale «No podemos encontrar esa pista», la canción es privada (BandLab solo deja incrustar las públicas): usa Abrir.";
       }else{
         poster(); falla(mi,"manual");
-        note.textContent="Escúchala en su pestaña y vuelve aquí: toca Siguiente.";
       }
       pintarPausa(); aplicarVol();
     };
@@ -575,20 +606,16 @@
         if(est===0) sig(); else if(est===1){ setPlaying(true); if(!f._v){ f._v=1; aplicarVol(); } } else if(est===2) setPlaying(false);
         if(d.event==="onError"){ if(d.info===100){ marcar(it,"roto"); falla(mi,"roto"); } else { marcar(it,"limit"); falla(mi,"noinc"); } }
       };
-      note.textContent="Avanza solo al terminar.";
     }else if(k.t==="sc"){
       const f=frame(`https://w.soundcloud.com/player/?url=${encodeURIComponent(k.src)}&auto_play=true&visual=true&show_comments=false`);
       cur={sc:true,frame:f};
       const reg=()=>["finish","play","pause"].forEach(v=>post(f,{method:"addEventListener",value:v}));
       f.onload=()=>{ reg(); aplicarVol(); };
       onMsg=(ev,d)=>{ if(ev.source!==f.contentWindow||!d) return; if(d.method==="ready"){ reg(); aplicarVol(); } else if(d.method==="finish") sig(); else if(d.method==="play") setPlaying(true); else if(d.method==="pause") setPlaying(false); };
-      note.textContent="Avanza solo al terminar.";
     }else if(k.t==="drive"){
       frame(`https://drive.google.com/file/d/${k.id}/preview`);
-      note.textContent="Drive no avisa cuándo termina ni permite pausar desde aquí: usa Siguiente. Si el archivo se borró, Google lo mostrará en el recuadro.";
     }else if(k.t==="bandlab"||k.t==="smule"){
       const ld=document.createElement("div"); ld.className="pa-msg"; ld.innerHTML='<span class="pa-spin"></span><div>Buscando el archivo…</div>'; media.appendChild(ld);
-      note.textContent="";
       resolverMedia(it).then(r=>{
         if(mi!==tok||!root) return;
         media.innerHTML="";
@@ -597,7 +624,6 @@
       });
     }else{
       poster(); falla(mi,"manual");
-      note.textContent="Escúchala en su pestaña y vuelve aquí: toca Siguiente.";
     }
     pintarPausa(); aplicarVol();
   }

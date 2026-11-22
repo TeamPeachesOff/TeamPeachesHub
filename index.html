@@ -1541,7 +1541,7 @@
       </div>
       <div class="form-group" style="background:var(--card-bg-2);padding:10px;border-radius:12px;">
         <label style="color:var(--peach-2);">🔄 Sincronizar entregas desde el formulario (solo agrega, nunca borra)</label>
-        <input autocomplete="off" type="text" id="af_syncHoja" placeholder="Link de la hoja de respuestas del formulario (Google Sheets)" style="margin-bottom:8px;">
+        <input autocomplete="off" type="text" id="af_syncHoja" placeholder="Link de la hoja (vacío = la ligada al formulario elegido arriba)" style="margin-bottom:8px;">
         <input autocomplete="off" type="text" id="af_syncTexto" placeholder="Texto de la columna B (el mismo que se escribe en el formulario)">
         <button type="button" class="btn-small btn-family" id="af_syncAhora" style="width:100%;margin-top:8px;">🔄 Sincronizar ahora</button>
         <div class="upload-status" id="af_syncStatus" style="text-align:left;">La hoja debe estar compartida como «Cualquier persona con el enlace: lector». Se leen las filas cuya columna B sea ese texto y solo se añaden las entregas nuevas.</div>
@@ -2619,23 +2619,26 @@ function abrirModalEnlaces(){
   // Cada tipo de entrega tiene 2 enlaces emparejados: el de Staff (edición/respuestas, solo lo ve Staff)
   // y el de Entrega (el formulario que se les da a los miembros; es el que ofrece el selector al crear una actividad).
   const pares = [
-    {titulo:"🎤 Canto · Oficial",   staff:"CFG_ENTREGA_OFICIAL_CANTO_LINK",   entrega:"CFG_FORM_ENTREGA_OFICIAL_CANTO_LINK"},
-    {titulo:"🎤 Canto · Semanal",   staff:"CFG_ENTREGA_SEMANAL_CANTO_LINK",   entrega:"CFG_FORM_ENTREGA_SEMANAL_CANTO_LINK"},
-    {titulo:"🎙️ Doblaje · Oficial", staff:"CFG_ENTREGA_OFICIAL_DOBLAJE_LINK", entrega:"CFG_FORM_ENTREGA_OFICIAL_DOBLAJE_LINK"},
-    {titulo:"🎙️ Doblaje · Semanal", staff:"CFG_ENTREGA_SEMANAL_DOBLAJE_LINK", entrega:"CFG_FORM_ENTREGA_SEMANAL_DOBLAJE_LINK"}
+    {titulo:"🎤 Canto · Oficial",   staff:"CFG_ENTREGA_OFICIAL_CANTO_LINK",   entrega:"CFG_FORM_ENTREGA_OFICIAL_CANTO_LINK", hoja:"CFG_HOJA_ENTREGA_OFICIAL_CANTO_LINK"},
+    {titulo:"🎤 Canto · Semanal",   staff:"CFG_ENTREGA_SEMANAL_CANTO_LINK",   entrega:"CFG_FORM_ENTREGA_SEMANAL_CANTO_LINK", hoja:"CFG_HOJA_ENTREGA_SEMANAL_CANTO_LINK"},
+    {titulo:"🎙️ Doblaje · Oficial", staff:"CFG_ENTREGA_OFICIAL_DOBLAJE_LINK", entrega:"CFG_FORM_ENTREGA_OFICIAL_DOBLAJE_LINK", hoja:"CFG_HOJA_ENTREGA_OFICIAL_DOBLAJE_LINK"},
+    {titulo:"🎙️ Doblaje · Semanal", staff:"CFG_ENTREGA_SEMANAL_DOBLAJE_LINK", entrega:"CFG_FORM_ENTREGA_SEMANAL_DOBLAJE_LINK", hoja:"CFG_HOJA_ENTREGA_SEMANAL_DOBLAJE_LINK"}
   ];
   const clavesPares = []; pares.forEach(p=>{ clavesPares.push(p.staff, p.entrega); });
+  const hojasLocal = hojasAncladasLocal_();
+  const valorHoja = k => (enlacesStaff[k]!==undefined && enlacesStaff[k]!=="") ? enlacesStaff[k] : (hojasLocal[k]||"");
   const faltaBackend = pares.some(p=>enlacesStaff[p.entrega]===undefined);
   const campoHTML = (clave,label,ph)=>`<div class="form-group" style="margin-bottom:6px;"><label>${label}</label><input autocomplete="off" type="text" id="enl_${clave}" placeholder="${ph}" value="${escAttr(enlacesStaff[clave]||"")}"></div>`;
   document.getElementById("memberModalContent").innerHTML = `
     <h3>⚙️ Editar Enlaces</h3>
     <div style="display:flex;flex-direction:column;gap:10px;">
       ${campos.map(c=>`<div class="form-group"><label>${c.label}</label><input autocomplete="off" type="text" id="enl_${c.clave}" placeholder="https://..." value="${escAttr(enlacesStaff[c.clave]||"")}"></div>`).join("")}
-      ${faltaBackend?`<div style="font-size:12px;color:var(--gold);">⚠️ El backend aún no conoce los enlaces de Entrega (CFG_FORM_ENTREGA_*): agrégalos en CONFIG_ENLACES de Code.gs y publica una versión nueva, o no se guardarán.</div>`:""}
+      ${faltaBackend?`<div style="font-size:12px;color:var(--gold);">⚠️ (Las hojas de respuestas se guardan también en este navegador aunque el backend no las conozca.) El backend aún no conoce los enlaces de Entrega (CFG_FORM_ENTREGA_*): agrégalos en CONFIG_ENLACES de Code.gs y publica una versión nueva, o no se guardarán.</div>`:""}
       ${pares.map(p=>`<div style="background:var(--card-bg-2);padding:10px;border-radius:12px;">
         <div style="font-weight:800;color:var(--peach-2);margin-bottom:8px;">${p.titulo}</div>
         ${campoHTML(p.staff,"🔒 Staff (edición, solo Staff)","https://docs.google.com/forms/.../edit")}
         ${campoHTML(p.entrega,"📤 Entrega (se le da a los miembros)","https://forms.gle/...")}
+        <div class="form-group" style="margin-bottom:6px;"><label>📊 Hoja de respuestas (para sincronizar entregas)</label><input autocomplete="off" type="text" id="enl_${p.hoja}" placeholder="https://docs.google.com/spreadsheets/d/.../edit" value="${escAttr(valorHoja(p.hoja))}"></div>
       </div>`).join("")}
     </div>
     <div style="display:flex;gap:10px;margin-top:14px;">
@@ -2647,6 +2650,10 @@ function abrirModalEnlaces(){
     const enlaces = {};
     campos.forEach(c=>{ enlaces[c.clave] = document.getElementById("enl_"+c.clave).value.trim(); });
     clavesPares.forEach(k=>{ enlaces[k] = document.getElementById("enl_"+k).value.trim(); });
+    // Las hojas de respuestas también se guardan en este navegador: si el backend aún no conoce esas claves, siguen funcionando aquí.
+    const hojasNuevas = {}; pares.forEach(p=>{ hojasNuevas[p.hoja] = document.getElementById("enl_"+p.hoja).value.trim(); });
+    try{ localStorage.setItem("tph_hojasAncladas", JSON.stringify(hojasNuevas)); }catch(_){}
+    Object.assign(enlaces, hojasNuevas);
     const r = await apiPost({action:"guardarEnlacesStaff", enlaces}, "Guardando enlaces...");
     if(r.ok){
       enlacesStaff = r.enlaces;
@@ -6968,13 +6975,22 @@ function leerBotonesPersonalizados(){
    La configuración (hoja + texto de la columna B) viaja dentro de «botonesPersonalizados» como una entrada {sync:true,...} sin texto/url:
    botonesPersonalizadosDe() la ignora, así que no aparece como botón y no hace falta tocar el backend.
    SOLO AGREGA: nunca borra ni modifica entregas. Si algo se quita del formulario, en el Hub se queda. */
+const HOJA_DE_FORM_={CFG_FORM_ENTREGA_OFICIAL_CANTO_LINK:"CFG_HOJA_ENTREGA_OFICIAL_CANTO_LINK",CFG_FORM_ENTREGA_SEMANAL_CANTO_LINK:"CFG_HOJA_ENTREGA_SEMANAL_CANTO_LINK",CFG_FORM_ENTREGA_OFICIAL_DOBLAJE_LINK:"CFG_HOJA_ENTREGA_OFICIAL_DOBLAJE_LINK",CFG_FORM_ENTREGA_SEMANAL_DOBLAJE_LINK:"CFG_HOJA_ENTREGA_SEMANAL_DOBLAJE_LINK"};
+function hojasAncladasLocal_(){ try{ return JSON.parse(localStorage.getItem("tph_hojasAncladas")||"{}")||{}; }catch(_){ return {}; } }
+// hoja de respuestas ligada al formulario ancla que usa la actividad (por el link de Forms, o por la clave elegida en el selector)
+function hojaAncladaDe_(linkForms, claveForm){
+  const enl=enlacesStaff||{}, loc=hojasAncladasLocal_();
+  const ks=claveForm&&HOJA_DE_FORM_[claveForm]?[claveForm]:Object.keys(HOJA_DE_FORM_).filter(k=>enl[k]&&linkForms&&normalizarUrlLink_(enl[k])===normalizarUrlLink_(linkForms));
+  for(const k of ks){ const h=(enl[HOJA_DE_FORM_[k]]||"")||loc[HOJA_DE_FORM_[k]]||""; if(h) return h; }
+  return "";
+}
 function syncFormDe_(a){
   try{ const b=JSON.parse(a&&a.botonesPersonalizados||"[]"); const x=Array.isArray(b)&&b.find(v=>v&&v.sync); return x?{hoja:String(x.hoja||""),texto:String(x.texto||"")}:null; }catch(_){ return null; }
 }
 function leerSyncForm_(){
   const hoja=document.getElementById("af_syncHoja").value.trim(), texto=document.getElementById("af_syncTexto").value.trim();
   if(hoja) { try{ localStorage.setItem("tph_syncHoja",hoja); }catch(_){} }
-  return (hoja&&texto)?[{sync:true,hoja,texto}]:[];
+  return texto?[{sync:true,hoja,texto}]:[];
 }
 function csvParse_(t){
   const filas=[]; let f=[], c="", q=false;
@@ -7000,7 +7016,9 @@ async function leerHojaForm_(hoja){
 }
 let syncFormEnCurso_=false;
 async function sincronizarEntregasForm_(act, silencioso){
-  const sy=syncFormDe_(act); if(!sy||!sy.hoja||!sy.texto) return {ok:false,error:"Falta la hoja o el texto"};
+  const sy=syncFormDe_(act); if(!sy||!sy.texto) return {ok:false,error:"Falta el texto de la columna B"};
+  if(!enlacesStaff&&nivel==="staff"){ try{ await cargarEnlacesStaff(true); }catch(_){} }
+  sy.hoja=sy.hoja||hojaAncladaDe_(act.linkForms); if(!sy.hoja) return {ok:false,error:"Falta la hoja de respuestas (ponla aquí o en Editar Enlaces)"};
   if(syncFormEnCurso_) return {ok:false,error:"Ya hay una sincronización en curso"};
   syncFormEnCurso_=true;
   try{
@@ -7036,10 +7054,11 @@ document.getElementById("af_syncAhora").onclick=async()=>{
   const st=document.getElementById("af_syncStatus"), id=document.getElementById("af_id").value;
   const hoja=document.getElementById("af_syncHoja").value.trim(), texto=document.getElementById("af_syncTexto").value.trim();
   if(!id){ st.textContent="Guarda primero la actividad y luego sincroniza."; return; }
-  if(!hoja||!texto){ st.textContent="Pon el link de la hoja y el texto de la columna B."; return; }
+  if(!texto){ st.textContent="Pon el texto de la columna B."; return; }
+  if(!hoja&&!hojaAncladaDe_(document.getElementById("af_linkForms").value,document.getElementById("af_linkFormsSel").value)){ st.textContent="Pon el link de la hoja (o guárdalo en Editar Enlaces junto al formulario)."; return; }
   const act=(DB.actividades||[]).find(a=>String(a.id)===String(id)); if(!act){ st.textContent="No encontré la actividad."; return; }
   st.textContent="Sincronizando…";
-  const r=await sincronizarEntregasForm_(Object.assign({},act,{botonesPersonalizados:JSON.stringify([{sync:true,hoja,texto}])}));
+  const r=await sincronizarEntregasForm_(Object.assign({},act,{linkForms:document.getElementById("af_linkForms").value,botonesPersonalizados:JSON.stringify([{sync:true,hoja,texto}])}));
   st.textContent=r.ok?(`Listo ✅ ${r.nuevas} entrega(s) nueva(s) de ${r.total} fila(s) con ese texto.`+(r.errores?` ${r.errores} con error.`:"")+" Recuerda Guardar para conservar la configuración."):("⚠️ "+r.error);
 };
 /* Automático: cuando alguien de Staff tiene la página abierta, cada ~5 min revisa las actividades con sincronización y agrega lo nuevo. */
@@ -7047,7 +7066,7 @@ const syncFormUlt_={};
 async function autoSyncForms_(){
   if(nivel!=="staff"||document.visibilityState!=="visible"||syncFormEnCurso_||!DB||!Array.isArray(DB.actividades)) return;
   for(const a of DB.actividades){
-    const sy=syncFormDe_(a); if(!sy||!sy.hoja||!sy.texto) continue;
+    const sy=syncFormDe_(a); if(!sy||!sy.texto) continue;
     if(Date.now()-(syncFormUlt_[a.id]||0)<300000) continue;
     syncFormUlt_[a.id]=Date.now();
     const r=await sincronizarEntregasForm_(a,true);
@@ -8918,6 +8937,6 @@ document.getElementById("miembrosContarBtn").onclick=()=>{
 </script>
 <script src="scripts/rango-piano.js?v=10"></script>
 <script src="scripts/compartir-faltas.js?v=1"></script>
-<script src="scripts/reproducir-todo.js?v=6"></script>
+<script src="scripts/reproducir-todo.js?v=7"></script>
 </body>
 </html>
