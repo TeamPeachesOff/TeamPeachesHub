@@ -7022,6 +7022,13 @@ async function sincronizarEntregasForm_(act, silencioso){
   if(syncFormEnCurso_) return {ok:false,error:"Ya hay una sincronización en curso"};
   syncFormEnCurso_=true;
   try{
+    // 1) El servidor (Code.gs v17) lee la hoja con la cuenta del script, serializa con un candado y no necesita que la hoja sea pública.
+    try{
+      const rs=await apiPost({action:"sincronizarEntregasForm",idActividad:String(act.id),hoja:sy.hoja,texto:sy.texto},"",true);
+      if(rs&&rs.ok){ if(rs.nuevas) await cargarDatos(); return {ok:true,nuevas:rs.nuevas||0,errores:0,total:rs.total||0}; }
+      if(rs&&/en curso/i.test(rs.error||"")) return {ok:false,error:rs.error};
+    }catch(_){}
+    // 2) Respaldo (backend viejo o sin acceso a la hoja): se lee desde el navegador (la hoja debe ser pública).
     const filas=await leerHojaForm_(sy.hoja);
     if(filas.length<2) return {ok:true,nuevas:0,total:0};
     const enc=filas[0].map(h=>normalizarTexto_(h));
