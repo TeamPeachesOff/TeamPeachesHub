@@ -239,7 +239,18 @@
     const u=String(url||"").trim(); let m;
     if(/\.(mp3|m4a|aac|wav|ogg|oga|opus|flac)(\?|#|$)/i.test(u)) return {t:"audio",src:u,auto:true};
     if(/\.(mp4|webm|mov|m4v)(\?|#|$)/i.test(u)) return {t:"video",src:u,auto:true};
-    if((m=u.match(/youtu\.be\/([\w-]{11})/)||u.match(/[?&]v=([\w-]{11})/)||u.match(/youtube\.com\/(?:embed|shorts|live)\/([\w-]{11})/))) return {t:"yt",id:m[1],auto:true};
+    try{
+      const p=new URL(u), host=p.hostname.toLowerCase(), path=p.pathname;
+      if(p.protocol==="https:"||p.protocol==="http:"){
+        if(host==="youtu.be"){
+          const id=path.split("/").filter(Boolean)[0]; if(id&&/^[\w-]{11}$/.test(id)) return {t:"yt",id,auto:true};
+        }
+        if(host==="youtube.com"||host==="www.youtube.com"||host==="m.youtube.com"||host==="youtube-nocookie.com"||host==="www.youtube-nocookie.com"){
+          const id=p.searchParams.get("v")||((path.match(/\/(?:embed|shorts|live)\/([\w-]{11})(?:\/|$)/)||[])[1]);
+          if(id&&/^[\w-]{11}$/.test(id)) return {t:"yt",id,auto:true};
+        }
+      }
+    }catch(_){}
     if(/soundcloud\.com/i.test(u)) return {t:"sc",src:u,auto:true};
     if(/drive\.google\.com/i.test(u) && (m=u.match(/\/file\/d\/([\w-]+)/)||u.match(/[?&]id=([\w-]+)/))) return {t:"drive",id:m[1],auto:false};
     if(/bandlab\.com/i.test(u) && (m=u.match(/bandlab\.com\/(?:post|track|revisions?)\/([\w-]+)/))) return {t:"bandlab",id:m[1],auto:false};
@@ -508,12 +519,30 @@
         if(r&&r.ok&&r.url) med={url:r.url,tipo:r.tipo==="video"?"video":"audio"};
       }
     }catch(_){}
-    if(!med){ try{ med=await resolverEnNavegador(it); }catch(_){ med=null; } }
+    // YouTube no ofrece un archivo descargable al reproductor embebido. Solo se acepta una URL directa
+    // si el backend ya configurado la devuelve; no se extrae desde reproductores ni proxies públicos.
+    if(!med&&it.k.t!=="yt"){ try{ med=await resolverEnNavegador(it); }catch(_){ med=null; } }
+    if(med){
+      try{ const murl=new URL(med.url); if(!/^https?:$/.test(murl.protocol)||!["audio","video"].includes(med.tipo)) med=null; }
+      catch(_){ med=null; }
+    }
     it.media=med; return med;
   }
 
-  /* ---------- descarga: directos, Drive, Smule y BandLab (YouTube y SoundCloud no) ---------- */
-  const puedeDescargar=it=>!!it&&["audio","video","drive","smule","bandlab"].includes(it.k.t);
+  /* ---------- descarga: solo enlaces válidos y archivos ya resueltos ---------- */
+  function puedeDescargar(it){
+    if(!it) return false;
+    try{
+      const p=new URL(it.url); if(p.protocol!=="https:"&&p.protocol!=="http:") return false;
+      if(it.k.t==="audio") return /\.(mp3|m4a|aac|wav|ogg|oga|opus|flac)$/i.test(p.pathname);
+      if(it.k.t==="video") return /\.(mp4|webm|mov|m4v)$/i.test(p.pathname);
+      if(it.k.t==="drive") return p.hostname.toLowerCase()==="drive.google.com"&&!!it.k.id;
+      if(it.k.t==="yt") return !!it.media&&["youtube.com","www.youtube.com","m.youtube.com","youtu.be","youtube-nocookie.com","www.youtube-nocookie.com"].includes(p.hostname.toLowerCase());
+      if(it.k.t==="smule") return !!it.media&&(/(^|\.)smule\.com$/i.test(p.hostname))&&p.pathname!=="/";
+      if(it.k.t==="bandlab") return !!it.media&&(/(^|\.)bandlab\.com$/i.test(p.hostname))&&!!it.k.id;
+    }catch(_){}
+    return false;
+  }
   const limpiaNombre=n=>String(n||"").replace(/[\\/:*?"<>|\u0000-\u001f]+/g," ").replace(/\s+/g," ").trim().slice(0,110);
   function guardarBlob(blob,nombre){
     const u=URL.createObjectURL(blob), a=document.createElement("a"); a.href=u; a.download=nombre; document.body.appendChild(a); a.click(); a.remove(); setTimeout(()=>URL.revokeObjectURL(u),30000);
@@ -599,6 +628,7 @@
       nativo(k.t,k.src,"Avanza solo al terminar.");
     }else if(k.t==="yt"){
       const f=frame(`https://www.youtube.com/embed/${k.id}?enablejsapi=1&autoplay=1&playsinline=1&rel=0&origin=${encodeURIComponent(location.origin)}`);
+      resolverMedia(it).then(()=>{ if(mi===tok&&root) q(".pa-dl").hidden=!puedeDescargar(it); });
       cur={yt:true,frame:f}; f.onload=()=>{ post(f,{event:"listening",id:"pa"}); aplicarVol(); setTimeout(()=>{ if(mi===tok) aplicarVol(); },900); };
       onMsg=(ev,d)=>{
         if(ev.source!==f.contentWindow||!d) return;
@@ -618,6 +648,7 @@
       const ld=document.createElement("div"); ld.className="pa-msg"; ld.innerHTML='<span class="pa-spin"></span><div>Buscando el archivo…</div>'; media.appendChild(ld);
       resolverMedia(it).then(r=>{
         if(mi!==tok||!root) return;
+        q(".pa-dl").hidden=!puedeDescargar(it);
         media.innerHTML="";
         if(r) nativo(r.tipo,r.url,"Avanza solo al terminar.",sinArchivo); else sinArchivo();
         pintarPausa(); aplicarVol();
