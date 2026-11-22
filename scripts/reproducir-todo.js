@@ -24,7 +24,7 @@
   .pa-menu .pa-mo small{margin-left:auto;font-size:11px;font-weight:800;opacity:.7;}
   .pa-menu .pa-mo:hover:not(:disabled),.pa-menu .pa-mo:focus-visible{background:linear-gradient(90deg,var(--peach-2,#ef0870),var(--peach-1,#ff8fb1));}
   .pa-menu .pa-mo:disabled{opacity:.38;cursor:default;}
-  .pa-mem-all{display:inline-flex;align-items:center;justify-content:center;gap:7px;padding:9px 16px;border-radius:999px;font-weight:800;font-size:13px;color:#fff;cursor:pointer;white-space:nowrap;background:linear-gradient(90deg,var(--peach-2,#ef0870),var(--peach-1,#ff8fb1));box-shadow:0 4px 14px rgba(239,8,112,.3);}
+  .pa-mem-all{display:flex;flex:1 0 100%;width:100%;box-sizing:border-box;align-items:center;justify-content:center;gap:7px;padding:11px 16px;border-radius:999px;font-weight:800;font-size:13px;color:#fff;cursor:pointer;white-space:nowrap;background:linear-gradient(90deg,var(--peach-2,#ef0870),var(--peach-1,#ff8fb1));box-shadow:0 4px 14px rgba(239,8,112,.3);}
   .pa-mem-all svg{display:block;flex:none;}
   table.entregas-table tr[data-entrega-row].pa-now{border-radius:14px;background:linear-gradient(90deg,rgba(239,8,112,.20),rgba(255,143,177,.07));box-shadow:inset 0 0 0 1.5px rgba(255,143,177,.5);border-bottom-color:transparent;padding-left:8px;padding-right:8px;}
   table.entregas-table tr[data-entrega-row].pa-now td{background:none!important;}
@@ -254,7 +254,16 @@
     x:'<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="3.2" stroke-linecap="round"><path d="M5 5l14 14M19 5L5 19"/></svg>'
   };
   const POSTER_DEF=()=>(typeof ENT_SHOW_IMG!=="undefined"?ENT_SHOW_IMG:"");
-  const nombreDe=e=>{ try{ const t=document.createElement("div"); t.innerHTML=(typeof personaEntregaHTML_==="function")?personaEntregaHTML_(e):esc(e.nombreUsuario||""); return (t.textContent||"").trim()||String(e.nombreUsuario||""); }catch(_){ return String(e.nombreUsuario||""); } };
+  const nombreDe=e=>{ try{
+    const t=document.createElement("div"); t.innerHTML=(typeof personaEntregaHTML_==="function")?personaEntregaHTML_(e):esc(e.nombreUsuario||"");
+    /* grupos: «13 Peachys» + lista oculta → «13 Peachys: Alix, Hikari, …» (antes se pegaban sin separador) */
+    t.querySelectorAll("[data-grupo]").forEach(g=>{
+      const lab=g.querySelector("[data-grupo-toggle]"), lis=g.querySelector(".pg-lista");
+      const l=lab?(lab.textContent||"").trim():"", n=lis?(lis.textContent||"").replace(/\s+/g," ").trim():"";
+      g.textContent=l&&n?l+": "+n:(l||n);
+    });
+    return (t.textContent||"").replace(/\s+/g," ").trim()||String(e.nombreUsuario||"");
+  }catch(_){ return String(e.nombreUsuario||""); } };
   const fotoDe=e=>{ try{ const ms=(typeof miembrosDeEntrega_==="function")?miembrosDeEntrega_(e):[]; return (ms[0]&&ms[0].avatarUrl)||POSTER_DEF(); }catch(_){ return POSTER_DEF(); } };
   const fmtT=t=>{ if(!isFinite(t)) return "0:00"; t=Math.max(0,Math.floor(t)); return Math.floor(t/60)+":"+String(t%60).padStart(2,"0"); };
 
@@ -404,15 +413,70 @@
     }));
   }
 
-  /* ---------- Smule / BandLab: pedir al servidor (Apps Script) la URL directa del archivo ---------- */
+  /* ---------- Smule / BandLab: sacar la URL directa del archivo ----------
+     1) el servidor (Apps Script, acción resolverMedia)  2) respaldo en el navegador: se lee la página/API pública a través de un
+     «lector» con CORS y se busca el .m4a/.mp4/.mp3. El archivo en sí se reproduce con <audio>/<video> (eso no necesita CORS). */
+  const LECTORES=[
+    u=>"https://api.allorigins.win/raw?url="+encodeURIComponent(u),
+    u=>"https://corsproxy.io/?url="+encodeURIComponent(u),
+    u=>"https://api.codetabs.com/v1/proxy/?quest="+encodeURIComponent(u)
+  ];
+  async function conTiempo(url,ms,opts){
+    const ac=new AbortController(), t=setTimeout(()=>ac.abort(),ms);
+    try{ return await fetch(url,Object.assign({signal:ac.signal},opts||{})); } finally{ clearTimeout(t); }
+  }
+  async function leerPagina(u,comoJson){
+    for(const f of LECTORES){
+      try{
+        const r=await conTiempo(f(u),9000); if(!r.ok) continue;
+        const tx=await r.text(); if(!tx||tx.length<20) continue;
+        if(comoJson){ try{ return JSON.parse(tx); }catch(_){ continue; } }
+        return tx;
+      }catch(_){}
+    }
+    return null;
+  }
+  const EXT_MEDIA=/\.(m4a|mp3|aac|mp4|m4v|webm|ogg|opus|wav)(\?|#|$)/i;
+  const limpiaUrl=u=>String(u||"").replace(/\\u002F/gi,"/").replace(/\\\//g,"/").replace(/&amp;/g,"&").replace(/\\u0026/g,"&").trim();
+  const tipoPorUrl=u=>/\.(mp4|m4v|webm)(\?|#|$)/i.test(u)?"video":"audio";
+  function mediaEnTexto(tx){
+    if(!tx) return null;
+    const meta=n=>{ const m=tx.match(new RegExp('<meta[^>]+(?:property|name)=["\']'+n+'["\'][^>]+content=["\']([^"\']+)["\']','i'))||tx.match(new RegExp('<meta[^>]+content=["\']([^"\']+)["\'][^>]+(?:property|name)=["\']'+n+'["\']','i')); return m?limpiaUrl(m[1]):null; };
+    for(const n of ["og:audio","og:audio:secure_url","og:video","og:video:secure_url","twitter:player:stream"]){ const u=meta(n); if(u&&/^https?:/i.test(u)&&EXT_MEDIA.test(u)) return {url:u,tipo:tipoPorUrl(u)}; }
+    const re=/https?:(?:\\?\/){2}[^"'\s<>\\]+(?:\\\/[^"'\s<>\\]+)*\.(?:m4a|mp3|aac|mp4|m4v|webm)(?:\?[^"'\s<>\\]*)?/gi;
+    const hall=(tx.match(re)||[]).map(limpiaUrl).filter(u=>/^https?:\/\/[^/]+\//i.test(u));
+    const prefer=hall.find(u=>/smule\.com|bandlab|bnlb|cdn/i.test(u))||hall[0];
+    return prefer?{url:prefer,tipo:tipoPorUrl(prefer)}:null;
+  }
+  function mediaEnJson(o,prof){
+    if(!o||typeof o!=="object"||(prof||0)>8) return null;
+    const claves=["audioUrl","mp3Url","m4aUrl","downloadUrl","videoUrl","mediaUrl","url","src"];
+    for(const k of claves){ const v=o[k]; if(typeof v==="string"&&/^https?:/i.test(v)&&EXT_MEDIA.test(v)) return {url:v,tipo:tipoPorUrl(v)}; }
+    for(const k of Object.keys(o)){ const r=mediaEnJson(o[k],(prof||0)+1); if(r) return r; }
+    return null;
+  }
+  async function resolverEnNavegador(it){
+    const k=it.k, u=String(it.url||"").trim();
+    if(k.t==="bandlab"){
+      for(const ep of ["posts","revisions","tracks"]){
+        const j=await leerPagina("https://www.bandlab.com/api/v1.3/"+ep+"/"+encodeURIComponent(k.id),true);
+        const r=mediaEnJson(j); if(r) return r;
+      }
+    }
+    const tx=await leerPagina(u,false);
+    return mediaEnTexto(tx);
+  }
   async function resolverMedia(it){
     if(it.media!==undefined) return it.media;
+    let med=null;
     try{
-      if(typeof apiPost!=="function"){ it.media=null; return null; }
-      const r=await apiPost({action:"resolverMedia",url:it.url,clave:(typeof memberPin!=="undefined"&&memberPin)?memberPin:""},"",true);
-      it.media=(r&&r.ok&&r.url)?{url:r.url,tipo:r.tipo==="video"?"video":"audio"}:null;
-    }catch(_){ it.media=null; }
-    return it.media;
+      if(typeof apiPost==="function"){
+        const r=await apiPost({action:"resolverMedia",url:it.url,clave:(typeof memberPin!=="undefined"&&memberPin)?memberPin:""},"",true);
+        if(r&&r.ok&&r.url) med={url:r.url,tipo:r.tipo==="video"?"video":"audio"};
+      }
+    }catch(_){}
+    if(!med){ try{ med=await resolverEnNavegador(it); }catch(_){ med=null; } }
+    it.media=med; return med;
   }
 
   /* ---------- descarga: directos, Drive, Smule y BandLab (YouTube y SoundCloud no) ---------- */
@@ -435,7 +499,14 @@
     const base=limpiaNombre(nombreDe(it.e)+" - "+(it.e.detalleEntrega||it.titulo||"entrega"))||"entrega";
     const nombre=ext?base+"."+ext.toLowerCase():base;
     if(k.t!=="drive"){   // 1) si el servidor del archivo lo permite (CORS), se guarda con buen nombre sin salir del Hub
-      try{ const r=await fetch(url,{mode:"cors"}); if(r.ok){ guardarBlob(await r.blob(),nombre); tst("Descarga lista"); return; } }catch(_){}
+      try{ const r=await conTiempo(url,60000,{mode:"cors"}); if(r.ok){ guardarBlob(await r.blob(),nombre); tst("Descarga lista"); return; } }catch(_){}
+      // 1b) Smule/BandLab casi nunca dan CORS: se baja a través del lector y se guarda como archivo (sin abrir ningún recuadro)
+      if(k.t==="smule"||k.t==="bandlab"){
+        tst("Descargando…");
+        for(const f of LECTORES){
+          try{ const r=await conTiempo(f(url),120000); if(r.ok){ const b=await r.blob(); if(b.size>2048&&!/text\/html/i.test(b.type)){ guardarBlob(b,nombre); tst("Descarga lista"); return; } } }catch(_){}
+        }
+      }
     }
     const a=document.createElement("a"); a.href=url; a.target="_blank"; a.rel="noopener noreferrer"; if(k.t!=="drive") a.download=nombre;   // 2) respaldo: que lo maneje el navegador
     document.body.appendChild(a); a.click(); a.remove();
