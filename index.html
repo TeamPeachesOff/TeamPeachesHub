@@ -4636,9 +4636,10 @@ function similitud_(a,b){
   if(!ta||!tb) return 0;
   if(ta===tb) return 1;
   const ba=bigramas_(ta), bb=bigramas_(tb).slice();
+  const total=ba.length+bb.length;   // FIX: se calcula ANTES de gastar bb con splice; antes el divisor se encogía y el puntaje se inflaba (incluso >100%)
   let interseccion=0;
   ba.forEach(bg=>{ const idx=bb.indexOf(bg); if(idx!==-1){ interseccion++; bb.splice(idx,1); } });
-  return (2*interseccion)/(ba.length+bb.length);
+  return (2*interseccion)/total;
 }
 // Separa "Cami, Cazador y Wagner" / "Cami-Wagner-Fell" / '"Wagner FellFaby"' en tokens candidatos.
 function separarNombresTexto_(texto){
@@ -4646,18 +4647,32 @@ function separarNombresTexto_(texto){
     .split(/\s*(?:,|\/|;|\n|\s+y\s+|\s+e\s+|&|\s+-\s+|-)\s*/i)
     .map(s=>s.trim()).filter(Boolean);
 }
+// Seguridad contra falsos positivos (ej. "QaiTK" quedando como "Warupi"): con nombres cortos el parecido
+// por bigramas es muy frágil (1 letra distinta ya baja a ~75%), así que:
+//  1) nombres de 5 letras o menos: solo coincidencia EXACTA (ignorando mayúsculas/tildes/símbolos);
+//  2) si dos miembros distintos quedan casi empatados (menos de 10 puntos de diferencia), es ambiguo y NO se asigna.
+// Lo que no se asigna aquí queda "sin detectar" para asignarlo a mano.
 function mejorMiembroParaTexto_(texto, umbral){
   umbral = umbral===undefined?0.75:umbral;
-  let mejor=null, mejorScore=0;
+  const nt=normalizarTexto_(texto); if(!nt) return null;
+  const puntajes=[];
   (DB.miembros||[]).forEach(m=>{
+    let sc=0;
     [m.usuarioSmule, m.nombre].forEach(campo=>{
       if(!campo) return;
       const score=similitud_(texto, campo);
-      if(score>mejorScore){ mejorScore=score; mejor=m; }
+      if(score>sc) sc=score;
     });
+    if(sc>0) puntajes.push({m,sc});
   });
-  return (mejor && mejorScore>=umbral) ? mejor : null;
+  puntajes.sort((x,y)=>y.sc-x.sc);
+  const a=puntajes[0], b=puntajes[1];
+  if(!a || a.sc<umbral) return null;
+  if(a.sc<1 && nt.length<=5) return null;
+  if(b && b.sc>=umbral && (a.sc-b.sc)<0.1) return null;
+  return a.m;
 }
+
 // Para el texto COMPLETO de una entrega (puede traer varios nombres pegados), devuelve la lista
 // de ids de Miembro detectados, sin duplicados. Lo que no llega al umbral se deja afuera a
 // propósito — así entregas de gente que ya no está en el team simplemente quedan sin asignar,
@@ -8803,6 +8818,6 @@ document.getElementById("miembrosContarBtn").onclick=()=>{
 </script>
 <script src="scripts/rango-piano.js?v=10"></script>
 <script src="scripts/compartir-faltas.js?v=1"></script>
-<script src="scripts/reproducir-todo.js?v=3"></script>
+<script src="scripts/reproducir-todo.js?v=5"></script>
 </body>
 </html>

@@ -37,7 +37,7 @@
   .pa-x{flex:none;width:38px;height:38px;border-radius:50%;background:rgba(255,255,255,.08);color:#fff;display:grid;place-items:center;cursor:pointer;}
   .pa-x svg,.pa-ico svg{display:block;}
   .pa-main{grid-column:1;grid-row:2;min-width:0;min-height:0;overflow-y:auto;padding:0 18px 18px 20px;}
-  .pa-col{width:min(100%,max(300px,calc((100vh - 230px)*16/9)));}
+  .pa-col{width:min(100%,max(300px,calc((100vh - 230px)*16/9)));margin-left:auto;margin-right:auto;}
   .pa-player{position:relative;width:100%;aspect-ratio:16/9;background:#000;border-radius:16px;overflow:hidden;box-shadow:0 14px 40px rgba(0,0,0,.5);}
   .pa-media{position:absolute;inset:0;}
   .pa-media iframe{position:absolute;inset:0;width:100%;height:100%;border:0;}
@@ -62,6 +62,9 @@
   .pa-vb,.pa-ib{width:38px;height:38px;flex:none;display:grid;place-items:center;border-radius:50%;background:none;color:rgba(255,255,255,.78);cursor:pointer;text-decoration:none;transition:color .15s,transform .15s;}
   .pa-vb:hover,.pa-ib:hover{color:#fff;transform:scale(1.1);}
   .pa-vb svg,.pa-ib svg{display:block;}
+  .pa-ib[hidden]{display:none;}
+  .pa-spin{width:22px;height:22px;border-radius:50%;border:3px solid rgba(255,255,255,.22);border-top-color:var(--peach-1,#ff8fb1);animation:paspin .8s linear infinite;}
+  @keyframes paspin{to{transform:rotate(360deg);}}
   .pa-vr{-webkit-appearance:none;appearance:none;flex:1;min-width:0;width:110px;max-width:110px;height:20px;margin:0;background:transparent;cursor:pointer;--v:80%;}
   .pa-vr:focus{outline:none;}
   .pa-vr::-webkit-slider-runnable-track{height:5px;border-radius:999px;background:linear-gradient(90deg,var(--peach-2,#ef0870),var(--peach-1,#ff8fb1)) 0 0/var(--v) 100% no-repeat,rgba(255,255,255,.18);}
@@ -235,6 +238,7 @@
     open:'<svg viewBox="0 0 24 24" width="21" height="21" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round"><path d="M14 4h6v6M20 4l-9 9M18 14v4.5A1.5 1.5 0 0 1 16.5 20h-11A1.5 1.5 0 0 1 4 18.5v-11A1.5 1.5 0 0 1 5.5 6H10"/></svg>',
     min:'<svg viewBox="0 0 24 24" width="21" height="21" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="16" rx="2.5"/><rect x="12" y="12" width="7" height="5.5" rx="1" fill="currentColor"/></svg>',
     max:'<svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round"><path d="M14 4h6v6M10 20H4v-6M20 4l-7 7M4 20l7-7"/></svg>',
+    dl:'<svg viewBox="0 0 24 24" width="21" height="21" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round"><path d="M12 4v11M7 11l5 5 5-5M5 20h14"/></svg>',
     vhi:'<svg viewBox="0 0 24 24" width="21" height="21" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 9.5v5h3.6L12 18.6V5.4L7.6 9.5z" fill="currentColor"/><path d="M15.5 8.8a4.6 4.6 0 0 1 0 6.4M18.2 6.2a8.4 8.4 0 0 1 0 11.6"/></svg>',
     vlo:'<svg viewBox="0 0 24 24" width="21" height="21" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 9.5v5h3.6L12 18.6V5.4L7.6 9.5z" fill="currentColor"/><path d="M15.5 8.8a4.6 4.6 0 0 1 0 6.4"/></svg>',
     vmu:'<svg viewBox="0 0 24 24" width="21" height="21" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 9.5v5h3.6L12 18.6V5.4L7.6 9.5z" fill="currentColor"/><path d="M16 9.5l5 5M21 9.5l-5 5"/></svg>',
@@ -296,7 +300,7 @@
         <div class="pa-ctl">
           <div class="pa-l"><div class="pa-vol"><button type="button" class="pa-vb" aria-label="Silenciar"></button><input type="range" class="pa-vr" min="0" max="100" step="1" aria-label="Volumen"></div></div>
           <div class="pa-center"><button type="button" class="pa-ico pa-prev" aria-label="Anterior">${IC.prev}</button><button type="button" class="pa-ico big pa-pause" aria-label="Pausa"></button><button type="button" class="pa-ico pa-next" aria-label="Siguiente">${IC.next}</button></div>
-          <div class="pa-r"><a class="pa-ib pa-open" target="_blank" rel="noopener noreferrer" title="Abrir enlace" aria-label="Abrir enlace">${IC.open}</a><button type="button" class="pa-ib pa-min" title="Minimizar" aria-label="Minimizar">${IC.min}</button></div>
+          <div class="pa-r"><button type="button" class="pa-ib pa-dl" title="Descargar" aria-label="Descargar" hidden>${IC.dl}</button><a class="pa-ib pa-open" target="_blank" rel="noopener noreferrer" title="Abrir enlace" aria-label="Abrir enlace">${IC.open}</a><button type="button" class="pa-ib pa-min" title="Minimizar" aria-label="Minimizar">${IC.min}</button></div>
         </div>
         <div class="pa-info"><div class="pa-name"></div><div class="pa-song"></div><div class="pa-note"></div></div>
       </div></div>
@@ -308,6 +312,7 @@
     q(".pa-next").onclick=()=>{ dir=1; ir(idx+1,1); };
     q(".pa-pause").onclick=q(".pa-mpause").onclick=alternar;
     q(".pa-min").onclick=()=>minimizar(true);
+    q(".pa-dl").onclick=descargar;
     q(".pa-vr").oninput=e=>{ vol=+e.target.value; muted=false; try{ localStorage.setItem("pa-vol",String(vol)); }catch(_){} aplicarVol(); };
     q(".pa-vb").onclick=()=>{ if(muted||vol===0){ muted=false; if(vol===0) vol=50; } else muted=true; aplicarVol(); };
     q(".pa-mmax").onclick=()=>minimizar(false);
@@ -399,6 +404,44 @@
     }));
   }
 
+  /* ---------- Smule / BandLab: pedir al servidor (Apps Script) la URL directa del archivo ---------- */
+  async function resolverMedia(it){
+    if(it.media!==undefined) return it.media;
+    try{
+      if(typeof apiPost!=="function"){ it.media=null; return null; }
+      const r=await apiPost({action:"resolverMedia",url:it.url,clave:(typeof memberPin!=="undefined"&&memberPin)?memberPin:""},"",true);
+      it.media=(r&&r.ok&&r.url)?{url:r.url,tipo:r.tipo==="video"?"video":"audio"}:null;
+    }catch(_){ it.media=null; }
+    return it.media;
+  }
+
+  /* ---------- descarga: directos, Drive, Smule y BandLab (YouTube y SoundCloud no) ---------- */
+  const puedeDescargar=it=>!!it&&["audio","video","drive","smule","bandlab"].includes(it.k.t);
+  const limpiaNombre=n=>String(n||"").replace(/[\\/:*?"<>|\u0000-\u001f]+/g," ").replace(/\s+/g," ").trim().slice(0,110);
+  function guardarBlob(blob,nombre){
+    const u=URL.createObjectURL(blob), a=document.createElement("a"); a.href=u; a.download=nombre; document.body.appendChild(a); a.click(); a.remove(); setTimeout(()=>URL.revokeObjectURL(u),30000);
+  }
+  async function descargar(){
+    const it=cola[idx]; if(!puedeDescargar(it)) return; const k=it.k; let url=null;
+    if(k.t==="audio"||k.t==="video") url=k.src;
+    else if(k.t==="drive") url="https://drive.google.com/uc?export=download&id="+k.id;
+    else{
+      tst("Preparando descarga…");
+      const r=await resolverMedia(it);
+      if(!r){ tst("No se pudo obtener el archivo de este enlace. Usa Abrir."); return; }
+      url=r.url;
+    }
+    const ext=(String(url).split(/[?#]/)[0].match(/\.(mp3|m4a|aac|wav|ogg|oga|opus|flac|mp4|webm|mov|m4v)$/i)||[])[1];
+    const base=limpiaNombre(nombreDe(it.e)+" - "+(it.e.detalleEntrega||it.titulo||"entrega"))||"entrega";
+    const nombre=ext?base+"."+ext.toLowerCase():base;
+    if(k.t!=="drive"){   // 1) si el servidor del archivo lo permite (CORS), se guarda con buen nombre sin salir del Hub
+      try{ const r=await fetch(url,{mode:"cors"}); if(r.ok){ guardarBlob(await r.blob(),nombre); tst("Descarga lista"); return; } }catch(_){}
+    }
+    const a=document.createElement("a"); a.href=url; a.target="_blank"; a.rel="noopener noreferrer"; if(k.t!=="drive") a.download=nombre;   // 2) respaldo: que lo maneje el navegador
+    document.body.appendChild(a); a.click(); a.remove();
+    tst(k.t==="drive"?"Si Drive pide confirmación, acéptala en la pestaña que se abrió.":"Si se abrió el archivo en vez de bajarse, usa «Guardar como» en esa pestaña.");
+  }
+
   /* ---------- reproducir el elemento i ---------- */
   function ir(i,d){
     if(!root) return;
@@ -413,7 +456,7 @@
     q(".pa-song").textContent=e.detalleEntrega||"";
     qEls.forEach((b,j)=>{ b.classList.toggle("now",j===i); b.classList.toggle("done",j<i); b.querySelector(".pa-qn").innerHTML=j===i?IC.qplay:String(j+1); });
     if(qEls[i]) try{ qEls[i].scrollIntoView({block:"nearest",behavior:"smooth"}); }catch(_){}
-    q(".pa-prev").disabled=i===0;
+    q(".pa-prev").disabled=i===0; q(".pa-dl").hidden=!puedeDescargar(it);
     const open=q(".pa-open"); open.href=/^https?:/i.test(url)?url:"#";
     const media=q(".pa-media"), note=q(".pa-note"), prog=q(".pa-prog"), time=q(".pa-time");
     if(cur&&cur.el){ try{ cur.el.pause(); cur.el.removeAttribute("src"); cur.el.load(); }catch(_){} }
@@ -426,15 +469,32 @@
     const frame=(src)=>{ const f=document.createElement("iframe"); f.src=src; f.allow="autoplay; encrypted-media; clipboard-write; fullscreen"; f.setAttribute("allowfullscreen",""); media.appendChild(f); return f; };
     const poster=()=>{ const p=document.createElement("div"); p.className="pa-poster"; p.style.backgroundImage=`url("${fotoDe(e).replace(/"/g,"%22")}")`; p.innerHTML=`<img alt="" src="${esc(fotoDe(e))}">`; media.appendChild(p); };
 
-    if(k.t==="audio"||k.t==="video"){
-      if(k.t==="audio") poster();
-      const el=document.createElement(k.t); el.autoplay=true; el.playsInline=true; el.src=k.src; if(k.t==="audio") el.style.display="none"; media.appendChild(el);
+    /* reproductor propio (audio/video directo, o el archivo que resolvió el servidor para Smule/BandLab) */
+    const nativo=(tipo,src,aviso,alFallar)=>{
+      if(tipo==="audio") poster();
+      const el=document.createElement(tipo); el.autoplay=true; el.playsInline=true; el.src=src; if(tipo==="audio") el.style.display="none"; media.appendChild(el);
       cur={el}; prog.hidden=false; time.hidden=false;
       el.onplay=()=>setPlaying(true); el.onpause=()=>{ if(!el.ended) setPlaying(false); }; el.onended=sig;
       el.ontimeupdate=()=>{ prog.firstElementChild.style.width=(el.duration?100*el.currentTime/el.duration:0)+"%"; time.textContent=fmtT(el.currentTime)+" / "+fmtT(el.duration); };
-      el.onerror=()=>{ if(mi===tok){ marcar(it,"roto"); falla(mi,"roto"); } };
+      el.onerror=()=>{ if(mi===tok){ if(alFallar) alFallar(); else { marcar(it,"roto"); falla(mi,"roto"); } } };
       aplicarVol();
-      note.textContent="Avanza solo al terminar.";
+      note.textContent=aviso;
+    };
+    /* Smule / BandLab: primero se intenta sacar el archivo; si no se puede, se vuelve a lo de antes (iframe de BandLab / botón Abrir) */
+    const sinArchivo=()=>{
+      media.innerHTML=""; prog.hidden=true; time.hidden=true; cur=null; setPlaying(false);
+      if(k.t==="bandlab"){
+        frame(`https://www.bandlab.com/embed/?id=${k.id}&blur=false`);
+        note.textContent="BandLab no avisa cuándo termina ni permite pausar desde aquí: usa Siguiente. Si sale «No podemos encontrar esa pista», la canción es privada (BandLab solo deja incrustar las públicas): usa Abrir.";
+      }else{
+        poster(); falla(mi,"manual");
+        note.textContent="Escúchala en su pestaña y vuelve aquí: toca Siguiente.";
+      }
+      pintarPausa(); aplicarVol();
+    };
+
+    if(k.t==="audio"||k.t==="video"){
+      nativo(k.t,k.src,"Avanza solo al terminar.");
     }else if(k.t==="yt"){
       const f=frame(`https://www.youtube.com/embed/${k.id}?enablejsapi=1&autoplay=1&playsinline=1&rel=0&origin=${encodeURIComponent(location.origin)}`);
       cur={yt:true,frame:f}; f.onload=()=>{ post(f,{event:"listening",id:"pa"}); aplicarVol(); setTimeout(()=>{ if(mi===tok) aplicarVol(); },900); };
@@ -455,9 +515,15 @@
     }else if(k.t==="drive"){
       frame(`https://drive.google.com/file/d/${k.id}/preview`);
       note.textContent="Drive no avisa cuándo termina ni permite pausar desde aquí: usa Siguiente. Si el archivo se borró, Google lo mostrará en el recuadro.";
-    }else if(k.t==="bandlab"){
-      frame(`https://www.bandlab.com/embed/?id=${k.id}&blur=false`);
-      note.textContent="BandLab no avisa cuándo termina ni permite pausar desde aquí: usa Siguiente. Si sale «No podemos encontrar esa pista», la canción es privada (BandLab solo deja incrustar las públicas): usa Abrir.";
+    }else if(k.t==="bandlab"||k.t==="smule"){
+      const ld=document.createElement("div"); ld.className="pa-msg"; ld.innerHTML='<span class="pa-spin"></span><div>Buscando el archivo…</div>'; media.appendChild(ld);
+      note.textContent="";
+      resolverMedia(it).then(r=>{
+        if(mi!==tok||!root) return;
+        media.innerHTML="";
+        if(r) nativo(r.tipo,r.url,"Avanza solo al terminar.",sinArchivo); else sinArchivo();
+        pintarPausa(); aplicarVol();
+      });
     }else{
       poster(); falla(mi,"manual");
       note.textContent="Escúchala en su pestaña y vuelve aquí: toca Siguiente.";
