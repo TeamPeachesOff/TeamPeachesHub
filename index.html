@@ -1539,6 +1539,13 @@
         <input autocomplete="off" type="text" id="af_linkForms" placeholder="https://forms.gle/..." style="margin-top:6px;">
         <div class="upload-status" id="af_linkFormsStatus" style="text-align:left;"></div>
       </div>
+      <div class="form-group" style="background:var(--card-bg-2);padding:10px;border-radius:12px;">
+        <label style="color:var(--peach-2);">🔄 Sincronizar entregas desde el formulario (solo agrega, nunca borra)</label>
+        <input autocomplete="off" type="text" id="af_syncHoja" placeholder="Link de la hoja de respuestas del formulario (Google Sheets)" style="margin-bottom:8px;">
+        <input autocomplete="off" type="text" id="af_syncTexto" placeholder="Texto de la columna B (el mismo que se escribe en el formulario)">
+        <button type="button" class="btn-small btn-family" id="af_syncAhora" style="width:100%;margin-top:8px;">🔄 Sincronizar ahora</button>
+        <div class="upload-status" id="af_syncStatus" style="text-align:left;">La hoja debe estar compartida como «Cualquier persona con el enlace: lector». Se leen las filas cuya columna B sea ese texto y solo se añaden las entregas nuevas.</div>
+      </div>
       <div class="form-group"><label>Link para unirse (Smule, si es grupal)</label><input autocomplete="off" type="text" id="af_linkUnirse"></div>
       <div class="form-group">
         <label>Script/Letra (PDF, si es grupal)</label>
@@ -6796,6 +6803,7 @@ function openActivityForm(id, esAnuarioItem){
   document.getElementById("af_scriptFile").value=""; document.getElementById("af_scriptStatus").textContent="";
   document.getElementById("af_customButtons").innerHTML="";
   botonesPersonalizadosDe(a||{}).forEach(agregarFilaBotonPersonalizado);
+  { const sy=syncFormDe_(a||{}); document.getElementById("af_syncHoja").value=sy?sy.hoja:(localStorage.getItem("tph_syncHoja")||""); document.getElementById("af_syncTexto").value=sy?sy.texto:""; document.getElementById("af_syncStatus").textContent=""; }
   setSwitchPill("af_categoriaSwitch", a?(a.categoria||""):"");
   setSwitchPill("af_participacionSwitch", a?(a.participacion||"opcional"):"opcional");
   setSwitchPill("af_dobleSwitch", (a && esTrue(a.dobleEspacio)) ? "1" : "0");
@@ -6956,6 +6964,98 @@ document.getElementById("af_addCustomBtn").onclick=()=>agregarFilaBotonPersonali
 function leerBotonesPersonalizados(){
   return Array.from(document.querySelectorAll("#af_customButtons .custom-btn-row")).map(fila=>({texto:fila.querySelector(".cb-texto").value.trim(),url:fila.querySelector(".cb-url").value.trim()})).filter(b=>b.texto&&b.url).slice(0,3);
 }
+/* ---------- Sincronizar entregas desde un formulario (Google Forms → hoja de respuestas) ----------
+   La configuración (hoja + texto de la columna B) viaja dentro de «botonesPersonalizados» como una entrada {sync:true,...} sin texto/url:
+   botonesPersonalizadosDe() la ignora, así que no aparece como botón y no hace falta tocar el backend.
+   SOLO AGREGA: nunca borra ni modifica entregas. Si algo se quita del formulario, en el Hub se queda. */
+function syncFormDe_(a){
+  try{ const b=JSON.parse(a&&a.botonesPersonalizados||"[]"); const x=Array.isArray(b)&&b.find(v=>v&&v.sync); return x?{hoja:String(x.hoja||""),texto:String(x.texto||"")}:null; }catch(_){ return null; }
+}
+function leerSyncForm_(){
+  const hoja=document.getElementById("af_syncHoja").value.trim(), texto=document.getElementById("af_syncTexto").value.trim();
+  if(hoja) { try{ localStorage.setItem("tph_syncHoja",hoja); }catch(_){} }
+  return (hoja&&texto)?[{sync:true,hoja,texto}]:[];
+}
+function csvParse_(t){
+  const filas=[]; let f=[], c="", q=false;
+  for(let i=0;i<t.length;i++){
+    const ch=t[i];
+    if(q){ if(ch==='"'){ if(t[i+1]==='"'){ c+='"'; i++; } else q=false; } else c+=ch; }
+    else if(ch==='"') q=true;
+    else if(ch===","){ f.push(c); c=""; }
+    else if(ch==="\n"||ch==="\r"){ if(ch==="\r"&&t[i+1]==="\n") i++; f.push(c); c=""; filas.push(f); f=[]; }
+    else c+=ch;
+  }
+  if(c!==""||f.length){ f.push(c); filas.push(f); }
+  return filas;
+}
+async function leerHojaForm_(hoja){
+  const id=(String(hoja).match(/\/d\/([\w-]+)/)||[])[1]; if(!id) throw new Error("El link de la hoja no es válido");
+  const gid=(String(hoja).match(/[#&?]gid=(\d+)/)||[])[1];
+  const r=await fetch("https://docs.google.com/spreadsheets/d/"+id+"/gviz/tq?tqx=out:csv"+(gid?"&gid="+gid:""),{cache:"no-store"});
+  if(!r.ok) throw new Error("No pude leer la hoja (compártela como «Cualquier persona con el enlace: lector»)");
+  const tx=await r.text();
+  if(/^\s*<(!doctype|html)/i.test(tx)) throw new Error("La hoja no es pública: compártela como «Cualquier persona con el enlace: lector»");
+  return csvParse_(tx);
+}
+let syncFormEnCurso_=false;
+async function sincronizarEntregasForm_(act, silencioso){
+  const sy=syncFormDe_(act); if(!sy||!sy.hoja||!sy.texto) return {ok:false,error:"Falta la hoja o el texto"};
+  if(syncFormEnCurso_) return {ok:false,error:"Ya hay una sincronización en curso"};
+  syncFormEnCurso_=true;
+  try{
+    const filas=await leerHojaForm_(sy.hoja);
+    if(filas.length<2) return {ok:true,nuevas:0,total:0};
+    const enc=filas[0].map(h=>normalizarTexto_(h));
+    const col=(excl,...pat)=>enc.findIndex((h,i)=>i>1&&!excl.includes(i)&&pat.some(p=>h.includes(p)));
+    let cEnl=col([],"enlace","link","grabaci","url");
+    let cUsu=col([cEnl],"usuario","nombre","user","smule");
+    let cDet=col([cEnl,cUsu],"escena","cancion","detalle","titulo","tema");
+    const clave=normalizarTexto_(sy.texto);
+    const coinciden=filas.slice(1).filter(f=>{ const b=normalizarTexto_(f[1]); return b&&(b===clave); });
+    const ya=new Set((DB.entregas||[]).filter(e=>String(e.idActividad)===String(act.id)).map(e=>normalizarTexto_(e.nombreUsuario)+"|"+normalizarTexto_(e.linkGrabacion||e.detalleEntrega)));
+    let nuevas=0, errores=0, n=0;
+    for(const f of coinciden){
+      let enlace=cEnl>=0?String(f[cEnl]||"").trim():"";
+      if(!enlace){ const u=f.slice(2).find(x=>/^https?:\/\//i.test(String(x||"").trim())); enlace=u?String(u).trim():""; }
+      const usuario=cUsu>=0?String(f[cUsu]||"").trim():String(f.slice(2).find(x=>x&&!/^https?:\/\//i.test(String(x).trim()))||"").trim();
+      const detalle=cDet>=0?String(f[cDet]||"").trim():"";
+      if(!usuario&&!enlace) continue;
+      const k=normalizarTexto_(usuario)+"|"+normalizarTexto_(enlace||detalle);
+      if(ya.has(k)) continue;
+      ya.add(k); n++;
+      const data={ id:"ENT-"+Date.now()+"-"+n, idActividad:String(act.id), tituloActividad:act.titulo||"", categoria:act.categoria||"", nombreUsuario:usuario, detalleEntrega:detalle, linkGrabacion:enlace };
+      try{ const r=await apiPost({action:"addEntrega",data},"",true); if(r&&r.ok) nuevas++; else errores++; }catch(_){ errores++; }
+    }
+    if(nuevas) await cargarDatos();
+    return {ok:true,nuevas,errores,total:coinciden.length};
+  }catch(err){ return {ok:false,error:err.message||String(err)}; }
+  finally{ syncFormEnCurso_=false; }
+}
+document.getElementById("af_syncAhora").onclick=async()=>{
+  const st=document.getElementById("af_syncStatus"), id=document.getElementById("af_id").value;
+  const hoja=document.getElementById("af_syncHoja").value.trim(), texto=document.getElementById("af_syncTexto").value.trim();
+  if(!id){ st.textContent="Guarda primero la actividad y luego sincroniza."; return; }
+  if(!hoja||!texto){ st.textContent="Pon el link de la hoja y el texto de la columna B."; return; }
+  const act=(DB.actividades||[]).find(a=>String(a.id)===String(id)); if(!act){ st.textContent="No encontré la actividad."; return; }
+  st.textContent="Sincronizando…";
+  const r=await sincronizarEntregasForm_(Object.assign({},act,{botonesPersonalizados:JSON.stringify([{sync:true,hoja,texto}])}));
+  st.textContent=r.ok?(`Listo ✅ ${r.nuevas} entrega(s) nueva(s) de ${r.total} fila(s) con ese texto.`+(r.errores?` ${r.errores} con error.`:"")+" Recuerda Guardar para conservar la configuración."):("⚠️ "+r.error);
+};
+/* Automático: cuando alguien de Staff tiene la página abierta, cada ~5 min revisa las actividades con sincronización y agrega lo nuevo. */
+const syncFormUlt_={};
+async function autoSyncForms_(){
+  if(nivel!=="staff"||document.visibilityState!=="visible"||syncFormEnCurso_||!DB||!Array.isArray(DB.actividades)) return;
+  for(const a of DB.actividades){
+    const sy=syncFormDe_(a); if(!sy||!sy.hoja||!sy.texto) continue;
+    if(Date.now()-(syncFormUlt_[a.id]||0)<300000) continue;
+    syncFormUlt_[a.id]=Date.now();
+    const r=await sincronizarEntregasForm_(a,true);
+    if(r.ok&&r.nuevas) toast(`🔄 ${r.nuevas} entrega(s) nueva(s) en «${a.titulo||"actividad"}»`);
+  }
+}
+setTimeout(autoSyncForms_,8000); setInterval(autoSyncForms_,60000);
+
 document.getElementById("activityForm").addEventListener("submit", async(e)=>{
   e.preventDefault();
   const categoria=getSwitchPillValue("af_categoriaSwitch");
@@ -6986,7 +7086,7 @@ document.getElementById("activityForm").addEventListener("submit", async(e)=>{
       ganadorDoblaje: document.getElementById("af_ganadorDoblaje").value,
       mencionesHonorificas: document.getElementById("af_menciones").value,
       grupales: document.getElementById("af_grupales").value,
-      botonesPersonalizados: JSON.stringify(leerBotonesPersonalizados()),
+      botonesPersonalizados: JSON.stringify(leerBotonesPersonalizados().concat(leerSyncForm_())),
     };
     const esModoAnuario=document.getElementById("activityForm").dataset.modoAnuario==="1";
     if(!esModoAnuario){
@@ -8818,6 +8918,6 @@ document.getElementById("miembrosContarBtn").onclick=()=>{
 </script>
 <script src="scripts/rango-piano.js?v=10"></script>
 <script src="scripts/compartir-faltas.js?v=1"></script>
-<script src="scripts/reproducir-todo.js?v=5"></script>
+<script src="scripts/reproducir-todo.js?v=6"></script>
 </body>
 </html>
