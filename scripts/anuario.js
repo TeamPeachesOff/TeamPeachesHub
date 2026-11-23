@@ -256,7 +256,7 @@ function anuActHTML_(id){
     ${bestOnly.length?`<h3 class="act-sec">👑 Lo mejor de la actividad</h3>${bstHTML(bestOnly)}`:(grupL.length?"":`<p class="md-empty" style="text-align:center">Todavía sin ganadores asignados.</p>`)}
     ${mens.length?`<h3 class="act-sec">🎖️ Menciones honoríficas</h3><div class="act-list">${mens.map(w=>anuRowW_(w)).join("")}</div>`:""}
     ${anuEntregasHTML_(e,[...best.map(x=>x.w),...mens])}
-    <div class="act-staff"><button type="button" class="shr" data-share-anuario="${escAttr(e.id)}">${ANU_SHARE_ICON}<span>Compartir</span></button><button type="button" data-edit-anuario="${escAttr(e.id)}">✏️ Editar</button><button type="button" class="del" data-delete-anuario="${escAttr(e.id)}">🗑️ Borrar tarjeta</button></div></div>`;
+    <div class="act-staff"><button type="button" class="shr" data-share-anuario="${escAttr(e.id)}">${ANU_SHARE_ICON}<span>Compartir</span></button><button type="button" data-edit-anuario="${escAttr(e.id)}">✏️ Editar</button>${anuPuedeDividir_(e)?`<button type="button" data-split-anuario="${escAttr(e.id)}">✂️ Dividir</button>`:""}<button type="button" class="del" data-delete-anuario="${escAttr(e.id)}">🗑️ Borrar tarjeta</button></div></div>`;
 }
 function anuOpenAct_(id){ anuS.act=id; anuView_(); $a("anuDet").scrollTop=0; document.body.scrollTo({top:0}); }
 
@@ -362,7 +362,8 @@ function anuEditarTarjeta_(id){
       <h4 class="sg-gt" style="margin-top:20px"><span>Actividades incluidas (${gs.filter(x=>x.act).length||0})<small>${st.L.length} ${st.L.length===1?"canción":"canciones"} en total</small></span></h4>
       ${gs.length?gs.map(g=>{ const x=g.act?(TIPO_[g.act.categoria]||{t:"Especial",e:"✨"}):null;
         return `<section class="sg-grp" style="margin-top:12px"><h4 class="sg-gt" style="font-size:20px">${g.act&&g.act.imagenUrl?`<img src="${escAttr(g.act.imagenUrl)}" alt="">`:""}<span>${escHtml(g.act?g.act.titulo||"":"Otras canciones")}<small>${x?x.e+" "+x.t:"No se pudo ligar a una actividad"}</small></span></h4>${g.act?`<div class="ed-grp-btns"><button type="button" data-sep="${escAttr(g.act.id)}">✂️ Separar en su propia tarjeta</button><button type="button" data-quitar="${escAttr(g.act.id)}">Quitar de esta tarjeta</button></div>`:""}${g.items.map(({it,i})=>`<div class="ed-line m-${it.tipo==="mencion"?"mencion":it.tipo==="grupal"?"grupal":"mejor"}"><div><b>${escHtml(String(it.w.nombre||"").replace(/@/g,""))}</b>${it.w.detalle?`<small>${escHtml(it.w.detalle)}</small>`:""}</div><div class="ed-ctl"><button type="button" data-t="mejor" data-i="${i}" class="${it.tipo!=="mencion"&&it.tipo!=="grupal"?"on":""}">👑 Mejor</button><button type="button" data-t="mencion" data-i="${i}" class="${it.tipo==="mencion"?"on":""}">🎖️ Mención</button><button type="button" data-t="grupal" data-i="${i}" class="${it.tipo==="grupal"?"on":""}">👥 Grupal</button><button type="button" class="ed-x" data-x="${i}" aria-label="Quitar">🗑️</button></div></div>`).join("")}</section>`; }).join(""):`<p class="md-empty">Esta tarjeta todavía no tiene canciones.</p>`}
-      <div class="ed-big"><button type="button" id="edAdd">＋ Agregar actividad</button><button type="button" id="edMerge">🔀 Fusionar tarjetas</button></div>
+      <div class="ed-big"><button type="button" id="edAdd">＋ Agregar actividad</button><button type="button" id="edMerge">🔀 Fusionar tarjetas</button><button type="button" id="edSplit" class="${gs.length>=2?"":"off"}" aria-disabled="${gs.length>=2?"false":"true"}">✂️ Dividir tarjeta</button></div>
+      ${gs.length>=2?"":`<p class="md-hint ed-split-hint">Para dividir una tarjeta necesita 2 o más actividades.</p>`}
       <div class="md-acts"><button type="button" class="md-sec" data-close>Cerrar</button><button type="button" class="md-pri" id="edSave">Guardar</button></div></div>`);
     const val=(sel,f)=>{ const el=b.querySelector(sel); el.oninput=()=>{ f(el.value); st.dirty=true; }; };
     val("#edT",v=>st.titulo=v); val("#edFi",v=>st.fi=v); val("#edFf",v=>st.ff=v);
@@ -402,6 +403,7 @@ function anuEditarTarjeta_(id){
     const antes=async()=>{ if(st.dirty) return await guardar(); return true; };
     b.querySelector("#edAdd").onclick=async()=>{ if(!await antes()) return; anuAgregar_({id:st.id,titulo:st.titulo,fecha:st.fi,volver:()=>anuEditarTarjeta_(st.id)}); };
     b.querySelector("#edMerge").onclick=async()=>{ if(!await antes()) return; fusion(); };
+    b.querySelector("#edSplit").onclick=async()=>{ if(st.busy) return; if(gs.length<2){ toast("Esta tarjeta solo tiene una actividad: no hay nada que dividir"); return; } if(!await antes()) return; anuDividir_(st.id,()=>anuEditarTarjeta_(st.id)); };
     b.querySelector("#edSave").onclick=async()=>{ if(st.busy) return; st.busy=true; const ok=await guardar(); st.busy=false; if(ok){ toast("Tarjeta guardada ✅"); mdHide_(); } };
   };
   const fusion=()=>{
@@ -423,6 +425,83 @@ function anuEditarTarjeta_(id){
         if(r.ok){ toast("Tarjetas fusionadas ✅"); await cargarDatos(); anuEditarTarjeta_(st.id); } else toast("Error: "+(r.error||"")); }; };
     d1(); };
   draw();
+}
+
+/* ---------- Dividir tarjeta (staff, modo claro) ----------
+   Reparte las actividades de UNA tarjeta del Anuario en DOS: unas se quedan y otras pasan a una tarjeta nueva.
+   Las canciones se mueven tal cual (siguen siendo «Mejor / Mención / Grupal»), así que no hay que volver a elegirlas.
+   La actividad original nunca se toca. Si algo falla a medias, se deshace todo y la tarjeta queda como estaba. */
+function anuLineasDe_(row){
+  const actDe=w=>{ const k=anuKey_(w.nombre), d=String(w.detalle||"").trim().toLowerCase();
+    const e=(DB.entregas||[]).find(e=>anuKey_(e.nombreUsuario)===k&&String(e.detalleEntrega||"").trim().toLowerCase()===d);
+    return e?(DB.actividades||[]).find(a=>String(a.id)===String(e.idActividad))||null:null; };
+  const L=[]; [["canto","ganadorCanto"],["doblaje","ganadorDoblaje"],["mencion","mencionesHonorificas"],["grupal","grupales"]].forEach(([t,k])=>parseWinnerLines(row[k]).forEach(w=>{
+    const act=actDe(w); L.push({w,tipo:t,act,best:(t==="mencion"||t==="grupal")?(act&&act.categoria==="doblaje"?"doblaje":"canto"):t}); }));
+  return L;
+}
+/* Agrupa las líneas por actividad (las que no se pueden ligar a una actividad van juntas en «otras») */
+function anuGruposDe_(L){
+  const g=new Map(); L.forEach(it=>{ const k=it.act?String(it.act.id):"otras"; if(!g.has(k)) g.set(k,{k,act:it.act,items:[]}); g.get(k).items.push(it); });
+  return [...g.values()].sort((a,b)=>(a.act?0:1)-(b.act?0:1)||(anuFecha_(a.act&&a.act.fechaInicio)-anuFecha_(b.act&&b.act.fechaInicio))||0);
+}
+const anuDatosDe_=(row,L)=>({id:row.id,titulo:row.titulo||"Actividad",imagenUrl:row.imagenUrl||"",fechaInicio:toDateInput(row.fechaInicio),fechaFin:toDateInput(row.fechaFin),
+  ganadorCanto:L.filter(i=>i.tipo==="canto").map(i=>anuLn_(i.w)).join("\n"),ganadorDoblaje:L.filter(i=>i.tipo==="doblaje").map(i=>anuLn_(i.w)).join("\n"),
+  mencionesHonorificas:L.filter(i=>i.tipo==="mencion").map(i=>anuLn_(i.w)).join("\n"),grupales:L.filter(i=>i.tipo==="grupal").map(i=>anuLn_(i.w)).join("\n")});
+/* ¿Se puede dividir? Hace falta que la tarjeta tenga 2 o más actividades. */
+const anuPuedeDividir_=row=>anuGruposDe_(anuLineasDe_(row)).length>=2;
+function anuDividir_(id,volver){
+  if(!staffPin) return;
+  const row=(DB.anuario||[]).find(x=>String(x.id)===String(id)); if(!row){ toast("Tarjeta no encontrada"); return; }
+  const L=anuLineasDe_(row), gs=anuGruposDe_(L), atras=volver||(()=>mdHide_());
+  if(gs.length<2){ toast("Esta tarjeta solo tiene una actividad: no hay nada que dividir"); return; }
+  const sel=new Set(); let nombre="", tocado=false, busy=false;
+  const tipoDe=g=>g.act?(TIPO_[g.act.categoria]||{t:"Especial",e:"✨"}):{t:"Sin actividad ligada",e:"🎵"};
+  const plural=n=>n+" "+(n===1?"canción":"canciones");
+  const nombreAuto=()=>{ const g=gs.find(x=>sel.has(x.k)&&x.act); return g?String(g.act.titulo||""):""; };
+  const b=anuModal_(`<div class="md-body"><button type="button" class="md-back" id="dvBack"><svg class="ico-back" viewBox="0 0 24 24" aria-hidden="true"><path d="M15 5l-7 7 7 7"/></svg>Volver a la tarjeta</button>
+    <h3 class="md-t">Dividir tarjeta</h3>
+    <p class="md-hint">Toca las actividades que pasarán a una <b>tarjeta nueva</b>. Las demás se quedan en «${escHtml(row.titulo||"esta tarjeta")}». Las canciones se mueven tal cual: no hay que volver a elegirlas.</p>
+    <div class="md-list">${gs.map((g,i)=>{ const x=tipoDe(g);
+      return `<button type="button" class="md-opt dv-opt" data-g="${i}" aria-pressed="false">${g.act&&g.act.imagenUrl?`<img src="${escAttr(g.act.imagenUrl)}" alt="">`:`<span class="dv-ph" aria-hidden="true">🎵</span>`}<span class="dv-tx"><i class="dv-tag">Se queda</i><b>${escHtml(g.act?(g.act.titulo||"Actividad"):"Otras canciones")}</b><small>${x.e} ${x.t} · ${plural(g.items.length)}</small></span></button>`; }).join("")}</div>
+    <label class="sg-name-l" for="dvName">Nombre de la tarjeta nueva</label><input class="sg-name" id="dvName" type="text" maxlength="120" value="">
+    <div class="dv-sum" id="dvSum" role="status"></div>
+    <div class="md-acts"><button type="button" class="md-sec" id="dvNo">Cancelar</button><button type="button" class="md-pri" id="dvGo" aria-disabled="true">✂️ Dividir</button></div></div>`);
+  const estado=()=>{ const pasan=gs.filter(g=>sel.has(g.k)), quedan=gs.filter(g=>!sel.has(g.k)), ancla=pasan.find(g=>g.act);
+    return {pasan,quedan,ancla,ok:!!(pasan.length&&quedan.length&&ancla)}; };
+  const upd=()=>{
+    const e=estado(), inp=b.querySelector("#dvName");
+    b.querySelectorAll("[data-g]").forEach(x=>{ const on=sel.has(gs[+x.dataset.g].k); x.classList.toggle("sel",on); x.setAttribute("aria-pressed",String(on)); x.querySelector(".dv-tag").textContent=on?"Tarjeta nueva":"Se queda"; });
+    if(!tocado){ nombre=nombreAuto(); inp.value=nombre; }
+    b.querySelector("#dvSum").innerHTML=e.ok?`<b>${e.pasan.length}</b> ${e.pasan.length===1?"actividad pasa":"actividades pasan"} a la tarjeta nueva · <b>${e.quedan.length}</b> ${e.quedan.length===1?"se queda":"se quedan"} en la actual`
+      :(e.pasan.length&&!e.ancla)?"Las canciones sin actividad ligada solo pueden pasar junto a una actividad."
+      :!e.pasan.length?"Elige al menos una actividad para la tarjeta nueva.":"Deja al menos una actividad en la tarjeta actual.";
+    b.querySelector("#dvGo").setAttribute("aria-disabled",String(!e.ok||busy));
+  };
+  b.querySelector("#dvBack").onclick=b.querySelector("#dvNo").onclick=()=>{ if(!busy) atras(); };
+  b.querySelectorAll("[data-g]").forEach(x=>x.onclick=()=>{ if(busy) return; const k=gs[+x.dataset.g].k; if(sel.has(k)) sel.delete(k); else sel.add(k); upd(); });
+  b.querySelector("#dvName").oninput=ev=>{ nombre=ev.target.value; tocado=true; };
+  b.querySelector("#dvGo").onclick=async()=>{
+    if(busy) return; const e=estado();
+    if(!e.ok){ toast(e.pasan.length&&!e.ancla?"Incluye al menos una actividad con su nombre":!e.pasan.length?"Elige al menos una actividad para la tarjeta nueva":"Deja al menos una actividad en la tarjeta actual"); return; }
+    busy=true; upd();
+    const nm=String(nombre||"").trim()||String(e.ancla.act.titulo||"")||"Actividad";
+    const orig=anuDatosDe_(row,L), mover=e.pasan.flatMap(g=>g.items), resto=e.quedan.flatMap(g=>g.items);
+    const idsAntes=new Set((DB.anuario||[]).map(r=>String(r.id)));
+    /* reversa: borra lo nuevo que haya quedado a medias y deja la tarjeta original como estaba */
+    const deshacer=async()=>{ try{ await cargarDatos();
+      for(const r of (DB.anuario||[]).filter(r=>!idsAntes.has(String(r.id)))) await apiPost({action:"deleteAnuario",id:r.id},"Deshaciendo...",true);
+      await apiPost({action:"editAnuario",data:orig},"Restaurando tarjeta...",true); await cargarDatos(); }catch(_){} };
+    try{
+      const r=await apiPost({action:"editAnuario",data:anuDatosDe_(row,resto)},"Dividiendo la tarjeta...");
+      if(!r.ok){ toast("No se pudo dividir: "+(r.error||"")); return; }
+      const items=mover.map(i=>({destino:anuDestino_(i.tipo==="mencion"?"mencion":i.tipo==="grupal"?"grupal":"mejor",i.tipo),nombreUsuario:i.w.nombre||"",detalle:i.w.detalle||"",link:i.w.link||""}));
+      const ok=await anuEnviar_(items,e.ancla.act.id,nm,"");
+      const ya=anuYaSet_(true), dentro=items.every(it=>ya.has(anuItemKey_(it)));
+      if(!ok||!dentro){ await deshacer(); toast("No se pudo crear la tarjeta nueva; todo quedó como estaba"); return; }
+      toast("Tarjeta dividida en dos ✅"); mdHide_();
+    } finally{ busy=false; if(b.isConnected) upd(); }
+  };
+  upd();
 }
 
 /* ---------- Imagen de respaldo y compartir (PNG) ---------- */
@@ -696,6 +775,7 @@ function anuDet_(){
   d.querySelectorAll("img.anu-fb").forEach(im=>{ const fb=()=>{ if(im.dataset.fb) return; im.dataset.fb="1"; im.src=ANU_SHOW; }; im.addEventListener("error",fb); if(im.complete&&im.naturalWidth===0) fb(); });
   d.querySelectorAll("[data-share-anuario]").forEach(bt=>bt.onclick=()=>anuCompartir_(bt.dataset.shareAnuario));
   d.querySelectorAll("[data-edit-anuario]").forEach(bt=>bt.onclick=()=>anuEditarTarjeta_(bt.dataset.editAnuario));
+  d.querySelectorAll("[data-split-anuario]").forEach(bt=>bt.onclick=()=>anuDividir_(bt.dataset.splitAnuario,()=>mdHide_()));
   d.querySelectorAll("[data-delete-anuario]").forEach(bt=>bt.onclick=async()=>{
     if(!await confirmarAccion("¿Seguro que quieres borrar esta tarjeta completa del Anuario?")) return;
     const r=await apiPost({action:"deleteAnuario",id:bt.dataset.deleteAnuario}); if(r.ok){ toast("Borrado 🗑️"); anuS.act=null; await cargarDatos(); } else toast("Error: "+(r.error||"")); });
@@ -711,6 +791,10 @@ function anuView_(){
   $a("anuBarT").textContent=anuS.act?"Actividad":inDet?(anuS.key==="admin"?"Administración":MESES_LARGO[+anuS.key.split("-")[1]]):"Anuario "+p.titulo;
   anuIdx_(); anuDet_(); anuTabsAncho_();
 }
+/* Barra superior del libro (teléfono): cuando el contenido pasa por debajo, se le pone fondo para que no se solape con el título. */
+(function(){ let t=false; const bar=()=>document.querySelector("#viewAnuario .anu-bar");
+  const y=e=>{ const el=e&&e.target; return (!el||el===document||el===document.documentElement||el===document.body)?(document.body.scrollTop||document.documentElement.scrollTop||0):(el.scrollTop||0); };
+  addEventListener("scroll",e=>{ if(t) return; t=true; const v=y(e); requestAnimationFrame(()=>{ t=false; const b=bar(); if(b) b.classList.toggle("sc",v>6); }); },{passive:true,capture:true}); })();
 /* Ancho de las pestañas flotantes (Actividades/Anuario): la barra del libro se aparta justo lo necesario en pantalla ancha. */
 function anuTabsAncho_(){
   const R=document.documentElement, tb=document.querySelector("header .tabs"), bk=$a("anuBook"), tw=tb&&tb.offsetWidth;

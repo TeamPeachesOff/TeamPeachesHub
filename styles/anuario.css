@@ -848,3 +848,20 @@ html[data-anu-v="libro"] body.anuario-mode main{padding-top:0;}
 /* 4 portadas en teléfono: zigzag suave (la columna derecha baja; la cuadrícula reserva ese espacio abajo) */
 .anu-grid[data-zig]{padding-bottom:var(--zo,0px);}
 .anu-grid[data-zig] .anu-card:nth-child(even){translate:0 var(--zo,0px);}
+
+/* ===== Dividir tarjeta (staff): ventana para repartir las actividades de una tarjeta en dos ===== */
+.ed-big{flex-wrap:wrap;}
+.ed-big button{flex:1 1 140px;}
+.ed-big button.off{opacity:.55;}
+.ed-split-hint{margin:4px 2px 0;text-align:center;}
+.dv-opt{align-items:center;}
+.dv-opt .dv-tx{flex:1;min-width:0;}
+.dv-opt b,.dv-opt small{overflow-wrap:anywhere;}
+.dv-ph{width:48px;height:48px;border-radius:10px;background:var(--anu-t1,#ece3f8);display:grid;place-items:center;font-size:22px;flex:none;}
+.dv-tag{display:inline-block;margin-bottom:5px;font-style:normal;font-weight:800;font-size:11px;line-height:1;padding:5px 10px;border-radius:999px;background:var(--anu-t1,#ece3f8);color:var(--anu-acc,#3f2168);white-space:nowrap;}
+.dv-opt.sel .dv-tag{background:#f81e8e;color:#fff;}
+.dv-sum{margin:12px 0 2px;padding:10px 14px;border-radius:14px;background:var(--anu-t1,#f4ecfb);color:var(--anu-acc,#3f2168);font-size:13.5px;line-height:1.4;font-weight:600;overflow-wrap:anywhere;}
+.dv-sum b{font-weight:900;}
+
+/* Barra superior: al hacer scroll en teléfono, el contenido ya no se ve a través del título (solo cuando la barra es pegajosa) */
+body:not(.anu-lock) .anu-bar.sc{background:linear-gradient(180deg,rgba(255,250,245,.97) 0,rgba(255,250,245,.93) 72%,rgba(255,250,245,0) 100%);box-shadow:0 10px 14px -12px rgba(63,33,104,.28);}

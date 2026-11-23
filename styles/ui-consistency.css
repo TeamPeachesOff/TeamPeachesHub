@@ -1,0 +1,117 @@
+/* =====================================================================================
+   UI CONSISTENCY — capa final de la app (se carga DESPUÉS de todos los demás estilos).
+   Objetivo: que botones, ventanas, formularios, avisos y botones flotantes se vean igual en
+   toda la app, y que nada quede solapado (títulos contra la X de cerrar, textos largos,
+   barras flotantes, zonas seguras de iPhone/Android, etc.).
+
+   Para volver atrás: quita el <link> a este archivo en index.html. No cambia ninguna lógica.
+   ===================================================================================== */
+
+/* ---------- Escala común (radios, líneas, alturas) ---------- */
+:root{
+  --r-sm:10px;      /* botones chicos, chips */
+  --r-md:12px;      /* botones y campos */
+  --r-lg:16px;      /* tarjetas */
+  --r-xl:18px;      /* ventanas */
+  --r-pill:999px;   /* pestañas, filtros, botones de pantalla */
+  --ui-line:rgba(255,255,255,.10);
+  --ui-line-accent:rgba(239,8,112,.30);
+  --ui-shadow-pop:0 18px 50px rgba(0,0,0,.5);
+  --ui-btn-h:44px;  /* alto mínimo cómodo para el dedo */
+  --ui-safe-b:env(safe-area-inset-bottom,0px);
+  --ui-safe-t:env(safe-area-inset-top,0px);
+}
+
+/* ---------- Botón sin color propio: ya no queda el gris del navegador ----------
+   (:where baja la especificidad a 0: cualquier .btn-primary, .btn-danger, estilo en línea, etc. sigue mandando) */
+:where(.btn-small){background:var(--card-bg-2);color:var(--text);}
+.btn-small{border-radius:var(--r-sm);line-height:1.25;}
+
+/* ---------- Botones grandes de la pantalla principal: misma forma que Canto / Doblaje / Regalito ---------- */
+#addActBtn,#agendarStreamBtn{border-radius:var(--r-pill);min-height:var(--ui-btn-h);display:flex;align-items:center;justify-content:center;text-align:center;}
+
+/* ---------- Ventanas ---------- */
+.modal-overlay{padding:max(16px,var(--ui-safe-t)) 12px max(16px,var(--ui-safe-b));overscroll-behavior:contain;}
+.modal-box{
+  border-radius:var(--r-xl);
+  max-height:85vh;
+  max-height:min(85dvh,calc(100dvh - 32px));      /* en el móvil, 100vh incluye la barra del navegador y recortaba el fondo */
+  box-shadow:0 0 0 1px var(--ui-line),var(--ui-shadow-pop);
+  overscroll-behavior:contain;
+  overflow-wrap:break-word;
+}
+/* Título de la ventana: nunca pasa por debajo de la X de cerrar (44px a la derecha) */
+.modal-box > h2,.modal-box > h3{
+  padding-right:44px;
+  font-size:clamp(18px,5vw,21px);
+  line-height:1.25;
+  overflow-wrap:break-word;
+}
+.modal-box[style*="text-align:center"] > h2,
+.modal-box[style*="text-align:center"] > h3{padding-left:44px;}   /* simétrico: el título centrado sigue centrado */
+
+/* ---------- Botones al pie de las ventanas: todos con el mismo alto, radio y letra ---------- */
+.modal-actions{gap:10px;align-items:stretch;}
+.modal-actions > button{
+  min-height:var(--ui-btn-h);padding:10px 14px;border-radius:var(--r-md);
+  font-size:14px;font-weight:800;line-height:1.2;text-align:center;
+  display:inline-flex;align-items:center;justify-content:center;
+  border:1px solid transparent;
+}
+/* El botón "neutro" (Cancelar, Limpiar, Desmarcar…) se ve igual en todas las ventanas */
+.modal-actions > button:not(.btn-primary):not(.btn-danger):not(.btn-update):not(.btn-cumple):not(.btn-seguridad):not(.btn-family):not(.btn-admin):not(.btn-falta):not(.btn-strike){
+  background:var(--card-bg-2) !important;color:var(--text) !important;border-color:var(--ui-line);
+}
+.modal-actions > .btn-primary{border-color:transparent;flex:1.8 1 0;}   /* la acción principal es la más ancha */
+.modal-actions > button{min-width:0;}
+
+/* ---------- Formularios: mismos campos en todas las ventanas ---------- */
+.form-group label{line-height:1.3;}
+.form-group input,.form-group textarea,.form-group select{
+  border-radius:var(--r-md);padding:10px 12px;font-size:14px;
+  transition:border-color .15s,box-shadow .15s;
+}
+.form-group input:not([type=checkbox]):not([type=radio]):not([type=range]):not([type=file]),
+.form-group select{min-height:var(--ui-btn-h);}
+.form-group input:focus,.form-group textarea:focus,.form-group select:focus{
+  outline:none;border-color:var(--peach-1);box-shadow:0 0 0 3px rgba(239,8,112,.20);
+}
+/* En pantallas táctiles 16px evita que iPhone haga zoom solo al tocar un campo */
+@media (pointer:coarse){
+  .form-group input,.form-group textarea,.form-group select{font-size:16px;}
+}
+/* "Elegir archivo": con el mismo estilo que el resto de botones, no el gris del sistema */
+input[type=file]{font-size:13px;color:var(--text-dim);max-width:100%;}
+input[type=file]::file-selector-button{
+  margin-right:10px;border:0;border-radius:var(--r-sm);padding:8px 12px;
+  background:rgba(239,8,112,.22);color:var(--text);font:inherit;font-weight:700;cursor:pointer;
+}
+input[type=file]::file-selector-button:hover{background:rgba(239,8,112,.34);}
+
+/* ---------- Tarjetas de actividades: textos largos nunca se salen ---------- */
+.card{border-radius:var(--r-lg);}
+.card-title,.card-dates,.desc-text,.card-info{overflow-wrap:break-word;min-width:0;}
+.card-actions{align-items:center;}
+
+/* ---------- Avisos (toast): varias líneas con esquinas suaves, por encima de la zona segura ---------- */
+.toast{
+  bottom:calc(70px + var(--ui-safe-b));
+  border-radius:22px;
+  width:max-content;max-width:min(92vw,440px);
+  line-height:1.35;overflow-wrap:break-word;
+}
+
+/* ---------- Botones flotantes: respetan la zona segura (barra de inicio del iPhone) ---------- */
+#staffStatusBadge,.back-to-top-btn{bottom:calc(14px + var(--ui-safe-b));}
+#noTrackBadge,#memberStatusBadge,html #btnInstalarApp{bottom:calc(14px + var(--ui-safe-b));}
+/* el contenido nunca queda tapado al final de la página por los botones flotantes */
+main{padding-bottom:calc(72px + var(--ui-safe-b));}
+
+/* ---------- Drawer (menú lateral): botones y enlaces con el mismo alto ---------- */
+.drawer-nav-btn,.social-link{min-height:var(--ui-btn-h);}
+.drawer-nav-btn{text-align:left;}
+
+/* ---------- Anuario: ventanas del editor con el mismo trato ---------- */
+.md-body{overflow-wrap:break-word;}
+.md-opt b,.md-opt small{overflow-wrap:break-word;}
+.ed-line b,.ed-line small{overflow-wrap:break-word;}
