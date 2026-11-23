@@ -897,6 +897,20 @@
   .modal-box{position:relative;background:var(--card-bg);border-radius:18px;padding:20px;width:100%;max-width:440px;max-height:85vh;overflow-y:auto;-webkit-overflow-scrolling:touch;}
   .modal-box h3{margin-top:0;color:var(--peach-2);}
   .modal-close{position:absolute;top:14px;right:16px;background:rgba(255,255,255,0.08);color:var(--text-dim);font-size:18px;width:30px;height:30px;border-radius:50%;z-index:10;}
+  /* ===== X de cerrar ÚNICA para todo el Hub (la del piano vocal): una X marcada con brillo rosa, sin botón ===== */
+  .modal-close{top:8px!important;right:8px!important;width:44px!important;height:44px!important;padding:0!important;border:0!important;border-radius:0!important;background:transparent!important;box-shadow:none!important;font-size:0!important;line-height:0!important;color:#fff!important;text-shadow:none!important;opacity:1!important;display:grid!important;place-items:center;cursor:pointer;-webkit-tap-highlight-color:transparent;}
+  .modal-close::before,.search-bar #searchClearBtn::before{content:"";display:block;width:26px;height:26px;background:currentColor;-webkit-mask:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M5 5L19 19M19 5L5 19' fill='none' stroke='%23000' stroke-width='3.6' stroke-linecap='round'/%3E%3C/svg%3E") center/contain no-repeat;mask:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M5 5L19 19M19 5L5 19' fill='none' stroke='%23000' stroke-width='3.6' stroke-linecap='round'/%3E%3C/svg%3E") center/contain no-repeat;filter:drop-shadow(0 0 5px rgba(239,8,112,.9)) drop-shadow(0 0 12px rgba(239,8,112,.45));transition:transform .28s cubic-bezier(.3,1.5,.5,1),background-color .2s;}
+  .modal-close:hover::before,.modal-close:focus-visible::before,.search-bar #searchClearBtn:hover::before{transform:rotate(90deg) scale(1.15);background:#ff8fb1;}
+  .ico-back{display:inline-block;width:14px;height:14px;margin:-2px 6px 0 -2px;vertical-align:middle;fill:none;stroke:currentColor;stroke-width:3;stroke-linecap:round;stroke-linejoin:round;}
+  /* anillo de enfoque único (teclado / lector): mismo color en toda la app */
+  button:focus-visible,a:focus-visible,[role=button]:focus-visible,summary:focus-visible{outline:2px solid var(--peach-1);outline-offset:2px;}
+  input:focus-visible,select:focus-visible,textarea:focus-visible{outline:2px solid var(--peach-1);outline-offset:1px;}
+  .modal-close:focus-visible{outline:none;}
+  .modal-close:active::before,.search-bar #searchClearBtn:active::before{transform:rotate(90deg) scale(.88);}
+  .anu-light .modal-close{color:var(--anu-acc,#3f2168)!important;}
+  .search-bar #searchClearBtn{width:30px;height:30px;padding:0!important;font-size:0!important;color:#fff!important;place-items:center;-webkit-tap-highlight-color:transparent;}
+  .search-bar #searchClearBtn:not(.hidden){display:grid;}
+  .search-bar #searchClearBtn::before{width:16px;height:16px;filter:drop-shadow(0 0 4px rgba(239,8,112,.9));}
   /* --- Modal de Minecraft (Peachesland) --- todo escopado a #minecraftModal para no afectar
      ningún otro modal ni reusar accidentalmente nombres de clase de otra sección.
      El carrusel "sangra" hasta los bordes del modal (mismo ancho que le resta el padding) y usa
@@ -1253,7 +1267,7 @@
 
   <section id="viewMundo" class="hidden">
     <div class="mundo-topbar">
-      <button id="closeMundoBtn" class="mundo-back-btn">← Volver</button>
+      <button id="closeMundoBtn" class="mundo-back-btn"><svg class="ico-back" viewBox="0 0 24 24" aria-hidden="true"><path d="M15 5l-7 7 7 7"/></svg>Volver</button>
       <input autocomplete="off" type="text" id="searchMundo" placeholder="🔍 Buscar miembro en el globo...">
       <div class="mundo-zoom-btns">
         <button id="mundoZoomInBtn" aria-label="Acercar zoom" title="Acercar">+</button>
@@ -1969,7 +1983,7 @@
 </div>
 
 <script src="scripts/anuario-assets.js?v=1"></script>
-<script src="scripts/anuario.js?v=3.64"></script>
+<script src="scripts/anuario.js?v=3.65"></script>
 <script>
 // Si el navegador restaura esta página desde su caché de "atrás/adelante" (bfcache), el DOM puede
 // quedar congelado a mitad de una actualización (ej. justo cuando un innerHTML se estaba
@@ -2650,7 +2664,7 @@ function abrirModalEnlaces(){
       </div>`).join("")}
     </div>
     <div style="display:flex;gap:10px;margin-top:14px;">
-      <button class="btn-small btn-admin" id="enlacesVolverBtn">⬅️ Volver</button>
+      <button class="btn-small btn-admin" id="enlacesVolverBtn"><svg class="ico-back" viewBox="0 0 24 24" aria-hidden="true"><path d="M15 5l-7 7 7 7"/></svg>Volver</button>
       <button class="btn-small btn-primary" id="enlacesGuardarBtn">Guardar</button>
     </div>`;
   document.getElementById("enlacesVolverBtn").onclick = abrirStaffHub;
@@ -2758,7 +2772,7 @@ async function abrirAnalitica(){
           </table>`).join("")}
       </div>` : `<p style="text-align:center;color:var(--text-dim);">Todavía no hay datos registrados.</p>`}
     <div style="position:sticky;bottom:-20px;margin:14px -20px -20px;padding:10px 20px 20px;background:var(--card-bg);">
-      <button class="btn-small btn-admin" id="analiticaVolverBtn" style="width:100%;">⬅️ Volver</button>
+      <button class="btn-small btn-admin" id="analiticaVolverBtn" style="width:100%;"><svg class="ico-back" viewBox="0 0 24 24" aria-hidden="true"><path d="M15 5l-7 7 7 7"/></svg>Volver</button>
     </div>`;
   openModal("memberModal");
   document.getElementById("analiticaVolverBtn").onclick = abrirStaffHub;
@@ -2799,7 +2813,7 @@ async function abrirAnaliticaStaff(){
     <input autocomplete="off" type="text" id="analiticaStaffFiltro" placeholder="Filtrar por email..." style="width:100%;margin-bottom:10px;padding:8px 10px;border-radius:8px;">
     <div id="analiticaStaffTabla">${filas.length ? renderFilasStaff(filas) : `<p style="text-align:center;color:var(--text-dim);">Todavía no hay actividad de Staff registrada.</p>`}</div>
     <div style="position:sticky;bottom:-20px;margin:14px -20px -20px;padding:10px 20px 20px;background:var(--card-bg);">
-      <button class="btn-small btn-admin" id="analiticaStaffVolverBtn" style="width:100%;">⬅️ Volver</button>
+      <button class="btn-small btn-admin" id="analiticaStaffVolverBtn" style="width:100%;"><svg class="ico-back" viewBox="0 0 24 24" aria-hidden="true"><path d="M15 5l-7 7 7 7"/></svg>Volver</button>
     </div>`;
   openModal("memberModal");
   document.getElementById("analiticaStaffVolverBtn").onclick = abrirStaffHub;
@@ -2844,7 +2858,7 @@ async function abrirIntentosFallidos(){
         </table>
       </div>` : `<p style="text-align:center;color:var(--text-dim);">Todavía no hay intentos fallidos registrados 🎉</p>`}
     <div style="position:sticky;bottom:-20px;margin:14px -20px -20px;padding:10px 20px 20px;background:var(--card-bg);">
-      <button class="btn-small btn-admin" id="intentosVolverBtn" style="width:100%;">⬅️ Volver</button>
+      <button class="btn-small btn-admin" id="intentosVolverBtn" style="width:100%;"><svg class="ico-back" viewBox="0 0 24 24" aria-hidden="true"><path d="M15 5l-7 7 7 7"/></svg>Volver</button>
     </div>`;
   openModal("memberModal");
   document.getElementById("intentosVolverBtn").onclick = abrirStaffHub;
@@ -6288,7 +6302,10 @@ function formTieneCambios(id){
   return serializeForm(form)!==modalSnapshots[id];
 }
 function openModal(id){
-  document.getElementById(id).classList.add("open");
+  const _m=document.getElementById(id); _m.classList.add("open");
+  // siempre se abre desde ARRIBA (antes podía quedar a la mitad por el scroll de la vez anterior)
+  const _b=_m.querySelector(".modal-box"); _m.scrollTop=0; if(_b) _b.scrollTop=0;
+  requestAnimationFrame(()=>{ _m.scrollTop=0; if(_b) _b.scrollTop=0; });
   if(FORM_MODALS.includes(id)) snapshotModalForm(id); // snapshot al abrir, ya con los datos cargados
 }
 function closeModal(id){
@@ -6637,6 +6654,7 @@ function mcAbrirJava(){
 }
 // =============== Fin Minecraft (Peachesland) ================================
 
+document.querySelectorAll(".modal-close:not([aria-label])").forEach(b=>b.setAttribute("aria-label","Cerrar"));
 document.querySelectorAll("[data-close]").forEach(btn=>btn.onclick=async()=>{
   const id=btn.dataset.close;
   if(FORM_MODALS.includes(id) && formTieneCambios(id)){
@@ -9003,6 +9021,6 @@ document.getElementById("miembrosContarBtn").onclick=()=>{
 </script>
 <script src="scripts/rango-piano.js?v=10"></script>
 <script src="scripts/compartir-faltas.js?v=2"></script>
-<script src="scripts/reproducir-todo.js?v=11"></script>
+<script src="scripts/reproducir-todo.js?v=12"></script>
 </body>
 </html>

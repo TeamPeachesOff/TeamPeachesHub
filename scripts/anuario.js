@@ -292,7 +292,7 @@ function anuAgregar_(target){
       <div class="md-list">${L.length?L.map((a,i)=>{ const x=TIPO_[a.categoria]||{t:"Especial",e:"✨"};
         return `<button type="button" class="md-opt${sel.some(s=>String(s.id)===String(a.id))?" sel":""}" data-a="${i}" aria-pressed="${sel.some(s=>String(s.id)===String(a.id))}">${a.imagenUrl?`<img src="${escAttr(a.imagenUrl)}" alt="">`:""}<span><b>${escHtml(a.titulo||"")}</b><small>${x.e} ${x.t} · enviada ${dm(a.fechaInicio)}${enAnu.has(String(a.id))?" · ya está en el anuario":""}</small></span></button>`; }).join(""):`<p class="md-empty">No hay actividades enviadas en este mes.</p>`}</div>
       <div class="md-acts"><button type="button" class="md-sec" data-close>Cerrar</button><button type="button" class="md-pri" id="sgNext" aria-disabled="${sel.length?"false":"true"}">Continuar${sel.length?` (${sel.length})`:""}</button></div></div>`);
-    if(target) b.querySelectorAll("[data-close]").forEach(x=>{ x.textContent="← Volver"; x.onclick=target.volver; });
+    if(target) b.querySelectorAll("[data-close]").forEach(x=>{ x.innerHTML=`<svg class="ico-back" viewBox="0 0 24 24" aria-hidden="true"><path d="M15 5l-7 7 7 7"/></svg>Volver`; x.onclick=target.volver; });
     b.querySelectorAll("[data-nav]").forEach(x=>x.onclick=()=>{ m+=+x.dataset.nav; if(m<0){m=11;y--;} if(m>11){m=0;y++;} drawActs(); });
     b.querySelectorAll("[data-a]").forEach(x=>x.onclick=()=>{ const a=L[+x.dataset.a], k=sel.findIndex(s=>String(s.id)===String(a.id));
       if(k>=0) sel.splice(k,1); else sel.push(a);
@@ -311,7 +311,7 @@ function anuAgregar_(target){
       <div class="sg-bar"><button type="button" class="md-sec" data-close>Cerrar</button><button type="button" class="md-pri" id="sgGo" aria-disabled="true">Añadir al anuario</button></div></div>`);
     const upd=()=>{ const n=nSel(), g=$a("sgGo"); g.setAttribute("aria-disabled",String(!n)); g.textContent=n?`Añadir al anuario (${n})`:"Añadir al anuario"; };
     $a("mdBack").onclick=()=>{ paso="acts"; drawActs(); };
-    if(target) b.querySelectorAll("[data-close]").forEach(x=>{ x.textContent="← Volver"; x.onclick=target.volver; });
+    if(target) b.querySelectorAll("[data-close]").forEach(x=>{ x.innerHTML=`<svg class="ico-back" viewBox="0 0 24 24" aria-hidden="true"><path d="M15 5l-7 7 7 7"/></svg>Volver`; x.onclick=target.volver; });
     if($a("sgName")) $a("sgName").oninput=e=>{ nombre=e.target.value; tocado=true; };
     b.querySelectorAll(".sg-card").forEach(card=>card.querySelectorAll("[data-k]").forEach(btn=>btn.onclick=()=>{
       const key=card.dataset.key, k=btn.dataset.k;
@@ -409,7 +409,7 @@ function anuEditarTarjeta_(id){
     const otras=(DB.anuario||[]).filter(x=>String(x.id)!==String(st.id)).sort((a,c)=>anuFecha_(c.fechaInicio)-anuFecha_(a.fechaInicio)); const sel=new Set();
     const nL=r=>ANU_CAMPOS_.reduce((s,k)=>s+parseWinnerLines(r[k]).length,0);
     const dm=f=>{ const d=anuFecha_(f); return isNaN(d)?"":d.getDate()+" "+MESES_LARGO[d.getMonth()].slice(0,3).toLowerCase()+" "+d.getFullYear(); };
-    const d1=()=>{ const b=anuModal_(`<div class="md-body"><button type="button" class="md-back" id="fuBack">← Volver a la tarjeta</button><h3 class="md-t">Fusionar tarjetas</h3><p class="md-hint">Elige las tarjetas que quieres juntar dentro de «${escHtml(cur.titulo||"")}». Sus canciones pasan a esta tarjeta y las otras se borran.</p>
+    const d1=()=>{ const b=anuModal_(`<div class="md-body"><button type="button" class="md-back" id="fuBack"><svg class="ico-back" viewBox="0 0 24 24" aria-hidden="true"><path d="M15 5l-7 7 7 7"/></svg>Volver a la tarjeta</button><h3 class="md-t">Fusionar tarjetas</h3><p class="md-hint">Elige las tarjetas que quieres juntar dentro de «${escHtml(cur.titulo||"")}». Sus canciones pasan a esta tarjeta y las otras se borran.</p>
         <div class="md-list">${otras.length?otras.map((r,i)=>`<button type="button" class="md-opt${sel.has(String(r.id))?" sel":""}" data-f="${i}">${r.imagenUrl?`<img src="${escAttr(r.imagenUrl)}" alt="">`:""}<span><b>${escHtml(r.titulo||"")}</b><small>${dm(r.fechaInicio)} · ${nL(r)} ${nL(r)===1?"canción":"canciones"}</small></span></button>`).join(""):`<p class="md-empty">No hay otras tarjetas en el Anuario.</p>`}</div>
         <div class="md-acts"><button type="button" class="md-sec" id="fuBack2">Cancelar</button><button type="button" class="md-pri" id="fuGo" aria-disabled="${sel.size?"false":"true"}">Continuar${sel.size?` (${sel.size})`:""}</button></div></div>`);
       b.querySelector("#fuBack").onclick=b.querySelector("#fuBack2").onclick=()=>anuEditarTarjeta_(st.id);
