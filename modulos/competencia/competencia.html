@@ -258,6 +258,9 @@ button:focus-visible,a:focus-visible{outline:2px solid var(--peach-1);outline-of
 #rv .rv-info b{font-size:13px;letter-spacing:.4px;color:rgba(255,255,255,.85);text-shadow:0 1px 6px #000}
 #rv .rv-bar{display:block;width:150px;height:4px;border-radius:9px;background:rgba(255,255,255,.14);overflow:hidden}
 #rv .rv-bar u{display:block;height:100%;width:100%;transform-origin:0 50%;transform:scaleX(0);background:linear-gradient(90deg,var(--peach-2),var(--peach-1));transition:transform .45s}
+#rv .rv-hint{display:block;min-height:14px;font-size:12px;font-weight:800;letter-spacing:.3px;color:#f1c40f;opacity:0;transition:opacity .25s;text-shadow:0 1px 6px #000}
+#rv .rv-hint.on{opacity:1;animation:rvHintP 1.6s ease-in-out infinite}
+@keyframes rvHintP{50%{opacity:.45}}
 #rv .rv-panel{pointer-events:auto;text-align:center;padding:6px 8px 7px;border-radius:12px;background:rgba(0,0,0,.5);border:1px dashed rgba(255,255,255,.32)}
 #rv .rv-panel small{display:block;font-size:10.5px;font-weight:800;color:#f1c40f;margin-bottom:5px}
 #rv .rv-tabs{display:flex;gap:5px}
@@ -1160,10 +1163,11 @@ function planFirst(pl){
 
 /* ---- control de tiempo: cada espera se puede saltar o cancelar ---- */
 function mkRun(){
-  const r={dead:false,wk:new Set(),sp:1};
-  r.wait=ms=>new Promise((res,rej)=>{if(r.dead)return rej(DEAD);let t;const w=e=>{clearTimeout(t);r.wk.delete(w);e?rej(e):res()};r.wk.add(w);t=setTimeout(()=>w(0),ms*r.sp)});
+  const r={dead:false,fast:false,gt:null,wk:new Set(),sp:1};
+  r.wait=ms=>new Promise((res,rej)=>{if(r.dead)return rej(DEAD);let t;const w=e=>{clearTimeout(t);r.wk.delete(w);e?rej(e):res()};r.wk.add(w);t=setTimeout(()=>w(0),r.fast?20:ms*r.sp)});
+  r.gate=()=>new Promise((res,rej)=>{if(r.dead)return rej(DEAD);r.gt=e=>{r.gt=null;e?rej(e):res()}});
   r.fire=e=>[...r.wk].forEach(w=>w(e));
-  r.kill=()=>{r.dead=true;r.fire(DEAD)};
+  r.kill=()=>{r.dead=true;r.fire(DEAD);if(r.gt)r.gt(DEAD)};
   return r;
 }
 
@@ -1182,12 +1186,12 @@ function rvSmoke(st,n){for(let i=0;i<(n||2);i++){const s=document.createElement(
 const rvSide=(p,c,inner)=>`<div class="rv-side ${c}">${inner||`<div class="rv-av">${avatar(p)}</div><div class="rv-nm">${esc(p.n)}</div>`}</div>`;
 const rvQ=(st,s)=>st.querySelector(s);
 const rvCap=(st,txt)=>{const c=rvQ(st,".rv-cap");if(txt)c.textContent=txt;c.classList.add("in")};
-const rvOut=async(st,run)=>{const d=rvQ(st,".rv-duel");if(d)d.classList.add("out");await run.wait(300)};
+const rvOut=async(st,run)=>{const d=rvQ(st,".rv-duel");if(!d)return;d.classList.add("out");await run.wait(300)};
 
 /* ---- 1 · Duelo de Titanes ---- */
 async function intro0(st,run){
   st.innerHTML=`<div class="rv-pulse"></div><div class="rv-title">¡LOS TITANES<br>SE ENFRENTAN!</div>`;
-  SFX.thump();await run.wait(520);SFX.thump();await run.wait(520);SFX.impact();await run.wait(1000);
+  SFX.thump();await run.wait(520);SFX.thump();await run.wait(520);SFX.impact();
 }
 async function duel0(st,run,[a,b]){
   st.innerHTML=`<div class="rv-pulse"></div><div class="rv-bolts"><i class="rv-bolt a"></i><i class="rv-bolt b"></i></div><div class="rv-duel">${rvSide(a,"rv-a")}<div class="rv-vs">VS</div>${rvSide(b,"rv-b")}</div><div class="rv-cap">Una sola canción… un solo ganador</div>`;
@@ -1196,7 +1200,6 @@ async function duel0(st,run,[a,b]){
   await run.wait(640);
   rvImpact(st,["#ff2d95","#2d8bff","#fff"]);rvQ(st,".rv-vs").classList.add("in");
   await run.wait(420);rvCap(st);
-  await run.wait(1500);await rvOut(st,run);
 }
 
 /* ---- 2 · Cartas malditas ---- */
@@ -1221,14 +1224,13 @@ async function duel1(st,run,[a,b]){
   await run.wait(270);
   rvImpact(st,["#ffd700","#fff","#b24bff"]);rvSmoke(st,2);rvQ(st,".rv-vs").classList.add("in");
   await run.wait(420);rvCap(st);
-  await run.wait(1400);await rvOut(st,run);
 }
 
 /* ---- 3 · Arena del escenario ---- */
 async function intro2(st,run){
   st.innerHTML=`<div class="rv-cone"></div><div class="rv-fog"><i></i><i></i></div><div id="rvCnt"></div>`;
   for(const n of [3,2,1]){rvQ(st,"#rvCnt").innerHTML=`<div class="rv-count">${n}</div>`;SFX.tick();SFX.thump();await run.wait(850)}
-  rvQ(st,"#rvCnt").innerHTML=`<div class="rv-title">¡Luces, micrófonos…<br>acción!</div>`;SFX.impact();await run.wait(1300);
+  rvQ(st,"#rvCnt").innerHTML=`<div class="rv-title">¡Luces, micrófonos…<br>acción!</div>`;SFX.impact();await run.wait(300);
 }
 async function duel2(st,run,[a,b]){
   st.innerHTML=`<div class="rv-cone"></div><div class="rv-fog"><i></i><i></i></div><div class="rv-duel sil">${rvSide(a,"rv-a")}<div class="rv-vs drop">VS</div>${rvSide(b,"rv-b")}</div><div class="rv-cap">Esta noche, uno canta, el otro responde</div>`;
@@ -1239,40 +1241,56 @@ async function duel2(st,run,[a,b]){
   SFX.chime();rvQ(st,".rv-b").classList.add("rev");await run.wait(750);
   rvImpact(st,["#ffb347","#6ee7ff","#fff"],rvSmall()?6:10);rvSmoke(st,1);rvQ(st,".rv-vs").classList.add("in");
   await run.wait(400);rvCap(st);
-  await run.wait(1400);await rvOut(st,run);
 }
 const INTRO=[intro0,intro1,intro2],DUEL=[duel0,duel1,duel2];
 
 async function rvByeStep(st,run,p){
   st.innerHTML=`<div class="rv-duel"><div class="rv-side rv-a in"><div class="rv-title sm">Descansa esta ronda</div><div class="rv-av">${avatar(p)}</div><div class="rv-nm">${esc(p.n)}</div></div></div>`;
-  SFX.whoosh();await run.wait(2000);await rvOut(st,run);
+  SFX.whoosh();
 }
 
 /* ---- reproducción ---- */
 const rvBar=x=>{const u=document.querySelector("#rvBar u");if(u)u.style.transform="scaleX("+x+")"};
+const rvHint=t=>{const h=$("rvHint");if(!h)return;h.textContent=t||"";h.classList.toggle("on",!!t)};
+/* Un toque (o Espacio / Enter / →): si hay una pausa, avanza; si hay una animación en curso, la termina al instante. */
+function rvNext(){
+  const r=rvRun;if(!r||r.dead||rv.classList.contains("sum"))return;
+  if(r.gt)r.gt(0);else{r.fast=true;r.fire(0)}
+}
 async function rvPlay(){
   if(rvRun)rvRun.kill();
   const run=rvRun=mkRun(),st=$("rvStage"),pr=rvPlan.pairs;
   rv.classList.remove("sum");rv.dataset.t=rvTheme;
-  st.innerHTML="";$("rvSum").innerHTML="";rvBar(0);
+  st.innerHTML="";$("rvSum").innerHTML="";rvBar(0);rvHint("");
   document.querySelectorAll("#rvTabs button").forEach(b=>b.classList.toggle("on",+b.dataset.t===rvTheme));
-  $("rvRound").textContent="Primera ronda";
-  run.sp=rvReduced()?.35:pr.length>16?.6:pr.length>8?.8:1;
-  const step=async f=>{try{await f()}catch(e){if(e!==NEXT)throw e}};
+  $("rvRound").textContent="Listo para comenzar";
+  run.sp=rvReduced()?.35:1;   // modo manual: cada duelo va a su ritmo normal, tú controlas el paso
+  const step=async f=>{run.fast=false;rvHint("");try{await f()}catch(e){if(e!==NEXT)throw e}};
+  const hold=async t=>{rvHint(t);await run.gate();rvHint("");run.fast=false};
   try{
+    st.innerHTML=`<div class="rv-title sm">Listo para revelar<br>${pr.length} ${pr.length==1?"duelo":"duelos"}</div>`;
+    await hold("Toca para comenzar");
+    $("rvRound").textContent="Primera ronda";
     await step(()=>INTRO[rvTheme](st,run));
     for(let i=0;i<pr.length;i++){
+      await hold(i?"Toca para el siguiente duelo":"Toca para el primer duelo");
+      await rvOut(st,run);st.innerHTML="";
       $("rvRound").textContent=`Ronda 1 · Duelo ${i+1} de ${pr.length}`;rvBar(i/pr.length);
       await step(()=>DUEL[rvTheme](st,run,pr[i],i));
-      st.innerHTML="";
     }
-    if(rvPlan.bye)await step(()=>rvByeStep(st,run,rvPlan.bye));
+    if(rvPlan.bye){
+      await hold("Toca para ver quién descansa");
+      await rvOut(st,run);st.innerHTML="";
+      await step(()=>rvByeStep(st,run,rvPlan.bye));
+    }
+    await hold("Toca para ver el resumen");
+    await rvOut(st,run);
   }catch(e){
     if(e===DEAD)return;
     console.error(e);
   }
   if(run!==rvRun||run.dead)return;
-  rvBar(1);rvSummary();
+  rvHint("");rvBar(1);rvSummary();
 }
 function rvSummary(){
   const pr=rvPlan.pairs,b=rvPlan.bye;
@@ -1288,7 +1306,7 @@ function rvBuild(){
   if(rv)return;
   rv=document.createElement("div");rv.id="rv";
   rv.innerHTML=`<div class="rv-bg"></div>
-<div class="rv-hud"><div class="rv-info"><b id="rvRound"></b><i class="rv-bar" id="rvBar"><u></u></i></div>
+<div class="rv-hud"><div class="rv-info"><b id="rvRound"></b><i class="rv-bar" id="rvBar"><u></u></i><small class="rv-hint" id="rvHint"></small></div>
 <div class="rv-panel"><small>🧪 Propuesta de animación (temporal)</small><div class="rv-tabs" id="rvTabs">${RV_NAMES.map((n,i)=>`<button type="button" data-t="${i}">${i+1} · ${n}</button>`).join("")}</div></div></div>
 <div class="rv-stage" id="rvStage"></div>
 <div class="rv-sumwrap" id="rvSum"></div>
@@ -1296,7 +1314,7 @@ function rvBuild(){
 <div class="rv-ctl"><button type="button" id="rvBack">← Atrás</button><button type="button" id="rvSkip">⏭ Saltar animación</button><button type="button" id="rvRep">↻ Repetir animación</button><button type="button" id="rvSnd"></button><button type="button" class="rv-go" id="rvGo">▶ Comenzar torneo</button></div>`;
   document.body.appendChild(rv);
   const snd=()=>{$("rvSnd").textContent=SFX.on?"🔊":"🔇";$("rvSnd").setAttribute("aria-label",SFX.on?"Silenciar":"Activar sonido")};snd();
-  $("rvStage").onclick=()=>{if(rvRun&&!rv.classList.contains("sum"))rvRun.fire(NEXT)};
+  $("rvStage").onclick=rvNext;
   $("rvTabs").onclick=e=>{const b=e.target.closest("button");if(!b)return;SFX.unlock();rvTheme=+b.dataset.t;try{localStorage.setItem("rvTheme",rvTheme)}catch(_){}rvPlay()};
   $("rvSkip").onclick=()=>{if(rvRun)rvRun.kill();rvSummary()};
   $("rvRep").onclick=()=>{SFX.unlock();rvPlay()};
@@ -1306,7 +1324,7 @@ function rvBuild(){
   document.addEventListener("keydown",e=>{
     if(!rv.classList.contains("on"))return;
     if(e.key==="Escape"){rvClose()}
-    else if((e.key===" "||e.key==="ArrowRight")&&rvRun&&!rv.classList.contains("sum")){e.preventDefault();rvRun.fire(NEXT)}
+    else if((e.key===" "||e.key==="Enter"||e.key==="ArrowRight")&&rvRun&&!rv.classList.contains("sum")){e.preventDefault();rvNext()}
   });
 }
 function openReveal(pl,name){
