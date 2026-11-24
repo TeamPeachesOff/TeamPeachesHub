@@ -771,14 +771,19 @@
   /* El Bote: papelera de miembros (solo Staff). Mismo aspecto que «Contar miembros». */
   .miembros-contar button.hidden{display:none !important;}
   .bote-info{font-size:12.5px;color:var(--text-dim);line-height:1.45;margin:0 0 12px;}
-  .bote-fila{background:var(--card-bg);border-radius:14px;padding:8px 10px 10px;margin-bottom:10px;}
-  .bote-fila .member-row{background:none;padding:2px 2px 8px;}
+  .bote-fila{display:flex;align-items:center;gap:8px;background:var(--card-bg);border-radius:14px;padding:8px 10px;margin-bottom:10px;}
+  .bote-fila .member-row{flex:1;min-width:0;background:none;padding:2px;}
   .bote-fila .bote-meta{font-size:11.5px;color:var(--text-dim);margin-top:2px;}
-  .bote-btns{display:flex;gap:8px;}
-  .bote-btns .btn-small{flex:1;}
-  .btn-bote-borrar{background:rgba(231,76,60,0.2);color:var(--red);}
+  .bote-fila .bote-motivo{font-size:12px;color:#e6ccf7;margin-top:3px;overflow-wrap:anywhere;}
+  .bote-acciones{flex:0 0 auto;display:flex;gap:6px;margin-left:auto;}
+  .bote-icono{width:34px;height:34px;padding:0;border-radius:10px;display:flex;align-items:center;justify-content:center;flex:0 0 34px;}
+  .bote-icono svg{width:18px;height:18px;display:block;}
+  .bote-icono.rest{background:rgba(239,8,112,0.22);color:var(--peach-1);}
+  .bote-icono.borrar{background:rgba(231,76,60,0.2);color:var(--red);}
   .bote-banner{background:rgba(164,95,199,0.22);color:#e6ccf7;border:1px solid rgba(164,95,199,0.45);padding:8px;border-radius:10px;font-weight:800;text-align:center;margin-bottom:12px;font-size:13px;}
-  .bote-banner small{display:block;font-weight:600;opacity:.85;margin-top:2px;}
+  .bote-banner small{display:block;font-weight:600;opacity:.85;margin-top:2px;overflow-wrap:anywhere;}
+  .bote-banner-fila{display:flex;align-items:center;gap:8px;margin-bottom:12px;}
+  .bote-banner-fila .bote-banner{flex:1;margin-bottom:0;}
   .orden-opcion{display:flex;align-items:center;gap:10px;width:100%;text-align:left;padding:12px 14px;border-radius:12px;background:var(--card-bg-2);color:var(--text);font-weight:700;font-size:14px;margin-bottom:8px;}
   .orden-opcion.sel{background:linear-gradient(90deg,var(--peach-2),var(--peach-1));color:#fff;}
   .conteo-fila{display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid rgba(255,255,255,0.07);font-size:14px;}
@@ -1274,7 +1279,7 @@
       <div class="section-label">🍑 Miembros</div>
     </div>
     <div id="miembrosList"></div>
-    <div class="miembros-contar"><button type="button" id="miembrosContarBtn">Contar miembros</button><button type="button" id="miembrosBoteBtn" class="hidden">🚢 El Bote<span id="miembrosBoteN"></span></button></div>
+    <div class="miembros-contar"><button type="button" id="miembrosContarBtn">Contar miembros</button><button type="button" id="miembrosBoteBtn" class="hidden">El Bote</button></div>
   </section>
 
   <section id="viewMundo" class="hidden">
@@ -1453,7 +1458,7 @@
   <div id="miembrosConteoContenido"></div>
 </div></div>
 <div class="modal-overlay" id="boteModal"><div class="modal-box"><button class="modal-close" data-close="boteModal">✕</button>
-  <h3>🚢 El Bote</h3>
+  <h3>El Bote</h3>
   <div class="bote-info" id="boteInfo"></div>
   <div id="boteLista"></div>
 </div></div>
@@ -1789,7 +1794,7 @@
 <div class="modal-overlay" id="justificacionModal" style="z-index:300;">
   <div class="modal-box"><button class="modal-close" data-close="justificacionModal">✕</button>
     <h3 id="justTitulo">Justificación</h3>
-    <div style="font-size:13px;color:var(--text-dim);margin-bottom:8px;">Queda en el historial de castigos (solo lo ven los admins).</div>
+    <div id="justAyuda" style="font-size:13px;color:var(--text-dim);margin-bottom:8px;">Queda en el historial de castigos (solo lo ven los admins).</div>
     <textarea id="justTexto" rows="4" maxlength="300" placeholder="¿Por qué se le pone?" style="width:100%;resize:vertical;"></textarea>
     <div class="modal-actions" style="display:flex;gap:8px;margin-top:14px;">
       <button type="button" class="btn-small" id="justCancelarBtn" style="background:var(--card-bg-2);color:var(--text);flex:1;">Cancelar</button>
@@ -3214,7 +3219,6 @@ function aplicarUIRol_(nivelUI){
   if(bM.style.display !== dM) bM.style.display = dM;
   ["addActBtn","agendarStreamBtn","assignImagesBtn","importEntregasBtn"].forEach(id=>document.getElementById(id).classList.toggle("hidden", !esStaff));
   document.getElementById("miembrosBoteBtn").classList.toggle("hidden", !esStaff); // El Bote: solo modo Staff
-  actualizarBoteBtn_();
   actualizarVisibilidadBackToTop();
 }
 // Rol "optimista" a partir de lo guardado en este dispositivo (solo para mostrar la UI al instante; el servidor confirma después).
@@ -4260,8 +4264,7 @@ function openMemberModal(id,desdeAnuario){
         ${esTrue(m.inactivo)?`<span class="badge badge-inactivo">😴 Inactivo</span>`:""}
       </div>
     </div>
-    ${enBote?`<div class="bote-banner">🚢 Está en El Bote${m.fechaBote?`<small>Salió el ${escHtml(fmtFecha(m.fechaBote)||"")}</small>`:""}</div>`:""}
-    ${(staffPin&&enBote)?`<div class="bote-btns" style="margin-bottom:12px;"><button type="button" class="btn-small btn-family" data-bote-restaurar-ficha="${escAttr(m.id)}">♻️ Restaurar</button><button type="button" class="btn-small btn-bote-borrar" data-bote-borrar-ficha="${escAttr(m.id)}">🗑️ Eliminar para siempre</button></div>`:""}
+    ${enBote?`<div class="bote-banner-fila"><div class="bote-banner">Está en El Bote${m.fechaBote?`<small>Salió el ${escHtml(fmtFecha(m.fechaBote)||"")}</small>`:""}${m.motivoBote?`<small>Motivo: ${escHtml(m.motivoBote)}</small>`:""}</div>${staffPin?botesAccionesHTML_(m.id,"-ficha"):""}</div>`:""}
     ${(!enBote&&(strikes+strikesPermanentes)>=3)?`<div class="expelled-banner">🛑 EXPULSADO / FUERA DEL TEAM</div>`:""}
     <table class="info-table">
       <tr><td>🎵 Rango Vocal</td><td>${escHtml(m.rangoVocal||"—")}</td></tr>
@@ -4363,10 +4366,13 @@ function hcLista_(idMiembro){
     .filter(x=>String(x.idMiembro)===k)
     .map(x=>({id:String(x.id), tipo:String(x.tipo||""), motivo:x.motivo, fecha:x.fecha, auto:(x.auto===true||String(x.auto).toUpperCase()==="TRUE"), registradoPor:x.registradoPor}));
 }
-function pedirJustificacion_(titulo){
+function pedirJustificacion_(titulo,ayuda,placeholder,okTxt){
   return new Promise(resolve=>{
     const txt=document.getElementById("justTexto");
     document.getElementById("justTitulo").textContent=titulo;
+    document.getElementById("justAyuda").textContent=ayuda||"Queda en el historial de castigos (solo lo ven los admins).";
+    txt.placeholder=placeholder||"¿Por qué se le pone?";
+    document.getElementById("justOkBtn").textContent=okTxt||"Guardar";
     txt.value="";
     let hecho=false;
     const fin=v=>{ if(hecho) return; hecho=true; closeModal("justificacionModal"); resolve(v); };
@@ -4471,18 +4477,22 @@ function esDelBote_(id){
   const k=String(id);
   return !(DB.miembros||[]).some(m=>String(m.id)===k) && (DB.bote||[]).some(m=>String(m.id)===k);
 }
-function actualizarBoteBtn_(){
-  const n=(DB.bote||[]).filter(m=>m&&m.id).length;
-  const el=document.getElementById("miembrosBoteN"); if(el) el.textContent=n?(" ("+n+")"):"";
-}
 function entregasCountDeBote_(id){
   const k=String(id);
   return (DB.entregas||[]).filter(e=>idsDeEntrega_(e).includes(k)).length;
 }
+const BOTE_ICO_REST_=`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 12a9 9 0 1 0 3-6.7"/><path d="M3 4v5h5"/></svg>`, BOTE_ICO_DEL_=`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 7h16M9 7V4h6v3M6 7l1 13h10l1-13M10 11v6M14 11v6"/></svg>`;
+function botesAccionesHTML_(id,sufijo){
+  const k=escAttr(id);
+  return `<div class="bote-acciones">
+    <button type="button" class="bote-icono rest" title="Restaurar" aria-label="Restaurar" data-bote-restaurar${sufijo||""}="${k}">${BOTE_ICO_REST_}</button>
+    <button type="button" class="bote-icono borrar" title="Eliminar para siempre" aria-label="Eliminar para siempre" data-bote-borrar${sufijo||""}="${k}">${BOTE_ICO_DEL_}</button>
+  </div>`;
+}
 function renderBote_(){
   const L=(DB.bote||[]).filter(m=>m&&m.id).slice().sort((a,b)=>String(b.fechaBote||"").localeCompare(String(a.fechaBote||"")) || (a.nombre||"").localeCompare(b.nombre||""));
   document.getElementById("boteInfo").textContent = L.length
-    ? "Quienes salieron del team. Sus datos y entregas se conservan. Toca a alguien para ver su ficha; Restaurar lo devuelve a Miembros y Eliminar lo borra para siempre."
+    ? "Quienes salieron del team. Sus datos y entregas se conservan. Toca a alguien para ver su ficha."
     : "";
   document.getElementById("boteLista").innerHTML = L.length ? L.map(m=>{
     const nEnt=entregasCountDeBote_(m.id);
@@ -4491,14 +4501,11 @@ function renderBote_(){
     return `<div class="bote-fila">
       <div class="member-row" data-bote-ver="${escAttr(m.id)}">
         ${avatarImgTag(m)}
-        <div class="m-info"><div class="m-name">${escHtml(m.nombre||"(sin nombre)")}</div>${meta?`<div class="bote-meta">${escHtml(meta)}</div>`:""}</div>
+        <div class="m-info"><div class="m-name">${escHtml(m.nombre||"(sin nombre)")}</div>${meta?`<div class="bote-meta">${escHtml(meta)}</div>`:""}${m.motivoBote?`<div class="bote-motivo">Motivo: ${escHtml(m.motivoBote)}</div>`:""}</div>
       </div>
-      <div class="bote-btns">
-        <button type="button" class="btn-small btn-family" data-bote-restaurar="${escAttr(m.id)}">♻️ Restaurar</button>
-        <button type="button" class="btn-small btn-bote-borrar" data-bote-borrar="${escAttr(m.id)}">🗑️ Eliminar</button>
-      </div>
+      ${botesAccionesHTML_(m.id)}
     </div>`;
-  }).join("") : `<div class="empty-state">El Bote está vacío 🌊</div>`;
+  }).join("") : `<div class="empty-state">El Bote está vacío</div>`;
   const cont=document.getElementById("boteLista");
   cont.querySelectorAll("[data-bote-ver]").forEach(el=>el.onclick=()=>openMemberModal(el.dataset.boteVer));
   cont.querySelectorAll("[data-bote-restaurar]").forEach(b=>b.onclick=()=>restaurarDelBote_(b.dataset.boteRestaurar));
@@ -4514,23 +4521,23 @@ function errorBote_(r){
   const t=String((r&&r.error)||"");
   return /desconoc|unknown|no existe|not found|undefined/i.test(t) ? "Falta publicar el Code.gs nuevo con El Bote" : (t||"Error");
 }
-async function enviarAlBote_(id){
-  const r=await apiPost({action:"moverMiembroAlBote", id}, "Enviando al Bote...");
-  if(r&&r.ok){ toast("Enviado a El Bote 🚢"); closeModal("memberEditModal"); closeModal("memberModal"); await cargarDatos(); }
+async function enviarAlBote_(id,motivo){
+  const r=await apiPost({action:"moverMiembroAlBote", id, motivo}, "Enviando al Bote...");
+  if(r&&r.ok){ toast("Enviado a El Bote"); closeModal("memberEditModal"); closeModal("memberModal"); await cargarDatos(); }
   else toast("Error: "+errorBote_(r));
 }
 async function restaurarDelBote_(id){
   const m=miembroPorId_(id); if(!m) return;
   if(!await confirmarAccion(`¿Restaurar a ${m.nombre||"este miembro"}? Volverá a la lista de Miembros con sus datos.`)) return;
   const r=await apiPost({action:"restaurarDelBote", id}, "Restaurando...");
-  if(r&&r.ok){ toast("Restaurado ♻️"); closeModal("memberModal"); await cargarDatos(); if(document.getElementById("boteModal").classList.contains("open")) renderBote_(); }
+  if(r&&r.ok){ toast("Restaurado"); closeModal("memberModal"); await cargarDatos(); if(document.getElementById("boteModal").classList.contains("open")) renderBote_(); }
   else toast("Error: "+errorBote_(r));
 }
 async function eliminarDelBote_(id){
   const m=miembroPorId_(id); if(!m) return;
   if(!await confirmarAccion(`¿Eliminar a ${m.nombre||"este miembro"} para siempre? Se borra su registro y esto NO se puede deshacer. Sus entregas quedarán sin persona vinculada.`)) return;
   const r=await apiPost({action:"eliminarDelBote", id}, "Eliminando definitivamente...");
-  if(r&&r.ok){ toast("Eliminado para siempre 🗑️"); closeModal("memberModal"); await cargarDatos(); if(document.getElementById("boteModal").classList.contains("open")) renderBote_(); }
+  if(r&&r.ok){ toast("Eliminado para siempre"); closeModal("memberModal"); await cargarDatos(); if(document.getElementById("boteModal").classList.contains("open")) renderBote_(); }
   else toast("Error: "+errorBote_(r));
 }
 // Celda "Persona": si la entrega ya tiene miembros asignados, se muestra su nombre (en vez del
@@ -4795,7 +4802,8 @@ function mejorMiembroParaTexto_(texto, umbral){
   umbral = umbral===undefined?0.75:umbral;
   const nt=normalizarTexto_(texto); if(!nt) return null;
   const puntajes=[];
-  (DB.miembros||[]).forEach(m=>{
+  // Incluye a quienes están en El Bote: sus grabaciones siguen ligándose a su persona.
+  [...(DB.miembros||[]), ...(DB.bote||[])].forEach(m=>{
     let sc=0;
     [m.usuarioSmule, m.nombre].forEach(campo=>{
       if(!campo) return;
@@ -4866,7 +4874,7 @@ function renderPasarLista(){
       <div class="pl-act-body ${abierta?"open":""}">
         ${entregas.map(e=>{
           const ids=idsDeEntrega_(e);
-          const nombresAsignados = ids.map(id=>{ const m=miembroPorId_(id); return m?(m.nombre+(esDelBote_(id)?" 🚢":"")):null; }).filter(Boolean);
+          const nombresAsignados = ids.map(id=>{ const m=miembroPorId_(id); return m?(m.nombre+(esDelBote_(id)?" (El Bote)":"")):null; }).filter(Boolean);
           return `<div class="pl-entrega-row">
             <div class="pl-entrega-info">
               <div class="pl-entrega-nombre">${escHtml(e.nombreUsuario||"")}</div>
@@ -6349,8 +6357,11 @@ document.getElementById("me_deleteBtn").onclick=async()=>{
   const id=document.getElementById("me_id").value;
   if(!id) return;
   const nm=(document.getElementById("me_nombre").value||"").trim();
-  if(!await confirmarAccion(`¿Mandar a ${nm||"este miembro"} a El Bote? Dejará de aparecer en Miembros, pero sus datos y entregas se conservan y lo podrás recuperar.`)) return;
-  await enviarAlBote_(id);
+  const motivo=await pedirJustificacion_(`Mandar a ${nm||"este miembro"} a El Bote`,
+    "Dejará de aparecer en Miembros, pero sus datos y entregas se conservan y lo podrás restaurar. El motivo solo lo ve Staff.",
+    "Motivo del ban", "Mandar a El Bote");
+  if(motivo===null) return;
+  await enviarAlBote_(id,motivo);
 };
 
 /* ---------- confirmación personalizada (reemplaza confirm() nativo) ---------- */
