@@ -415,6 +415,29 @@
   .status-green{background:rgba(46,204,113,0.18);color:var(--green);}
   .status-yellow{background:rgba(241,196,15,0.18);color:var(--yellow);}
   .status-red{background:rgba(231,76,60,0.18);color:var(--red);}
+  /* Luz de estado junto al título: rosa = activa, ámbar = últimos días, morado = próximo stream, apagada = finalizada. */
+  .card-title-row{display:flex;align-items:flex-start;gap:6px;}
+  .card-title-row .card-title{flex:1;min-width:0;}
+  .luz-estado{flex:none;width:28px;height:28px;margin:-5px -5px 0 0;padding:0;border-radius:50%;background:none;display:grid;place-items:center;}
+  .luz-estado .luz{width:13px;height:13px;border-radius:50%;background:var(--lz);}
+  .luz-activa{--lz:#ff2d8f;--lzg:rgba(255,45,143,.95);}
+  .luz-ultimos{--lz:#ffc83d;--lzg:rgba(255,200,61,.9);}
+  .luz-stream{--lz:#b66cff;--lzg:rgba(182,108,255,.95);}
+  .luz-finalizada{--lz:#241a2b;}
+  @keyframes luzPulso{0%,100%{box-shadow:0 0 0 0 var(--lzg),0 0 10px 2px var(--lzg);}50%{box-shadow:0 0 0 7px transparent,0 0 22px 6px var(--lzg);}}
+  .luz-activa .luz,.luz-ultimos .luz,.luz-stream .luz{background:radial-gradient(circle at 35% 30%,#fff 0 18%,var(--lz) 55%);animation:luzPulso 1.6s ease-in-out infinite;}
+  .luz-ultimos .luz{animation-duration:.9s;}
+  .luz-finalizada .luz{box-shadow:inset 0 0 0 2px #4b3b54;}
+  .card.card-fin .card-img-wrap img{filter:grayscale(.85) brightness(.7);}
+  .card.card-fin .card-title{color:#a692ae;}
+  .luz-pop{position:fixed;z-index:3600;width:244px;max-width:calc(100vw - 20px);padding:10px;border-radius:14px;background:#2a1638;border:1px solid rgba(255,255,255,.12);box-shadow:0 16px 40px rgba(0,0,0,.55);display:flex;flex-direction:column;gap:2px;}
+  .luz-pop h4{margin:0 0 4px 4px;font-size:11.5px;font-weight:800;letter-spacing:.06em;text-transform:uppercase;color:var(--text-dim);}
+  .luz-pop .lp-row{display:flex;align-items:center;gap:10px;padding:7px 6px;border-radius:10px;font-size:13px;color:var(--text);}
+  .luz-pop .lp-row.now{background:rgba(255,255,255,.08);}
+  .luz-pop .lp-row b{display:block;font-weight:800;}
+  .luz-pop .lp-row small{display:block;color:var(--text-dim);font-size:11.5px;}
+  .luz-pop .luz{width:12px;height:12px;border-radius:50%;flex:none;margin:0 3px;}
+  @media (prefers-reduced-motion:reduce){.luz-estado .luz{animation:none!important;}}
   .status-purple{background:rgba(164,95,199,0.30);color:#e6c9ff;box-shadow:inset 0 0 0 1px rgba(190,120,235,0.45);}
   .part-opcional{background:rgba(93,173,226,0.18);color:#5dade2;}
   .part-obligatoria{background:rgba(241,196,15,0.18);color:var(--yellow);}
@@ -3892,19 +3915,41 @@ const ACT_ICO_={
   pencil:`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 20h4L19 9l-4-4L4 16v4z"/><path d="M13.5 6.5l4 4"/></svg>`,
   trash:`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 7h16M9 7V4h6v3M6 7l1 13h10l1-13M10 11v6M14 11v6"/></svg>`
 };
+// Ventanita con la simbología de la luz de estado (se abre al tocar la luz de cualquier tarjeta).
+(function(){
+  const FILAS=[["activa","Rosa brillante","Actividad activa"],["ultimos","Ámbar","Últimos días (quedan 2 o menos)"],["stream","Morado brillante","Próximo stream"],["finalizada","Apagada","Actividad finalizada"]];
+  let pop=null;
+  function cerrar(){ if(pop){ pop.remove(); pop=null; } }
+  document.addEventListener("click",ev=>{
+    const b=ev.target.closest&&ev.target.closest(".luz-estado");
+    if(!b){ if(pop && !ev.target.closest(".luz-pop")) cerrar(); return; }
+    ev.stopPropagation();
+    const k=b.dataset.luz; const abierta=pop&&pop.dataset.k===k&&pop._b===b; cerrar(); if(abierta) return;
+    pop=document.createElement("div"); pop.className="luz-pop"; pop.dataset.k=k; pop._b=b; pop.setAttribute("role","dialog"); pop.setAttribute("aria-label","Simbología de la luz de estado");
+    pop.innerHTML='<h4>Estado de la actividad</h4>'+FILAS.map(f=>`<div class="lp-row${f[0]===k?" now":""}"><span class="luz-estado luz-${f[0]}" style="width:auto;height:auto;margin:0;pointer-events:none"><span class="luz"></span></span><span><b>${f[1]}</b><small>${f[2]}</small></span></div>`).join("");
+    document.body.appendChild(pop);
+    const r=b.getBoundingClientRect(), w=pop.offsetWidth, h=pop.offsetHeight;
+    let x=Math.min(Math.max(10,r.right-w), window.innerWidth-w-10), y=r.bottom+8;
+    if(y+h>window.innerHeight-10) y=Math.max(10,r.top-h-8);
+    pop.style.left=x+"px"; pop.style.top=y+"px";
+  });
+  document.addEventListener("keydown",ev=>{ if(ev.key==="Escape") cerrar(); });
+  document.body.addEventListener("scroll",cerrar,{passive:true}); window.addEventListener("scroll",cerrar,{passive:true});
+})();
 function cardHTML(a, entregasDeEsta){
   const estado=estadoActividad(a.fechaFin, a);
   entregasDeEsta = entregasDeEsta || DB.entregas.filter(e=>String(e.idActividad)===String(a.id));
   const fechasTxt=`${fmtFecha(a.fechaInicio)} → ${fmtFecha(a.fechaFin)}`;
+  const luzK=estado.clase==="status-green"?"activa":estado.clase==="status-yellow"?"ultimos":estado.clase==="status-purple"?"stream":"finalizada";
+  const luzTxt={activa:"Actividad activa",ultimos:"Últimos días",stream:"Próximo stream",finalizada:"Actividad finalizada"}[luzK];
   return `
-  <div class="card${esTrue(a.dobleEspacio)?" doble":""}" data-id="${escAttr(a.id)}">
+  <div class="card${esTrue(a.dobleEspacio)?" doble":""}${luzK==="finalizada"?" card-fin":""}" data-id="${escAttr(a.id)}">
     <div class="card-top">
       <div class="card-img-wrap">${a.imagenUrl?`<img class="js-longpress" data-filename="${escAttr((a.titulo||'actividad')+'.jpg')}" src="${escAttr(a.imagenUrl)}" alt="" loading="lazy" decoding="async">`:""}</div>
       <div class="card-info">
-        <div class="card-title">${escHtml(a.titulo||"")}</div>
+        <div class="card-title-row"><div class="card-title">${escHtml(a.titulo||"")}</div><button type="button" class="luz-estado luz-${luzK}" data-luz="${luzK}" aria-label="Estado: ${luzTxt}. Toca para ver la simbología" title="${luzTxt}"><span class="luz"></span></button></div>
         <div class="card-dates">${fechasTxt}</div>
         <div class="badge-row">
-          <span class="status-tag ${estado.clase}">${estado.texto}</span>
           ${categoriaTag(a.categoria)}
           ${participacionTag(a.participacion)}
         </div>
