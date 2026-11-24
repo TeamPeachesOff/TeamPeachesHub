@@ -116,7 +116,7 @@ function anuWreath_(c){
 /* brote de dos hojas, con la base metida detrás del círculo (arriba a la izquierda) */
 const anuSprout_=()=>{ const h=(rot,L,W)=>`<g transform="translate(18 18) rotate(${rot})"><path d="M0 0C${W} ${-L*.25} ${W} ${-L*.75} 0 ${-L}C${-W} ${-L*.75} ${-W} ${-L*.25} 0 0Z" fill="url(#anuLg)"/><path d="M0 -2V${-L*.78}" stroke="#dcf1b8" stroke-width=".9" stroke-linecap="round" fill="none"/></g>`;
   return `<svg class="anu-sp" viewBox="0 0 100 100" aria-hidden="true">${h(-80,30,10)}${h(24,36,12)}</svg>`; };
-const anuArc_=(id,t)=>`<svg class="anu-arc" viewBox="0 0 100 100" aria-hidden="true"><path id="arc${escAttr(id)}" d="M2.2 45.8A48 48 0 0 1 97.8 45.8" fill="none"/><text class="t1" textLength="${(t.length*14.5).toFixed(0)}" lengthAdjust="spacing"><textPath href="#arc${escAttr(id)}" startOffset="50%" text-anchor="middle">${t}</textPath></text><text class="t2" textLength="${(t.length*14.5).toFixed(0)}" lengthAdjust="spacing"><textPath href="#arc${escAttr(id)}" startOffset="50%" text-anchor="middle">${t}</textPath></text></svg>`;
+const anuArc_=(id,t)=>`<svg class="anu-arc" viewBox="0 0 100 100" aria-hidden="true"><path id="arc${escAttr(id)}" d="M2.2 45.8A48 48 0 0 1 97.8 45.8" fill="none"/><text class="t1" textLength="${(t.length*15.6).toFixed(0)}" lengthAdjust="spacing"><textPath href="#arc${escAttr(id)}" startOffset="50%" text-anchor="middle">${t}</textPath></text><text class="t2" textLength="${(t.length*15.6).toFixed(0)}" lengthAdjust="spacing"><textPath href="#arc${escAttr(id)}" startOffset="50%" text-anchor="middle">${t}</textPath></text></svg>`;
 const anuIsF_=m=>esTrue(m.fundadora)||esTrue(m.fundador);
 const anuFundEt_=m=>(anuKey_(m.nombre).includes("eryck")||(esTrue(m.fundador)&&!esTrue(m.fundadora)))?"Fundador":"Fundadora";
 const anuRolDe_=m=>anuIsF_(m)?"f":esTrue(m.lider)?"a":esTrue(m.staff)?"s":null;
@@ -917,7 +917,7 @@ function renderAnuario(){
 let _anuFontsP=null;
 function anuFonts_(){
   if(_anuFontsP) return _anuFontsP;
-  const f=["Caveat Brush","Lilita One","Kaushan Script"].map(n=>{ try{ return document.fonts.load('40px "'+n+'"'); }catch(_){ return Promise.resolve(); } });
+  const f=["Caveat Brush","Lilita One","Kaushan Script","Playfair Display"].map(n=>{ try{ return document.fonts.load('40px "'+n+'"'); }catch(_){ return Promise.resolve(); } });
   _anuFontsP=Promise.race([Promise.all(f).catch(()=>{}),new Promise(r=>setTimeout(r,1800))]);
   return _anuFontsP;
 }
