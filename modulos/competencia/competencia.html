@@ -5,6 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Competencia · Team Peaches Hub 🍑</title>
 <meta name="theme-color" content="#180E1D">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap">
 <style>
 :root{--peach-1:#ff8fb1;--peach-2:#EF0870;--bg:#1a1020;--card-bg:#2a1830;--card-bg-2:#33203a;--text:#fbeaf2;--text-dim:#c9a8bb;--green:#2ecc71;--gold:#ffd700;--rosa-comp:#0DEF8A;--radius:16px;--line:rgba(239,8,112,.45)}
 *{box-sizing:border-box}
@@ -415,6 +416,87 @@ button:focus-visible,a:focus-visible{outline:2px solid var(--peach-1);outline-of
 }
 @media (prefers-reduced-motion:reduce){
   #rv .rv-stage.shake,#rv .rv-ring,#rv .rv-flip,#rv .rv-pulse,#rv .rv-fog i{animation:none}
+}
+/* ===== ronda N: etiqueta + récord ===== */
+#rv .rv-rtag{position:absolute;left:0;right:0;top:calc(env(safe-area-inset-top,0px) + 72px);z-index:3;text-align:center;font-weight:900;letter-spacing:.35em;font-size:clamp(13px,2.8vmin,22px);color:#f1c40f;text-shadow:0 2px 10px #000;animation:rvTitleIn .5s backwards}
+#rv .rv-rec{display:block;margin-top:.3em;font-size:.5em;font-weight:800;letter-spacing:.08em;color:#f1c40f;text-shadow:0 1px 6px #000}
+#rv .rv-tabs{flex-wrap:wrap;justify-content:center}
+@keyframes arBlink{50%{opacity:0}}
+@keyframes arTitle{from{transform:translateY(-70vh)}to{transform:none}}
+@keyframes arCoin{from{opacity:1;transform:translateY(-110px)}to{opacity:1;transform:none}}
+@keyframes arLock{0%,40%,80%{transform:scale(1.2)}20%,60%,100%{transform:scale(1)}}
+@keyframes krEq{from{transform:scaleY(.12)}to{transform:scaleY(var(--h))}}
+@keyframes krFlick{0%{opacity:0}8%{opacity:1}12%{opacity:.2}18%{opacity:1}24%{opacity:.3}30%,100%{opacity:1}}
+@keyframes krWipe{to{clip-path:inset(0 0 0 0)}}
+@keyframes krRing{from{opacity:.9;transform:scale(.2)}to{opacity:0;transform:scale(2.6)}}
+@keyframes krScratch{0%{transform:rotate(0)}25%{transform:rotate(-40deg)}50%{transform:rotate(25deg)}100%{transform:rotate(0)}}
+
+/* ===== 4 · Arcade (8 bits) ===== */
+#rv[data-t="3"] .rv-bg{background:repeating-linear-gradient(0deg,rgba(255,255,255,.045) 0 2px,rgba(0,0,0,0) 2px 4px),radial-gradient(ellipse 80% 60% at 50% 40%,rgba(80,40,200,.45),rgba(5,2,14,0) 70%),linear-gradient(180deg,#07031a,#0d0426 60%,#1a0836)}
+#rv[data-t="3"] .rv-a{--c:#ff3d9a}#rv[data-t="3"] .rv-b{--c:#35c8ff}
+#rv[data-t="3"] .rv-vs,#rv[data-t="3"] .rv-cap,#rv[data-t="3"] .rv-nm,#rv[data-t="3"] .rv-rtag,#rv .ar-sel,#rv .ar-title,#rv .ar-ins,#rv .ar-tag,#rv .ar-t::before,#rv .ar-t.q::after{font-family:"Press Start 2P",ui-monospace,Menlo,Consolas,monospace;font-style:normal;letter-spacing:0;font-weight:400}
+#rv[data-t="3"] .rv-vs{font-size:clamp(34px,11vmin,90px);color:#ffd23f;text-shadow:5px 5px 0 #b3261e,-3px -3px 0 #000}
+#rv[data-t="3"] .rv-cap{font-size:clamp(18px,4.6vmin,36px);color:#ffd23f;text-shadow:4px 4px 0 #b3261e;animation:arBlink .6s steps(2) 4}
+#rv[data-t="3"] .rv-nm{font-size:clamp(10px,2.3vmin,17px);line-height:1.5;text-transform:uppercase;text-shadow:3px 3px 0 #000}
+#rv[data-t="3"] .rv-rtag{font-size:clamp(11px,2.4vmin,18px);letter-spacing:.1em}
+#rv[data-t="3"] .rv-av{position:relative;overflow:hidden;border-radius:6px;border:6px solid var(--c);background:#000;box-shadow:0 0 0 4px #000,7px 7px 0 4px rgba(0,0,0,.55)}
+#rv[data-t="3"] .rv-av img{border-radius:0}
+#rv[data-t="3"] .rv-sparks i{border-radius:0}
+#rv .ar-px{position:absolute;inset:0;width:100%;height:100%;image-rendering:pixelated;z-index:2}
+#rv .ar-tag{padding:5px 8px;font-size:clamp(9px,2vmin,15px);background:var(--c);color:#000;box-shadow:3px 3px 0 #000}
+#rv .ar-scr{position:absolute;inset:0;z-index:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:clamp(10px,2.6vmin,22px);padding:calc(env(safe-area-inset-top,0px) + 64px) 14px 96px;transition:opacity .35s}
+#rv .ar-scr.out{opacity:0}
+#rv .ar-sel{font-size:clamp(10px,2.5vmin,19px);line-height:1.5;text-align:center;color:#ffd23f;text-shadow:3px 3px 0 #b3261e;animation:arBlink 1s steps(2) infinite}
+#rv .ar-grid{display:grid;grid-template-columns:repeat(var(--cols,6),1fr);gap:clamp(5px,1.2vmin,10px);width:min(92vw,640px,max(160px,calc((100vh - 250px)*var(--k,2))))}
+#rv .ar-t{position:relative;aspect-ratio:1;background:#120a2a;border:3px solid #3b2b78;box-shadow:inset 0 0 0 2px #000;overflow:hidden}
+#rv .ar-t img{display:block;width:100%;height:100%;object-fit:cover;filter:saturate(.45) brightness(.55)}
+#rv .ar-t.q::after{content:"?";position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:clamp(14px,3.4vmin,26px);color:#4d3d8c}
+#rv .ar-t.hl1{--cc:#ff3d9a;border-color:var(--cc);box-shadow:0 0 0 3px var(--cc),0 0 18px var(--cc);z-index:2}
+#rv .ar-t.hl2{--cc:#35c8ff;border-color:var(--cc);box-shadow:0 0 0 3px var(--cc),0 0 18px var(--cc);z-index:2}
+#rv .ar-t.hl1 img,#rv .ar-t.hl2 img{filter:none}
+#rv .ar-t.hl1::before,#rv .ar-t.hl2::before{position:absolute;left:0;top:0;z-index:3;padding:3px 4px;font-size:8px;background:var(--cc);color:#000}
+#rv .ar-t.hl1::before{content:"1P"}#rv .ar-t.hl2::before{content:"2P"}
+#rv .ar-t.locked{animation:arLock .5s steps(5)}
+#rv .ar-intro{position:relative;z-index:3;display:flex;flex-direction:column;align-items:center;text-align:center}
+#rv .ar-title{font-size:clamp(22px,7vmin,58px);line-height:1.35;color:#ffd23f;text-shadow:5px 5px 0 #b3261e,-3px -3px 0 #000;animation:arTitle .7s steps(8) backwards}
+#rv .ar-ins{margin-top:clamp(16px,4vmin,34px);font-size:clamp(10px,2.5vmin,19px);line-height:1.8;color:#fff;animation:arBlink 1s steps(2) infinite}
+#rv .ar-coin{margin-top:12px;font-size:clamp(28px,7vmin,56px);opacity:0}
+#rv .ar-coin.drop{animation:arCoin .6s steps(6) forwards}
+
+/* ===== 5 · Karaoke (vinilos) ===== */
+#rv[data-t="4"] .rv-bg{background:radial-gradient(ellipse 60% 50% at 18% 18%,rgba(255,45,149,.38),rgba(0,0,0,0) 70%),radial-gradient(ellipse 60% 50% at 82% 22%,rgba(53,200,255,.3),rgba(0,0,0,0) 70%),linear-gradient(180deg,#0a0414,#15061f)}
+#rv[data-t="4"] .rv-b{--c:#35c8ff}
+#rv .kr-eq{position:absolute;left:0;right:0;bottom:0;height:36%;display:flex;align-items:flex-end;gap:clamp(3px,.8vw,8px);padding:0 2vw;pointer-events:none;z-index:0;opacity:.5}
+#rv .kr-eq i{flex:1;height:100%;transform-origin:50% 100%;transform:scaleY(var(--h));border-radius:3px 3px 0 0;background:linear-gradient(0deg,#ff2d95,#b24bff 55%,#35c8ff);animation:krEq var(--t) ease-in-out var(--d) infinite alternate}
+#rv .kr-neon{position:relative;z-index:3;text-align:center;font-weight:900;line-height:1}
+#rv .kr-neon span{display:block;font-size:clamp(40px,14vmin,130px);letter-spacing:.06em;color:#fff;text-shadow:0 0 6px #fff,0 0 18px #ff2d95,0 0 42px #ff2d95,0 0 80px #b24bff;animation:krFlick 1.2s linear backwards}
+#rv .kr-neon small{display:block;margin-top:.7em;font-size:clamp(12px,3vmin,24px);letter-spacing:.4em;color:#bff3ff;text-shadow:0 0 8px #35c8ff,0 0 24px #35c8ff;animation:krFlick 1.2s .3s linear backwards}
+#rv .kr-mic{position:absolute;z-index:2;bottom:calc(env(safe-area-inset-bottom,0px) + 100px);font-size:clamp(40px,12vmin,100px);filter:drop-shadow(0 0 12px rgba(255,45,149,.7));animation:rvSideIn .8s .3s cubic-bezier(.2,.9,.25,1) backwards}
+#rv .kr-mic.l{left:14%;--sx:-50vw;--sy:0}#rv .kr-mic.r{right:14%;--sx:50vw;--sy:0;transform:scaleX(-1)}
+#rv .kr-rec{--rs:clamp(130px,34vmin,260px);position:relative;flex:none;width:var(--rs);height:var(--rs)}
+#rv .kr-disc{position:absolute;inset:0;border-radius:50%;background:conic-gradient(rgba(255,255,255,0),rgba(255,255,255,.26) 12%,rgba(255,255,255,0) 25%,rgba(255,255,255,0) 50%,rgba(255,255,255,.26) 62%,rgba(255,255,255,0) 75%),repeating-radial-gradient(circle,#0b0612 0 3px,#1c1126 3px 5px);box-shadow:0 0 28px var(--c),inset 0 0 0 3px #000;animation:rvSpin 2.4s linear infinite}
+#rv .kr-rec .rv-av{position:absolute;left:50%;top:50%;width:46%;transform:translate(-50%,-50%);border-width:3px}
+#rv .kr-nm{display:grid;margin-top:4px}
+#rv .kr-nm>*{grid-area:1/1}
+#rv .kr-w{color:rgba(255,255,255,.35)}
+#rv .kr-f{color:var(--c);text-shadow:0 0 14px var(--c);clip-path:inset(0 100% 0 0)}
+#rv .kr-nm.sing .kr-f{animation:krWipe 1s linear forwards}
+#rv .kr.scr .kr-disc{animation:krScratch .5s ease-out,rvSpin 2.4s .5s linear infinite}
+#rv .kr-ring{position:absolute;left:50%;top:50%;width:min(50vmin,380px);aspect-ratio:1;margin:calc(min(50vmin,380px)/-2) 0 0 calc(min(50vmin,380px)/-2);border-radius:50%;border:3px solid #fff;box-shadow:0 0 18px #ff2d95;pointer-events:none;z-index:1;animation:krRing .95s ease-out forwards}
+#rv .kr-notes i{width:auto;height:auto;margin:0;border-radius:0;background:none;font-style:normal;font-size:clamp(22px,5vmin,36px);text-shadow:0 0 10px currentColor;animation-duration:1.4s}
+@media (max-width:640px){
+  #rv .rv-stage{padding-top:calc(env(safe-area-inset-top,0px) + 164px)}
+  #rv .rv-rtag{top:calc(env(safe-area-inset-top,0px) + 168px)}
+  #rv .ar-scr{padding-top:calc(env(safe-area-inset-top,0px) + 164px);padding-bottom:104px}
+  #rv .rv-sumwrap{padding-top:calc(env(safe-area-inset-top,0px) + 164px)}
+  #rv .rv-tabs button{padding:6px 8px;font-size:11px}
+}
+@media (max-width:640px),(max-aspect-ratio:1/1){
+  #rv .kr-rec{--rs:clamp(78px,15.5vh,190px)}
+  #rv .kr-mic.l{left:8%}#rv .kr-mic.r{right:8%}
+}
+@media (prefers-reduced-motion:reduce){
+  #rv .kr-eq i,#rv .kr-disc,#rv .ar-sel,#rv .ar-ins{animation:none}
 }
 </style>
 </head>
@@ -848,7 +930,7 @@ function newT(pl,name,plan){
   S={v:1,id:uid(),name,pl,rounds:[],view:0,phase:"swiss",rank:new Map(pl.map(p=>[p,Math.random()])),br:null};
   if(plan){S.rounds.push({matches:plan.pairs.map(([a,b])=>({a,b,w:null,ra:{w:0,l:0},rb:{w:0,l:0}})),bye:plan.bye||null});S.view=0}   // primera ronda ya revelada
   else genRound(true);
-  creating=false;champId=null;clearDraft();
+  creating=false;champId=null;clearDraft();pendNext=null;
   $("champ").classList.remove("show");$("champ")._h=null;
   markDirty();refresh();
 }
@@ -903,7 +985,11 @@ function nextRound(){
   if(S.br){S.phase="br";render();return}
   const cur=S.rounds[S.rounds.length-1];
   if(!roundDone(cur)||activeLeft()==0)return;
-  genRound(true);markDirty();render();
+  const n=S.rounds.length+1;
+  let rd=pendNext&&pendNext.n===n&&pendNext.sid===S.id?pendNext.rd:null;      // «Atrás» conserva las parejas ya sorteadas
+  if(!rd){const v=S.view;genRound(true);rd=S.rounds.pop();S.view=v;pendNext={n,sid:S.id,rd}}
+  if(!rd.matches.length){S.rounds.push(rd);S.view=S.rounds.length-1;pendNext=null;markDirty();render();return}
+  openRevealNext(rd,n);
 }
 function pick(mi,s){
   if(!isStaff()||S.br)return;
@@ -1112,9 +1198,9 @@ function confetti(){
    Al pulsar «Comenzar torneo» NO se crea nada todavía: se abre esta pantalla, se revelan las parejas y al final
    se confirma. «Atrás» vuelve a la selección sin tocar el torneo; al volver a comenzar se conservan las parejas
    cuyos dos integrantes siguen elegidos y solo se rearma a quien se quedó sin rival (o a quien se agregó). */
-const RV_NAMES=["Titanes","Cartas","Escenario"];
-let rv=null,rvRun=null,rvPlan=null,rvPl=[],rvName="",pend=null,okReplace=false;
-let rvTheme=0;try{rvTheme=Math.min(2,Math.max(0,+localStorage.getItem("rvTheme")||0))}catch(e){}
+const RV_NAMES=["Titanes","Cartas","Escenario","Arcade","Karaoke"];
+let rv=null,rvRun=null,rvPlan=null,rvPl=[],rvName="",pend=null,okReplace=false,rvMode={n:1,recs:null},pendNext=null;
+let rvTheme=0;try{rvTheme=Math.min(4,Math.max(0,+localStorage.getItem("rvTheme")||0))}catch(e){}
 const DEAD={d:1},NEXT={n:1};
 const rvSmall=()=>matchMedia("(max-width:640px)").matches;
 const rvReduced=()=>matchMedia("(prefers-reduced-motion: reduce)").matches;
@@ -1183,14 +1269,16 @@ function rvImpact(st,cols,n){
   st.appendChild(w);setTimeout(()=>w.remove(),900);
 }
 function rvSmoke(st,n){for(let i=0;i<(n||2);i++){const s=document.createElement("div");s.className="rv-smoke";s.style.animationDelay=i*.12+"s";st.appendChild(s);setTimeout(()=>s.remove(),1900)}}
-const rvSide=(p,c,inner)=>`<div class="rv-side ${c}">${inner||`<div class="rv-av">${avatar(p)}</div><div class="rv-nm">${esc(p.n)}</div>`}</div>`;
+const rvRec=p=>{const x=rvMode&&rvMode.recs&&rvMode.recs.get(p);return x?`<span class="rv-rec">${x.w}V · ${x.l}D</span>`:""};
+const rvRtag=()=>`<div class="rv-rtag">RONDA ${rvMode.n}</div>`;
+const rvSide=(p,c,inner)=>`<div class="rv-side ${c}">${inner||`<div class="rv-av">${avatar(p)}</div><div class="rv-nm">${esc(p.n)}${rvRec(p)}</div>`}</div>`;
 const rvQ=(st,s)=>st.querySelector(s);
 const rvCap=(st,txt)=>{const c=rvQ(st,".rv-cap");if(txt)c.textContent=txt;c.classList.add("in")};
 const rvOut=async(st,run)=>{const d=rvQ(st,".rv-duel");if(!d)return;d.classList.add("out");await run.wait(300)};
 
 /* ---- 1 · Duelo de Titanes ---- */
 async function intro0(st,run){
-  st.innerHTML=`<div class="rv-pulse"></div><div class="rv-title">¡LOS TITANES<br>SE ENFRENTAN!</div>`;
+  st.innerHTML=`${rvRtag()}<div class="rv-pulse"></div><div class="rv-title">¡LOS TITANES<br>SE ENFRENTAN!</div>`;
   SFX.thump();await run.wait(520);SFX.thump();await run.wait(520);SFX.impact();
 }
 async function duel0(st,run,[a,b]){
@@ -1204,10 +1292,10 @@ async function duel0(st,run,[a,b]){
 
 /* ---- 2 · Cartas malditas ---- */
 async function intro1(st,run){
-  st.innerHTML=`<div class="rv-ring">${[0,1,2,3,4,5,6,7].map(k=>`<i style="--k:${k}"></i>`).join("")}</div><div class="rv-title gold">El destino<br>ha elegido…</div>`;
+  st.innerHTML=`${rvRtag()}<div class="rv-ring">${[0,1,2,3,4,5,6,7].map(k=>`<i style="--k:${k}"></i>`).join("")}</div><div class="rv-title gold">El destino<br>ha elegido…</div>`;
   SFX.roll(1.7);await run.wait(2200);
 }
-const card=(p,c)=>rvSide(p,c,`<div class="rv-flip"><div class="rv-fi"><div class="rv-bk">🍑</div><div class="rv-ft"><div class="rv-av">${avatar(p)}</div><div class="rv-nm">${esc(p.n)}</div></div></div><div class="rv-glow"></div></div>`);
+const card=(p,c)=>rvSide(p,c,`<div class="rv-flip"><div class="rv-fi"><div class="rv-bk">🍑</div><div class="rv-ft"><div class="rv-av">${avatar(p)}</div><div class="rv-nm">${esc(p.n)}${rvRec(p)}</div></div></div><div class="rv-glow"></div></div>`);
 async function flip(st,run,sel){
   const s=rvQ(st,sel);s.querySelector(".rv-fi").classList.add("flip");
   const g=s.querySelector(".rv-glow");g.classList.remove("go");void g.offsetWidth;g.classList.add("go");SFX.chime();
@@ -1228,7 +1316,7 @@ async function duel1(st,run,[a,b]){
 
 /* ---- 3 · Arena del escenario ---- */
 async function intro2(st,run){
-  st.innerHTML=`<div class="rv-cone"></div><div class="rv-fog"><i></i><i></i></div><div id="rvCnt"></div>`;
+  st.innerHTML=`${rvRtag()}<div class="rv-cone"></div><div class="rv-fog"><i></i><i></i></div><div id="rvCnt"></div>`;
   for(const n of [3,2,1]){rvQ(st,"#rvCnt").innerHTML=`<div class="rv-count">${n}</div>`;SFX.tick();SFX.thump();await run.wait(850)}
   rvQ(st,"#rvCnt").innerHTML=`<div class="rv-title">¡Luces, micrófonos…<br>acción!</div>`;SFX.impact();await run.wait(300);
 }
@@ -1242,7 +1330,89 @@ async function duel2(st,run,[a,b]){
   rvImpact(st,["#ffb347","#6ee7ff","#fff"],rvSmall()?6:10);rvSmoke(st,1);rvQ(st,".rv-vs").classList.add("in");
   await run.wait(400);rvCap(st);
 }
-const INTRO=[intro0,intro1,intro2],DUEL=[duel0,duel1,duel2];
+/* ---- 4 · Arcade 8 bits: «Selecciona tu luchador» ---- */
+async function intro3(st,run){
+  st.innerHTML=`${rvRtag()}<div class="ar-intro"><div class="ar-title">PEACHES<br>FIGHTERS</div><div class="ar-ins" id="arIns">INSERT COIN</div><div class="ar-coin" id="arCoin">🪙</div></div>`;
+  SFX.thump();await run.wait(950);
+  rvQ(st,"#arCoin").classList.add("drop");SFX.tick();await run.wait(700);
+  rvQ(st,"#arIns").innerHTML="CREDIT 01<br>PRESS START ▶";SFX.chime();await run.wait(250);
+}
+const arSide=(p,c,t)=>rvSide(p,c,`<div class="ar-tag">${t}</div><div class="rv-av">${avatar(p)}</div><div class="rv-nm">${esc(p.n)}${rvRec(p)}</div>`);
+async function arSweep(run,T,real,target,cls,skip){
+  const pool=real.filter(i=>i!==skip&&i!==target),hops=8;let prev=-1;
+  for(let k=0;k<=hops;k++){
+    let i=target;
+    if(k<hops&&pool.length){do{i=pool[Math.random()*pool.length|0]}while(i===prev&&pool.length>1)}
+    if(prev>=0)T[prev].classList.remove(cls);
+    T[i].classList.add(cls);prev=i;SFX.tick();
+    await run.wait(50+k*k*3);
+  }
+  T[target].classList.add("locked");SFX.chime();await run.wait(450);
+}
+async function arPix(run,st,sel){      // el retrato «carga» en píxeles gordos y se aclara
+  const av=rvQ(st,sel+" .rv-av"),im=av&&av.querySelector("img");
+  if(!im||!im.complete||!im.naturalWidth||rvReduced())return;
+  const W=av.clientWidth||120,cv=document.createElement("canvas"),t=document.createElement("canvas");
+  cv.width=cv.height=W;cv.className="ar-px";av.appendChild(cv);
+  try{
+    for(const z of [5,9,14,24,40]){
+      let ok=true;
+      try{const w=im.naturalWidth,h=im.naturalHeight,m=Math.min(w,h),g=cv.getContext("2d");
+        t.width=t.height=z;t.getContext("2d").drawImage(im,(w-m)/2,(h-m)/2,m,m,0,0,z,z);
+        g.imageSmoothingEnabled=false;g.clearRect(0,0,W,W);g.drawImage(t,0,0,z,z,0,0,W,W)}catch(_){ok=false}
+      if(!ok)break;
+      await run.wait(110);
+    }
+  }finally{cv.remove()}
+}
+async function duel3(st,run,[a,b]){
+  const cols=rvSmall()?4:6,n=cols*3;
+  const others=shuf(rvPl.filter(p=>p.id!==a.id&&p.id!==b.id)).slice(0,n-2);
+  const items=shuf([{p:a},{p:b},...others.map(p=>({p})),...Array(Math.max(0,n-2-others.length)).fill({})]);
+  const real=[],ia=items.findIndex(x=>x.p===a),ib=items.findIndex(x=>x.p===b);
+  items.forEach((x,i)=>{if(x.p)real.push(i)});
+  st.innerHTML=`<div class="ar-scr" id="arScr"><div class="ar-sel">SELECT YOUR FIGHTER</div><div class="ar-grid" style="--cols:${cols};--k:${cols==4?1.33:2}">${items.map(x=>x.p?`<i class="ar-t">${avatar(x.p)}</i>`:`<i class="ar-t q"></i>`).join("")}</div></div><div class="rv-duel">${arSide(a,"rv-a","P1")}<div class="rv-vs">VS</div>${arSide(b,"rv-b","P2")}</div><div class="rv-cap">¡FIGHT!</div>`;
+  const T=[...st.querySelectorAll(".ar-t")];
+  SFX.whoosh();await run.wait(500);
+  await arSweep(run,T,real,ia,"hl1",-1);
+  await arSweep(run,T,real,ib,"hl2",ia);
+  await run.wait(300);
+  const sc=rvQ(st,"#arScr");sc.classList.add("out");await run.wait(380);sc.style.visibility="hidden";
+  SFX.whoosh();rvQ(st,".rv-a").classList.add("in");rvQ(st,".rv-b").classList.add("in","d2");
+  await run.wait(500);
+  const r=await Promise.all([arPix(run,st,".rv-a"),arPix(run,st,".rv-b")].map(x=>x.then(()=>0,e=>e)));
+  const er=r.find(Boolean);if(er)throw er;
+  rvImpact(st,["#ffd23f","#ff3d9a","#35c8ff"],rvSmall()?6:10);rvQ(st,".rv-vs").classList.add("in");
+  await run.wait(500);rvCap(st);
+}
+
+/* ---- 5 · Karaoke: vinilos, letra que se ilumina y notas ---- */
+const krBars=()=>Array.from({length:rvSmall()?16:28},()=>`<i style="--h:${(.3+Math.random()*.7).toFixed(2)};--d:${(-Math.random()*1.2).toFixed(2)}s;--t:${(.5+Math.random()*.6).toFixed(2)}s"></i>`).join("");
+async function intro4(st,run){
+  st.innerHTML=`${rvRtag()}<div class="kr-eq">${krBars()}</div><div class="kr-neon"><span>KARAOKE</span><small>♪ DUEL NIGHT ♪</small></div><div class="kr-mic l">🎤</div><div class="kr-mic r">🎤</div>`;
+  SFX.thump();await run.wait(600);SFX.chime();await run.wait(700);
+}
+const krSide=(p,c)=>rvSide(p,c,`<div class="kr-rec"><div class="kr-disc"></div><div class="rv-av">${avatar(p)}</div></div><div class="rv-nm kr-nm"><span class="kr-w">${esc(p.n)}</span><span class="kr-f">${esc(p.n)}</span></div>${rvRec(p)}`);
+function krBurst(st){
+  const w=document.createElement("div");w.className="rv-sparks kr-notes";
+  const N=rvSmall()?6:10,cs=["#ff2d95","#35c8ff","#ffd700","#fff"],R=rvSmall()?130:270;
+  for(let i=0;i<N;i++){const e=document.createElement("i");e.textContent=["♪","♫","♬"][i%3];e.style.color=cs[i%4];
+    e.style.setProperty("--x",(Math.random()*2-1)*R+"px");e.style.setProperty("--y",-(70+Math.random()*(rvSmall()?150:200))+"px");w.appendChild(e)}
+  st.appendChild(w);
+  for(let k=0;k<2;k++){const r=document.createElement("div");r.className="kr-ring";r.style.animationDelay=k*.18+"s";st.appendChild(r);setTimeout(()=>r.remove(),1400)}
+  setTimeout(()=>w.remove(),1500);
+}
+async function duel4(st,run,[a,b]){
+  st.innerHTML=`<div class="kr-eq">${krBars()}</div><div class="rv-duel kr">${krSide(a,"rv-a")}<div class="rv-vs">VS</div>${krSide(b,"rv-b")}</div><div class="rv-cap">♪ Que empiece el dúo ♪</div>`;
+  SFX.whoosh();await run.wait(250);
+  rvQ(st,".rv-a").classList.add("in");rvQ(st,".rv-b").classList.add("in","d2");
+  await run.wait(800);
+  SFX.chime();rvQ(st,".rv-a .kr-nm").classList.add("sing");await run.wait(1000);
+  SFX.chime();rvQ(st,".rv-b .kr-nm").classList.add("sing");await run.wait(1000);
+  rvImpact(st,["#ff2d95","#35c8ff","#fff"]);krBurst(st);rvQ(st,".rv-vs").classList.add("in");rvQ(st,".kr").classList.add("scr");
+  await run.wait(420);rvCap(st);
+}
+const INTRO=[intro0,intro1,intro2,intro3,intro4],DUEL=[duel0,duel1,duel2,duel3,duel4];
 
 async function rvByeStep(st,run,p){
   st.innerHTML=`<div class="rv-duel"><div class="rv-side rv-a in"><div class="rv-title sm">Descansa esta ronda</div><div class="rv-av">${avatar(p)}</div><div class="rv-nm">${esc(p.n)}</div></div></div>`;
@@ -1268,14 +1438,14 @@ async function rvPlay(){
   const step=async f=>{run.fast=false;rvHint("");try{await f()}catch(e){if(e!==NEXT)throw e}};
   const hold=async t=>{rvHint(t);await run.gate();rvHint("");run.fast=false};
   try{
-    st.innerHTML=`<div class="rv-title sm">Listo para revelar<br>${pr.length} ${pr.length==1?"duelo":"duelos"}</div>`;
+    st.innerHTML=`<div class="rv-title sm">${rvMode.n>1?"Ronda "+rvMode.n+"<br>":""}Listo para revelar<br>${pr.length} ${pr.length==1?"duelo":"duelos"}</div>`;
     await hold("Toca para comenzar");
-    $("rvRound").textContent="Primera ronda";
+    $("rvRound").textContent=rvMode.n==1?"Primera ronda":"Ronda "+rvMode.n;
     await step(()=>INTRO[rvTheme](st,run));
     for(let i=0;i<pr.length;i++){
       await hold(i?"Toca para el siguiente duelo":"Toca para el primer duelo");
       await rvOut(st,run);st.innerHTML="";
-      $("rvRound").textContent=`Ronda 1 · Duelo ${i+1} de ${pr.length}`;rvBar(i/pr.length);
+      $("rvRound").textContent=`Ronda ${rvMode.n} · Duelo ${i+1} de ${pr.length}`;rvBar(i/pr.length);
       await step(()=>DUEL[rvTheme](st,run,pr[i],i));
     }
     if(rvPlan.bye){
@@ -1297,7 +1467,7 @@ function rvSummary(){
   rv.classList.add("sum");$("rvStage").innerHTML="";
   $("rvRound").textContent="Parejas listas";rvBar(1);
   $("rvSum").scrollTop=0;
-  $("rvSum").innerHTML=`<h2>🏁 Parejas de la primera ronda</h2><p>${pr.length} ${pr.length==1?"duelo":"duelos"} · ${rvPl.length} participantes</p><div class="rv-grid">${pr.map(([x,y],i)=>`<div class="rv-pair" style="--d:${Math.min(i,14)*45}ms"><div class="s a">${avatar(x)}<b>${esc(x.n)}</b></div><em>VS</em><div class="s b">${avatar(y)}<b>${esc(y.n)}</b></div></div>`).join("")}</div>${b?`<div class="rv-bye">😴 Descansa esta ronda: <b>${esc(b.n)}</b></div>`:""}`;
+  $("rvSum").innerHTML=`<h2>🏁 Parejas de la ${rvMode.n==1?"primera ronda":"ronda "+rvMode.n}</h2><p>${pr.length} ${pr.length==1?"duelo":"duelos"} · ${pr.length*2+(b?1:0)} participantes</p><div class="rv-grid">${pr.map(([x,y],i)=>`<div class="rv-pair" style="--d:${Math.min(i,14)*45}ms"><div class="s a">${avatar(x)}<b>${esc(x.n)}</b></div><em>VS</em><div class="s b">${avatar(y)}<b>${esc(y.n)}</b></div></div>`).join("")}</div>${b?`<div class="rv-bye">😴 Descansa esta ronda: <b>${esc(b.n)}</b></div>`:""}`;
   SFX.chord();
 }
 
@@ -1327,11 +1497,22 @@ function rvBuild(){
     else if((e.key===" "||e.key==="Enter"||e.key==="ArrowRight")&&rvRun&&!rv.classList.contains("sum")){e.preventDefault();rvNext()}
   });
 }
-function openReveal(pl,name){
-  rvBuild();rvPl=pl;rvName=name;rvPlan=planFirst(pl);
-  pl.forEach(p=>{const i=new Image();i.src=p.img});            // precarga de avatares para que no parpadeen
+function rvShow(){
+  rvPl.forEach(p=>{const i=new Image();i.src=p.img});            // precarga de avatares para que no parpadeen
+  $("rvGo").textContent=rvMode.n==1?"▶ Comenzar torneo":"▶ Comenzar ronda "+rvMode.n;
   rv.classList.add("on");document.documentElement.style.overflow="hidden";
   rvPlay();
+}
+function openReveal(pl,name){
+  rvBuild();rvPl=pl;rvName=name;rvPlan=planFirst(pl);rvMode={n:1,recs:null};
+  rvShow();
+}
+/* Siguientes rondas: las parejas ya están sorteadas, pero la ronda NO se crea hasta confirmar en la pantalla de revelación. */
+function openRevealNext(rd,n){
+  rvBuild();rvPl=S.pl;rvName=S.name;
+  rvPlan={pairs:rd.matches.map(m=>[m.a,m.b]),bye:rd.bye||null};
+  rvMode={n,rd,sid:S.id,recs:recs()};
+  rvShow();
 }
 function rvClose(){
   if(rvRun)rvRun.kill();rvRun=null;
@@ -1339,9 +1520,20 @@ function rvClose(){
   document.documentElement.style.overflow="";
 }
 function rvCommit(){
-  const pl=rvPl,name=rvName,plan=rvPlan;
-  rvClose();pend=null;okReplace=false;
+  const pl=rvPl,name=rvName,plan=rvPlan,m=rvMode;
+  rvClose();
+  if(m.n>1){commitNext(m);return}
+  pend=null;okReplace=false;
   newT(pl,name,plan);
+}
+function commitNext(m){
+  if(!S||S.id!==m.sid||S.br||S.rounds.length!==m.n-1){toast("⚠️ El torneo cambió mientras se revelaba. Pulsa «Siguiente ronda» otra vez.",5000);return}
+  const rd=m.rd,f=p=>p&&S.pl.find(x=>x.id===p.id);
+  const ok=rd.matches.every(x=>f(x.a)&&f(x.b))&&(!rd.bye||f(rd.bye));
+  if(!ok){toast("⚠️ Cambió la lista de participantes. Pulsa «Siguiente ronda» otra vez.",5000);return}
+  rd.matches.forEach(x=>{x.a=f(x.a);x.b=f(x.b)});if(rd.bye)rd.bye=f(rd.bye);
+  S.rounds.push(rd);S.view=S.rounds.length-1;pendNext=null;
+  markDirty();render();
 }
 
 /* ================= Arranque ================= */
