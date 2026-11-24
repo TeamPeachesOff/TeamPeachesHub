@@ -449,6 +449,16 @@
   .card-copy-hashtags{position:absolute;right:20px;top:calc(var(--tgh,41px)/2);margin-top:-15px;width:30px;height:30px;padding:0;border:0;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;z-index:2;background:linear-gradient(90deg,var(--peach-2),var(--peach-1));color:#fff;box-shadow:none;}
   .card-copy-hashtags svg{display:block;}
   #actividadesFeed .card-copy-hashtags{right:22px;--tgh:33px;}
+  /* Botones de la tarjeta: píldoras compactas (la capa ui-consistency les ponía 40px de alto y esquinas cuadradas) */
+  .card-actions a.btn-small{min-height:0;padding:6px 14px;border-radius:999px;font-size:12.5px;line-height:1.25;}
+  .card .card-copy-hashtags.btn-small{min-height:0;width:30px;height:30px;padding:0;border-radius:50%;}
+  /* Staff: solo iconos (campana, lápiz, cesto) + interruptor de «Formulario» */
+  .card-actions .act-ico{min-height:0;width:34px;height:34px;padding:0;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;flex:0 0 34px;}
+  .act-ico svg{width:17px;height:17px;display:block;}
+  .card-actions .act-sw{position:relative;flex:0 0 42px;width:42px;height:24px;min-height:0;padding:0;border-radius:999px;background:rgba(255,255,255,0.16);border:1px solid rgba(255,255,255,0.12);transition:background .15s;}
+  .act-sw .act-sw-knob{position:absolute;top:2px;left:2px;width:18px;height:18px;border-radius:50%;background:#fff;transition:transform .15s;}
+  .act-sw.on{background:linear-gradient(90deg,var(--peach-2),var(--peach-1));border-color:transparent;}
+  .act-sw.on .act-sw-knob{transform:translateX(18px);}
   .stream-block{background:linear-gradient(135deg,rgba(239,8,112,0.18),rgba(255,143,177,0.08));border:1px solid rgba(239,8,112,0.35);border-radius:14px;padding:12px;margin-bottom:12px;}
   .stream-title{font-weight:800;color:var(--text);font-size:14px;margin-bottom:4px;}
   .stream-time{font-size:12.5px;color:var(--text-dim);margin-bottom:10px;}
@@ -3843,6 +3853,11 @@ document.getElementById("backToTopBtn").onclick=()=>{
 };
 
 
+const ACT_ICO_={
+  bell:`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 8a6 6 0 0 1 12 0c0 7 3 8 3 8H3s3-1 3-8"/><path d="M10.3 20a1.9 1.9 0 0 0 3.4 0"/></svg>`,
+  pencil:`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 20h4L19 9l-4-4L4 16v4z"/><path d="M13.5 6.5l4 4"/></svg>`,
+  trash:`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 7h16M9 7V4h6v3M6 7l1 13h10l1-13M10 11v6M14 11v6"/></svg>`
+};
 function cardHTML(a, entregasDeEsta){
   const estado=estadoActividad(a.fechaFin);
   entregasDeEsta = entregasDeEsta || DB.entregas.filter(e=>String(e.idActividad)===String(a.id));
@@ -3866,10 +3881,10 @@ function cardHTML(a, entregasDeEsta){
           ${botonesPersonalizadosDe(a).map(b=>`<a class="btn-small btn-family" target="_blank" rel="noopener noreferrer" onclick="trackUI('botonPersonalizado')" href="${escUrl(b.url)}">${escHtml(b.texto)}</a>`).join("")}
         </div>`:""}
         ${staffPin?`<div class="card-actions">
-          <button class="btn-small btn-bell" data-bell="${escAttr(a.id)}">🔔</button>
-          ${(()=>{ const sy=syncFormDe_(a); return sy&&sy.texto?`<button class="btn-small ${sy.activo?"btn-family":"btn-admin"}" data-sync-toggle="${escAttr(a.id)}" title="Conexión de entregas con el formulario: ${sy.activo?"encendida":"apagada"}. Toca para ${sy.activo?"apagarla":"encenderla"}">🔗 Formulario: ${sy.activo?"ON":"OFF"}</button>`:""; })()}
-          <button class="btn-small btn-admin" data-edit="${escAttr(a.id)}">✏️ Editar</button>
-          <button class="btn-small btn-danger" data-delete="${escAttr(a.id)}">🗑️ Borrar</button>
+          <button type="button" class="btn-small act-ico btn-bell" data-bell="${escAttr(a.id)}" title="Aviso de prueba" aria-label="Aviso de prueba">${ACT_ICO_.bell}</button>
+          <button type="button" class="btn-small act-ico btn-admin" data-edit="${escAttr(a.id)}" title="Editar" aria-label="Editar">${ACT_ICO_.pencil}</button>
+          <button type="button" class="btn-small act-ico btn-danger" data-delete="${escAttr(a.id)}" title="Borrar" aria-label="Borrar">${ACT_ICO_.trash}</button>
+          ${(()=>{ const sy=syncFormDe_(a); return sy&&sy.texto?`<button type="button" class="act-sw${sy.activo?" on":""}" role="switch" aria-checked="${sy.activo?"true":"false"}" data-sync-toggle="${escAttr(a.id)}" aria-label="Formulario" title="Conexión de entregas con el formulario: ${sy.activo?"encendida":"apagada"}. Toca para ${sy.activo?"apagarla":"encenderla"}"><span class="act-sw-knob"></span></button>`:""; })()}
         </div>`:""}
       </div>
     </div>
