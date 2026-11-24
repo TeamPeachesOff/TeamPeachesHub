@@ -389,15 +389,13 @@ function anuEditarTarjeta_(id){
       if(!grupo.length) return;
       if(grupo.length===st.L.length){ toast("Esta tarjeta solo tiene esa actividad; ya está separada"); return; }
       if(!await confirmarAccion(`Se sacarán ${grupo.length} canción(es) de «${st.titulo||row.titulo||"esta tarjeta"}» y quedarán en una tarjeta nueva. ¿Separar?`)) return;
-      st.busy=true; const orig=datos(), act=grupo[0].act;
-      const volver=async()=>{ await apiPost({action:"editAnuario",data:orig},"Restaurando tarjeta..."); };  /* reversa si algo falla */
+      st.busy=true; const act=grupo[0].act;
       try{
-        const resto=st.L.filter(i=>!grupo.includes(i)), L0=st.L; st.L=resto;
-        const okA=await guardar(); st.L=L0; if(!okA){ toast("No se pudo separar"); return; }
-        const items=grupo.map(i=>({destino:anuDestino_(i.tipo==="mencion"?"mencion":i.tipo==="grupal"?"grupal":"mejor",act.categoria),nombreUsuario:i.w.nombre||"",detalle:i.w.detalle||"",link:i.w.link||""}));
-        const okB=await anuEnviar_(items,act.id,act.titulo||"","");
-        const dentro=(DB.anuario||[]).some(r=>String(r.id)!==String(st.id)&&ANU_CAMPOS_.some(k=>parseWinnerLines(r[k]).some(w=>anuLn_(w)===anuLn_(grupo[0].w))));
-        if(!okB||!dentro){ await volver(); await cargarDatos(); toast("No se pudo crear la tarjeta nueva; todo quedó como estaba"); return; }
+        if(st.dirty&&!await guardar()) return;   /* primero se guardan los cambios pendientes del editor */
+        const fresca=(DB.anuario||[]).find(x=>String(x.id)===String(st.id))||row;
+        const resto=st.L.filter(i=>!grupo.includes(i));
+        const r=await anuSepararReal_(fresca,anuLineasDe_(fresca),grupo.map(i=>({w:i.w,tipo:i.tipo,act:i.act,best:i.best})),resto.map(i=>({w:i.w,tipo:i.tipo,act:i.act,best:i.best})),act,String(act.titulo||"").trim()||"Actividad");
+        if(!r.ok){ toast("⚠️ "+r.msg,6000); return; }
         toast("Actividad separada en su propia tarjeta ✅"); mdHide_();
       } finally{ st.busy=false; } });
     const antes=async()=>{ if(st.dirty) return await guardar(); return true; };
@@ -449,6 +447,44 @@ const anuDatosDe_=(row,L)=>({id:row.id,titulo:row.titulo||"Actividad",imagenUrl:
   mencionesHonorificas:L.filter(i=>i.tipo==="mencion").map(i=>anuLn_(i.w)).join("\n"),grupales:L.filter(i=>i.tipo==="grupal").map(i=>anuLn_(i.w)).join("\n")});
 /* ¿Se puede dividir? Hace falta que la tarjeta tenga 2 o más actividades. */
 const anuPuedeDividir_=row=>anuGruposDe_(anuLineasDe_(row)).length>=2;
+
+/* Reparte una tarjeta en DOS tarjetas realmente separadas (la original conserva su nombre; la nueva lleva el nombre elegido).
+   El servidor, al agregar canciones, vuelve a meterlas en la tarjeta que «reconoce» (por fechas/título de la actividad) y por eso
+   las tarjetas se volvían a juntar. Para evitarlo: mientras se crea la nueva, la original lleva un título y una fecha provisionales
+   que el servidor no puede confundir; al final se le devuelven su nombre y fechas. Después se VERIFICA que sean 2 tarjetas distintas;
+   si no lo son, se deshace todo y se avisa (nunca se da por bueno algo que no quedó separado). */
+const anuClaveLinea_=w=>String(w.nombre||"").trim()+"|"+String(w.detalle||"").trim();
+const anuClavesDe_=r=>{ const s=new Set(); ANU_CAMPOS_.forEach(k=>parseWinnerLines(r[k]).forEach(w=>s.add(anuClaveLinea_(w)))); return s; };
+async function anuSepararReal_(row,L,mover,resto,ancla,nombre){
+  const orig=anuDatosDe_(row,L), quedar=anuDatosDe_(row,resto), idsAntes=new Set((DB.anuario||[]).map(r=>String(r.id)));
+  const kMover=mover.map(i=>anuClaveLinea_(i.w)), kResto=resto.map(i=>anuClaveLinea_(i.w));
+  const edit=async(data,msg)=>{ const r=await apiPost({action:"editAnuario",data},msg,true); return !!(r&&r.ok); };
+  const deshacer=async()=>{ try{ await cargarDatos();
+    for(const r of (DB.anuario||[]).filter(r=>!idsAntes.has(String(r.id)))) await apiPost({action:"deleteAnuario",id:r.id},"Deshaciendo...",true);
+    await edit(orig,"Restaurando tarjeta..."); await cargarDatos(); }catch(_){} };
+  /* 1) la original, sin las canciones que se van y con huella provisional */
+  const huella=Object.assign({},quedar,{titulo:"__dividiendo__"+Date.now(),fechaInicio:"1900-01-01",fechaFin:"1900-01-01"});
+  if(!await edit(huella,"Dividiendo la tarjeta...")){ await deshacer(); return {ok:false,msg:"No se pudo preparar la división"}; }
+  try{
+    /* 2) la tarjeta nueva, con las canciones que se mueven */
+    const items=mover.map(i=>({destino:anuDestino_(i.tipo==="mencion"?"mencion":i.tipo==="grupal"?"grupal":"mejor",i.tipo),nombreUsuario:i.w.nombre||"",detalle:i.w.detalle||"",link:i.w.link||""}));
+    const ok=await anuEnviar_(items,ancla.id,nombre,"");
+    if(!ok){ await deshacer(); return {ok:false,msg:"No se pudo crear la tarjeta nueva"}; }
+    /* 3) ¿quedó en una tarjeta APARTE de la original? (id distinto y con todas las canciones que se movieron) */
+    const nueva=(DB.anuario||[]).find(r=>String(r.id)!==String(row.id)&&!idsAntes.has(String(r.id))&&kMover.every(k=>anuClavesDe_(r).has(k)));
+    if(!nueva){ await deshacer(); return {ok:false,msg:"El servidor volvió a unir las canciones en la misma tarjeta; todo quedó como estaba"}; }
+    /* 4) devolverle a la original su nombre y fechas; y a la nueva, el nombre elegido */
+    if(!await edit(quedar,"Restaurando la tarjeta original...")){ await deshacer(); return {ok:false,msg:"No se pudo restaurar la tarjeta original"}; }
+    if(String(nueva.titulo||"").trim()!==nombre){ const d=anuDatosDe_(nueva,anuLineasDe_(nueva)); d.titulo=nombre; if(!await edit(d,"Nombrando la tarjeta nueva...")){ await deshacer(); return {ok:false,msg:"No se pudo nombrar la tarjeta nueva"}; } }
+    /* 5) verificación final: recargar y comprobar las DOS tarjetas */
+    await cargarDatos();
+    const A=(DB.anuario||[]).find(r=>String(r.id)===String(row.id)), B=(DB.anuario||[]).find(r=>String(r.id)===String(nueva.id));
+    const kA=A?anuClavesDe_(A):new Set(), kB=B?anuClavesDe_(B):new Set();
+    const bien=A&&B&&String(A.id)!==String(B.id)&&kResto.every(k=>kA.has(k))&&kMover.every(k=>kB.has(k))&&!kMover.some(k=>kA.has(k))&&!kResto.some(k=>kB.has(k))&&String(B.titulo||"").trim()===nombre&&String(A.titulo||"").trim()===String(row.titulo||"").trim();
+    if(!bien){ await deshacer(); return {ok:false,msg:"No quedaron separadas correctamente; todo quedó como estaba"}; }
+    return {ok:true};
+  }catch(err){ await deshacer(); return {ok:false,msg:"Error al dividir; todo quedó como estaba"}; }
+}
 function anuDividir_(id,volver){
   if(!staffPin) return;
   const row=(DB.anuario||[]).find(x=>String(x.id)===String(id)); if(!row){ toast("Tarjeta no encontrada"); return; }
@@ -485,19 +521,10 @@ function anuDividir_(id,volver){
     if(!e.ok){ toast(e.pasan.length&&!e.ancla?"Incluye al menos una actividad con su nombre":!e.pasan.length?"Elige al menos una actividad para la tarjeta nueva":"Deja al menos una actividad en la tarjeta actual"); return; }
     busy=true; upd();
     const nm=String(nombre||"").trim()||String(e.ancla.act.titulo||"")||"Actividad";
-    const orig=anuDatosDe_(row,L), mover=e.pasan.flatMap(g=>g.items), resto=e.quedan.flatMap(g=>g.items);
-    const idsAntes=new Set((DB.anuario||[]).map(r=>String(r.id)));
-    /* reversa: borra lo nuevo que haya quedado a medias y deja la tarjeta original como estaba */
-    const deshacer=async()=>{ try{ await cargarDatos();
-      for(const r of (DB.anuario||[]).filter(r=>!idsAntes.has(String(r.id)))) await apiPost({action:"deleteAnuario",id:r.id},"Deshaciendo...",true);
-      await apiPost({action:"editAnuario",data:orig},"Restaurando tarjeta...",true); await cargarDatos(); }catch(_){} };
+    const mover=e.pasan.flatMap(g=>g.items), resto=e.quedan.flatMap(g=>g.items);
     try{
-      const r=await apiPost({action:"editAnuario",data:anuDatosDe_(row,resto)},"Dividiendo la tarjeta...");
-      if(!r.ok){ toast("No se pudo dividir: "+(r.error||"")); return; }
-      const items=mover.map(i=>({destino:anuDestino_(i.tipo==="mencion"?"mencion":i.tipo==="grupal"?"grupal":"mejor",i.tipo),nombreUsuario:i.w.nombre||"",detalle:i.w.detalle||"",link:i.w.link||""}));
-      const ok=await anuEnviar_(items,e.ancla.act.id,nm,"");
-      const ya=anuYaSet_(true), dentro=items.every(it=>ya.has(anuItemKey_(it)));
-      if(!ok||!dentro){ await deshacer(); toast("No se pudo crear la tarjeta nueva; todo quedó como estaba"); return; }
+      const r=await anuSepararReal_(row,L,mover,resto,e.ancla.act,nm);
+      if(!r.ok){ toast("⚠️ "+r.msg,6000); return; }
       toast("Tarjeta dividida en dos ✅"); mdHide_();
     } finally{ busy=false; if(b.isConnected) upd(); }
   };
@@ -803,8 +830,11 @@ function anuTabsAncho_(){
   const r=bk.getBoundingClientRect(); if(!r.width) return;
   /* a la izquierda: el menú flotante ocupa ~62px desde el borde; a la derecha: las pestañas flotantes. Solo se aparta lo que haga falta. */
   R.style.setProperty("--anu-bar-pl",Math.max(0,Math.round(64-r.left))+"px");
-  R.style.setProperty("--anu-bar-pr",Math.max(0,Math.round((tw||230)+28-(R.clientWidth-r.right)))+"px");
+  R.style.setProperty("--anu-bar-pr",Math.max(0,Math.round((tw||230)+36-(R.clientWidth-r.right)))+"px");
+  /* el ancho útil cambia después de entrar (aparece la barra de scroll, carga el contenido): se recalcula solo para que las pestañas nunca tapen «Agregar» */
+  if(window.ResizeObserver&&_anuRoEl!==bk){ if(_anuRO) _anuRO.disconnect(); _anuRoEl=bk; _anuRO=new ResizeObserver(()=>anuTabsAncho_()); _anuRO.observe(bk); _anuRO.observe(document.documentElement); }
 }
+let _anuRO=null,_anuRoEl=null;
 addEventListener("resize",()=>{ if(document.body.classList.contains("anuario-mode")) anuTabsAncho_(); });
 /* El año de la portada: si el tema del año trae «anioImg» se muestra esa imagen (la letra exacta de ese año); si no, texto con la letra del tema */
 const _anuTV={};

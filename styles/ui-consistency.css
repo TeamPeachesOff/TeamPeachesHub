@@ -42,13 +42,13 @@
 }
 /* Título de la ventana: nunca pasa por debajo de la X de cerrar (44px a la derecha) */
 .modal-box > h2,.modal-box > h3{
-  padding-right:44px;
+  padding-right:60px;
   font-size:clamp(18px,5vw,21px);
   line-height:1.25;
   overflow-wrap:break-word;
 }
 .modal-box[style*="text-align:center"] > h2,
-.modal-box[style*="text-align:center"] > h3{padding-left:44px;}   /* simétrico: el título centrado sigue centrado */
+.modal-box[style*="text-align:center"] > h3{padding-left:60px;}   /* simétrico: el título centrado sigue centrado */
 
 /* ---------- Botones al pie de las ventanas: todos con el mismo alto, radio y letra ---------- */
 .modal-actions{gap:10px;align-items:stretch;}
@@ -115,3 +115,64 @@ main{padding-bottom:calc(72px + var(--ui-safe-b));}
 .md-body{overflow-wrap:break-word;}
 .md-opt b,.md-opt small{overflow-wrap:break-word;}
 .ed-line b,.ed-line small{overflow-wrap:break-word;}
+
+
+/* =====================================================================================
+   HITBOX ESTABLE — el área que responde al toque es EXACTAMENTE la que se ve.
+   Problemas que esto corrige:
+   1) El aviso (.toast) estaba invisible (opacity:0) pero seguía capturando los toques en la
+      parte baja y central de la pantalla, justo donde están "Guardar", "Continuar", etc.
+   2) Muchos botones se ENCOGÍAN al pulsarlos (:active scale .9) o SE MOVÍAN al pasar el cursor
+      (:hover translateY). Si tocabas cerca del borde, el botón se apartaba de debajo del dedo,
+      soltabas "fuera" de él y el clic se perdía (había que tocar varias veces o en el centro).
+   3) Botones de 28 px de alto: demasiado chicos para el dedo.
+   El feedback visual al pulsar ahora es de brillo/sombra, que no cambia la forma ni la posición.
+   ===================================================================================== */
+
+/* 1) Un aviso nunca debe interceptar toques */
+.toast{pointer-events:none;}
+
+/* 2) Sin movimiento ni encogimiento del propio botón (hover y pulsado) */
+.cv-go:hover,
+.cv-arr:hover:not(:disabled),.cv-arr:active,.cv-arr:active:not(:disabled),
+.anu-m:hover,.anu-m:active,
+.anu-menu:active,.anu-home:active,
+.anu-yr-btn:active,
+#anuarioModal:not(.anu-light) .sg-btns button:hover:not(:disabled),
+#anuarioModal .sg-btns button:active:not(:disabled),
+#anuarioModal .modal-close:hover,
+button.med-acard:hover,button.med-acard:active,
+.mm-med:hover,.med-tab:hover,
+.chambeador-row[data-chambeador-id]:active,
+.chambeadores-periodo-btn:active,.chambeadores-periodo-del:active,
+.trofeo-menu-btn:active,.trofeo-nav-btn:active,
+#chambeadoresModal .trofeo-act-btn:active,#chambeadoresModal .trofeo-share-btn:active,
+#rangoPianoModal .rp-seg button:active,#rangoPianoModal .rp-snd:active,#rangoPianoModal .rp-ref:active,
+#miembrosFiltroBtn:active,#chambeadoresTrofeoBtn:active,#mundoPeachesBtn:active,
+.back-to-top-btn:active,
+a.ent-play:hover,.med-play:hover,.mm-anu-ver:hover,.pa-vb:hover,.pa-ib:hover,.pa-msg a:hover,
+table.entregas-table .anuario-mini-btn:hover,
+#streamInfoModal .modal-close:hover,#minecraftModal .modal-close:hover{transform:none !important;}
+
+/* la tarjeta del anuario conserva su inclinación propia, pero tampoco se mueve ni se encoge */
+.anu-card:hover,.anu-card:active{transform:rotate(var(--r,0deg)) !important;}
+
+/* feedback al pulsar que NO cambia el tamaño ni la posición */
+.cv-go:active,.cv-arr:active,.anu-m:active,.anu-menu:active,.anu-home:active,.anu-yr-btn:active,
+.md-acts button:active,.ed-big button:active,.sg-btns button:active,
+.trofeo-menu-btn:active,.trofeo-nav-btn:active,.trofeo-share-btn:active,.trofeo-act-btn:active,
+.modal-actions > button:active,.btn-small:active,.back-to-top-btn:active,
+#miembrosFiltroBtn:active,#chambeadoresTrofeoBtn:active{filter:brightness(.9);}
+.cv-go:hover{filter:brightness(1.06);}
+
+/* 3) Botones con el tamaño que se ve = el tamaño que responde */
+.btn-small{min-height:40px;padding:9px 14px;display:inline-flex;align-items:center;justify-content:center;gap:6px;}
+.cv-go{min-height:56px;min-width:min(240px,86vw);}
+.accordion-toggle{min-height:44px;}
+.anu-menu,.anu-home,.anu-bk,.anu-add{min-height:44px;}
+.anu-menu,.anu-home{min-width:44px;}
+.md-acts button{min-height:46px;}
+.modal-close{min-width:44px;min-height:44px;}
+
+/* los iconos/etiquetas dentro de un botón nunca "roban" el toque: siempre cuenta como toque al botón */
+button > svg,button > img,button > i,.btn-small > svg,.btn-small > img{pointer-events:none;}
