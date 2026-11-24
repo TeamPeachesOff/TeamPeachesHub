@@ -176,3 +176,20 @@ table.entregas-table .anuario-mini-btn:hover,
 
 /* los iconos/etiquetas dentro de un botón nunca "roban" el toque: siempre cuenta como toque al botón */
 button > svg,button > img,button > i,.btn-small > svg,.btn-small > img{pointer-events:none;}
+
+
+/* =====================================================================================
+   Indicador de carga SIEMPRE por encima de las ventanas (antes quedaba detrás de las del Anuario,
+   que están en capa 900, y de los módulos, en 9500). Solo el aviso (toast) queda por encima de él.
+   ===================================================================================== */
+#loadingOverlay{z-index:10050;}
+
+/* Panel de Staff › Módulos: botón pequeño y discreto «Abrir», a la izquierda del interruptor */
+.hub-mod .hm-open{
+  flex:none;min-height:34px;padding:6px 11px;border-radius:var(--r-pill);
+  background:transparent;color:var(--text-dim);border:1px solid var(--ui-line);
+  font:inherit;font-size:12px;font-weight:700;line-height:1;cursor:pointer;
+  transition:color .15s,border-color .15s,background .15s;
+}
+.hub-mod .hm-open:hover,.hub-mod .hm-open:focus-visible{color:var(--text);border-color:var(--ui-line-accent);background:rgba(239,8,112,.12);outline:none;}
+.hub-mod .hm-open:active{filter:brightness(.9);}

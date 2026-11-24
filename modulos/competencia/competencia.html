@@ -953,6 +953,13 @@ async function init(){
     r={ok:true,rev:c0?c0.rev:0,estado:c0?c0.estado:null,offline:true};
     bannerMsg="⚠️ Sin conexión con el servidor. Se reintentará automáticamente.";
   }else if(!r.ok&&r.error==="Sin acceso"){denied=true}
+  else if(!r.ok&&r.error==="Módulo desactivado"&&staff){
+    /* Staff entra con el botón «Abrir» del panel aunque el módulo siga desactivado para el público: vista PRIVADA.
+       Todo se guarda solo en este navegador, no se envía nada al servidor, así los miembros no ven nada. */
+    backend="local";
+    bannerMsg="🕶️ Vista privada de staff: el módulo está desactivado para el público. Lo que hagas aquí se guarda solo en este navegador.";
+    r=localApi({action:"obtenerTorneo"});
+  }
   else if(!r.ok&&r.error==="Módulo desactivado"){denied=true;deniedMsg="off"}
   else if(!r.ok){
     backend="local";
