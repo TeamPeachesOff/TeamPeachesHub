@@ -419,9 +419,17 @@
   .status-yellow{background:rgba(241,196,15,0.18);color:var(--yellow);}
   .status-red{background:rgba(231,76,60,0.18);color:var(--red);}
   /* Luz de estado junto al título: rosa = activa, ámbar = últimos días, morado = próximo stream, apagada = finalizada. */
-  .card-title-row{display:flex;align-items:flex-start;gap:6px;}
-  .card-title-row .card-title{flex:1;min-width:0;}
-  .luz-estado{flex:none;width:28px;height:28px;margin:-5px -5px 0 0;padding:0;border-radius:50%;background:none;display:grid;place-items:center;}
+  /* Columna de indicadores (luz de estado + tipo + prioridad): va APARTE, posicionada en absoluto a la derecha,
+     así que no mueve nada de lo que hay a la izquierda (título, fechas, botones). */
+  .card-info.has-col{position:relative;}
+  #actividadesFeed .card-info.has-col{padding-right:48px;}
+  .card-ind-col{position:absolute;top:8px;right:8px;display:flex;flex-direction:column;align-items:center;gap:0;}
+  .luz-estado{flex:none;width:33px;height:31px;padding:0;border-radius:50%;background:none;display:grid;place-items:center;}
+  .ti-btn{flex:none;width:33px;height:31px;padding:0;border-radius:9px;background:none;display:grid;place-items:center;color:var(--ti);}
+  .ti-btn svg{width:18.7px;height:18.7px;display:block;fill:none;stroke:currentColor;stroke-width:2.3;stroke-linecap:round;stroke-linejoin:round;filter:drop-shadow(0 0 3px var(--ti)) drop-shadow(0 0 7px color-mix(in srgb,var(--ti) 55%,transparent));}
+  .ti-btn svg .f{fill:currentColor;stroke:none;}
+  .ti-btn:focus-visible{outline:2px solid var(--ti);outline-offset:-2px;}
+  .ti-canto{--ti:#B200FE;} .ti-doblaje{--ti:#FF006A;} .ti-semanal{--ti:#35E0A1;} .ti-oficial{--ti:#FFB020;} .ti-purga{--ti:#FF4D4D;}
   .luz-estado .luz{width:13px;height:13px;border-radius:50%;background:var(--lz);}
   .luz-activa{--lz:#ff2d8f;--lzg:rgba(255,45,143,.95);}
   .luz-ultimos{--lz:#ffc83d;--lzg:rgba(255,200,61,.9);}
@@ -440,6 +448,7 @@
   .luz-pop .lp-row b{display:block;font-weight:800;}
   .luz-pop .lp-row small{display:block;color:var(--text-dim);font-size:11.5px;}
   .luz-pop .luz{width:12px;height:12px;border-radius:50%;flex:none;margin:0 3px;}
+  .luz-pop .lp-row .ti-btn,.luz-pop .lp-row .luz-estado{pointer-events:none;width:30px;height:26px;}
   @media (prefers-reduced-motion:reduce){.luz-estado .luz{animation:none!important;}}
   .status-purple{background:rgba(164,95,199,0.30);color:#e6c9ff;box-shadow:inset 0 0 0 1px rgba(190,120,235,0.45);}
   .part-opcional{background:rgba(93,173,226,0.18);color:#5dade2;}
@@ -3918,18 +3927,39 @@ const ACT_ICO_={
   pencil:`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 20h4L19 9l-4-4L4 16v4z"/><path d="M13.5 6.5l4 4"/></svg>`,
   trash:`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 7h16M9 7V4h6v3M6 7l1 13h10l1-13M10 11v6M14 11v6"/></svg>`
 };
-// Ventanita con la simbología de la luz de estado (se abre al tocar la luz de cualquier tarjeta).
+// Íconos de tipo y prioridad (SVG de trazo; heredan el color de .ti-*).
+const TI_ICO_={
+  canto:`<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 17.5V5.5l11-2.2v12"/><circle class="f" cx="6.4" cy="17.6" r="3"/><circle class="f" cx="17.4" cy="15.4" r="3"/></svg>`,
+  doblaje:`<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 4h14a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2h-7l-5 4v-4H5a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2z"/><path d="M8.5 10v2M12 8v6M15.5 10v2"/></svg>`,
+  semanal:`<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M11 20A7 7 0 0 1 9.8 6.1C15.5 5 17 4.5 19 2c1 2 2 4.2 2 8 0 5.5-4.8 10-10 10z"/><path d="M2 21c0-3 1.9-5.4 5.1-6C9.5 14.5 12 13 13 12"/></svg>`,
+  oficial:`<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><path d="M12 7.5v5"/><circle class="f" cx="12" cy="16.2" r="1.3"/></svg>`,
+  purga:`<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3C7.6 3 4.5 6 4.5 10c0 2.4 1.1 4 2.5 5v3.5h10V15c1.4-1 2.5-2.6 2.5-5 0-4-3.1-7-7.5-7z"/><circle class="f" cx="9" cy="10.5" r="1.6"/><circle class="f" cx="15" cy="10.5" r="1.6"/><path d="M10.5 18.5v2.5M13.5 18.5v2.5"/></svg>`
+};
+const TI_GRUPOS_={
+  tipo:{titulo:"Tipo de actividad",items:{canto:["Canto","Cantar una canción"],doblaje:["Doblaje","Doblar una escena"]}},
+  pri:{titulo:"Prioridad",items:{semanal:["Semanal","Opcional · actividad de la semana"],oficial:["Oficial","Obligatoria · actividad oficial del equipo"],purga:["Purga","Actividad de purga"]}}
+};
+const LUZ_FILAS_=[["activa","Rosa brillante","Actividad activa"],["ultimos","Ámbar","Últimos días (quedan 2 o menos)"],["stream","Morado brillante","Próximo stream"],["finalizada","Apagada","Actividad finalizada"]];
+// Ventanita con la simbología (se abre al tocar la luz, el icono de tipo o el de prioridad de cualquier tarjeta).
 (function(){
-  const FILAS=[["activa","Rosa brillante","Actividad activa"],["ultimos","Ámbar","Últimos días (quedan 2 o menos)"],["stream","Morado brillante","Próximo stream"],["finalizada","Apagada","Actividad finalizada"]];
   let pop=null;
   function cerrar(){ if(pop){ pop.remove(); pop=null; } }
   document.addEventListener("click",ev=>{
-    const b=ev.target.closest&&ev.target.closest(".luz-estado");
+    const b=ev.target.closest&&ev.target.closest(".luz-estado[data-g],.ti-btn[data-g]");
     if(!b){ if(pop && !ev.target.closest(".luz-pop")) cerrar(); return; }
     ev.stopPropagation();
-    const k=b.dataset.luz; const abierta=pop&&pop.dataset.k===k&&pop._b===b; cerrar(); if(abierta) return;
-    pop=document.createElement("div"); pop.className="luz-pop"; pop.dataset.k=k; pop._b=b; pop.setAttribute("role","dialog"); pop.setAttribute("aria-label","Simbología de la luz de estado");
-    pop.innerHTML='<h4>Estado de la actividad</h4>'+FILAS.map(f=>`<div class="lp-row${f[0]===k?" now":""}"><span class="luz-estado luz-${f[0]}" style="width:auto;height:auto;margin:0;pointer-events:none"><span class="luz"></span></span><span><b>${f[1]}</b><small>${f[2]}</small></span></div>`).join("");
+    const g=b.dataset.g, v=b.dataset.v;
+    const abierta=pop&&pop.dataset.g===g&&pop._b===b; cerrar(); if(abierta) return;
+    let titulo, filas;
+    if(g==="luz"){
+      titulo="Estado de la actividad";
+      filas=LUZ_FILAS_.map(f=>`<div class="lp-row${f[0]===v?" now":""}"><span class="luz-estado luz-${f[0]}"><span class="luz"></span></span><span><b>${f[1]}</b><small>${f[2]}</small></span></div>`).join("");
+    }else{
+      const G=TI_GRUPOS_[g]; titulo=G.titulo;
+      filas=Object.entries(G.items).map(([k,t])=>`<div class="lp-row${k===v?" now":""}"><span class="ti-btn ti-${k}">${TI_ICO_[k]}</span><span><b>${t[0]}</b><small>${t[1]}</small></span></div>`).join("");
+    }
+    pop=document.createElement("div"); pop.className="luz-pop"; pop.dataset.g=g; pop._b=b; pop.setAttribute("role","dialog"); pop.setAttribute("aria-label",titulo);
+    pop.innerHTML=`<h4>${titulo}</h4>`+filas;
     document.body.appendChild(pop);
     const r=b.getBoundingClientRect(), w=pop.offsetWidth, h=pop.offsetHeight;
     let x=Math.min(Math.max(10,r.right-w), window.innerWidth-w-10), y=r.bottom+8;
@@ -3945,17 +3975,21 @@ function cardHTML(a, entregasDeEsta){
   const fechasTxt=`${fmtFecha(a.fechaInicio)} → ${fmtFecha(a.fechaFin)}`;
   const luzK=estado.clase==="status-green"?"activa":estado.clase==="status-yellow"?"ultimos":estado.clase==="status-purple"?"stream":"finalizada";
   const luzTxt={activa:"Actividad activa",ultimos:"Últimos días",stream:"Próximo stream",finalizada:"Actividad finalizada"}[luzK];
+  const tipoK=a.categoria==="canto"?"canto":a.categoria==="doblaje"?"doblaje":"";
+  const priK=a.participacion==="obligatoria"?"oficial":a.participacion==="purga"?"purga":"semanal";
+  const priTxt=TI_GRUPOS_.pri.items[priK][0], tipoTxt=tipoK?TI_GRUPOS_.tipo.items[tipoK][0]:"";
   return `
   <div class="card${esTrue(a.dobleEspacio)?" doble":""}${luzK==="finalizada"?" card-fin":""}" data-id="${escAttr(a.id)}">
     <div class="card-top">
       <div class="card-img-wrap">${a.imagenUrl?`<img class="js-longpress" data-filename="${escAttr((a.titulo||'actividad')+'.jpg')}" src="${escAttr(a.imagenUrl)}" alt="" loading="lazy" decoding="async">`:""}</div>
-      <div class="card-info">
-        <div class="card-title-row"><div class="card-title">${escHtml(a.titulo||"")}</div><button type="button" class="luz-estado luz-${luzK}" data-luz="${luzK}" aria-label="Estado: ${luzTxt}. Toca para ver la simbología" title="${luzTxt}"><span class="luz"></span></button></div>
-        <div class="card-dates">${fechasTxt}</div>
-        <div class="badge-row">
-          ${categoriaTag(a.categoria)}
-          ${participacionTag(a.participacion)}
+      <div class="card-info has-col">
+        <div class="card-ind-col">
+          <button type="button" class="luz-estado luz-${luzK}" data-g="luz" data-v="${luzK}" aria-label="Estado: ${luzTxt}. Toca para ver la simbología" title="${luzTxt}"><span class="luz"></span></button>
+          ${tipoK?`<button type="button" class="ti-btn ti-${tipoK}" data-g="tipo" data-v="${tipoK}" aria-label="Tipo: ${tipoTxt}. Toca para ver la simbología" title="${tipoTxt}">${TI_ICO_[tipoK]}</button>`:""}
+          <button type="button" class="ti-btn ti-${priK}" data-g="pri" data-v="${priK}" aria-label="Prioridad: ${priTxt}. Toca para ver la simbología" title="${priTxt}">${TI_ICO_[priK]}</button>
         </div>
+        <div class="card-title">${escHtml(a.titulo||"")}</div>
+        <div class="card-dates">${fechasTxt}</div>
         ${(a.linkForms||a.linkUnirse||a.linkScript||botonesPersonalizadosDe(a).length)?`<div class="card-actions">
           ${a.linkForms?`<a class="btn-small btn-primary" target="_blank" rel="noopener noreferrer" onclick="trackUI('irAEntregar')" href="${escUrl(a.linkForms)}">🎙️ Entregar</a>`:""}
           ${a.linkUnirse?`<a class="btn-small btn-family" target="_blank" rel="noopener noreferrer" onclick="trackUI('irAUnirse')" href="${escUrl(a.linkUnirse)}">🤝 Unirse</a>`:""}
