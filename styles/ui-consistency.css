@@ -193,3 +193,16 @@ button > svg,button > img,button > i,.btn-small > svg,.btn-small > img{pointer-e
 }
 .hub-mod .hm-open:hover,.hub-mod .hm-open:focus-visible{color:var(--text);border-color:var(--ui-line-accent);background:rgba(239,8,112,.12);outline:none;}
 .hub-mod .hm-open:active{filter:brightness(.9);}
+
+/* ---------- Sin «pixel sobrante» a la izquierda de las píldoras ----------
+   Un degradado en un botón con borde (o con borde transparente, como el interruptor encendido) se dibuja desde el
+   borde de relleno y se REPITE bajo el borde: en la izquierda asoma 1px del color del extremo derecho.
+   Con background-origin:border-box el degradado ocupa todo el botón y ya no queda esa línea. */
+button,
+[class*="btn-"],
+.act-sw,
+.status-tag,.part-tag,.cat-tag,
+.pa-count,.pa-mem-all,.year-divider-pill,
+.tab-btn,.search-field-btn{
+  background-origin:border-box;
+}

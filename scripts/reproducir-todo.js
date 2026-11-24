@@ -12,6 +12,9 @@
   const st=document.createElement("style"); st.id="pa-style";
   st.textContent=`
   .card-play-all.card-copy-hashtags{width:auto;padding:0 13px 0 14px;border-radius:15px;gap:7px;font-size:12px;font-weight:800;white-space:nowrap;cursor:pointer;}
+  /* index.html fija .card .card-copy-hashtags.btn-small en 30x30 redondo (mayor especificidad): se iguala para que el botón se alargue lo que pida su texto */
+  .card .card-play-all.card-copy-hashtags.btn-small{width:auto;min-width:30px;height:30px;padding:0 13px 0 14px;border-radius:15px;white-space:nowrap;}
+  .card .card-play-all.card-copy-hashtags.btn-small span{white-space:nowrap;}
   .card-play-all[hidden]{display:none!important;}
   .card-play-all .pa-ls{display:none;}
   @media (max-width:640px){ .card-play-all .pa-lf{display:none;} .card-play-all .pa-ls{display:inline;} }
