@@ -795,7 +795,7 @@ html[data-anu-v="libro"] body.anuario-mode main{padding-top:0;}
 /* portadas del mes (mientras se mide el tamaño, .fitting las mantiene ocultas; la animación arranca al terminar) */
 .anu-detail.enter .anu-grid:not(.fitting) .anu-card{animation:anuCardIn .8s cubic-bezier(.2,.9,.25,1) backwards;animation-delay:calc(var(--i,0)*90ms + 80ms);}
 .anu-detail.enter .anu-grid:not(.fitting) .anu-card::after{content:"";position:absolute;inset:0;border-radius:14px;pointer-events:none;
-  background:linear-gradient(108deg,transparent 36%,rgba(255,205,230,.5) 45%,rgba(255,140,200,.62) 50%,rgba(255,205,230,.5) 55%,transparent 64%) 135% 0/260% 100% no-repeat;
+  background:linear-gradient(108deg,transparent 36%,rgba(var(--sh1,255,236,245),.55) 45%,rgba(var(--sh2,255,222,238),.7) 50%,rgba(var(--sh1,255,236,245),.55) 55%,transparent 64%) 135% 0/260% 100% no-repeat;
   animation:anuShine .95s ease-out backwards;animation-delay:calc(var(--i,0)*90ms + 560ms);}
 
 /* Administradores */

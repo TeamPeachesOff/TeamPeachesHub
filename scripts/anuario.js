@@ -201,6 +201,33 @@ function anuWinBadges_(e){
   const b=parseWinnerLines(e.ganadorCanto).length+parseWinnerLines(e.ganadorDoblaje).length, m=parseWinnerLines(e.mencionesHonorificas).length, g=parseWinnerLines(e.grupales).length;
   return (b||m||g)?`<span class="anu-win">${b?`<i class="w1">👑 ${b} ${b===1?"Mejor":"Mejores"}</i>`:""}${m?`<i class="w2">🎖️ ${m} ${m===1?"Mención":"Menciones"}</i>`:""}${g?`<i class="w3">👥 ${g} ${g===1?"Grupal":"Grupales"}</i>`:""}</span>`:"";
 }
+/* ---------- Brillo de cristal de las portadas: toma el color principal de cada portada, muy aclarado ----------
+   Se lee un puñado de píldoras de la imagen (ponderando los tonos más vivos); el brillo queda casi blanco con ese matiz.
+   Si la imagen no se puede leer (otro dominio sin permiso, portada gris, error), la portada conserva el blanco con un toque de rosa del CSS. */
+const anuShineCache_=new Map();
+function anuShineColor_(im){
+  try{
+    const N=32, cv=document.createElement("canvas"); cv.width=cv.height=N; const c=cv.getContext("2d",{willReadFrequently:true});
+    c.drawImage(im,0,0,N,N); const d=c.getImageData(0,0,N,N).data; let R=0,G=0,B=0,W=0;
+    for(let i=0;i<d.length;i+=4){ if(d[i+3]<200) continue;
+      const r=d[i],g=d[i+1],b=d[i+2], mx=Math.max(r,g,b), mn=Math.min(r,g,b), l=(mx+mn)/510; if(l>.93||l<.07) continue;
+      const s=mx?(mx-mn)/mx:0, w=s*s*(1-Math.abs(l-.5)); R+=r*w; G+=g*w; B+=b*w; W+=w; }
+    if(W<1) return null;                                                   // portada casi gris: nada que tomar
+    const r=R/W/255,g=G/W/255,b=B/W/255, mx=Math.max(r,g,b), mn=Math.min(r,g,b), dl=mx-mn;
+    let h=0; if(dl){ h=mx===r?((g-b)/dl)%6:mx===g?(b-r)/dl+2:(r-g)/dl+4; h*=60; if(h<0) h+=360; }
+    const l0=(mx+mn)/2, s0=dl?dl/(1-Math.abs(2*l0-1)):0, s=Math.min(Math.max(s0,.45),.9);
+    const rgb=l=>{ const a=s*Math.min(l,1-l), f=n=>{ const k=(n+h/30)%12; return Math.round(255*(l-a*Math.max(-1,Math.min(k-3,9-k,1)))); }; return f(0)+","+f(8)+","+f(4); };
+    return [rgb(.9),rgb(.82)];                                             // [brillo claro, brillo del centro]
+  }catch(_){ return null; }                                                // lienzo "contaminado" por imagen sin permiso CORS
+}
+function anuShineTint_(root){
+  (root||document).querySelectorAll(".anu-card img.anu-pic").forEach(img=>{
+    const card=img.closest(".anu-card"), src=img.getAttribute("src"); if(!card||!src) return;
+    const put=c=>{ if(c&&card.isConnected){ card.style.setProperty("--sh1",c[0]); card.style.setProperty("--sh2",c[1]); } };
+    if(anuShineCache_.has(src)) return put(anuShineCache_.get(src));
+    anuLoadImg_(src).then(im=>{ const c=im?anuShineColor_(im):null; anuShineCache_.set(src,c); put(c); }).catch(()=>{});
+  });
+}
 function anuarioBlockHTML(x,i=0){
   /* La tarjeta ES la portada de la actividad (la portada ya trae el nombre): sin marco, textos ni etiquetas. */
   const n=x.n, r=[-1.6,1.2,-0.8,1.8][i%4], src=n.imgs[0];
@@ -789,6 +816,7 @@ function anuDet_(){
     else { const sig=anuS.key+"|"+[...g.children].map(c=>c.dataset.anuario).join(",");
       if(anuS.fit&&anuS.fit.sig===sig) anuFitPon_(g,anuS.fit);   // misma visita (cambio de tamaño, refresco en segundo plano): se conserva la medida
       else { g.classList.add("fitting"); anuFit_(g,sig); } } }
+  anuShineTint_(d);
   d.querySelectorAll("[data-anuario]").forEach(t=>t.onclick=()=>anuOpenAct_(t.dataset.anuario));
   d.querySelectorAll("[data-miembro]").forEach(t=>t.onclick=()=>anuAbrirMiembro_(t.dataset.miembro));
   d.querySelectorAll("[data-peachys-toggle]").forEach(bt=>{ const alt=()=>{
