@@ -207,13 +207,24 @@ function anuWinBadges_(e){
 const anuShineCache_=new Map();
 function anuShineColor_(im){
   try{
-    const N=32, cv=document.createElement("canvas"); cv.width=cv.height=N; const c=cv.getContext("2d",{willReadFrequently:true});
-    c.drawImage(im,0,0,N,N); const d=c.getImageData(0,0,N,N).data; let R=0,G=0,B=0,W=0;
+    /* Histograma por tono (36 tramos). El rosa/magenta de la marca (logo, títulos, pegatinas) sale en TODAS las portadas, así que pesa muy poco:
+       solo gana si la imagen no tiene otro color con presencia. Se pondera por área, con un poco de viveza y evitando extremos de luz. */
+    const N=48, cv=document.createElement("canvas"); cv.width=cv.height=N; const c=cv.getContext("2d",{willReadFrequently:true});
+    c.drawImage(im,0,0,N,N); const d=c.getImageData(0,0,N,N).data;
+    const bin=new Array(36).fill(0), sr=new Array(36).fill(0), sg=new Array(36).fill(0), sb=new Array(36).fill(0), sw=new Array(36).fill(0);
     for(let i=0;i<d.length;i+=4){ if(d[i+3]<200) continue;
-      const r=d[i],g=d[i+1],b=d[i+2], mx=Math.max(r,g,b), mn=Math.min(r,g,b), l=(mx+mn)/510; if(l>.93||l<.07) continue;
-      const s=mx?(mx-mn)/mx:0, w=s*s*(1-Math.abs(l-.5)); R+=r*w; G+=g*w; B+=b*w; W+=w; }
-    if(W<1) return null;                                                   // portada casi gris: nada que tomar
-    const r=R/W/255,g=G/W/255,b=B/W/255, mx=Math.max(r,g,b), mn=Math.min(r,g,b), dl=mx-mn;
+      const r=d[i]/255,g=d[i+1]/255,b=d[i+2]/255, mx=Math.max(r,g,b), mn=Math.min(r,g,b), l=(mx+mn)/2, dl=mx-mn;
+      const s=dl?dl/(1-Math.abs(2*l-1)):0; if(l>.93||l<.1||s<.18) continue;
+      let h=mx===r?((g-b)/dl)%6:mx===g?(b-r)/dl+2:(r-g)/dl+4; h*=60; if(h<0) h+=360;
+      let w=(.35+Math.min(s,1))*(1-Math.abs(l-.5)*1.2);
+      if(h>=295&&h<=350) w*=.12;                                            // rosa de la marca
+      const k=Math.floor(h/10)%36; bin[k]+=w; sr[k]+=r*w; sg[k]+=g*w; sb[k]+=b*w; sw[k]+=w; }
+    let best=-1,bv=0;
+    for(let k=0;k<36;k++){ const v=bin[k]+.5*(bin[(k+35)%36]+bin[(k+1)%36]); if(v>bv){ bv=v; best=k; } }
+    if(best<0||bv<1.2) return null;                                         // casi gris o sin color con presencia
+    let R=0,G=0,B=0,W=0; for(const k of [(best+35)%36,best,(best+1)%36]){ R+=sr[k]; G+=sg[k]; B+=sb[k]; W+=sw[k]; }
+    if(W<=0) return null;
+    const r=R/W,g=G/W,b=B/W, mx=Math.max(r,g,b), mn=Math.min(r,g,b), dl=mx-mn;
     let h=0; if(dl){ h=mx===r?((g-b)/dl)%6:mx===g?(b-r)/dl+2:(r-g)/dl+4; h*=60; if(h<0) h+=360; }
     const l0=(mx+mn)/2, s0=dl?dl/(1-Math.abs(2*l0-1)):0, s=Math.min(Math.max(s0,.45),.9);
     const rgb=l=>{ const a=s*Math.min(l,1-l), f=n=>{ const k=(n+h/30)%12; return Math.round(255*(l-a*Math.max(-1,Math.min(k-3,9-k,1)))); }; return f(0)+","+f(8)+","+f(4); };
