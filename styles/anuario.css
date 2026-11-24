@@ -866,14 +866,8 @@ html[data-anu-v="libro"] body.anuario-mode main{padding-top:0;}
 /* Barra superior: al hacer scroll en teléfono, el contenido ya no se ve a través del título (solo cuando la barra es pegajosa) */
 body:not(.anu-lock) .anu-bar.sc{background:linear-gradient(180deg,rgba(255,250,245,.97) 0,rgba(255,250,245,.93) 72%,rgba(255,250,245,0) 100%);box-shadow:0 10px 14px -12px rgba(63,33,104,.28);}
 
-/* ===== Letra elegante y nítida para Fundadores y Staff (nombres y etiquetas) =====
-   Para probar otra letra basta cambiar --f-elegante (y agregarla al enlace de Google Fonts en index.html). */
-:root{--f-elegante:'Playfair Display','Cormorant Garamond',Georgia,'Times New Roman',serif;}
-.anu-pn,.adm .anu-pn{font-family:var(--f-elegante);font-weight:800;letter-spacing:.005em;line-height:1.2;
-  font-size:min(clamp(14px,4vw,19px),calc(var(--mw)*1.9/var(--nl,10)));}
-.adm .anu-pn{font-size:min(clamp(16px,4.6vw,21px),calc(var(--mw)*2.1/var(--nl,10)));}
-.anu-rol text,.adm .anu-rol text{font-family:var(--f-elegante);font-weight:800;font-size:27px;}
-.adm .anu-rol text{font-size:30px;}
-.anu-arc text,.adm .anu-arc text{font-family:var(--f-elegante);font-weight:800;font-size:19px;}
-.adm .anu-arc text{font-size:21px;}
-.anu-arc .t1{stroke-width:11;}
+/* ===== Letra de Fundadores y Staff (2025, 2026 y Administradores) =====
+   La misma letra de pincel (Caveat Brush) con contorno blanco que se ve en la página de Administradores. */
+.anu-pn{font-family:var(--f-disp);font-size:min(clamp(18px,5vw,24px),calc(var(--mw)*2.2/var(--nl,10)));line-height:1.15;letter-spacing:.01em;}
+.anu-rol text{font-family:var(--f-disp);font-size:34px;}
+.anu-arc text{font-family:var(--f-disp);font-size:27px;}

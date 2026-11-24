@@ -14,9 +14,9 @@ body{margin:0;font-family:'PeachesSans','Segoe UI',Arial,sans-serif;background:#
 button{font-family:inherit;cursor:pointer;border:none;-webkit-appearance:none;appearance:none;user-select:none;-webkit-tap-highlight-color:transparent;touch-action:manipulation}
 img{display:block;max-width:100%}
 header{position:sticky;top:0;z-index:50;background:#180E1D;border-bottom:1px solid rgba(239,8,112,.25)}
-.header-inner{max-width:1600px;margin:0 auto;padding:10px 16px;display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap}
-.logo{font-weight:800;font-size:19px;background:linear-gradient(90deg,var(--peach-2),var(--peach-1));-webkit-background-clip:text;background-clip:text;color:transparent}
-.tabs{display:flex;gap:4px}
+.header-inner{max-width:1600px;margin:0 auto;padding:14px 18px;display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap}
+.logo{font-weight:800;font-size:19px;letter-spacing:.5px;background:linear-gradient(90deg,var(--peach-2),#ffffff);-webkit-background-clip:text;background-clip:text;color:transparent;white-space:nowrap}
+.tabs{display:flex;gap:6px;background:var(--card-bg);padding:4px;border-radius:999px;flex:0 0 auto}
 .tab-btn{padding:8px 16px;border-radius:999px;background:none;color:var(--text-dim);font-weight:600;font-size:14px}
 .tab-btn.active{background:linear-gradient(90deg,var(--peach-2),var(--peach-1));color:#fff}
 main{max-width:1600px;margin:0 auto;padding:22px 20px 60px}
@@ -246,7 +246,7 @@ button:focus-visible,a:focus-visible{outline:2px solid var(--peach-1);outline-of
 </style>
 </head>
 <body>
-<header><div class="header-inner"><div class="logo">🍑 Peaches Hub</div>
+<header><div class="header-inner"><div class="logo"><span class="brand-peach">🍑</span><span class="brand-peaches"> Peaches</span><span class="brand-hub"> Hub</span></div>
 <div class="tabs"><button class="tab-btn">Actividades</button><button class="tab-btn">Anuario</button><button class="tab-btn active" id="tabComp">🏆 Competencia</button></div><button class="tab-btn" id="bClose" style="display:none">✕ Volver</button></div></header>
 <main>
 <div class="banner" id="banner" style="display:none"></div>
