@@ -413,6 +413,7 @@
   @media (max-width:480px){.card-info{padding-left:0;padding-top:10px;}}
   .card-title{font-weight:800;font-size:16px;line-height:1.25;}
   .card-dates{font-size:12.5px;color:var(--text-dim);}
+  .card-dates .fl{display:inline-block;width:1em;height:1em;vertical-align:-0.16em;margin:0 .22em;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;}
   .badge-row{display:flex;gap:6px;flex-wrap:wrap;}
   .status-tag,.part-tag,.cat-tag{display:inline-block;padding:3px 10px;border-radius:999px;font-size:12px;font-weight:700;width:fit-content;}
   .status-green{background:rgba(46,204,113,0.18);color:var(--green);}
@@ -421,16 +422,16 @@
   /* Luz de estado junto al título: rosa = activa, ámbar = últimos días, morado = próximo stream, apagada = finalizada. */
   /* Columna de indicadores (luz de estado + tipo + prioridad): va APARTE, posicionada en absoluto a la derecha,
      así que no mueve nada de lo que hay a la izquierda (título, fechas, botones). */
-  .card-info.has-col{position:relative;}
-  #actividadesFeed .card-info.has-col{padding-right:48px;}
+  .card-info.has-col{position:relative;min-height:122px;} /* alto suficiente para la columna de indicadores (luz + 2 iconos) */
+  #actividadesFeed .card-info.has-col{padding-right:52px;}
   .card-ind-col{position:absolute;top:8px;right:8px;display:flex;flex-direction:column;align-items:center;gap:0;}
-  .luz-estado{flex:none;width:33px;height:31px;padding:0;border-radius:50%;background:none;display:grid;place-items:center;}
-  .ti-btn{flex:none;width:33px;height:31px;padding:0;border-radius:9px;background:none;display:grid;place-items:center;color:var(--ti);}
-  .ti-btn svg{width:18.7px;height:18.7px;display:block;fill:none;stroke:currentColor;stroke-width:2.3;stroke-linecap:round;stroke-linejoin:round;filter:drop-shadow(0 0 3px var(--ti)) drop-shadow(0 0 7px color-mix(in srgb,var(--ti) 55%,transparent));}
+  .luz-estado{flex:none;width:36px;height:34px;padding:0;border-radius:50%;background:none;display:grid;place-items:center;}
+  .ti-btn{flex:none;width:36px;height:34px;padding:0;border-radius:9px;background:none;display:grid;place-items:center;color:var(--ti);}
+  .ti-btn svg{width:20.6px;height:20.6px;display:block;fill:none;stroke:currentColor;stroke-width:2.3;stroke-linecap:round;stroke-linejoin:round;filter:drop-shadow(0 0 3px var(--ti)) drop-shadow(0 0 7px color-mix(in srgb,var(--ti) 55%,transparent));}
   .ti-btn svg .f{fill:currentColor;stroke:none;}
   .ti-btn:focus-visible{outline:2px solid var(--ti);outline-offset:-2px;}
   .ti-canto{--ti:#B200FE;} .ti-doblaje{--ti:#FF006A;} .ti-semanal{--ti:#35E0A1;} .ti-oficial{--ti:#FFB020;} .ti-purga{--ti:#FF4D4D;}
-  .luz-estado .luz{width:13px;height:13px;border-radius:50%;background:var(--lz);}
+  .luz-estado .luz{width:14.3px;height:14.3px;border-radius:50%;background:var(--lz);}
   .luz-activa{--lz:#ff2d8f;--lzg:rgba(255,45,143,.95);}
   .luz-ultimos{--lz:#ffc83d;--lzg:rgba(255,200,61,.9);}
   .luz-stream{--lz:#b66cff;--lzg:rgba(182,108,255,.95);}
@@ -439,8 +440,6 @@
   .luz-activa .luz,.luz-ultimos .luz,.luz-stream .luz{background:radial-gradient(circle at 35% 30%,#fff 0 18%,var(--lz) 55%);animation:luzPulso 1.6s ease-in-out infinite;}
   .luz-ultimos .luz{animation-duration:.9s;}
   .luz-finalizada .luz{box-shadow:inset 0 0 0 2px #4b3b54;}
-  .card.card-fin .card-img-wrap img{filter:grayscale(.85) brightness(.7);}
-  .card.card-fin .card-title{color:#a692ae;}
   .luz-pop{position:fixed;z-index:3600;width:244px;max-width:calc(100vw - 20px);padding:10px;border-radius:14px;background:#2a1638;border:1px solid rgba(255,255,255,.12);box-shadow:0 16px 40px rgba(0,0,0,.55);display:flex;flex-direction:column;gap:2px;}
   .luz-pop h4{margin:0 0 4px 4px;font-size:11.5px;font-weight:800;letter-spacing:.06em;text-transform:uppercase;color:var(--text-dim);}
   .luz-pop .lp-row{display:flex;align-items:center;gap:10px;padding:7px 6px;border-radius:10px;font-size:13px;color:var(--text);}
@@ -3972,14 +3971,14 @@ const LUZ_FILAS_=[["activa","Rosa brillante","Actividad activa"],["ultimos","Ám
 function cardHTML(a, entregasDeEsta){
   const estado=estadoActividad(a.fechaFin, a);
   entregasDeEsta = entregasDeEsta || DB.entregas.filter(e=>String(e.idActividad)===String(a.id));
-  const fechasTxt=`${fmtFecha(a.fechaInicio)} → ${fmtFecha(a.fechaFin)}`;
+  const fechasTxt=`${fmtFecha(a.fechaInicio)}<svg class="fl" viewBox="0 0 24 24" aria-label="a" role="img"><path d="M4 12h16M14 6l6 6-6 6"/></svg>${fmtFecha(a.fechaFin)}`;
   const luzK=estado.clase==="status-green"?"activa":estado.clase==="status-yellow"?"ultimos":estado.clase==="status-purple"?"stream":"finalizada";
   const luzTxt={activa:"Actividad activa",ultimos:"Últimos días",stream:"Próximo stream",finalizada:"Actividad finalizada"}[luzK];
   const tipoK=a.categoria==="canto"?"canto":a.categoria==="doblaje"?"doblaje":"";
   const priK=a.participacion==="obligatoria"?"oficial":a.participacion==="purga"?"purga":"semanal";
   const priTxt=TI_GRUPOS_.pri.items[priK][0], tipoTxt=tipoK?TI_GRUPOS_.tipo.items[tipoK][0]:"";
   return `
-  <div class="card${esTrue(a.dobleEspacio)?" doble":""}${luzK==="finalizada"?" card-fin":""}" data-id="${escAttr(a.id)}">
+  <div class="card${esTrue(a.dobleEspacio)?" doble":""}" data-id="${escAttr(a.id)}">
     <div class="card-top">
       <div class="card-img-wrap">${a.imagenUrl?`<img class="js-longpress" data-filename="${escAttr((a.titulo||'actividad')+'.jpg')}" src="${escAttr(a.imagenUrl)}" alt="" loading="lazy" decoding="async">`:""}</div>
       <div class="card-info has-col">
