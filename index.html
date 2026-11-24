@@ -766,8 +766,19 @@
   .mes-fila{display:flex;align-items:center;gap:10px;}
   .mes-dia{flex:0 0 30px;text-align:right;font-weight:800;font-size:15px;color:var(--peach-1);font-variant-numeric:tabular-nums;}
   .mes-fila .member-row{flex:1;min-width:0;}
-  .miembros-contar{margin-top:26px;padding-top:14px;border-top:1px solid rgba(255,255,255,0.12);text-align:center;}
+  .miembros-contar{margin-top:26px;padding-top:14px;border-top:1px solid rgba(255,255,255,0.12);text-align:center;display:flex;justify-content:center;align-items:center;flex-wrap:wrap;gap:4px;}
   .miembros-contar button{background:none;color:var(--peach-1);font-weight:800;font-size:14px;padding:8px 14px;}
+  /* El Bote: papelera de miembros (solo Staff). Mismo aspecto que «Contar miembros». */
+  .miembros-contar button.hidden{display:none !important;}
+  .bote-info{font-size:12.5px;color:var(--text-dim);line-height:1.45;margin:0 0 12px;}
+  .bote-fila{background:var(--card-bg);border-radius:14px;padding:8px 10px 10px;margin-bottom:10px;}
+  .bote-fila .member-row{background:none;padding:2px 2px 8px;}
+  .bote-fila .bote-meta{font-size:11.5px;color:var(--text-dim);margin-top:2px;}
+  .bote-btns{display:flex;gap:8px;}
+  .bote-btns .btn-small{flex:1;}
+  .btn-bote-borrar{background:rgba(231,76,60,0.2);color:var(--red);}
+  .bote-banner{background:rgba(164,95,199,0.22);color:#e6ccf7;border:1px solid rgba(164,95,199,0.45);padding:8px;border-radius:10px;font-weight:800;text-align:center;margin-bottom:12px;font-size:13px;}
+  .bote-banner small{display:block;font-weight:600;opacity:.85;margin-top:2px;}
   .orden-opcion{display:flex;align-items:center;gap:10px;width:100%;text-align:left;padding:12px 14px;border-radius:12px;background:var(--card-bg-2);color:var(--text);font-weight:700;font-size:14px;margin-bottom:8px;}
   .orden-opcion.sel{background:linear-gradient(90deg,var(--peach-2),var(--peach-1));color:#fff;}
   .conteo-fila{display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid rgba(255,255,255,0.07);font-size:14px;}
@@ -1263,7 +1274,7 @@
       <div class="section-label">🍑 Miembros</div>
     </div>
     <div id="miembrosList"></div>
-    <div class="miembros-contar"><button type="button" id="miembrosContarBtn">Contar miembros</button></div>
+    <div class="miembros-contar"><button type="button" id="miembrosContarBtn">Contar miembros</button><button type="button" id="miembrosBoteBtn" class="hidden">🚢 El Bote<span id="miembrosBoteN"></span></button></div>
   </section>
 
   <section id="viewMundo" class="hidden">
@@ -1440,6 +1451,11 @@
 <div class="modal-overlay" id="miembrosConteoModal"><div class="modal-box"><button class="modal-close" data-close="miembrosConteoModal">✕</button>
   <h3>Contar miembros</h3>
   <div id="miembrosConteoContenido"></div>
+</div></div>
+<div class="modal-overlay" id="boteModal"><div class="modal-box"><button class="modal-close" data-close="boteModal">✕</button>
+  <h3>🚢 El Bote</h3>
+  <div class="bote-info" id="boteInfo"></div>
+  <div id="boteLista"></div>
 </div></div>
 
 <div class="modal-overlay" id="memberModal"><div class="modal-box"><button class="modal-close" data-close="memberModal">✕</button><div id="memberModalContent"></div></div></div>
@@ -2026,7 +2042,7 @@ const MESES = ["ene","feb","mar","abr","may","jun","jul","ago","sep","oct","nov"
 const MESES_LARGOS = ["enero","febrero","marzo","abril","mayo","junio","julio","agosto","septiembre","octubre","noviembre","diciembre"];
 const MESES_LARGO = ["Enero","Febrero","Marzo","Abril","Mayo","Junio","Julio","Agosto","Septiembre","Octubre","Noviembre","Diciembre"];
 
-let DB = { actividades: [], entregas: [], miembros: [], anuario: [], periodos: [], historialCastigos: [] };
+let DB = { actividades: [], entregas: [], miembros: [], bote: [], anuario: [], periodos: [], historialCastigos: [] };
 
 // ---------- Ocultar de verdad para lectores accesibles (Ticket: fuga en Modo Lectura de Edge) ----------
 // El "Modo Lectura" de Edge (y lectores de pantalla similares) extraen el texto de TODO el DOM sin
@@ -3197,6 +3213,8 @@ function aplicarUIRol_(nivelUI){
   if(bS.style.display !== dS) bS.style.display = dS;
   if(bM.style.display !== dM) bM.style.display = dM;
   ["addActBtn","agendarStreamBtn","assignImagesBtn","importEntregasBtn"].forEach(id=>document.getElementById(id).classList.toggle("hidden", !esStaff));
+  document.getElementById("miembrosBoteBtn").classList.toggle("hidden", !esStaff); // El Bote: solo modo Staff
+  actualizarBoteBtn_();
   actualizarVisibilidadBackToTop();
 }
 // Rol "optimista" a partir de lo guardado en este dispositivo (solo para mostrar la UI al instante; el servidor confirma después).
@@ -4217,8 +4235,9 @@ function renderMiembros(filtro=""){
 }
 
 function openMemberModal(id,desdeAnuario){
-  const m=DB.miembros.find(x=>String(x.id)===String(id));
+  const m=miembroPorId_(id);
   if(!m) return;
+  const enBote=esDelBote_(m.id); // ficha de alguien que ya no está en el team: solo lectura
   document.getElementById("memberModal").classList.toggle("anu-light",!!desdeAnuario); // modo claro SOLO si se abre desde el Anuario
   const rolMk=desdeAnuario?anuRolDe_(m):null;
   document.getElementById("memberModal").classList.remove("sobre-chambeadores"); // (se vuelve a poner solo si se abrió desde Chambeadores)
@@ -4229,7 +4248,7 @@ function openMemberModal(id,desdeAnuario){
       ${rolMk?`<div class="mm-frame${rolMk==="f"?" f":""}" style="--pc:${anuFrame_(m,rolMk,anuStaffIdx_(m)).c}">${anuFrame_(m,rolMk,anuStaffIdx_(m)).html}</div>`:vipWrap_(m,`<img id="memberDetailAvatar" class="js-avatar" data-filename="${escAttr((m.nombre||'miembro')+'.jpg')}" src="${escAttr(m.avatarUrl||LOGO_DEFAULT)}">`)}
       <div class="mm-name-row">
         <div style="font-weight:800;font-size:17px;">${escHtml(m.nombre||"")}</div>
-        ${staffPin?`<button class="edit-pencil" data-edit-member="${escAttr(m.id)}">✏️</button>`:""}
+        ${(staffPin&&!enBote)?`<button class="edit-pencil" data-edit-member="${escAttr(m.id)}">✏️</button>`:""}
       </div>
       <div class="badges-row" style="justify-content:center;">
         ${(esTrue(m.fundadora)||esTrue(m.fundador))?`<span class="badge badge-reina">👑 ${anuFundEt_(m)}</span>`:""}
@@ -4241,7 +4260,9 @@ function openMemberModal(id,desdeAnuario){
         ${esTrue(m.inactivo)?`<span class="badge badge-inactivo">😴 Inactivo</span>`:""}
       </div>
     </div>
-    ${(strikes+strikesPermanentes)>=3?`<div class="expelled-banner">🛑 EXPULSADO / FUERA DEL TEAM</div>`:""}
+    ${enBote?`<div class="bote-banner">🚢 Está en El Bote${m.fechaBote?`<small>Salió el ${escHtml(fmtFecha(m.fechaBote)||"")}</small>`:""}</div>`:""}
+    ${(staffPin&&enBote)?`<div class="bote-btns" style="margin-bottom:12px;"><button type="button" class="btn-small btn-family" data-bote-restaurar-ficha="${escAttr(m.id)}">♻️ Restaurar</button><button type="button" class="btn-small btn-bote-borrar" data-bote-borrar-ficha="${escAttr(m.id)}">🗑️ Eliminar para siempre</button></div>`:""}
+    ${(!enBote&&(strikes+strikesPermanentes)>=3)?`<div class="expelled-banner">🛑 EXPULSADO / FUERA DEL TEAM</div>`:""}
     <table class="info-table">
       <tr><td>🎵 Rango Vocal</td><td>${escHtml(m.rangoVocal||"—")}</td></tr>
       <tr><td>🎂 Cumpleaños</td><td>${fmtCumple(m.cumpleanos)||"—"}</td></tr>
@@ -4266,7 +4287,7 @@ function openMemberModal(id,desdeAnuario){
       <div class="ct-row"><span>☠️ Strike permanente</span><strong>${strikesPermanentes}</strong></div>
       <div class="ct-row"><span>⚠️ Strikes</span><strong>${strikes}</strong></div>
       <div class="ct-row"><span>📉 Faltas</span><strong>${faltas}</strong></div>
-      ${staffPin?`<div class="admin-strike-btns"><button class="btn-falta" data-falta="${escAttr(m.id)}">+ Falta</button><button class="btn-strike" data-strike="${escAttr(m.id)}">+ Strike</button><button class="btn-strike-permanente" data-strike-permanente="${escAttr(m.id)}">+ Permanente</button></div>
+      ${(staffPin&&!enBote)?`<div class="admin-strike-btns"><button class="btn-falta" data-falta="${escAttr(m.id)}">+ Falta</button><button class="btn-strike" data-strike="${escAttr(m.id)}">+ Strike</button><button class="btn-strike-permanente" data-strike-permanente="${escAttr(m.id)}">+ Permanente</button></div>
       <button class="btn-reset-castigos" data-historial="${escAttr(m.id)}">📜 Historial de castigos</button>`:""}
     </div>
     ${entregasDelMiembroHTML_(m.id)}`;
@@ -4312,6 +4333,8 @@ function openMemberModal(id,desdeAnuario){
   const strikePermBtn=document.querySelector("[data-strike-permanente]"); if(strikePermBtn) strikePermBtn.onclick=()=>registrarStrikePermanente(m.id);
   const histBtn=document.querySelector("[data-historial]"); if(histBtn) histBtn.onclick=()=>abrirHistorialCastigos_(m.id);
   const editBtn=document.querySelector("[data-edit-member]"); if(editBtn) editBtn.onclick=()=>{ closeModal("memberModal"); openMemberEditForm(m.id); };
+  const boteRest=document.querySelector("[data-bote-restaurar-ficha]"); if(boteRest) boteRest.onclick=()=>restaurarDelBote_(m.id);
+  const boteDel=document.querySelector("[data-bote-borrar-ficha]"); if(boteDel) boteDel.onclick=()=>eliminarDelBote_(m.id);
   // v23: filtro Canto/Doblaje de la sección de Entregas de esta tarjeta -- cada pill es
   // independiente (no exclusivo), así que pueden quedar ambas prendidas, solo una, o ninguna.
   // Filtro Canto/Doblaje: APAGADOS al abrir = no se muestra ninguna entrega. Al prender uno (o varios) salen solo esas categorías.
@@ -4432,7 +4455,83 @@ async function borrarCastigos(idMiembro){ if(!await confirmarAccion("¿Poner fal
 function idsDeEntrega_(e){ return String((e&&e.idMiembro)||"").split(",").map(s=>s.trim()).filter(Boolean); }
 // Miembros asignados a una entrega (solo los que existen y tienen nombre).
 function miembrosDeEntrega_(e){
-  return idsDeEntrega_(e).map(id=>(DB.miembros||[]).find(m=>String(m.id)===String(id))).filter(m=>m&&m.nombre);
+  // También resuelve a quienes están en El Bote: la entrega sigue ligada a su persona aunque ya no esté en el team.
+  return idsDeEntrega_(e).map(id=>miembroPorId_(id)).filter(m=>m&&m.nombre);
+}
+/* ==================== El Bote (papelera de miembros) ====================
+   Al «eliminar» un miembro, el backend NO lo borra: lo mueve a la hoja «Bote» conservando su id original
+   (así ese id nunca se reutiliza y las entregas, medallas y rankings siguen apuntando a la misma persona).
+   DB.bote llega en cada carga: completo para Staff y solo {id, nombre, avatarUrl} para Miembro (lo justo para
+   mostrar el nombre en entregas). El público no recibe nada. Ver «EL BOTE» en Code.gs. */
+function miembroPorId_(id){
+  const k=String(id);
+  return (DB.miembros||[]).find(m=>String(m.id)===k) || (DB.bote||[]).find(m=>String(m.id)===k) || null;
+}
+function esDelBote_(id){
+  const k=String(id);
+  return !(DB.miembros||[]).some(m=>String(m.id)===k) && (DB.bote||[]).some(m=>String(m.id)===k);
+}
+function actualizarBoteBtn_(){
+  const n=(DB.bote||[]).filter(m=>m&&m.id).length;
+  const el=document.getElementById("miembrosBoteN"); if(el) el.textContent=n?(" ("+n+")"):"";
+}
+function entregasCountDeBote_(id){
+  const k=String(id);
+  return (DB.entregas||[]).filter(e=>idsDeEntrega_(e).includes(k)).length;
+}
+function renderBote_(){
+  const L=(DB.bote||[]).filter(m=>m&&m.id).slice().sort((a,b)=>String(b.fechaBote||"").localeCompare(String(a.fechaBote||"")) || (a.nombre||"").localeCompare(b.nombre||""));
+  document.getElementById("boteInfo").textContent = L.length
+    ? "Quienes salieron del team. Sus datos y entregas se conservan. Toca a alguien para ver su ficha; Restaurar lo devuelve a Miembros y Eliminar lo borra para siempre."
+    : "";
+  document.getElementById("boteLista").innerHTML = L.length ? L.map(m=>{
+    const nEnt=entregasCountDeBote_(m.id);
+    const cuando=m.fechaBote?fmtFecha(m.fechaBote):"";
+    const meta=[cuando?("Salió: "+cuando):"", nEnt?(nEnt+" entrega"+(nEnt===1?"":"s")):""].filter(Boolean).join(" · ");
+    return `<div class="bote-fila">
+      <div class="member-row" data-bote-ver="${escAttr(m.id)}">
+        ${avatarImgTag(m)}
+        <div class="m-info"><div class="m-name">${escHtml(m.nombre||"(sin nombre)")}</div>${meta?`<div class="bote-meta">${escHtml(meta)}</div>`:""}</div>
+      </div>
+      <div class="bote-btns">
+        <button type="button" class="btn-small btn-family" data-bote-restaurar="${escAttr(m.id)}">♻️ Restaurar</button>
+        <button type="button" class="btn-small btn-bote-borrar" data-bote-borrar="${escAttr(m.id)}">🗑️ Eliminar</button>
+      </div>
+    </div>`;
+  }).join("") : `<div class="empty-state">El Bote está vacío 🌊</div>`;
+  const cont=document.getElementById("boteLista");
+  cont.querySelectorAll("[data-bote-ver]").forEach(el=>el.onclick=()=>openMemberModal(el.dataset.boteVer));
+  cont.querySelectorAll("[data-bote-restaurar]").forEach(b=>b.onclick=()=>restaurarDelBote_(b.dataset.boteRestaurar));
+  cont.querySelectorAll("[data-bote-borrar]").forEach(b=>b.onclick=()=>eliminarDelBote_(b.dataset.boteBorrar));
+  bindAvatarFallbacks();
+}
+function abrirBote_(){
+  if(nivel!=="staff"){ toast("El Bote es solo para Staff"); return; }
+  renderBote_(); openModal("boteModal");
+}
+// Aviso claro si el backend todavía no tiene las acciones del Bote (nunca se cae a borrar de verdad).
+function errorBote_(r){
+  const t=String((r&&r.error)||"");
+  return /desconoc|unknown|no existe|not found|undefined/i.test(t) ? "Falta publicar el Code.gs nuevo con El Bote" : (t||"Error");
+}
+async function enviarAlBote_(id){
+  const r=await apiPost({action:"moverMiembroAlBote", id}, "Enviando al Bote...");
+  if(r&&r.ok){ toast("Enviado a El Bote 🚢"); closeModal("memberEditModal"); closeModal("memberModal"); await cargarDatos(); }
+  else toast("Error: "+errorBote_(r));
+}
+async function restaurarDelBote_(id){
+  const m=miembroPorId_(id); if(!m) return;
+  if(!await confirmarAccion(`¿Restaurar a ${m.nombre||"este miembro"}? Volverá a la lista de Miembros con sus datos.`)) return;
+  const r=await apiPost({action:"restaurarDelBote", id}, "Restaurando...");
+  if(r&&r.ok){ toast("Restaurado ♻️"); closeModal("memberModal"); await cargarDatos(); if(document.getElementById("boteModal").classList.contains("open")) renderBote_(); }
+  else toast("Error: "+errorBote_(r));
+}
+async function eliminarDelBote_(id){
+  const m=miembroPorId_(id); if(!m) return;
+  if(!await confirmarAccion(`¿Eliminar a ${m.nombre||"este miembro"} para siempre? Se borra su registro y esto NO se puede deshacer. Sus entregas quedarán sin persona vinculada.`)) return;
+  const r=await apiPost({action:"eliminarDelBote", id}, "Eliminando definitivamente...");
+  if(r&&r.ok){ toast("Eliminado para siempre 🗑️"); closeModal("memberModal"); await cargarDatos(); if(document.getElementById("boteModal").classList.contains("open")) renderBote_(); }
+  else toast("Error: "+errorBote_(r));
 }
 // Celda "Persona": si la entrega ya tiene miembros asignados, se muestra su nombre (en vez del
 // texto crudo que se escribió al registrar) y cada nombre abre su perfil. Se ve igual que texto
@@ -4533,7 +4632,7 @@ function medMesesHTML_(items,cat){
   return grupos.map(g=>`<section class="med-mgrp"><div class="med-mes"><b>${g.d?escHtml(MESES_LARGO[g.d.getMonth()]):""}</b><small>${g.d?g.d.getFullYear():""}</small></div>${g.L.map(x=>medallaItemHTML_(x.it,x.d,!cat)).join("")}</section>`).join("");
 }
 function pintarMedallas_(id,cat){
-  const m=(DB.miembros||[]).find(x=>String(x.id)===String(id)); if(!m) return;
+  const m=miembroPorId_(id); if(!m) return;
   const lista=medallasListaDe_(m), c=medallasDe_(m), total=medallasTotal_(m);
   const defs=cat?MEDALLAS_DEF.filter(d=>d.id===cat):MEDALLAS_DEF;
   const items=defs.flatMap(d=>lista[d.id].map(it=>({it,d}))).sort((a,b)=>{
@@ -4767,7 +4866,7 @@ function renderPasarLista(){
       <div class="pl-act-body ${abierta?"open":""}">
         ${entregas.map(e=>{
           const ids=idsDeEntrega_(e);
-          const nombresAsignados = ids.map(id=>{ const m=DB.miembros.find(x=>String(x.id)===id); return m?m.nombre:null; }).filter(Boolean);
+          const nombresAsignados = ids.map(id=>{ const m=miembroPorId_(id); return m?(m.nombre+(esDelBote_(id)?" 🚢":"")):null; }).filter(Boolean);
           return `<div class="pl-entrega-row">
             <div class="pl-entrega-info">
               <div class="pl-entrega-nombre">${escHtml(e.nombreUsuario||"")}</div>
@@ -5560,13 +5659,13 @@ function renderChambeadores(){
   /* v3.64: datos para la imagen de «Compartir» */
   const _catTxt=catSel==="doblaje"?"Doblaje":"Canto", _perTxt=p?p.nombre:"General";
   _rankShare_={titulo:"Chambeadores",sub:`${_perTxt} · ${_catTxt}`,archivo:`ranking-entregas-${_perTxt}-${_catTxt}`,
-    items:filas.map(f=>{ const m=DB.miembros.find(x=>String(x.id)===f.id);
+    items:filas.map(f=>{ const m=miembroPorId_(f.id);
       return {nombre:m?m.nombre:"(miembro ya no existe)",avatar:m?(m.avatarUrl||""):"",total:f.total,detalle:f.total===1?"1 entrega":f.total+" entregas"}; })};
   shBtn.classList.remove("hidden");
-  const podioItems=filas.slice(0,3).map(f=>{ const m=DB.miembros.find(x=>String(x.id)===f.id);
+  const podioItems=filas.slice(0,3).map(f=>{ const m=miembroPorId_(f.id);
     return {mid:m?m.id:"",nombre:m?m.nombre:"(miembro ya no existe)",avatar:m?(m.avatarUrl||LOGO_DEFAULT):LOGO_DEFAULT,total:f.total}; });
   el.innerHTML = podioHTML_(podioItems) + filas.slice(3).map((f,k)=>{
-    const i=k+3, m=DB.miembros.find(x=>String(x.id)===f.id);
+    const i=k+3, m=miembroPorId_(f.id);
     return `<div class="chambeador-row"${m?` data-chambeador-id="${escAttr(String(m.id))}" role="button" tabindex="0"`:""}>
       <div class="chambeador-puesto">${i+1}</div>
       <img src="${escAttr(m?(m.avatarUrl||LOGO_DEFAULT):LOGO_DEFAULT)}" onerror="this.onerror=null;this.src='${LOGO_DEFAULT}';">
@@ -6249,9 +6348,9 @@ document.getElementById("memberEditForm").addEventListener("submit", async(e)=>{
 document.getElementById("me_deleteBtn").onclick=async()=>{
   const id=document.getElementById("me_id").value;
   if(!id) return;
-  if(!await confirmarAccion("¿Seguro que quieres borrar a este miembro?")) return;
-  const r=await apiPost({action:"deleteMiembro", id});
-  if(r.ok){ toast("Miembro borrado 🗑️"); closeModal("memberEditModal"); await cargarDatos(); } else toast("Error: "+(r.error||""));
+  const nm=(document.getElementById("me_nombre").value||"").trim();
+  if(!await confirmarAccion(`¿Mandar a ${nm||"este miembro"} a El Bote? Dejará de aparecer en Miembros, pero sus datos y entregas se conservan y lo podrás recuperar.`)) return;
+  await enviarAlBote_(id);
 };
 
 /* ---------- confirmación personalizada (reemplaza confirm() nativo) ---------- */
@@ -8705,6 +8804,7 @@ document.getElementById("miembrosFiltroBtn").onclick=()=>{
   });
   openModal("miembrosOrdenModal");
 };
+document.getElementById("miembrosBoteBtn").onclick=abrirBote_;
 document.getElementById("miembrosContarBtn").onclick=()=>{
   const ms=DB.miembros.filter(m=>m.nombre && String(m.nombre).trim()!=="");
   const staff=ms.filter(m=>esTrue(m.staff)).length;
