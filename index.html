@@ -1072,6 +1072,9 @@
   body.modulo-abierto *{animation-play-state:paused !important;}
   #moduloOverlay.open{display:block;}
   #moduloOverlay iframe{width:100%;height:100%;border:0;display:block;background:#180E1D;}
+  /* Panel de Staff: botones sin fondo; solo se resalta al pasar el mouse / tocar */
+  .hub-staff :is(.drawer-nav-btn,.btn-small){background:transparent;transition:background .18s ease;}
+  .hub-staff :is(.drawer-nav-btn,.btn-small):hover,.hub-staff :is(.drawer-nav-btn,.btn-small):active{background:rgba(239,8,112,0.18);}
   .hub-mod{display:flex;align-items:center;gap:10px;background:var(--card-bg-2);padding:10px 12px;border-radius:12px;margin-bottom:8px;text-align:left;}
   .hub-mod .hm-ic{font-size:22px;flex:none;}
   .hub-mod .hm-tx{flex:1;min-width:0;}
@@ -8161,10 +8164,23 @@ function closeDrawer(){ document.getElementById("drawer").classList.remove("open
   document.addEventListener("touchend", e=>terminar(e, false), {passive:true});
   document.addEventListener("touchcancel", e=>terminar(e, true), {passive:true});
 })();
+// Número de versión del Panel de Staff: sale del service worker (VERSION en sw.js), así que se actualiza solo en cada despliegue.
+function mostrarVersionHub_(){
+  const el=document.getElementById("hubVersion"); if(!el) return;
+  const poner=v=>{ if(v) el.textContent="Versión "+String(v).replace(/^v/i,""); else if(el.textContent==="Versión …") el.textContent=""; };
+  try{
+    const c=navigator.serviceWorker && navigator.serviceWorker.controller;
+    if(c){ const ch=new MessageChannel(); ch.port1.onmessage=e=>{ if(e.data && e.data.label) poner(e.data.label); else desdeArchivo(); }; c.postMessage({type:"VERSION"},[ch.port2]); setTimeout(()=>{ if(el.textContent==="Versión …") desdeArchivo(); },1500); return; }
+  }catch(e){}
+  desdeArchivo();
+  function desdeArchivo(){
+    fetch("sw.js",{cache:"no-store"}).then(r=>r.text()).then(t=>{ const m=/VERSION\s*=\s*"([^"]+)"/.exec(t); poner(m&&m[1]); }).catch(()=>poner(null));
+  }
+}
 function abrirStaffHub(){
   if(!staffPin){ toast("Activa el modo Staff primero"); return; }
   closeDrawer();
-  document.getElementById("memberModalContent").innerHTML=`
+  document.getElementById("memberModalContent").innerHTML=`<div class="hub-staff">
     <h3>🔗 Panel de Staff</h3>
     <div class="section-label" style="text-align:left;">📣 Pruebas de Discord</div>
     <div style="display:flex;gap:8px;justify-content:center;flex-wrap:wrap;margin-bottom:16px;">
@@ -8215,8 +8231,9 @@ function abrirStaffHub(){
     <div class="section-label" style="text-align:left;">🧩 Módulos</div>
     <div id="hubModulos" style="margin-bottom:12px;"><div class="hub-mod-vacio">Buscando módulos…</div></div>
     <button class="btn-small btn-admin" id="hubEnlaces" style="width:100%;">⚙️ Editar Enlaces</button>
-    <div id="hubVersion" style="text-align:center;margin:16px 0 4px;font-size:12px;font-weight:700;opacity:.6;">Versión 3.67</div>`;
+    <div id="hubVersion" style="text-align:center;margin:16px 0 4px;font-size:12px;font-weight:700;opacity:.6;">Versión …</div></div>`;
   openModal("memberModal");
+  mostrarVersionHub_();
   cargarHubModulos();
   document.getElementById("hubCumple").onclick=()=>probarHub("testCumpleanos","Cumpleaños");
   document.getElementById("hubSeguridad").onclick=()=>probarHub("testSeguridad","Seguridad");
