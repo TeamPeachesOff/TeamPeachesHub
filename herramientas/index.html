@@ -82,19 +82,19 @@ main{max-width:640px;margin:0 auto;padding:6px 16px 70px;}
    - accion: 'piano' en vez de href → abre el Piano de rangos vocales del Hub (solo miembros). */
 const SECCIONES = [
   { titulo: '🎤 Análisis de voz', items: [
-    { n: 'Rango vocal', d: 'Descubre tu tipo de voz', img: 'logos/rango-vocal.png', href: 'rango-vocal/', ring: true },
-    { n: 'Piano vocal', d: 'Los rangos de todo el team', img: 'logos/piano-vocal.png', accion: 'piano', ring: true },
-    { n: 'Analizar notas en canción', d: 'Sube una canción y mira sus notas', img: 'logos/analizar-notas.png', href: 'rango-vocal/?v=cancion', ring: true }
+    { n: 'Rango vocal', k: 'herr_rango_vocal', d: 'Descubre tu tipo de voz', img: 'logos/rango-vocal.png', href: 'rango-vocal/', ring: true },
+    { n: 'Piano vocal', k: 'herr_piano_vocal', d: 'Los rangos de todo el team', img: 'logos/piano-vocal.png', accion: 'piano', ring: true },
+    { n: 'Analizar notas en canción', k: 'herr_analizar_notas', d: 'Sube una canción y mira sus notas', img: 'logos/analizar-notas.png', href: 'rango-vocal/?v=cancion', ring: true }
   ]},
   { titulo: '⬇️ Descargadores', items: [
-    { n: 'Y2mate', d: 'Descarga de YouTube', img: 'logos/y2mate.png', href: 'https://y2mate.gs/es/' },
-    { n: 'Smule Downloader', d: 'Descarga de Smule', img: 'logos/smuledownloader.png', href: 'https://smuledownloader.online/' },
-    { n: 'Sownloader', d: 'Extensión para navegadores, descarga de Smule', img: 'logos/sownloader.png', href: 'https://sownloader.com/' }
+    { n: 'Y2mate', k: 'herr_y2mate', d: 'Descarga de YouTube', img: 'logos/y2mate.png', href: 'https://y2mate.gs/es/' },
+    { n: 'Smule Downloader', k: 'herr_smule_downloader', d: 'Descarga de Smule', img: 'logos/smuledownloader.png', href: 'https://smuledownloader.online/' },
+    { n: 'Sownloader', k: 'herr_sownloader', d: 'Extensión para navegadores, descarga de Smule', img: 'logos/sownloader.png', href: 'https://sownloader.com/' }
   ]},
   { titulo: '✂️ Herramientas de edición', items: [
-    { n: 'Vocal Remover', d: 'Borrador de instrumental', img: 'logos/vocalremover.png', href: 'https://vocalremover.org/es/' },
-    { n: 'X-Minus', d: 'Borrador de instrumental', img: 'logos/xminus.png', href: 'https://x-minus.pro/ai' },
-    { n: 'ArtCraft', d: 'Herramientas creativas de código abierto', img: 'logos/artcraft.png', href: 'https://getartcraft.com/apps' }
+    { n: 'Vocal Remover', k: 'herr_vocal_remover', d: 'Borrador de instrumental', img: 'logos/vocalremover.png', href: 'https://vocalremover.org/es/' },
+    { n: 'X-Minus', k: 'herr_x_minus', d: 'Borrador de instrumental', img: 'logos/xminus.png', href: 'https://x-minus.pro/ai' },
+    { n: 'ArtCraft', k: 'herr_artcraft', d: 'Herramientas creativas de código abierto', img: 'logos/artcraft.png', href: 'https://getartcraft.com/apps' }
   ]}
 ];
 
@@ -107,6 +107,20 @@ const abrirPiano = () => {
   location.href = '../';   // fuera del Hub no hay piano: se vuelve al Hub
 };
 
+/* Contador de uso: dentro del Hub usa su mismo trackUI (que ya respeta el modo fantasma 👻 y la sesión de Staff).
+   Si se abre esta página sola, se manda aquí, respetando también el modo fantasma. */
+const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbwcnPM10DeRLE6ReNX_AqeViRfKkHjpflT-QCw05oW_L8n5ohrDhfR_iPuzTqYNrG8H4A/exec';   // el mismo de index.html
+function contar(clave){
+  try { if (window.parent !== window && window.parent.trackUI) { window.parent.trackUI(clave); return; } } catch (err) {}
+  try {
+    let v = null, token = '';
+    try { v = localStorage.getItem('tph_notrack'); if (localStorage.getItem('tph_session_rol') === 'staff') token = localStorage.getItem('tph_session_token') || ''; } catch (err) {}
+    if (v === null) v = (document.cookie.match(/(?:^|; )tph_notrack=([^;]*)/) || [])[1];
+    if (v === '1') return;
+    fetch(APPS_SCRIPT_URL, { method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' }, body: JSON.stringify({ action: 'trackUI', clave, token }), keepalive: true }).catch(() => {});
+  } catch (err) {}
+}
+
 const box = document.getElementById('secciones');
 let n = 0;
 SECCIONES.forEach((sec, si) => {
@@ -118,6 +132,8 @@ SECCIONES.forEach((sec, si) => {
     const esAccion = !!it.accion, ext = !esAccion && /^https?:/.test(it.href);
     const a = document.createElement(esAccion ? 'button' : 'a'); a.className = 'app'; a.style.setProperty('--i', n++);
     if (esAccion) { a.type = 'button'; a.onclick = abrirPiano; } else a.href = it.href;
+    a.addEventListener('click', () => contar(it.k));
+    a.addEventListener('auxclick', e => { if (e.button === 1) contar(it.k); });
     if (ext) { a.target = '_blank'; a.rel = 'noopener noreferrer'; }
     a.innerHTML = '<span class="ico' + (it.ring ? ' ring' : '') + '"><img alt="" width="76" height="76" loading="lazy"><i class="bdg"></i></span><span class="nm"></span><span class="ds"></span>';
     a.querySelector('img').src = it.img;

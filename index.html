@@ -2767,7 +2767,7 @@ function setNoTrack_(valor, avisar){
 function trackUI(clave){
   if(noTrack) return; // modo "sin registro": no se manda nada
   try{
-    fetch(APPS_SCRIPT_URL,{method:"POST",headers:{"Content-Type":"text/plain;charset=utf-8"},body:JSON.stringify({action:"trackUI", clave, token:sessionToken||""})}).catch(()=>{});
+    fetch(APPS_SCRIPT_URL,{method:"POST",headers:{"Content-Type":"text/plain;charset=utf-8"},body:JSON.stringify({action:"trackUI", clave, token:sessionToken||""}), keepalive:true}).catch(()=>{});
   }catch(e){ /* nunca debe romper el click que la disparó */ }
 }
 function abrirEnlacePrivado(clave){
@@ -2858,11 +2858,15 @@ const ANALITICA_LABELS = {
   testRecordatorio:"🔔 Prueba de Recordatorio", testCumpleanos:"🎂 Prueba de Cumpleaños", testSeguridad:"🔒 Prueba de Seguridad",
   addQueja:"📮 Buzón: queja/recomendación enviada", addReporte:"🐞 Reporte de error enviado",
   obtenerEnlacesStaff:"🔗 Enlaces de Staff consultados", obtenerClaveMiembro:"🍑 Clave de Miembro entregada a Staff", guardarEnlacesStaff:"⚙️ Enlaces de Staff guardados",
-  agregarPeriodo:"🏆 Periodo de Chambeadores agregado", eliminarPeriodo:"🗑️ Periodo de Chambeadores borrado"
+  agregarPeriodo:"🏆 Periodo de Chambeadores agregado", eliminarPeriodo:"🗑️ Periodo de Chambeadores borrado",
+  drawer_herramientas:"🧰 Herramientas abierto", modulo_competencia:"🧩 Módulo Competencia abierto",
+  herr_rango_vocal:"🎤 Herramienta: Rango vocal", herr_piano_vocal:"🎹 Herramienta: Piano vocal", herr_analizar_notas:"🎼 Herramienta: Analizar notas en canción",
+  herr_y2mate:"⬇️ Herramienta: Y2mate", herr_smule_downloader:"⬇️ Herramienta: Smule Downloader", herr_sownloader:"⬇️ Herramienta: Sownloader",
+  herr_vocal_remover:"✂️ Herramienta: Vocal Remover", herr_x_minus:"✂️ Herramienta: X-Minus", herr_artcraft:"✂️ Herramienta: ArtCraft"
 };
 // Agrupa cada acción bajo una categoría, solo para que la tabla de analítica se lea más rápido.
 // Si aparece una acción sin categoría asignada acá, cae sola en "Otros" (nunca se pierde un dato).
-const ANALITICA_CATEGORIAS_ORDEN = ["Accesos a la app","Seguridad","Tarjetas de Miembro","Mundo Peaches (globo)","Búsquedas","Actividades y entregas","Anuario","Redes sociales","Gestión de Miembros (Staff)","Multimedia","Buzón y reportes","Pruebas del sistema","Enlaces de Staff","Otros"];
+const ANALITICA_CATEGORIAS_ORDEN = ["Accesos a la app","Seguridad","Tarjetas de Miembro","Mundo Peaches (globo)","Búsquedas","Actividades y entregas","Anuario","Herramientas y módulos","Redes sociales","Gestión de Miembros (Staff)","Multimedia","Buzón y reportes","Pruebas del sistema","Enlaces de Staff","Otros"];
 const ANALITICA_CATEGORIA_DE = {
   cargarPagina_publico:"Accesos a la app", cargarPagina_miembro:"Accesos a la app", cargarPagina_staff:"Accesos a la app",
   loginGoogle_staff:"Accesos a la app", loginGoogle_miembro:"Accesos a la app",
@@ -2882,8 +2886,32 @@ const ANALITICA_CATEGORIA_DE = {
   addQueja:"Buzón y reportes", addReporte:"Buzón y reportes",
   testRecordatorio:"Pruebas del sistema", testCumpleanos:"Pruebas del sistema", testSeguridad:"Pruebas del sistema",
   obtenerEnlacesStaff:"Enlaces de Staff", obtenerClaveMiembro:"Enlaces de Staff", guardarEnlacesStaff:"Enlaces de Staff",
-  agregarPeriodo:"Actividades y entregas", eliminarPeriodo:"Actividades y entregas"
+  agregarPeriodo:"Actividades y entregas", eliminarPeriodo:"Actividades y entregas",
+  drawer_herramientas:"Herramientas y módulos", modulo_competencia:"Herramientas y módulos",
+  herr_rango_vocal:"Herramientas y módulos", herr_piano_vocal:"Herramientas y módulos", herr_analizar_notas:"Herramientas y módulos",
+  herr_y2mate:"Herramientas y módulos", herr_smule_downloader:"Herramientas y módulos", herr_sownloader:"Herramientas y módulos",
+  herr_vocal_remover:"Herramientas y módulos", herr_x_minus:"Herramientas y módulos", herr_artcraft:"Herramientas y módulos"
 };
+// Fechas de la analítica en lenguaje natural: "Hoy, 3:15 p. m.", "Ayer, 9:02 a. m.", "24 de nov, 8:00 p. m.".
+// Acepta lo que mande el servidor (ISO, "2026-11-26 15:15", "26/11/2026 15:15" o el texto largo de Date); si no lo entiende, lo deja igual.
+function fechaNatural_(v){
+  if(v===null||v===undefined||v==="") return "";
+  const s=String(v).trim();
+  let d=null, conHora=true, m;
+  if((m=s.match(/^(\d{4})-(\d{1,2})-(\d{1,2})(?:[ T,]+(\d{1,2}):(\d{2})(?::\d{2}(?:\.\d+)?)?)?$/))){ conHora=m[4]!==undefined; d=new Date(+m[1],m[2]-1,+m[3],+(m[4]||0),+(m[5]||0)); }
+  else if((m=s.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})(?:[ ,]+(\d{1,2}):(\d{2})(?::\d{2})?\s*([ap])?\.?\s*(?:m\.?)?)?$/i))){
+    conHora=m[4]!==undefined; let h=+(m[4]||0); if(m[6]) h=(h%12)+(m[6].toLowerCase()==="p"?12:0);
+    d=new Date(+m[3],m[2]-1,+m[1],h,+(m[5]||0));
+  }
+  else if(/^\d{4}-\d{2}-\d{2}T[\d:.]+(Z|[+-]\d{2}:?\d{2})$/.test(s) || /^[A-Z][a-z]{2} [A-Z][a-z]{2} \d{1,2} \d{4}/.test(s)) d=new Date(s);
+  if(!d||isNaN(d.getTime())) return s;
+  const dia=x=>Date.UTC(x.getFullYear(),x.getMonth(),x.getDate());
+  const ahora=new Date(), dif=Math.round((dia(ahora)-dia(d))/86400000);
+  const meses=["ene","feb","mar","abr","may","jun","jul","ago","sep","oct","nov","dic"];
+  const cuando = dif===0 ? "Hoy" : dif===1 ? "Ayer" : d.getDate()+" de "+meses[d.getMonth()]+(d.getFullYear()!==ahora.getFullYear()?" "+d.getFullYear():"");
+  if(!conHora) return cuando;
+  return cuando+", "+(d.getHours()%12||12)+":"+String(d.getMinutes()).padStart(2,"0")+(d.getHours()<12?" a. m.":" p. m.");
+}
 async function abrirAnalitica(){
   const r = await apiPost({action:"obtenerAnalitica"}, "Cargando analítica...");
   if(!r.ok){ toast("Error: "+(r.error||"")); return; }
@@ -2909,7 +2937,7 @@ async function abrirAnalitica(){
               ${porCategoria[cat].map(f=>`<tr style="border-top:1px solid rgba(255,255,255,0.06);">
                 <td style="padding:8px 10px;">${escHtml(ANALITICA_LABELS[f.accion]||f.accion)}</td>
                 <td style="padding:8px 10px;text-align:right;font-weight:700;color:var(--peach-1);white-space:nowrap;">${f.total}</td>
-                <td style="padding:8px 10px;text-align:right;color:var(--text-dim);white-space:nowrap;">${escHtml(f.ultimoUso||"")}</td>
+                <td style="padding:8px 10px;text-align:right;color:var(--text-dim);white-space:nowrap;">${escHtml(fechaNatural_(f.ultimoUso))}</td>
               </tr>${(f.ultimaIP||f.ultimaUbicacion||f.ultimoValorIntentado)?`<tr style="border-top:none;">
                 <td colspan="3" style="padding:0 10px 8px;font-size:11px;color:var(--text-dim);">
                   Último intento — valor: <code>${escHtml(f.ultimoValorIntentado||"—")}</code> · IP: ${escHtml(f.ultimaIP||"desconocida")} · ubicación aprox: ${escHtml(f.ultimaUbicacion||"desconocida")}
@@ -2945,7 +2973,7 @@ async function abrirAnaliticaStaff(){
         </thead>
         <tbody>
           ${lista.map(f=>`<tr style="border-top:1px solid rgba(255,255,255,0.06);">
-            <td style="padding:7px 10px;white-space:nowrap;color:var(--text-dim);">${escHtml(f.timestamp||"")}</td>
+            <td style="padding:7px 10px;white-space:nowrap;color:var(--text-dim);">${escHtml(fechaNatural_(f.timestamp))}</td>
             <td style="padding:7px 10px;white-space:nowrap;">${escHtml(f.email||"—")}</td>
             <td style="padding:7px 10px;">${escHtml(ANALITICA_LABELS[f.accion]||f.accion)}</td>
           </tr>`).join("")}
@@ -2997,7 +3025,7 @@ async function abrirIntentosFallidos(){
           </thead>
           <tbody>
             ${filas.map(f=>`<tr style="border-top:1px solid rgba(255,255,255,0.06);">
-              <td style="padding:7px 10px;white-space:nowrap;color:var(--text-dim);">${escHtml(f.timestamp||"")}</td>
+              <td style="padding:7px 10px;white-space:nowrap;color:var(--text-dim);">${escHtml(fechaNatural_(f.timestamp))}</td>
               <td style="padding:7px 10px;white-space:nowrap;">🔐 Login Google</td>
               <td style="padding:7px 10px;"><code>${escHtml(f.detalle||"—")}</code></td>
             </tr>`).join("")}
@@ -3390,6 +3418,7 @@ function precargarCompetencia_(){
     if(nivel!=="staff" && nivel!=="miembro") return;
     if(window.TPH_PRE && Date.now()-window.TPH_PRE.t < 20000) return;
     const q = new URLSearchParams({accion:"obtenerTorneo", token:sessionToken||"", clave:memberPin||"", desdeRev:0});
+    if(noTrack) q.set("notrack","1");
     window.TPH_PRE = {t:Date.now(), p:fetch(APPS_SCRIPT_URL+"?"+q.toString()).then(r=>r.json()).catch(()=>null)};
   }catch(e){}
 }
@@ -3421,6 +3450,7 @@ async function abrirModulo(id){
   if(id==="competencia") precargarCompetencia_();
   // "herramientas" no es un módulo activable: es una página fija (carpeta herramientas/) que se abre igual, en esta misma ventana.
   const esHerr = id==="herramientas";
+  if(!esHerr) trackUI("modulo_"+id);
   const info = esHerr ? null : await infoModulo_(id);
   const base = esHerr ? "herramientas/" : MODULOS_DIR+id+"/";
   const archivo = (info && typeof info.archivo==="string" && /^[A-Za-z0-9_.-]{1,60}\.html$/.test(info.archivo)) ? info.archivo : "index.html";
