@@ -1324,7 +1324,7 @@
       <button type="button" id="chambeadoresTrofeoBtn" class="hidden chambeadores-trofeo-btn" title="Chambeadores de la temporada 🏆">🏆</button>
       <div class="miembros-searchbox">
         <svg class="ms-icon" viewBox="0 0 24 24" aria-hidden="true"><circle cx="10.5" cy="10.5" r="6.5"/><path d="M15.5 15.5 21 21"/></svg>
-        <input autocomplete="off" type="text" id="searchMiembros" placeholder="Buscar por nombre, rol, rango vocal, generación, cumpleaños o &quot;2 strikes&quot;...">
+        <input autocomplete="off" type="text" id="searchMiembros" placeholder="Buscar por nombre, usuario (Discord, BandLab, Instagram), rol, rango vocal, generación o &quot;2 strikes&quot;...">
         <button type="button" id="miembrosFiltroBtn" aria-label="Ordenar y filtrar miembros" title="Ordenar miembros">
           <svg class="ms-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M3.5 5h17l-6.5 7.8V19l-4 2v-8.2z"/></svg>
         </button>
@@ -4371,12 +4371,13 @@ function rangosConocidos_(){
 function renderMiembros(filtro=""){
   const textoFiltro = filtro.trim();
   const matchStrikes = textoFiltro.match(/^(\d+)\s*strikes?$/i);
-  const f=normalizar(textoFiltro);
+  const f=normalizar(textoFiltro).replace(/^@+/,"");   // se puede escribir con o sin @
   const conNombre=m=>m.nombre && String(m.nombre).trim()!=="";
   const filtrar = matchStrikes
     ? (m=>conNombre(m) && (Number(m.strikes)||0)===Number(matchStrikes[1]))
     : (m=>conNombre(m) && (!f || (()=>{ const x=filtroExactoMiembro_(m,f); return x!==null ? x : normalizar([
         m.nombre, m.rangoVocal,
+        m.usuarioDiscord, m.usuarioBandlab, limpiarUsuarioBandlab(m.usuarioBandlab), limpiarUsuarioInstagram(m.usuarioInstagram), m.usuarioSmule,   // cualquiera de sus usuarios
         esTrue(m.staff)?"staff":"", esTrue(m.canto)?"canto":"", esTrue(m.doblaje)?"doblaje":"", esTrue(m.inactivo)?"inactivo":"",
         m.generacionNum||"", palabraGeneracion(m.generacionNum),
         mesDeCumple(m.cumpleanos)
