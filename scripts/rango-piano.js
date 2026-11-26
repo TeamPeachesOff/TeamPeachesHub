@@ -144,15 +144,17 @@
   let overlay=null, scroller=null, infoEl=null;
 
   function construir(){
+    // Mismas fuentes que la página Rango vocal (se piden solo cuando se abre el piano por primera vez).
+    if(!document.getElementById("rpFuentes")){ const l=document.createElement("link"); l.id="rpFuentes"; l.rel="stylesheet"; l.href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Space+Grotesk:wght@500;700&display=swap"; document.head.appendChild(l); }
     overlay=document.createElement("div");
     overlay.className="modal-overlay";
     overlay.id="rangoPianoModal";
     overlay.innerHTML=`
-      <div class="rp-box" role="dialog" aria-modal="true" aria-label="Rango vocal en piano">
+      <div class="rp-box" role="dialog" aria-modal="true" aria-label="Piano vocal">
         <div class="rp-head">
           <div class="rp-title">
-            <span class="rp-ico" aria-hidden="true">🎹</span>
-            <div><h3>Rango vocal</h3><p class="rp-info" id="rpInfo"></p></div>
+            <span class="rp-ico" aria-hidden="true"><img src="herramientas/logos/piano-vocal.png" alt="" width="34" height="34"></span>
+            <div><h3>Piano vocal</h3><p class="rp-info" id="rpInfo"></p></div>
           </div>
           <div class="rp-ctrls">
             <button type="button" class="rp-ref" id="rpRef" aria-pressed="true" title="Mostrar u ocultar los rangos de referencia de cada tipo de voz"><i></i>Referencia</button>
