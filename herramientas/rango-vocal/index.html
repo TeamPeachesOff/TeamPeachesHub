@@ -1007,18 +1007,27 @@ function showMicBlocked() {
   if (!(navigator.mediaDevices && navigator.mediaDevices.getUserMedia && window.MediaRecorder)) showMicBlocked();
 })();
 
-/* Detector de tono ligero para mostrar la nota mientras grabas (YIN). El análisis final es el motor completo. */
+/* Detector de tono ligero para mostrar la nota mientras grabas (YIN). El análisis final es el motor completo.
+   Cubre de ~27 Hz (La0) a 5000 Hz (pasa de Do8): antes iba de 45 a 2000 Hz, por eso no salían Do1–Fa1
+   y desde Do7 la nota aparecía una octava abajo. Calcula solo hasta encontrar el periodo, así las notas agudas cuestan muy poco. */
 function yinLive(buf, sr) {
   let e = 0; for (let i = 0; i < buf.length; i++) e += buf[i] * buf[i];
   if (Math.sqrt(e / buf.length) < 0.008) return null;
-  const W = 2048, tMin = Math.max(2, Math.floor(sr / 2000)), tMax = Math.min(Math.floor(sr / 45), buf.length - W - 2);
-  const cm = new Float32Array(tMax + 2); let run = 0;
-  for (let t = 1; t <= tMax + 1; t++) { let s = 0; for (let i = 0; i < W; i++) { const x = buf[i] - buf[i + t]; s += x * x; } run += s; cm[t] = s * t / (run || 1); }
-  let t = tMin;
-  while (t < tMax) { if (cm[t] < 0.15) { while (t + 1 < tMax && cm[t + 1] < cm[t]) t++; break; } t++; }
-  if (t >= tMax) return null;
-  const a = cm[t - 1], b = cm[t], c = cm[t + 1], den = a - 2 * b + c;
-  return sr / (den ? t + (a - c) / (2 * den) : t);
+  const W = 4096, tMin = Math.max(2, Math.floor(sr / 5000)), tMax = Math.min(Math.floor(sr / 27), buf.length - W - 2);
+  const cm = new Float32Array(tMax + 2); let run = 0, best = 0, found = 0;
+  for (let t = 1; t <= tMax + 1; t++) {
+    let s = 0; for (let i = 0; i < W; i++) { const x = buf[i] - buf[i + t]; s += x * x; } run += s; cm[t] = s * t / (run || 1);
+    const p = t - 1;   // p ya tiene vecino a ambos lados
+    if (p < tMin) continue;
+    if (found) { if (cm[t] < cm[found]) found = t; else break; }          // baja hasta el fondo del valle
+    else if (cm[p] < 0.15) found = cm[t] < cm[p] ? t : p;
+    if (found && found < t) break;
+    if (cm[p] <= cm[p - 1] && cm[p] <= cm[t] && (!best || cm[p] < cm[best])) best = p;
+  }
+  const k = found || (best && cm[best] < 0.3 ? best : 0);   // respaldo para graves de piano, menos «limpios»
+  if (!k || k > tMax) return null;
+  const a = cm[k - 1], b = cm[k], c = cm[k + 1], den = a - 2 * b + c;
+  return sr / (den > 0 ? k + 0.5 * (a - c) / den : k);
 }
 function setRecUI(id, on) {
   const el = $('#slot-' + id), b = el.querySelector('[data-act="rec"]');
@@ -1035,7 +1044,7 @@ async function startRec(id) {
   const mime = ['audio/webm;codecs=opus', 'audio/webm', 'audio/mp4', 'audio/ogg'].find(m => MediaRecorder.isTypeSupported(m));
   const mr = mime ? new MediaRecorder(stream, { mimeType: mime }) : new MediaRecorder(stream);
   actx = actx || new (window.AudioContext || window.webkitAudioContext)(); if (actx.state === 'suspended') actx.resume();
-  const an = actx.createAnalyser(); an.fftSize = 4096; const src = actx.createMediaStreamSource(stream); src.connect(an);
+  const an = actx.createAnalyser(); an.fftSize = 8192; const src = actx.createMediaStreamSource(stream); src.connect(an);
   const buf = new Float32Array(an.fftSize), chunks = [], sl = SLOTS.find(s => s.id === id);
   rec = { id, mr, t0: Date.now(), cancel: false, hist: [], ext: null };
   mr.ondataavailable = e => { if (e.data.size) chunks.push(e.data); };
