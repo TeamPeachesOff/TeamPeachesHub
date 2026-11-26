@@ -91,7 +91,7 @@
     ::-webkit-scrollbar-thumb{background:rgba(255,255,255,0.15);border-radius:99px;}
     ::-webkit-scrollbar-thumb:hover{background:rgba(255,255,255,0.35);}
   }
-  /* El scroll del documento se hace en <body class="act-planas">
+  /* El scroll del documento se hace en <body>
 , no en <html>. Motivo: estilar el thumb/pill del
      scroll de la página con ::-webkit-scrollbar puesto en <html> (la raíz/viewport) es justo lo
      que fallaba antes ("no engancha de forma confiable en Edge" — quedaba el feo scrollbar blanco
@@ -234,8 +234,10 @@
   .drawer-nav-btn:hover{background:rgba(239,8,112,0.18);}
   .drawer-nav-btn img{width:26px;height:26px;border-radius:50%;object-fit:cover;}
   .drawer-nav-btn .dn-ico{flex:none;width:22px;height:22px;fill:none;stroke:currentColor;stroke-width:1.9;stroke-linecap:round;stroke-linejoin:round;}
-  #miembrosDrawerBtn .dn-ico,#herramientasDrawerBtn .dn-ico,#buzonDrawerBtn .dn-ico,#reporteDrawerBtn .dn-ico{color:var(--peach-1);}
-  .drawer-nav-btn:hover .dn-ico{color:#fff;}
+  .drawer-nav-btn .dn-ico{fill:color-mix(in srgb,var(--ic,#ff8fb1) 24%,transparent);stroke:var(--ic,#ff8fb1);filter:drop-shadow(0 0 5px color-mix(in srgb,var(--ic,#ff8fb1) 55%,transparent));}
+  #miembrosDrawerBtn{--ic:#ff9f7a;} #herramientasDrawerBtn{--ic:#ffd23f;} #buzonDrawerBtn{--ic:#8fb8ff;} #reporteDrawerBtn{--ic:#ff5c6c;}
+  #staffDrawerBtn .dn-ico{--ic:#fff;}
+  .drawer-nav-btn:hover .dn-ico{filter:drop-shadow(0 0 8px var(--ic,#ff8fb1));}
   #staffDrawerBtn{background:linear-gradient(90deg,#6a3d8f,#a45fc7);color:#fff;}
   .staff-bottom-group{margin-top:auto;display:flex;flex-direction:column;gap:10px;}
 
@@ -288,7 +290,7 @@
 
   /* ===== EXPERIMENTO: tarjetas de actividad PLANAS (sin color de fondo distinto ni contorno) =====
      Reversible: para volver a como estaba, quita la clase "act-planas" de <body> (o borra este bloque). */
-  body.act-planas #actividadesFeed .card{background:transparent;box-shadow:none;border:0;}
+  body.act-planas #actividadesFeed .card,body.act-planas #diasSinWrap .card,body.act-planas #miembrosList .member-row{background:transparent;box-shadow:none;border:0;}
 
   /* Teléfono horizontal: usa casi todo el ancho de la pantalla (sin el tope de ancho de escritorio). */
   @media (orientation:landscape) and (max-height:600px) and (max-width:899px){
@@ -1204,7 +1206,7 @@
 <script src="https://accounts.google.com/gsi/client" async defer></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 </head>
-<body>
+<body class="act-planas">
 
 <div id="loadingOverlay"><div class="peach-loader"><span>🍑</span><span>🍑</span><span>🍑</span></div><div class="loading-text">Cargando...</div></div>
 
