@@ -340,3 +340,57 @@
   #rangoPianoModal .rp-head{padding-left:max(4px,env(safe-area-inset-left,0px));padding-right:max(4px,env(safe-area-inset-right,0px));}
   #rangoPianoModal .rp-info{max-width:none;font-size:12px;}
 }
+
+/* =====================================================================
+ * AJUSTES: animación de apertura · semitonos sueltos · redondeado de la app (12px / 16px) · encabezado con foto
+ * ===================================================================== */
+/* semitonos: número suelto, en blanco, sin cuadro */
+#rangoPianoModal .rp-st{background:none;border:0;border-radius:0;padding:0 2px;color:#fff;font:700 13px var(--rp-fb);}
+
+/* redondeado igual al resto del Hub: 12px en botones/barras, 16px en paneles */
+#rangoPianoModal .rp-seg,#rangoPianoModal .rp-snd,#rangoPianoModal .rp-dots,#rangoPianoModal .rp-switch{border-radius:12px;}
+#rangoPianoModal .rp-seg button.on{border-radius:0;}
+#rangoPianoModal .rp-menu{border-radius:16px;}
+#rangoPianoModal .rp-menu .rp-switch .rp-sw-thumb{border-radius:9px;}
+#rangoPianoModal .rp-band{border-radius:12px;}
+#rangoPianoModal .rp-l{border-radius:12px;}
+#rangoPianoModal .rp-gb{border-radius:0 12px 12px 0;}
+#rangoPianoModal .rp-empty{border-radius:16px;}
+#rangoPianoModal .rp-row.sel .rp-band{box-shadow:0 0 0 2px var(--rp-pink);}
+
+/* encabezado: foto + nombre + rango */
+#rangoPianoModal .rp-who{display:inline-flex;align-items:center;gap:10px;max-width:100%;text-align:left;}
+#rangoPianoModal .rp-who img{width:38px;height:38px;border-radius:50%;object-fit:cover;flex:none;box-shadow:0 0 0 2.5px var(--vc);}
+#rangoPianoModal .rp-wt{display:flex;flex-direction:column;min-width:0;line-height:1.15;}
+#rangoPianoModal .rp-wt strong{font:700 17px var(--rp-fd);color:color-mix(in srgb,var(--vc) 55%,#fff);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+#rangoPianoModal .rp-wt small{font:500 12.5px var(--rp-fb);color:var(--rp-dim);margin-top:2px;}
+#rangoPianoModal .rp-info{overflow:visible;}
+
+/* animación al abrir el piano (se repite cada vez que se abre) */
+@keyframes rpFade{from{opacity:0}to{opacity:1}}
+@keyframes rpRise{0%{opacity:0;transform:translateY(46px) scale(.95)}60%{opacity:1}100%{opacity:1;transform:none}}
+@keyframes rpHead{from{opacity:0;transform:translateY(-14px)}to{opacity:1;transform:none}}
+@keyframes rpKeys{from{opacity:0;transform:translateY(-22px)}to{opacity:1;transform:none}}
+@keyframes rpRow{from{opacity:0;transform:translateX(-18px)}to{opacity:1;transform:none}}
+#rangoPianoModal.open{animation:rpFade .25s ease both;}
+#rangoPianoModal.open .rp-box{animation:rpRise .55s cubic-bezier(.22,1.15,.36,1) both;}
+#rangoPianoModal.open .rp-head{animation:rpHead .5s .15s cubic-bezier(.22,1,.36,1) both;}
+#rangoPianoModal.open .rp-piano-wrap{animation:rpKeys .6s .22s cubic-bezier(.22,1,.36,1) both;}
+#rangoPianoModal.rp-intro .rp-row,#rangoPianoModal.rp-intro .rp-group,#rangoPianoModal.rp-intro .rp-letter{animation:rpRow .5s cubic-bezier(.22,1,.36,1) both;animation-delay:calc(.34s + var(--i,0) * 28ms);}
+#rangoPianoModal .rp-row:nth-child(1),#rangoPianoModal .rp-g:nth-child(1){--i:1}
+#rangoPianoModal .rp-row:nth-child(2),#rangoPianoModal .rp-g:nth-child(2){--i:2}
+#rangoPianoModal .rp-row:nth-child(3),#rangoPianoModal .rp-g:nth-child(3){--i:3}
+#rangoPianoModal .rp-row:nth-child(4),#rangoPianoModal .rp-g:nth-child(4){--i:4}
+#rangoPianoModal .rp-row:nth-child(5),#rangoPianoModal .rp-g:nth-child(5){--i:5}
+#rangoPianoModal .rp-row:nth-child(6),#rangoPianoModal .rp-g:nth-child(6){--i:6}
+#rangoPianoModal .rp-row:nth-child(7),#rangoPianoModal .rp-g:nth-child(7){--i:7}
+#rangoPianoModal .rp-row:nth-child(8),#rangoPianoModal .rp-g:nth-child(8){--i:8}
+#rangoPianoModal .rp-row:nth-child(9),#rangoPianoModal .rp-g:nth-child(9){--i:9}
+#rangoPianoModal .rp-row:nth-child(10),#rangoPianoModal .rp-g:nth-child(10){--i:10}
+#rangoPianoModal .rp-row:nth-child(11),#rangoPianoModal .rp-g:nth-child(11){--i:11}
+#rangoPianoModal .rp-row:nth-child(12),#rangoPianoModal .rp-g:nth-child(12){--i:12}
+#rangoPianoModal .rp-row:nth-child(13),#rangoPianoModal .rp-g:nth-child(13){--i:13}
+#rangoPianoModal .rp-row:nth-child(14),#rangoPianoModal .rp-g:nth-child(14){--i:14}
+@media (prefers-reduced-motion:reduce){
+  #rangoPianoModal.open,#rangoPianoModal.open *{animation:none !important;}
+}

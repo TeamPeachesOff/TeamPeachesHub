@@ -456,7 +456,8 @@
       if(el){ el.classList.add("on"); el.style.setProperty("--vc",x.color); }
     }
     overlay.querySelectorAll(`[data-rp-id="${CSS.escape(String(est.sel))}"]`).forEach(el=>el.classList.add("sel"));
-    infoEl.innerHTML=`<b>${escHtml(x.m.nombre||"")}</b> · ${nombreNota(x.lo,est.nota)} – ${nombreNota(x.hi,est.nota)}`;
+    infoEl.innerHTML=`<span class="rp-who" style="--vc:${x.color}">${avatarImgTag(x.m)}<span class="rp-wt"><strong>${escHtml(x.m.nombre||"")}</strong><small>${nombreNota(x.lo,est.nota)} – ${nombreNota(x.hi,est.nota)}</small></span></span>`;
+    if(typeof bindAvatarFallbacks==="function") bindAvatarFallbacks();
     if(mover && scroller){
       const kw=overlay.querySelector(".rp-w").getBoundingClientRect().width;
       const centro=16+((inicioU(x.lo)+finU(x.hi))/2)*kw;
@@ -479,10 +480,11 @@
   }
 
   /* ---------- Abrir / cerrar ---------- */
-  let desdeHerr=false;
+  let desdeHerr=false, introT=0;
   function abrir(){
     if(!overlay) construir();
     overlay.classList.toggle("rp-fromtools",desdeHerr); menu(false);
+    overlay.classList.add("rp-intro"); clearTimeout(introT); introT=setTimeout(()=>overlay.classList.remove("rp-intro"),1500);
     est.sel=null; anchoNombre();
     openModal("rangoPianoModal");
     scroller.scrollTo(0,0);
