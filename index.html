@@ -950,6 +950,11 @@
   .badge-reina{background:rgba(255,215,0,0.22);color:var(--gold);}
   .badge-conserje{background:rgba(217,119,6,0.18);color:#e0a458;}
   .badge-inactivo{background:rgba(160,160,170,0.18);color:#a0a0aa;}
+  /* Roles (Canto, Doblaje, Inactivo, Staff, Líder…): solo el texto con su color, sin fondo de insignia */
+  .badge[class]{background:none;padding:0;}
+  .badges-row{gap:4px 12px;}
+  /* Miembros en compu: 2 columnas dentro del mismo ancho */
+  @media (min-width:700px){#miembrosList{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px 14px;}}
 
   .center-screen{max-width:340px;margin:60px auto;text-align:center;padding:0 16px;}
   #memberPinInput{width:100%;text-align:center;font-size:24px;letter-spacing:8px;padding:14px;border-radius:12px;border:1px solid rgba(255,255,255,0.15);background:var(--card-bg-2);color:var(--text);margin:16px 0;}
@@ -1075,6 +1080,8 @@
   /* Panel de Staff: botones sin fondo; solo se resalta al pasar el mouse / tocar */
   .hub-staff :is(.drawer-nav-btn,.btn-small){background:transparent;transition:background .18s ease;}
   .hub-staff :is(.drawer-nav-btn,.btn-small):hover,.hub-staff :is(.drawer-nav-btn,.btn-small):active{background:rgba(239,8,112,0.18);}
+  /* Pruebas de Discord: los 3 en una sola línea, sin borde de color */
+  .hub-staff .hub-discord .btn-small{flex:1 1 auto;min-width:0;border:0;white-space:nowrap;padding:8px 6px;font-size:12px;}
   .hub-mod{display:flex;align-items:center;gap:10px;background:var(--card-bg-2);padding:10px 12px;border-radius:12px;margin-bottom:8px;text-align:left;}
   .hub-mod .hm-ic{font-size:22px;flex:none;}
   .hub-mod .hm-tx{flex:1;min-width:0;}
@@ -8183,7 +8190,7 @@ function abrirStaffHub(){
   document.getElementById("memberModalContent").innerHTML=`<div class="hub-staff">
     <h3>🔗 Panel de Staff</h3>
     <div class="section-label" style="text-align:left;">📣 Pruebas de Discord</div>
-    <div style="display:flex;gap:8px;justify-content:center;flex-wrap:wrap;margin-bottom:16px;">
+    <div class="hub-discord" style="display:flex;gap:4px;justify-content:center;flex-wrap:nowrap;margin-bottom:16px;">
       <button class="btn-small btn-cumple" id="hubCumple">🎂 Cumpleaños</button>
       <button class="btn-small btn-seguridad" id="hubSeguridad">🔒 Seguridad</button>
       <button class="btn-small btn-bell" id="hubRecordatorio">🔔 Recordatorios</button>
