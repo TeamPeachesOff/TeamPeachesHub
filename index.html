@@ -806,7 +806,7 @@
 
 </style>
 <link rel="stylesheet" href="styles/anuario-fonts.css?v=1">
-<link rel="stylesheet" href="styles/anuario.css?v=3.68">
+<link rel="stylesheet" href="styles/anuario.css?v=3.69">
 <link rel="stylesheet" href="styles/rango-piano.css?v=14">
 <style>
 
@@ -946,7 +946,7 @@
   .badge{padding:2px 8px;border-radius:999px;font-size:10.5px;font-weight:700;}
   .badge-staff{background:rgba(164,95,199,0.25);color:#d9b6f5;}
   .badge-canto{background:rgba(155,66,193,0.22);color:#c77dff;}
-  .badge-doblaje{background:rgba(52,152,219,0.2);color:#5dade2;}
+  .badge-doblaje{background:rgba(255,0,106,0.18);color:#ff7eae;}
   .badge-reina{background:rgba(255,215,0,0.22);color:var(--gold);}
   .badge-conserje{background:rgba(217,119,6,0.18);color:#e0a458;}
   .badge-inactivo{background:rgba(160,160,170,0.18);color:#a0a0aa;}
@@ -955,7 +955,7 @@
   .rol-ico svg{width:100%;height:100%;fill:none;stroke:currentColor;stroke-width:2.1;stroke-linecap:round;stroke-linejoin:round;display:block;}
   .rol-ico svg .f{fill:currentColor;}
   .rol-canto{color:#B200FE;} .rol-doblaje{color:#FF006A;} .rol-zzz{color:#a0a0aa;}
-  /* Staff: al pasar el mouse sobre su foto aparecen sus roles bajo el nombre (el espacio ya está reservado: no mueve nada) */
+  /* Reinas y staff: al pasar el mouse sobre su foto aparecen sus roles bajo el nombre (el espacio ya está reservado: no mueve nada) */
   .member-avatar-item .m-roles{display:flex;flex-wrap:wrap;justify-content:center;gap:1px 6px;margin-top:2px;opacity:0;transform:translateY(-4px);transition:opacity .22s ease,transform .22s ease;pointer-events:none;}
   .member-avatar-item .m-roles .badge{font-size:10.5px;line-height:1.3;white-space:nowrap;}
   @media (hover:hover){.member-avatar-item:hover .m-roles{opacity:1;transform:none;}}
@@ -4368,7 +4368,7 @@ const ROL_ICO_={
   zzz:()=>`<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 8h6.5L4 15.5h6.5"/><path d="M12.5 12.5h4.8l-4.8 5.6h4.8"/><path d="M16.5 3.5h3.8l-3.8 4.6h3.8"/></svg>`
 };
 function rolIco_(k){ return `<span class="rol-ico rol-${k}">${ROL_ICO_[k]()}</span>`; }
-// Roles que se muestran bajo el nombre de un staff al pasar el mouse.
+// Roles que se muestran bajo el nombre de reinas y staff al pasar el mouse.
 function rolesStaffHtml_(m){
   const r=[]; if(esTrue(m.canto)) r.push(`<span class="badge badge-canto">${rolIco_("canto")} Canto</span>`);
   if(esTrue(m.doblaje)) r.push(`<span class="badge badge-doblaje">${rolIco_("doblaje")} Doblaje</span>`);
@@ -4409,7 +4409,7 @@ function renderMiembros(filtro=""){
   if(miembrosOrden!=="normal"){ renderMiembrosOrdenado_(filtrar); return; }
   document.getElementById("miembrosFijas").classList.remove("hidden");
   const reinas=DB.miembros.filter(m=>(esTrue(m.fundadora)||esTrue(m.lider)) && filtrar(m));
-  document.getElementById("reinasCarousel").innerHTML=reinas.length?reinas.map(m=>`<div class="member-avatar-item reina" data-member="${escAttr(m.id)}">${avatarImgTag(m)}<div class="m-name">${escHtml(m.nombre||"")}</div></div>`).join(""):`<div style="color:var(--text-dim);font-size:13px;">Sin resultados.</div>`;
+  document.getElementById("reinasCarousel").innerHTML=reinas.length?reinas.map(m=>`<div class="member-avatar-item reina" data-member="${escAttr(m.id)}">${avatarImgTag(m)}<div class="m-name">${escHtml(m.nombre||"")}</div>${rolesStaffHtml_(m)}</div>`).join(""):`<div style="color:var(--text-dim);font-size:13px;">Sin resultados.</div>`;
 
   const staffList=DB.miembros.filter(m=>esTrue(m.staff) && !esTrue(m.fundadora) && !esTrue(m.lider) && filtrar(m));
   document.getElementById("staffCarousel").innerHTML=staffList.length?staffList.map(m=>`<div class="member-avatar-item" data-member="${escAttr(m.id)}">${avatarImgTag(m)}<div class="m-name">${escHtml(m.nombre||"")}</div>${rolesStaffHtml_(m)}</div>`).join(""):`<div style="color:var(--text-dim);font-size:13px;">Sin resultados.</div>`;
