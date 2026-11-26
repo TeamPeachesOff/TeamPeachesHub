@@ -298,3 +298,45 @@
   #rangoPianoModal .rp-seg button{padding:0 11px;font-size:13px;}
   #rangoPianoModal .rp-ref{font-size:13px;padding:0 10px;}
 }
+
+/* =====================================================================
+ * CABECERA SIMPLE: «<» (solo si se abrió desde Herramientas) · info · sonido · ⋮ · X
+ * ===================================================================== */
+#rangoPianoModal .rp-head{flex-wrap:nowrap;gap:4px;padding:calc(env(safe-area-inset-top,0px) + 8px) max(8px,env(safe-area-inset-right,0px)) 8px max(8px,env(safe-area-inset-left,0px));}
+#rangoPianoModal .rp-info{flex:1 1 0;min-width:0;margin:0;padding:0 8px;max-width:none;text-align:center;}
+#rangoPianoModal .rp-info:empty{visibility:hidden;}
+#rangoPianoModal .rp-ctrls{flex-wrap:nowrap;gap:0;width:auto;order:0;}
+#rangoPianoModal .rp-back{display:none;position:relative;width:44px;height:44px;flex:none;padding:0;background:transparent;place-items:center;-webkit-tap-highlight-color:transparent;}
+#rangoPianoModal.rp-fromtools .rp-back{display:grid;}
+#rangoPianoModal:not(.rp-fromtools) .rp-info{text-align:left;}
+#rangoPianoModal .rp-back svg{width:26px;height:26px;fill:none;stroke:#fff;stroke-width:4.2;stroke-linecap:round;stroke-linejoin:round;
+  filter:drop-shadow(0 0 5px rgba(239,8,112,.9)) drop-shadow(0 0 12px rgba(239,8,112,.45));transition:transform .28s cubic-bezier(.3,1.5,.5,1),stroke .2s;}
+#rangoPianoModal .rp-back:hover svg,#rangoPianoModal .rp-back:focus-visible svg{transform:translateX(-3px);stroke:#ff8fb1;}
+#rangoPianoModal .rp-back:active svg{transform:translateX(-3px) scale(.9);}
+#rangoPianoModal .rp-snd,#rangoPianoModal .rp-dots{width:44px;height:44px;flex:none;padding:0;border:0;border-radius:10px;background:transparent;box-shadow:none;display:grid;place-items:center;color:var(--rp-ink);-webkit-tap-highlight-color:transparent;}
+#rangoPianoModal .rp-snd:hover,#rangoPianoModal .rp-dots:hover{background:rgba(255,255,255,.06);}
+#rangoPianoModal .rp-snd svg{width:24px;height:24px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;}
+#rangoPianoModal .rp-snd svg path:first-child{fill:currentColor;}
+#rangoPianoModal .rp-snd.off{opacity:.6;}
+#rangoPianoModal .rp-dots svg{width:22px;height:22px;fill:currentColor;}
+#rangoPianoModal .rp-dots[aria-expanded="true"]{color:var(--rp-pink);}
+#rangoPianoModal .rp-menuwrap{position:relative;}
+#rangoPianoModal .rp-menu{position:absolute;right:0;top:calc(100% + 6px);z-index:30;min-width:230px;padding:6px;background:#33203a;border:1px solid var(--rp-line2);border-radius:12px;box-shadow:0 8px 24px #0008;}
+#rangoPianoModal .rp-menu[hidden]{display:none;}
+#rangoPianoModal .rp-mrow{display:flex;align-items:center;justify-content:space-between;gap:14px;padding:8px 10px;font:500 14px var(--rp-fb);color:var(--rp-ink);}
+#rangoPianoModal .rp-mrow.rp-mcol{flex-direction:column;align-items:stretch;gap:8px;}
+#rangoPianoModal:not([data-ord="voz"]) .rp-mref{display:none;}
+#rangoPianoModal .rp-menu .rp-seg{width:100%;}
+#rangoPianoModal .rp-menu .rp-seg button{flex:1;padding:0 8px;min-height:36px;font-size:13px;}
+#rangoPianoModal .rp-menu .rp-switch{height:36px;width:84px;}
+#rangoPianoModal .rp-menu .rp-switch .rp-sw-thumb{height:30px;}
+#rangoPianoModal .rp-sw2{position:relative;width:44px;height:26px;padding:0;border-radius:99px;border:1px solid var(--rp-line2);background:transparent;flex:none;}
+#rangoPianoModal .rp-sw2 i{position:absolute;top:3px;left:3px;width:18px;height:18px;border-radius:50%;background:var(--rp-line2);transition:transform .2s,background .2s;}
+#rangoPianoModal .rp-sw2[aria-pressed="true"]{background:var(--rp-pink);border-color:var(--rp-pink);}
+#rangoPianoModal .rp-sw2[aria-pressed="true"] i{transform:translateX(18px);background:var(--rp-aink);}
+/* cantidad de personas por tipo de voz: solo número con color, suelto */
+#rangoPianoModal .rp-gc{background:none;box-shadow:none;border-radius:0;padding:5px 4px;font:700 15px var(--rp-fd);color:color-mix(in srgb,var(--vc) 70%,#fff);}
+@media (max-width:640px){
+  #rangoPianoModal .rp-head{padding-left:max(4px,env(safe-area-inset-left,0px));padding-right:max(4px,env(safe-area-inset-right,0px));}
+  #rangoPianoModal .rp-info{max-width:none;font-size:12px;}
+}

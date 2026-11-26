@@ -152,21 +152,30 @@
     overlay.innerHTML=`
       <div class="rp-box" role="dialog" aria-modal="true" aria-label="Piano vocal">
         <div class="rp-head">
-          <div class="rp-title">
-            <span class="rp-ico" aria-hidden="true"><img src="herramientas/logos/piano-vocal.png" alt="" width="34" height="34"></span>
-            <div><h3>Piano vocal</h3><p class="rp-info" id="rpInfo"></p></div>
-          </div>
+          <button type="button" class="rp-back" data-rp-back aria-label="Volver a Herramientas"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 5L8 12l7 7"/></svg></button>
+          <p class="rp-info" id="rpInfo" aria-live="polite"></p>
           <div class="rp-ctrls">
-            <button type="button" class="rp-ref" id="rpRef" aria-pressed="true" title="Mostrar u ocultar los rangos de referencia de cada tipo de voz"><i></i>Referencia</button>
-            <div class="rp-seg" role="group" aria-label="Orden">
-              <button type="button" data-o="tesitura" title="De la nota más grave a la más aguda">Tesitura</button>
-              <button type="button" data-o="voz" title="Soprano, Mezzosoprano, Contralto, Tenor, Barítono, Bajo">Tipo de voz</button>
-              <button type="button" data-o="az" title="Orden alfabético">A–Z</button>
+            <button type="button" class="rp-snd" id="rpSnd" aria-pressed="true" aria-label="Sonido de las teclas" title="Sonido de las teclas"></button>
+            <div class="rp-menuwrap">
+              <button type="button" class="rp-dots" id="rpDots" aria-haspopup="true" aria-expanded="false" aria-label="Más opciones" title="Más opciones"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="5" r="2.4"/><circle cx="12" cy="12" r="2.4"/><circle cx="12" cy="19" r="2.4"/></svg></button>
+              <div class="rp-menu" id="rpMenu" role="menu" hidden>
+                <div class="rp-mrow rp-mref"><span>Referencia</span>
+                  <button type="button" class="rp-sw2" id="rpRef" role="switch" aria-pressed="true" aria-label="Mostrar rangos de referencia" title="Mostrar u ocultar los rangos de referencia de cada tipo de voz"><i></i></button>
+                </div>
+                <div class="rp-mrow rp-mcol"><span>Ordenar por</span>
+                  <div class="rp-seg" role="group" aria-label="Orden">
+                    <button type="button" data-o="tesitura" title="De la nota más grave a la más aguda">Tesitura</button>
+                    <button type="button" data-o="voz" title="Soprano, Mezzosoprano, Contralto, Tenor, Barítono, Bajo">Tipo de voz</button>
+                    <button type="button" data-o="az" title="Orden alfabético">A–Z</button>
+                  </div>
+                </div>
+                <div class="rp-mrow"><span>Notas</span>
+                  <button type="button" class="rp-switch" id="rpNota" role="switch" title="Cambiar nombres de notas: C D E… / Do Re Mi…">
+                    <span class="rp-sw-l">C</span><span class="rp-sw-l">Do</span><i class="rp-sw-thumb"></i>
+                  </button>
+                </div>
+              </div>
             </div>
-            <button type="button" class="rp-switch" id="rpNota" role="switch" title="Cambiar nombres de notas: C D E… / Do Re Mi…">
-              <span class="rp-sw-l">C</span><span class="rp-sw-l">Do</span><i class="rp-sw-thumb"></i>
-            </button>
-            <button type="button" class="rp-snd" id="rpSnd" aria-pressed="true" title="Sonido de las teclas"></button>
           </div>
           <button type="button" class="rp-x" data-rp-close aria-label="Cerrar"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 5L19 19M19 5L5 19"/></svg></button>
         </div>
@@ -181,6 +190,9 @@
 
     overlay.addEventListener("click",e=>{
       if(e.target.closest("[data-rp-close]")){ cerrar(); return; }
+      if(e.target.closest("[data-rp-back]")){ cerrar(); if(typeof abrirModulo==="function") setTimeout(()=>abrirModulo("herramientas"),80); return; }
+      if(e.target.closest("#rpDots")){ menu(!overlay.querySelector("#rpMenu").hidden?false:true); return; }
+      if(!e.target.closest("#rpMenu")) menu(false);
       const o=e.target.closest("[data-o]");
       if(o){ if(est.orden!==o.dataset.o){ est.orden=o.dataset.o; guardar(); pintar(true); } return; }
       if(e.target.closest("#rpRef")){ est.ref=!est.ref; guardar(); pintarRef(); return; }
@@ -239,7 +251,7 @@
   function pulsar(k){
     const n=parseInt(k.dataset.m,10); tocar(n);
     k.classList.add("hit"); setTimeout(()=>k.classList.remove("hit"),170);
-    infoEl.innerHTML=`${est.sonido?"🔊":"🔇"} <b>${nombreNota(n,est.nota)}</b> · ${Math.round(hz(n))} Hz`;
+    infoEl.innerHTML=`<b>${nombreNota(n,est.nota)}</b> · ${Math.round(hz(n))} Hz`;
     clearTimeout(infoT); infoT=setTimeout(()=>resaltar(false),1500);
   }
   /* Las etiquetas de dentro de la barra (tipo de voz a la izquierda, tesitura a la derecha) quedan ancladas a los extremos de SU barra
@@ -264,9 +276,15 @@
     const b=overlay.querySelector("#rpRef"); if(b){ b.classList.toggle("on",est.ref); b.setAttribute("aria-pressed",est.ref?"true":"false"); }
     const l=scroller.querySelector(".rp-lanes"); if(l) l.classList.toggle("noref",!est.ref);
   }
+  function menu(ab){
+    const m=overlay.querySelector("#rpMenu"), d=overlay.querySelector("#rpDots"); if(!m) return;
+    m.hidden=!ab; d.setAttribute("aria-expanded",ab?"true":"false");
+  }
+  const ICO_SND_ON='<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 9.5v5h3.6L12.5 19V5L7.6 9.5H4z"/><path d="M16 9.2a4 4 0 0 1 0 5.6M18.6 6.6a7.8 7.8 0 0 1 0 10.8"/></svg>';
+  const ICO_SND_OFF='<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 9.5v5h3.6L12.5 19V5L7.6 9.5H4z"/><path d="M16.5 9.5l5 5M21.5 9.5l-5 5"/></svg>';
   function pintarSnd(){
     const b=overlay.querySelector("#rpSnd"); if(!b) return;
-    b.textContent=est.sonido?"🔊":"🔇"; b.setAttribute("aria-pressed",est.sonido?"true":"false"); b.classList.toggle("off",!est.sonido);
+    b.innerHTML=est.sonido?ICO_SND_ON:ICO_SND_OFF; b.setAttribute("aria-pressed",est.sonido?"true":"false"); b.classList.toggle("off",!est.sonido);
   }
   /* ancho de la columna del nombre (fija a la izquierda de la ventana); también define el margen al abrir */
   let anchoNom=150;
@@ -426,7 +444,7 @@
     const x={m,lo:Math.min(lo,hi),hi:Math.max(lo,hi),color:k?VOZ[k].c:COLOR_OTRO};
     x.color=colorDe(x); return x;
   }
-  const INFO_BASE="Teclas: toca o arrastra para escuchar · Rango: 1 toque lo señala; 2 toques o mantener = tarjeta";
+  const INFO_BASE="";
   function resaltar(mover){
     if(!overlay) return;
     overlay.querySelectorAll(".rp-w.on,.rp-b.on").forEach(el=>{ el.classList.remove("on"); el.style.removeProperty("--vc"); });
@@ -461,8 +479,10 @@
   }
 
   /* ---------- Abrir / cerrar ---------- */
+  let desdeHerr=false;
   function abrir(){
     if(!overlay) construir();
+    overlay.classList.toggle("rp-fromtools",desdeHerr); menu(false);
     est.sel=null; anchoNombre();
     openModal("rangoPianoModal");
     scroller.scrollTo(0,0);
@@ -478,8 +498,8 @@
       } else scroller.scrollLeft=Math.max(0,16+(blancaIdx[60]+.5)*kw-scroller.clientWidth/2);
     });
   }
-  function cerrar(){ closeModal("rangoPianoModal"); }
-  window.tphAbrirPianoVocal=abrir;   // lo usa la pestaña Herramientas (sidebar) para abrir el piano sin pasar por "Ordenar miembros"
+  function cerrar(){ menu(false); closeModal("rangoPianoModal"); }
+  window.tphAbrirPianoVocal=function(){ desdeHerr=true; abrir(); };   // lo usa la pestaña Herramientas (sidebar) para abrir el piano sin pasar por "Ordenar miembros"
 
   /* ---------- Botón dentro de "Ordenar miembros" ----------
    * El modal de orden vuelve a pintar sus opciones cada vez que se abre; después de ese pintado
@@ -492,7 +512,7 @@
       const b=document.createElement("button");
       b.type="button"; b.className="orden-opcion"; b.setAttribute("data-rp-abrir","1");
       b.innerHTML=`<span>🎹</span>Piano de rangos vocales`;
-      b.onclick=()=>{ closeModal("miembrosOrdenModal"); abrir(); };
+      b.onclick=()=>{ closeModal("miembrosOrdenModal"); desdeHerr=false; abrir(); };
       const ref=cont.querySelector('[data-orden="rango"]');
       if(ref) ref.insertAdjacentElement("afterend",b); else cont.appendChild(b);
     });
