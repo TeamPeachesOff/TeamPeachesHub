@@ -243,6 +243,15 @@
 
   main{max-width:640px;margin:0 auto;padding:16px 12px 60px;}
   .hidden{display:none !important;}
+  /* Miembros: flecha discreta que despliega las herramientas de staff */
+  .mt-toggle{display:flex;align-items:center;justify-content:center;width:48px;height:26px;margin:-2px auto 4px;padding:0;background:transparent;border:0;border-radius:12px;color:var(--text-dim);opacity:.7;cursor:pointer;transition:opacity .2s ease,color .2s ease;-webkit-tap-highlight-color:transparent;}
+  .mt-toggle:hover,.mt-toggle[aria-expanded="true"]{opacity:1;color:var(--peach-1);}
+  .mt-toggle svg{width:22px;height:22px;fill:none;stroke:currentColor;stroke-width:3.8;stroke-linecap:round;stroke-linejoin:round;transition:transform .45s cubic-bezier(.22,1,.36,1);}
+  .mt-toggle[aria-expanded="true"] svg{transform:rotate(180deg);}
+  .mt-body{display:grid;grid-template-rows:0fr;opacity:0;visibility:hidden;transition:grid-template-rows .45s cubic-bezier(.22,1,.36,1),opacity .3s ease,visibility 0s .45s;}
+  .mt-body.open{grid-template-rows:1fr;opacity:1;visibility:visible;transition:grid-template-rows .45s cubic-bezier(.22,1,.36,1),opacity .35s ease .05s,visibility 0s;}
+  .mt-in{overflow:hidden;min-height:0;}
+  @media (prefers-reduced-motion:reduce){.mt-toggle svg,.mt-body,.mt-body.open{transition:none;}}
 
   /* =====================================================================================
      REDISEÑO DE ESCRITORIO — "Marco completo" (solo ancho >= 900px; teléfono/vertical NO cambia).
@@ -923,7 +932,10 @@
   .member-avatar-item{flex:0 0 auto;width:78px;text-align:center;cursor:pointer;}
   .member-avatar-item img{width:64px;height:64px;border-radius:50%;object-fit:cover;border:2px solid var(--peach-2);margin:0 auto;}
   .member-avatar-item.reina img{border-color:var(--gold);}
-  .member-avatar-item .m-name{font-size:11px;margin-top:6px;color:var(--text-dim);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+  /* La foto siempre es un bloque (con o sin insignia VIP) para que el nombre quede a la MISMA altura; el nombre usa el mismo peso/color que en la lista de miembros. */
+  .member-avatar-item>img,.member-avatar-item>.vip-wrap{display:block;width:fit-content;margin:0 auto;}
+  .member-avatar-item .vip-wrap>img{display:block;}
+  .member-avatar-item .m-name{font-weight:700;font-size:12px;line-height:1.25;margin-top:6px;color:var(--text);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
 
   #miembrosList{display:flex;flex-direction:column;gap:10px;}
   .member-row{display:flex;align-items:center;gap:12px;background:var(--card-bg);padding:10px 12px;border-radius:14px;cursor:pointer;}
@@ -1311,6 +1323,11 @@
         src="https://raw.githubusercontent.com/TeamPeachesOff/TeamPeachesHub/main/Logos/MundoPeaches.png"
         onerror="this.onerror=null;this.style.display='none';">
     </div>
+    <!-- Herramientas de staff: ocultas tras una flecha discreta (se despliegan con animación). Solo se ve la flecha si hay sesión de staff. -->
+    <button type="button" id="memberToolsToggle" class="mt-toggle hidden" aria-expanded="false" aria-controls="memberToolsBody" aria-label="Mostrar herramientas de staff" title="Herramientas de staff">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 9l7 7 7-7"/></svg>
+    </button>
+    <div class="mt-body" id="memberToolsBody"><div class="mt-in">
     <div class="hidden" id="memberToolsRow1" style="margin-bottom:10px;">
       <button id="addMemberBtn" class="btn-small btn-family" style="width:100%;">➕ Añadir Miembro</button>
     </div>
@@ -1326,6 +1343,7 @@
       <button class="btn-small btn-family" id="pasarListaBtn" style="flex:1;">🗒️ Participación</button>
       <button class="btn-small btn-family" id="compartirFaltasBtn" style="flex:1;">📸 Compartir Faltas</button>
     </div>
+    </div></div>
     <div id="miembrosFijas">
       <div class="section-label">👑 Reinas Peachy</div>
       <div class="avatar-row" id="reinasCarousel"></div>
@@ -8298,6 +8316,13 @@ document.getElementById("avisoMiembroSiBtn").onclick = ()=>{
   closeModal("avisoMiembroModal");
   mostrarViewMemberPin();
 };
+// Flecha de herramientas de staff (Miembros): abre/cierra el panel con animación.
+function setMemberTools(open){
+  const b=document.getElementById("memberToolsToggle"), body=document.getElementById("memberToolsBody"); if(!b||!body) return;
+  body.classList.toggle("open",open); b.setAttribute("aria-expanded",open?"true":"false");
+  b.setAttribute("aria-label",open?"Ocultar herramientas de staff":"Mostrar herramientas de staff");
+}
+document.getElementById("memberToolsToggle").onclick=()=>setMemberTools(!document.getElementById("memberToolsBody").classList.contains("open"));
 function mostrarViewMiembros(){
   document.querySelectorAll(".tab-btn").forEach(b=>b.classList.remove("active"));
   document.getElementById("viewActividades").classList.add("hidden"); document.getElementById("viewAnuario").classList.add("hidden"); document.getElementById("viewGoogleLogin").classList.add("hidden"); document.getElementById("viewMundo").classList.add("hidden"); document.getElementById("viewMemberPin").classList.add("hidden"); actualizarVisibilidadBackToTop();
@@ -8306,6 +8331,8 @@ function mostrarViewMiembros(){
   document.getElementById("memberToolsRow2").classList.toggle("hidden", !staffPin);
   document.getElementById("memberToolsRow3").classList.toggle("hidden", !staffPin);
   document.getElementById("memberToolsRow4").classList.toggle("hidden", !staffPin);
+  document.getElementById("memberToolsToggle").classList.toggle("hidden", !staffPin);
+  if(!staffPin) setMemberTools(false);
   aplicarVisibilidadMundo();
   renderMiembros();
 }
@@ -8389,7 +8416,8 @@ async function cerrarSesionActual(mensaje, cual){
     localStorage.removeItem("tph_session_token"); localStorage.removeItem("tph_session_rol");
     enlacesStaff = null; // se borran de memoria: sin sesión activa, no deben quedar accesibles ni un momento más
     document.getElementById("staffStatusBadge").style.display="none";
-    ["addActBtn","agendarStreamBtn","assignImagesBtn","importEntregasBtn","memberToolsRow1","memberToolsRow2","memberToolsRow3","memberToolsRow4"].forEach(id=>document.getElementById(id).classList.add("hidden"));
+    ["addActBtn","agendarStreamBtn","assignImagesBtn","importEntregasBtn","memberToolsRow1","memberToolsRow2","memberToolsRow3","memberToolsRow4","memberToolsToggle"].forEach(id=>document.getElementById(id).classList.add("hidden"));
+    setMemberTools(false);
     // Sin clave de Miembro guardada no queda ningún rol: se oculta también esa insignia.
     if(!memberPin) document.getElementById("memberStatusBadge").style.display="none";
     if (window.google && google.accounts && google.accounts.id) google.accounts.id.disableAutoSelect();

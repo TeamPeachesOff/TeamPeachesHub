@@ -1,5 +1,19 @@
 <!doctype html>
-<html lang="es"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><style>[hidden]{display:none!important}</style>
+<html lang="es"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><style>[hidden]{display:none!important}
+/* Mapa vocal: «Mostrar todas las tesituras» — las filas entran y salen deslizándose (un <g> por tipo con --y1 / --y2) */
+#mapBox .mrow{transform:translateY(var(--y1));opacity:0;pointer-events:none;transition:transform .65s cubic-bezier(.22,1,.36,1),opacity .35s ease}
+#mapBox .mrow.mine{opacity:1;pointer-events:auto}
+#mapBox svg[data-all] .mrow{transform:translateY(var(--y2));opacity:1;pointer-events:auto;transition-delay:calc(var(--i) * 40ms)}
+#mapBox .mlow{transform:translateY(0);transition:transform .65s cubic-bezier(.22,1,.36,1)}
+#mapBox svg[data-all] .mlow{transform:translateY(var(--d))}
+#mapBox :is(.mgrid,.comfband){transform:scaleY(var(--h1));transition:transform .65s cubic-bezier(.22,1,.36,1),opacity .4s ease}
+#mapBox svg[data-all] :is(.mgrid,.comfband){transform:scaleY(var(--h2))}
+#mapBox .mzone{opacity:0;pointer-events:none;transition:opacity .35s ease}
+#mapBox svg[data-all] .mzone{opacity:1;transition:opacity .5s ease .45s}
+#mapBox .rbox{opacity:0;transition:opacity .35s ease}
+#mapBox svg[data-all] .rbox{opacity:1;transition-delay:.3s}
+@media (prefers-reduced-motion:reduce){#mapBox :is(.mrow,.mlow,.mgrid,.comfband,.mzone,.rbox){transition:none!important}}
+</style>
 <title>Rango vocal · Team Peaches Hub 🍑</title>
 <link rel="icon" type="image/png" href="../logos/rango-vocal.png">
 <meta name="theme-color" content="#180E1D">
@@ -131,7 +145,7 @@ h2{font:700 22px/1.2 var(--f-display);margin:0 0 6px}h3{font:600 15px/1.3 var(--
 .maphead{display:flex;align-items:baseline;justify-content:space-between;gap:12px;flex-wrap:wrap}
 .chart-scroll{overflow-x:auto;margin-top:12px}.chart-scroll svg{display:block;width:100%;min-width:640px;height:auto}
 .gl{stroke:var(--line);stroke-width:1}.rl{font:500 11px var(--f-body);fill:var(--muted)}.rl.best{fill:var(--accent);font-weight:700}.ul{font:600 11px var(--f-body);fill:var(--ink)}
-.b-abs{fill:var(--teal);opacity:.7}.b-comf{fill:var(--accent)}.b-speech{fill:#fff;opacity:.85}.comfband{fill:var(--accent);opacity:.1}.tick{stroke:var(--bg);stroke-width:2}
+.b-abs{fill:var(--teal);opacity:.7}.b-comf{fill:var(--accent)}.b-speech{fill:#fff;opacity:.85}.comfband{fill:var(--accent);opacity:.1}.tick{stroke:var(--bg);stroke-width:2;transition:stroke-width .3s ease}.sel-speech .tick{stroke-width:4.5}
 .kw{fill:var(--key-w);stroke:var(--line);stroke-width:.6}.kb{fill:var(--key-b)}.oct{font:500 10px var(--f-body);fill:var(--muted)}
 .rb{stroke:var(--bg);stroke-width:1;opacity:.75}.rb.on{opacity:1}
 .rb-strohbass{fill:var(--r-strohbass)}.rb-pecho{fill:var(--r-pecho)}.rb-medio{fill:var(--r-medio)}.rb-cabeza{fill:var(--r-cabeza)}.rb-silbido{fill:var(--r-silbido)}
@@ -936,8 +950,8 @@ const stopAll = () => ALL.forEach(a => a.pause());
 
 GROUPS.forEach(g => {
   const sec = document.createElement('div');
-  sec.className = 'grp'; sec.id = 'grp-' + g.id; sec.setAttribute('data-open', ''); sec.setAttribute('data-ready', '');
-  sec.innerHTML = `<div class="ghead" role="button" tabindex="0" aria-expanded="true" data-act="gtoggle" data-g="${g.id}"><span class="gno">${g.n}</span><span class="gt">${g.title}</span><span class="hs"></span><span class="car">${ICON.chev}</span></div>
+  sec.className = 'grp'; sec.id = 'grp-' + g.id; if (g.n === 1) { sec.setAttribute('data-open', ''); sec.setAttribute('data-ready', ''); }   // solo «Cómodas» arranca abierta
+  sec.innerHTML = `<div class="ghead" role="button" tabindex="0" aria-expanded="${g.n === 1}" data-act="gtoggle" data-g="${g.id}"><span class="gno">${g.n}</span><span class="gt">${g.title}</span><span class="hs"></span><span class="car">${ICON.chev}</span></div>
     <div class="gbody"><div class="gin"><p class="hint" style="margin-bottom:16px">${g.desc}</p><div class="pair"></div>
     <div class="gwarn" role="alert"></div>
     <div class="gsum" hidden><div class="gs-t"></div><button class="btn primary" type="button" data-act="done" data-g="${g.id}">Listo</button></div></div></div>`;
@@ -1245,7 +1259,7 @@ function refreshAll() { SLOTS.forEach(s => renderSlot(s.id)); updateGroups(); if
 function clearAll() {
   if (rec) cancelRec(); stopAll();
   SLOTS.forEach(sl => { S[sl.id].takes.forEach(t => URL.revokeObjectURL(t.url)); S[sl.id] = { takes: [], cur: -1, open: false }; renderSlot(sl.id); });
-  GROUPS.forEach(g => setOpen(g.id, true)); updateGroups();
+  GROUPS.forEach(g => setOpen(g.id, g.n === 1)); updateGroups();
 }
 
 /* ---- Género ----
@@ -1298,7 +1312,7 @@ document.addEventListener('click', e => {
   else if (act === 'done') finishGroup(b.dataset.g);
   else if (act === 'mapsel') { mapSel = mapSel === b.dataset.k ? null : b.dataset.k; renderMap(); }
   else if (act === 'share') shareImages();
-  else if (act === 'maptog') { mapAll = !mapAll; renderMap(); }
+  else if (act === 'maptog') toggleMapAll();
 });
 document.addEventListener('keydown', e => {
   if ((e.key === 'Enter' || e.key === ' ') && e.target.matches('[data-nt],.ghead')) { e.preventDefault(); e.target.click(); }
@@ -1380,19 +1394,40 @@ function renderResults() {
     <div class="foot-logo"><img src="../../Logos/PeachesLogo.jpeg" alt="" onerror="this.remove()">Team Peaches</div>`;
   renderMap();
 }
-function renderMap() {
-  if (!lastR) return;
-  $('#mapTog').textContent = mapAll ? 'Mostrar solo mi tipo de voz' : 'Mostrar todas las tesituras';
+function legendHtml() {
   const key = (k, label, color) => `<button type="button" data-act="mapsel" data-k="${k}" aria-pressed="${mapSel === k}"><i style="background:${color}"></i>${label}</button>`;
   const regs = ['strohbass', 'pecho', 'medio', 'cabeza', 'silbido'].filter(k => (mapAll ? REF : [lastT]).some(t => t.regs.some(r => r[0] === k)));
-  if (mapSel && !['comf', 'abs', 'speech', ...regs].includes(mapSel)) mapSel = null;
-  const leg = `<div class="legend">${regs.map(k => key(k, REG_ES[k], `var(--r-${k})`)).join('')}</div>
+  if (mapSel && !['comf', 'abs', 'speech', ...regs].includes(mapSel)) mapSel = null;   // la selección ya no existe en este modo
+  return `<div class="legend">${regs.map(k => key(k, REG_ES[k], `var(--r-${k})`)).join('')}</div>
     <div class="legend">${key('speech', 'Voz hablada (marca = promedio)', '#fff')}${key('comf', 'Rango cómodo', 'var(--accent)')}${key('abs', 'Rango absoluto', 'var(--teal)')}</div>
     ${mapAll ? '<div class="legend">Recuadros punteados: voz hablada típica de referencia</div>' : ''}`;
+}
+const mapTogTxt = () => mapAll ? 'Mostrar solo mi tipo de voz' : 'Mostrar todas las tesituras';
+let mapAnim = 0;
+function toggleMapAll() {   // las filas se deslizan/funden por CSS (data-all); aquí solo se anima la altura del dibujo
+  mapAll = !mapAll;
+  const svg = $('#mapBox svg');
+  if (!svg || !lastR) { renderMap(); return; }
+  $('#mapTog').textContent = mapTogTxt();
+  const before = mapSel, leg = legendHtml();
+  $('#mapBox .mleg').innerHTML = leg;
+  if (before !== mapSel) { $('#mapBox .chart-scroll').className = 'chart-scroll'; mapPrevSel = mapSel; }
+  const from = parseFloat(svg.getAttribute('viewBox').split(' ')[3]), to = +svg.dataset[mapAll ? 'h2' : 'h1'];
+  if (mapAll) svg.setAttribute('data-all', ''); else svg.removeAttribute('data-all');
+  cancelAnimationFrame(mapAnim);
+  if (REDUCED.matches) { svg.setAttribute('viewBox', `0 0 1000 ${to}`); return; }
+  const t0 = performance.now(), dur = 650;
+  const step = now => { const t = Math.min(1, (now - t0) / dur), e = 1 - Math.pow(1 - t, 5); svg.setAttribute('viewBox', `0 0 1000 ${from + (to - from) * e}`); if (t < 1) mapAnim = requestAnimationFrame(step); };
+  mapAnim = requestAnimationFrame(step);
+}
+function renderMap() {
+  if (!lastR) return;
+  $('#mapTog').textContent = mapTogTxt();
+  const leg = legendHtml();
   const old = $('#mapBox .chart-scroll'), sx = old ? old.scrollLeft : 0;
   const selCls = k => k ? ' sel sel-' + k : '';
   const fadeSel = old && mapPrevSel !== mapSel && !REDUCED.matches;   // se dibuja con la selección anterior y se pasa a la nueva para que se funda
-  $('#mapBox').innerHTML = `<div class="chart-scroll${selCls(fadeSel ? mapPrevSel : mapSel)}">${drawMap(lastR, lastT, mapAll)}</div>${leg}`;
+  $('#mapBox').innerHTML = `<div class="chart-scroll${selCls(fadeSel ? mapPrevSel : mapSel)}">${drawMap(lastR, lastT, mapAll)}</div><div class="mleg">${leg}</div>`;
   if (fadeSel) { const cs = $('#mapBox .chart-scroll'); void cs.getBoundingClientRect(); cs.className = 'chart-scroll' + selCls(mapSel); }
   mapPrevSel = mapSel;
   $('#mapBox .chart-scroll').scrollLeft = sx;
@@ -1412,31 +1447,35 @@ function pianoSvg(lo, hi, X, P, y, withNames) {
 function drawMap(R, T, all) {
   const vals = [R.abs.low, R.abs.high, R.comf.low, R.comf.high].filter(v => v != null); if (R.speech) vals.push(R.speech.p10, R.speech.p90);
   let lo = 36, hi = 96;
-  (all ? REF : [T]).forEach(t => vals.push(t.lo, t.hi));
+  REF.forEach(t => vals.push(t.lo, t.hi));   // siempre todas: así la escala no cambia al alternar entre «mi tipo» y «todas»
   if (vals.length) { lo = Math.min(lo, Math.floor((Math.min(...vals) - 3) / 12) * 12); hi = Math.max(hi, Math.ceil((Math.max(...vals) + 2) / 12) * 12); }
   lo = Math.max(0, lo); hi = Math.min(132, hi);
   const W = 1000, L = 96, P = (W - L - 10) / (hi - lo), X = m => L + (m - lo) * P, RH = 20;
-  let y = 8, body = '';
+  let body = '', low = '';
   const ends = (a, b, yy) => {   // nota en cada extremo, por fuera de la línea
     a = Math.round(a); b = Math.round(b); if (a > b) [a, b] = [b, a];
     return `<text class="el" x="${X(a) - 4}" y="${yy}" text-anchor="end">${lb(a)}</text><text class="el" x="${X(b + 1) + 4}" y="${yy}">${lb(b)}</text>`;
   };
-  (all ? REF : [T]).forEach(t => {
+  // Se dibujan SIEMPRE los 6 tipos. Cada fila es un <g> con dos posiciones (--y1: solo mi tipo, --y2: todas);
+  // al alternar solo cambia data-all en el <svg> y el CSS las desliza y funde con animación.
+  const STEP = RH + 2, te1 = 8 + RH, te2 = 8 + REF.length * STEP;
+  REF.forEach((t, i) => {
     const best = t.id === T.id;
-    body += `<text class="rl${best ? ' best' : ''}" x="${L - 8}" y="${y + 13}" text-anchor="end">${t.es}</text>`;
+    let g = `<text class="rl${best ? ' best' : ''}" x="${L - 8}" y="13" text-anchor="end">${t.es}</text>`;
     t.regs.forEach((r, k) => {
       const a = k === 0 ? r[1] : t.bnd[k - 1] + 0.5, b = k === t.regs.length - 1 ? r[2] + 1 : t.bnd[k] + 0.5;
-      body += `<rect data-sel="${r[0]}" class="rb rb-${r[0]}${best ? ' on' : ''}" x="${X(a)}" y="${y}" width="${(b - a) * P}" height="16"/>`;
+      g += `<rect data-sel="${r[0]}" class="rb rb-${r[0]}${best ? ' on' : ''}" x="${X(a)}" y="0" width="${(b - a) * P}" height="16"/>`;
     });
-    if (all && best) body += `<rect class="rbox" x="${X(t.lo) - 1}" y="${y - 1.5}" width="${(t.hi - t.lo + 1) * P + 2}" height="19" rx="3"/>`;
-    body += ends(t.lo, t.hi, y + 12);
-    y += RH + (all ? 2 : 0);
+    if (best) g += `<rect class="rbox" x="${X(t.lo) - 1}" y="-1.5" width="${(t.hi - t.lo + 1) * P + 2}" height="19" rx="3"/>`;
+    g += ends(t.lo, t.hi, 12);
+    body += `<g class="mrow${best ? ' mine' : ''}" style="--y1:8px;--y2:${8 + i * STEP}px;--i:${i}">${g}</g>`;
   });
-  const typeEnd = y; y += 14;
+  let y = te1 + 14;   // el resto se calcula con la posición de «solo mi tipo»; en «todas» baja D
+  const yz = te2 + 14, D = (te2 - te1) + 28;
   let grid = '';
-  for (let m = lo; m <= hi; m += 12) grid += `<line class="gl" x1="${X(m)}" x2="${X(m)}" y1="0" y2="@KEY"/>`;
+  for (let m = lo; m <= hi; m += 12) grid += `<line class="gl" x1="${X(m)}" x2="${X(m)}" y1="0" y2="100"/>`;
   let band = '';
-  if (R.comf.low != null && R.comf.high != null) band = `<rect class="comfband" x="${X(Math.round(R.comf.low))}" y="0" width="${(Math.round(R.comf.high) - Math.round(R.comf.low) + 1) * P}" height="${typeEnd}"/>`;
+  if (R.comf.low != null && R.comf.high != null) band = `<rect class="comfband" x="${X(Math.round(R.comf.low))}" y="0" width="${(Math.round(R.comf.high) - Math.round(R.comf.low) + 1) * P}" height="100" style="--h1:${te1 / 100};--h2:${te2 / 100}"/>`;
   const sp = R.speech, bar = (cls, a, b, yy) => {
     const k = cls.slice(2);
     a = a != null ? Math.round(a) : null; b = b != null ? Math.round(b) : null;
@@ -1445,37 +1484,40 @@ function drawMap(R, T, all) {
     return '';
   };
   const lab2 = (t, yy) => `<text class="ul" x="${L - 8}" y="${yy + 13}" text-anchor="end">${t}</text>`;
-  if (all) {
-    body += `<text class="rl" x="${L - 8}" y="${y + 13}" text-anchor="end">Hablado típico</text>`;
-    [['Hombres', SPEECH_REF.hombres], ['Mujeres y niños', SPEECH_REF.mujeres]].forEach(([n, z]) => {
-      const w = (z[1] - z[0] + 1) * P; body += `<rect class="zone" x="${X(z[0])}" y="${y}" width="${w}" height="18" rx="5"/><text class="zt" x="${X(z[0]) + w / 2}" y="${y + 12.5}" text-anchor="middle">${n}</text>`;
-    });
-    y += 28;
-  }
-  body += lab2('Hablado', y) + bar('b-speech', sp ? sp.p10 : null, sp ? sp.p90 : null, y);
-  if (sp) { const x = X(Math.round(sp.avg)) + P / 2; body += `<line class="tick" x1="${x}" x2="${x}" y1="${y + 2}" y2="${y + 16}"/>`; }
+  let zone = `<text class="rl" x="${L - 8}" y="${yz + 13}" text-anchor="end">Hablado típico</text>`;
+  [['Hombres', SPEECH_REF.hombres], ['Mujeres y niños', SPEECH_REF.mujeres]].forEach(([n, z]) => {
+    const w = (z[1] - z[0] + 1) * P; zone += `<rect class="zone" x="${X(z[0])}" y="${yz}" width="${w}" height="18" rx="5"/><text class="zt" x="${X(z[0]) + w / 2}" y="${yz + 12.5}" text-anchor="middle">${n}</text>`;
+  });
+  low += lab2('Hablado', y) + bar('b-speech', sp ? sp.p10 : null, sp ? sp.p90 : null, y);
+  if (sp) { const x = X(Math.round(sp.avg)) + P / 2; low += `<line class="tick" x1="${x}" x2="${x}" y1="${y + 2}" y2="${y + 16}"/>`; }
   y += 28;
-  body += lab2('Cómodo', y) + bar('b-comf', R.comf.low, R.comf.high, y); y += 28;
-  body += lab2('Absoluto', y) + bar('b-abs', R.abs.low, R.abs.high, y); y += 34;
+  low += lab2('Cómodo', y) + bar('b-comf', R.comf.low, R.comf.high, y); y += 28;
+  low += lab2('Absoluto', y) + bar('b-abs', R.abs.low, R.abs.high, y); y += 34;
   const key = y; let oct = '';
   for (let m = lo; m < hi; m += 12) oct += `<text class="oct" x="${X(m) + 1}" y="${key + 44}">${cLab(m)}</text>`;
   // teclas de los bordes del rango seleccionado
   let edge = '', ab = null;
-  if (mapSel === 'speech' && sp) ab = [sp.p10, sp.p90];
+  if (mapSel === 'speech' && sp) ab = [sp.p10, sp.avg, sp.p90];   // extremos + promedio
   else if (mapSel === 'comf') ab = [R.comf.low, R.comf.high];
   else if (mapSel === 'abs') ab = [R.abs.low, R.abs.high];
   else if (mapSel) { const r = T.regs.find(r => r[0] === mapSel); if (r) ab = [r[1], r[2]]; }
   if (ab) {
     const ms = [...new Set(ab.filter(v => v != null).map(Math.round))].sort((a, b) => a - b);
+    // posición de las etiquetas: separadas al menos 31 unidades para que no se pisen (2 o 3 notas)
+    const cxs = ms.map(m => X(m) + P / 2), txs = cxs.slice();
+    for (let i = 1; i < txs.length; i++) if (txs[i] < txs[i - 1] + 31) txs[i] = txs[i - 1] + 31;
+    const shift = (cxs.reduce((a, c) => a + c, 0) - txs.reduce((a, c) => a + c, 0)) / txs.length;
+    for (let i = 0; i < txs.length; i++) txs[i] += shift;
     ms.forEach((m, i) => {
-      const black = [1, 3, 6, 8, 10].includes(m % 12), cx = X(m) + P / 2, close = ms.length === 2 && ms[1] - ms[0] < 4;
-      const tx = cx + (close ? (i ? 15 : -15) : 0);
+      const black = [1, 3, 6, 8, 10].includes(m % 12), cx = cxs[i];
+      const tx = txs[i];
       const [wx0, wx1] = whiteX(m, lo, hi, X, P);
       edge += `<rect class="ekey" style="fill:var(--b-${mapSel})" x="${black ? X(m) + P * 0.08 : wx0 + 0.5}" y="${black ? key : key + 19}" width="${black ? P * 0.84 : wx1 - wx0 - 1}" height="${black ? 19 : 11}"/>
         <line class="eline" x1="${cx}" y1="${key + (black ? 19 : 30)}" x2="${tx}" y2="${key + 50}"/><rect class="ekl" x="${tx - 14}" y="${key + 50}" width="28" height="17" rx="5" style="fill:var(--b-${mapSel})"/><text class="etxt" x="${tx}" y="${key + 62.5}">${lb(m)}</text>`;
     });
   }
-  return `<svg viewBox="0 0 ${W} ${key + 72}" role="img" aria-label="Tus rangos sobre un teclado">${grid.replace(/@KEY/g, key)}${band}${body}${pianoSvg(lo, hi, X, P, key)}${oct}${edge}</svg>`;
+  const H1 = key + 72;
+  return `<svg viewBox="0 0 ${W} ${all ? H1 + D : H1}"${all ? ' data-all' : ''} data-h1="${H1}" data-h2="${H1 + D}" role="img" aria-label="Tus rangos sobre un teclado"><g class="mgrid" style="--h1:${key / 100};--h2:${(key + D) / 100}">${grid}</g>${band}${body}<g class="mzone">${zone}</g><g class="mlow" style="--d:${D}px">${low}${pianoSvg(lo, hi, X, P, key)}${oct}${edge}</g></svg>`;
 }
 
 /* ---- Guardar resultado ----
