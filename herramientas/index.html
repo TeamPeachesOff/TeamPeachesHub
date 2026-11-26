@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>Herramientas · Team Peaches Hub 🍑</title>
+<link rel="icon" type="image/jpeg" href="https://raw.githubusercontent.com/TeamPeachesOff/TeamPeachesHub/main/Logos/PeachesLogo.jpeg">
+<meta name="theme-color" content="#180E1D">
+<link rel="stylesheet" href="../styles/anuario-fonts.css?v=1">
+<style>
+/* Mismas variables, fondo, header y botones que el Hub (index.html) */
+:root{--peach-1:#ff8fb1;--peach-2:#EF0870;--bg:#1a1020;--card-bg:#2a1830;--card-bg-2:#33203a;--text:#fbeaf2;--text-dim:#c9a8bb;--rosa-comp:#0DEF8A;--radius:16px;}
+*{box-sizing:border-box;}
+html{height:100%;overflow:hidden;background:#180E1D;color-scheme:dark;overscroll-behavior:none;}
+body{margin:0;font-family:'PeachesSans','Segoe UI',Arial,sans-serif;background:#180E1D linear-gradient(160deg,var(--bg),#241228 60%,#170b1c) fixed;color:var(--text);height:100%;overflow-y:auto;overscroll-behavior:none;-webkit-overflow-scrolling:touch;scrollbar-width:thin;scrollbar-color:rgba(255,255,255,0.28) transparent;}
+body::-webkit-scrollbar{width:6px;}body::-webkit-scrollbar-track{background:transparent;}
+body::-webkit-scrollbar-thumb{background:rgba(255,255,255,0.28);border-radius:99px;}
+a{color:inherit;text-decoration:none;-webkit-user-select:none;user-select:none;-webkit-touch-callout:none;-webkit-tap-highlight-color:transparent;touch-action:manipulation;}
+img{max-width:100%;display:block;}
+
+header{position:sticky;top:0;z-index:50;background:#180E1D;border-bottom:1px solid rgba(239,8,112,0.25);padding-top:env(safe-area-inset-top,0px);}
+.header-inner{position:relative;max-width:640px;margin:0 auto;padding:14px 62px;display:flex;align-items:center;justify-content:center;gap:12px;}
+/* X de cerrar: la misma de todo el Hub (marcada, con brillo rosa, sin botón) */
+#closeBtn{position:absolute;top:50%;right:8px;transform:translateY(-50%);width:44px;height:44px;display:grid;place-items:center;color:#fff;-webkit-tap-highlight-color:transparent;}
+#closeBtn::before{content:"";display:block;width:26px;height:26px;background:currentColor;-webkit-mask:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M5 5L19 19M19 5L5 19' fill='none' stroke='%23000' stroke-width='3.6' stroke-linecap='round'/%3E%3C/svg%3E") center/contain no-repeat;mask:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M5 5L19 19M19 5L5 19' fill='none' stroke='%23000' stroke-width='3.6' stroke-linecap='round'/%3E%3C/svg%3E") center/contain no-repeat;filter:drop-shadow(0 0 5px rgba(239,8,112,.9)) drop-shadow(0 0 12px rgba(239,8,112,.45));transition:transform .28s cubic-bezier(.3,1.5,.5,1),background-color .2s;}
+#closeBtn:hover::before,#closeBtn:focus-visible::before{transform:rotate(90deg) scale(1.15);background:#ff8fb1;}
+#closeBtn:active::before{transform:rotate(90deg) scale(.88);}
+#closeBtn:focus-visible{outline:none;}
+.logo{font-weight:800;font-size:19px;letter-spacing:.5px;background:linear-gradient(90deg,var(--peach-2),#ffffff);-webkit-background-clip:text;background-clip:text;color:transparent;white-space:nowrap;}
+
+main{max-width:640px;margin:0 auto;padding:6px 16px 70px;}
+
+/* Separador de tipo: mismo estilo que el separador de años del Hub */
+.sec{margin-top:30px;}
+.sec-title{display:flex;align-items:center;gap:10px;margin:0 2px 20px;}
+.sec-title::before,.sec-title::after{content:"";flex:1;height:2px;border-radius:2px;background:linear-gradient(90deg,transparent,rgba(239,8,112,0.3));}
+.sec-title::after{background:linear-gradient(90deg,rgba(239,8,112,0.3),transparent);}
+.sec-title span{flex:0 1 auto;min-width:0;line-height:1.3;font-size:12px;font-weight:800;letter-spacing:.06em;color:var(--text-dim);background:var(--card-bg-2);padding:4px 14px;border-radius:999px;border:1px solid rgba(239,8,112,0.25);text-align:center;}
+
+/* Cuadrícula tipo apps del teléfono */
+.grid{display:flex;flex-wrap:wrap;justify-content:center;gap:26px 10px;}
+.app{display:flex;flex-direction:column;align-items:center;gap:8px;width:104px;text-align:center;border-radius:16px;padding:2px 0 4px;outline:none;cursor:pointer;background:none;border:0;font:inherit;color:inherit;}
+.ico{position:relative;width:76px;height:76px;transition:transform .3s cubic-bezier(.22,1,.36,1);}
+.ico img{width:100%;height:100%;object-fit:contain;filter:drop-shadow(0 6px 10px rgba(0,0,0,0.45));}
+.ico.ring img{border-radius:23%;box-shadow:0 0 0 1.5px rgba(255,143,177,0.4);}
+.bdg{position:absolute;right:-6px;bottom:-6px;width:21px;height:21px;border-radius:50%;background:var(--card-bg);border:1.5px solid rgba(239,8,112,0.55);color:var(--peach-1);font:700 11px/1 inherit;font-style:normal;display:grid;place-items:center;box-shadow:0 2px 6px rgba(0,0,0,0.4);}
+.nm{font-weight:800;font-size:13px;line-height:1.2;color:var(--text);}
+.ds{font-size:11px;line-height:1.3;color:var(--text-dim);display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden;}
+.app:active .ico{transform:scale(0.9);}
+.app:focus-visible .ico{outline:3px solid var(--rosa-comp);outline-offset:4px;border-radius:20px;}
+@media (hover:hover){.app:hover .ico{transform:translateY(-4px) scale(1.05);}.app:hover .nm{color:var(--peach-1);}}
+.nm{transition:color .2s ease;}
+.pronto{margin-top:38px;text-align:center;font-size:12.5px;color:var(--text-dim);}
+
+@keyframes rise{from{opacity:0;transform:translateY(16px);}}
+@keyframes fade{from{opacity:0;}}
+@media (prefers-reduced-motion:no-preference){
+  .intro{animation:fade .6s ease backwards;}
+  .sec-title{animation:fade .6s ease backwards;animation-delay:calc(var(--s,0) * 90ms + .05s);}
+  .app{animation:rise .6s cubic-bezier(.22,1,.36,1) backwards;animation-delay:calc(var(--i,0) * 60ms + .12s);}
+  .pronto{animation:fade .8s 1s ease backwards;}
+}
+</style>
+</head>
+<body>
+<header>
+  <div class="header-inner">
+    <div class="logo">🍑 Herramientas</div>
+    <a id="closeBtn" href="../" aria-label="Cerrar Herramientas"></a>
+  </div>
+</header>
+
+<main>
+  <div id="secciones"></div>
+  <p class="pronto">Pronto habrá más herramientas 🍑</p>
+</main>
+
+<script>
+/* Para agregar una herramienta: copia un bloque { n, d, img, href } dentro de la sección que quieras.
+   - n: nombre · d: descripción corta · img: logo cuadrado (1:1) en herramientas/logos/
+   - href con "http" se abre en otra pestaña; si es una ruta del Hub (ej. "rango-vocal/") se abre en la misma.
+   - accion: 'piano' en vez de href → abre el Piano de rangos vocales del Hub (solo miembros). */
+const SECCIONES = [
+  { titulo: '🎤 Análisis de voz', items: [
+    { n: 'Rango vocal', d: 'Descubre tu tipo de voz', img: 'logos/rango-vocal.png', href: 'rango-vocal/', ring: true },
+    { n: 'Piano vocal', d: 'Los rangos de todo el team', img: 'logos/piano-vocal.png', accion: 'piano', ring: true },
+    { n: 'Analizar notas en canción', d: 'Sube una canción y mira sus notas', img: 'logos/analizar-notas.png', href: 'rango-vocal/?v=cancion', ring: true }
+  ]},
+  { titulo: '⬇️ Descargadores', items: [
+    { n: 'Y2mate', d: 'Descarga de YouTube', img: 'logos/y2mate.png', href: 'https://y2mate.gs/es/' },
+    { n: 'Smule Downloader', d: 'Descarga de Smule', img: 'logos/smuledownloader.png', href: 'https://smuledownloader.online/' },
+    { n: 'Sownloader', d: 'Extensión para navegadores, descarga de Smule', img: 'logos/sownloader.png', href: 'https://sownloader.com/' }
+  ]},
+  { titulo: '✂️ Herramientas de edición', items: [
+    { n: 'Vocal Remover', d: 'Borrador de instrumental', img: 'logos/vocalremover.png', href: 'https://vocalremover.org/es/' },
+    { n: 'X-Minus', d: 'Borrador de instrumental', img: 'logos/xminus.png', href: 'https://x-minus.pro/ai' },
+    { n: 'ArtCraft', d: 'Herramientas creativas de código abierto', img: 'logos/artcraft.png', href: 'https://getartcraft.com/apps' }
+  ]}
+];
+
+/* Dentro del Hub esta página vive en una ventana (iframe): la X cierra esa ventana en vez de cargar el Hub dentro de sí mismo. */
+document.getElementById('closeBtn').addEventListener('click', e => {
+  try { if (window.parent && window.parent !== window && window.parent.cerrarModulo) { e.preventDefault(); window.parent.cerrarModulo(); } } catch (err) {}
+});
+const abrirPiano = () => {
+  try { if (window.parent && window.parent !== window && window.parent.abrirPianoVocalDesdeHerramientas) { window.parent.abrirPianoVocalDesdeHerramientas(); return; } } catch (err) {}
+  location.href = '../';   // fuera del Hub no hay piano: se vuelve al Hub
+};
+
+const box = document.getElementById('secciones');
+let n = 0;
+SECCIONES.forEach((sec, si) => {
+  const s = document.createElement('section'); s.className = 'sec'; s.style.setProperty('--s', si);
+  const h = document.createElement('div'); h.className = 'sec-title';
+  const sp = document.createElement('span'); sp.textContent = sec.titulo; h.appendChild(sp); s.appendChild(h);
+  const g = document.createElement('div'); g.className = 'grid';
+  sec.items.forEach(it => {
+    const esAccion = !!it.accion, ext = !esAccion && /^https?:/.test(it.href);
+    const a = document.createElement(esAccion ? 'button' : 'a'); a.className = 'app'; a.style.setProperty('--i', n++);
+    if (esAccion) { a.type = 'button'; a.onclick = abrirPiano; } else a.href = it.href;
+    if (ext) { a.target = '_blank'; a.rel = 'noopener noreferrer'; }
+    a.innerHTML = '<span class="ico' + (it.ring ? ' ring' : '') + '"><img alt="" width="76" height="76" loading="lazy"><i class="bdg"></i></span><span class="nm"></span><span class="ds"></span>';
+    a.querySelector('img').src = it.img;
+    a.querySelector('.bdg').textContent = ext ? '↗' : '🍑';
+    a.querySelector('.nm').textContent = it.n;
+    a.querySelector('.ds').textContent = it.d;
+    a.setAttribute('aria-label', it.n + ' — ' + it.d + (ext ? ' (se abre en otra pestaña)' : ''));
+    g.appendChild(a);
+  });
+  s.appendChild(g); box.appendChild(s);
+});
+</script>
+</body>
+</html>

@@ -477,6 +477,7 @@
     });
   }
   function cerrar(){ closeModal("rangoPianoModal"); }
+  window.tphAbrirPianoVocal=abrir;   // lo usa la pestaña Herramientas (sidebar) para abrir el piano sin pasar por "Ordenar miembros"
 
   /* ---------- Botón dentro de "Ordenar miembros" ----------
    * El modal de orden vuelve a pintar sus opciones cada vez que se abre; después de ese pintado

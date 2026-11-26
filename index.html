@@ -1239,6 +1239,7 @@
   <div class="drawer-divider"></div>
   <div class="drawer-nav-group">
     <button class="drawer-nav-btn" id="miembrosDrawerBtn">👥 Miembros</button>
+    <button class="drawer-nav-btn" id="herramientasDrawerBtn">🧰 Herramientas</button>
     <button class="drawer-nav-btn hidden" id="buzonDrawerBtn">📮 Buzón Anónimo</button>
     <button class="drawer-nav-btn hidden" id="reporteDrawerBtn">🐞 Reportar Error</button>
   </div>
@@ -3371,11 +3372,14 @@ let _moduloScrollY = 0;
 async function abrirModulo(id){
   if(!MODULO_ID_RE.test(id)) return;
   if(id==="competencia") precargarCompetencia_();
-  const info = await infoModulo_(id);
+  // "herramientas" no es un módulo activable: es una página fija (carpeta herramientas/) que se abre igual, en esta misma ventana.
+  const esHerr = id==="herramientas";
+  const info = esHerr ? null : await infoModulo_(id);
+  const base = esHerr ? "herramientas/" : MODULOS_DIR+id+"/";
   const archivo = (info && typeof info.archivo==="string" && /^[A-Za-z0-9_.-]{1,60}\.html$/.test(info.archivo)) ? info.archivo : "index.html";
   let ov = document.getElementById("moduloOverlay");
   if(!ov){ ov = document.createElement("div"); ov.id="moduloOverlay"; document.body.appendChild(ov); }
-  ov.innerHTML = `<iframe src="${MODULOS_DIR}${id}/${archivo}" title="${escAttr(id)}" allow="clipboard-write"></iframe>`;
+  ov.innerHTML = `<iframe src="${base}${archivo}" title="${escAttr(id)}" allow="clipboard-write"></iframe>`;
   ov.classList.add("open");
   _moduloScrollY = window.scrollY || document.body.scrollTop || 0;
   document.body.classList.add("modulo-abierto");
@@ -8215,6 +8219,13 @@ function abrirStaffHub(){
   document.getElementById("hubIntentosFallidos").onclick=abrirIntentosFallidos;
 }
 async function probarHub(action,nombre,idActividad){ const r=await apiPost({action:action,idActividad:idActividad},"Enviando prueba..."); toast(r.ok?nombre+" enviado ✅":"Error: "+(r.error||"")); }
+// Herramientas > Piano vocal: cierra la ventana de Herramientas y abre el piano (el mismo de "Ordenar miembros"). Solo miembros/staff, igual que allá.
+window.abrirPianoVocalDesdeHerramientas=function(){
+  cerrarModulo();
+  if(nivel!=="staff" && nivel!=="miembro"){ toast("El piano vocal es solo para miembros 🍑"); return; }
+  setTimeout(()=>{ if(window.tphAbrirPianoVocal) window.tphAbrirPianoVocal(); },80);
+};
+document.getElementById("herramientasDrawerBtn").onclick=()=>{ closeDrawer(); try{ trackUI("drawer_herramientas"); }catch(e){} abrirModulo("herramientas"); };
 document.getElementById("miembrosDrawerBtn").onclick=()=>{
   closeDrawer();
   if(staffPin||memberPin){ mostrarViewMiembros(); return; }
@@ -9262,7 +9273,7 @@ document.getElementById("miembrosContarBtn").onclick=()=>{
   }
 })();
 </script>
-<script src="scripts/rango-piano.js?v=10"></script>
+<script src="scripts/rango-piano.js?v=11"></script>
 <script src="scripts/compartir-faltas.js?v=2"></script>
 <script src="scripts/reproducir-todo.js?v=13"></script>
 </body>
