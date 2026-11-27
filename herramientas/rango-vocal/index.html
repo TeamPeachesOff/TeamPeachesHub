@@ -233,7 +233,16 @@ html,body{overflow-x:clip}
 #mapBox.grow :is(.rb,.b-comf,.b-abs,.b-speech){transform-box:fill-box;transform-origin:0 50%;animation:growX 1s cubic-bezier(.22,1,.36,1) backwards}
 #mapBox.grow .b-speech{animation-delay:.1s}#mapBox.grow .b-comf{animation-delay:.25s}#mapBox.grow .b-abs{animation-delay:.4s}
 }
-</style></head>
+</style>
+<style id="pg-css">
+/* ===== Paso 4 · Passaggio (desconectado) ===== */
+.pg{display:flex;flex-direction:column;gap:14px;margin-top:8px}.pg-lead{max-width:62ch;color:var(--ink)}
+.pg-list{display:grid;gap:14px}.pg-card{display:flex;flex-direction:column;gap:10px;padding:16px;border:1px solid var(--line);border-radius:14px;background:var(--accent-soft)}
+.pg-h{display:flex;justify-content:space-between;align-items:baseline;gap:10px}
+.pg-cv{width:100%;height:150px;display:block;border-radius:10px;background:var(--bg)}
+.pg-res{padding:18px;border:1px solid var(--line2);border-radius:14px;background:var(--accent-soft)}.pg-line{font-size:14px}
+</style>
+</head>
 <body>
 <button id="back" type="button" aria-label="Volver a Herramientas"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 5l-7 7 7 7"/></svg></button><button id="cerrar" type="button" aria-label="Cerrar"></button>
 <div class="wrap">
@@ -284,6 +293,13 @@ html,body{overflow-x:clip}
   </section>
 
   <!-- Página 3: Resultado -->
+  <!-- Paso 4: Passaggio (funciona en local; aún no se guarda en la base de datos) -->
+  <section id="v-passaggio" class="view" hidden>
+    <h1>Passaggio</h1>
+    <div id="pgHost"></div>
+    <div class="cont" style="gap:10px;flex-wrap:wrap"><button class="btn primary big" id="btnPgCont" type="button">Ver resultado</button><button class="btn quiet" id="btnPgSkip" type="button">Omitir este paso</button></div>
+  </section>
+
   <section id="v-result" class="view" hidden><div id="res"></div></section>
 
   <!-- Canción (se abre desde la portada) -->
@@ -846,6 +862,172 @@ function synthMelody(notes, sr) {
   return y;
 }
 /*CORE-END*/
+/*PASSAGGIO-ENGINE-START*/
+/* ====== Paso 4 · Passaggio (motor) ======
+   Funciones puras, sin DOM. Reutilizan el motor de tono de arriba: el audio grabado se analiza con analyzePitch()
+   (YIN multibanda + Viterbi) y los cuadros {t, rms, f0, conf} se revisan buscando el quiebre de la sirena.
+   Nada de esto se ejecuta solo: lo llama passMount() cuando se conecte el paso. */
+const PASS = {
+  hop: 0.015,        // 15 ms por cuadro
+  minConf: 0.45,     // claridad mínima para fiarse del f0 de un cuadro
+  minRun: 4,         // un tramo con voz necesita ≥ 4 cuadros (60 ms) para contar
+  jumpSt: 2.0,       // salto discontinuo mínimo (semitonos) entre cuadros consecutivos
+  gapMax: 0.30,      // hueco máximo (s) que aún cuenta como parte del mismo deslizamiento
+  gapMin: 0.03,      // hueco mínimo (s) para considerarlo micro-caída
+  maxSec: 14,        // duración máxima de cada intento
+  outlierSt: 3       // un intento a más de 3 st de la mediana se descarta
+};
+const avgOf = a => a.reduce((s, v) => s + v, 0) / a.length;
+const medAvg = a => { const s = [...a].sort((p, q) => p - q), n = s.length; return n % 2 ? s[(n - 1) / 2] : (s[n / 2 - 1] + s[n / 2]) / 2; };
+
+// FFT radix-2 en sitio (para el centroide espectral).
+function fftInPlace(re, im) {
+  const n = re.length;
+  for (let i = 1, j = 0; i < n; i++) {
+    let bit = n >> 1; for (; j & bit; bit >>= 1) j ^= bit; j ^= bit;
+    if (i < j) { let t = re[i]; re[i] = re[j]; re[j] = t; t = im[i]; im[i] = im[j]; im[j] = t; }
+  }
+  for (let len = 2; len <= n; len <<= 1) {
+    const ang = -2 * Math.PI / len, wr = Math.cos(ang), wi = Math.sin(ang);
+    for (let i = 0; i < n; i += len) {
+      let cr = 1, ci = 0;
+      for (let k = 0; k < len / 2; k++) {
+        const a = i + k, b = a + len / 2, tr = re[b] * cr - im[b] * ci, ti = re[b] * ci + im[b] * cr;
+        re[b] = re[a] - tr; im[b] = im[a] - ti; re[a] += tr; im[a] += ti;
+        const nr = cr * wr - ci * wi; ci = cr * wi + ci * wr; cr = nr;
+      }
+    }
+  }
+}
+// Centroide espectral (Hz) de cada cuadro con voz. Devuelve NaN donde no hay f0.
+function spectralCentroids(x, sr, frames) {
+  const N = 2048, re = new Float64Array(N), im = new Float64Array(N), win = new Float64Array(N);
+  for (let i = 0; i < N; i++) win[i] = 0.5 - 0.5 * Math.cos(2 * Math.PI * i / (N - 1));
+  const kMax = Math.min(N / 2 - 1, Math.floor(6000 * N / sr)), out = new Float64Array(frames.length).fill(NaN);
+  frames.forEach((f, k) => {
+    if (!(f.f0 > 0)) return;
+    const c = Math.round(f.t * sr) - N / 2; if (c < 0 || c + N > x.length) return;
+    for (let i = 0; i < N; i++) { re[i] = x[c + i] * win[i]; im[i] = 0; }
+    fftInPlace(re, im);
+    let num = 0, den = 0;
+    for (let b = 2; b <= kMax; b++) { const m = Math.hypot(re[b], im[b]); num += m * b; den += m; }
+    if (den > 0) out[k] = (num / den) * sr / N;
+  });
+  return out;
+}
+
+// Pendiente (st por cuadro) por mínimos cuadrados de los últimos n puntos con voz antes del índice a (inclusive).
+function slopeBefore(m, a, n) {
+  const xs = [], ys = [];
+  for (let k = a; k >= 0 && xs.length < n; k--) { if (m[k] !== m[k]) break; xs.push(k); ys.push(m[k]); }
+  if (xs.length < 4) return { slope: 0, n: xs.length, rise: 0 };
+  const mx = avgOf(xs), my = avgOf(ys); let sxy = 0, sxx = 0;
+  xs.forEach((v, i) => { sxy += (v - mx) * (ys[i] - my); sxx += (v - mx) * (v - mx); });
+  return { slope: sxx ? sxy / sxx : 0, n: xs.length, rise: ys[0] - ys[ys.length - 1] };
+}
+
+/* Analiza un intento. frames = salida de analyzePitch; x/sr (opcionales) activan el criterio espectral.
+   Devuelve { ok, reason?, midi?, t?, kind?, jump?, score?, conf?, flags[], series[], ev } */
+function detectPassaggio(frames, x, sr) {
+  const hop = frames.length > 1 ? frames[1].t - frames[0].t : PASS.hop, n = frames.length;
+  const m = new Float64Array(n).fill(NaN);
+  frames.forEach((f, k) => { if (f.f0 > 0 && f.conf >= PASS.minConf) m[k] = hzToMidi(f.f0); });
+  // 1) quita errores de un solo cuadro (mediana de 3 respetando los escalones reales)
+  for (let k = 1; k < n - 1; k++) {
+    if (m[k - 1] === m[k - 1] && m[k] === m[k] && m[k + 1] === m[k + 1]) {
+      const md = medAvg([m[k - 1], m[k], m[k + 1]]);
+      if (Math.abs(m[k] - md) > 1.5 && Math.abs(m[k - 1] - m[k + 1]) < 1) m[k] = md;
+    }
+  }
+  // 2) tramos con voz: descarta los muy cortos
+  const runs = []; let s0 = -1;
+  for (let k = 0; k <= n; k++) {
+    const v = k < n && m[k] === m[k];
+    if (v && s0 < 0) s0 = k;
+    if (!v && s0 >= 0) { if (k - s0 >= PASS.minRun) runs.push([s0, k - 1]); else for (let j = s0; j < k; j++) m[j] = NaN; s0 = -1; }
+  }
+  const series = Array.from(m, (v, k) => (v === v ? { t: frames[k].t, m: v } : null));
+  const voiced = runs.reduce((s, r) => s + r[1] - r[0] + 1, 0);
+  if (voiced * hop < 0.8) return { ok: false, reason: 'poca-voz', series, flags: [] };
+  const vals = []; runs.forEach(r => { for (let k = r[0]; k <= r[1]; k++) vals.push(m[k]); });
+  if (pct(vals, 0.95) - pct(vals, 0.05) < 4) return { ok: false, reason: 'sin-recorrido', series, flags: [] };
+
+  const cent = x && sr ? spectralCentroids(x, sr, frames) : null;
+  const cAvg = (i0, i1) => { const v = []; for (let k = Math.max(0, i0); k <= Math.min(n - 1, i1); k++) if (cent[k] === cent[k]) v.push(cent[k]); return v.length >= 3 ? avgOf(v) : NaN; };
+  const rmsAvg = (i0, i1) => { const v = []; for (let k = Math.max(0, i0); k <= Math.min(n - 1, i1); k++) v.push(frames[k].rms); return v.length ? avgOf(v) : 0; };
+
+  const cands = [];
+  const addCand = (a, b, kind) => {   // a: último cuadro antes del quiebre, b: primero después
+    const pre = slopeBefore(m, a, 20);
+    if (pre.n < 6) return;                                        // sin tramo previo no hay "subida" que juzgar
+    if (pre.slope < 0.005 && pre.rise < 0.8) return;              // tiene que venir subiendo
+    const span = b - a;
+    let post = []; for (let k = b; k < Math.min(n, b + 6) && m[k] === m[k]; k++) post.push(m[k]);
+    if (post.length < 4) return;
+    let preV = []; for (let k = a; k > a - 6 && k >= 0 && m[k] === m[k]; k--) preV.push(m[k]);
+    // salto = nivel después − nivel antes (medianas de 4 cuadros, así el cuadro borroso del cambio no lo achica) − lo que habría subido sin quiebre
+    const jump = medAvg(post.slice(0, 4)) - medAvg(preV.slice(0, 4)) - Math.max(0, pre.slope) * (span + 3);
+    if (medAvg(post) < m[a] + 0.5) return;                        // no regresa: se queda arriba
+    const gapS = (span - 1) * hop, flags = [];
+    let score = 0, spec = 0;
+    const dip = rmsAvg(a - 4, a) > 0 ? rmsAvg(a + 1, b - 1) / rmsAvg(a - 4, a) : 1;
+    if (kind === 'salto') {
+      if (jump < PASS.jumpSt - 0.3 && !cent) return;
+      score += Math.min(2, Math.max(0, (jump - 1) / 2));
+    } else {                                                     // hueco: micro-caída seguida de reanudación más aguda
+      if (gapS < PASS.gapMin || gapS > PASS.gapMax || jump < 0.7) return;
+      score += 0.6 + Math.min(1.2, jump / 3);
+      if (dip < 0.6) { score += 0.6; flags.push('caída de volumen'); }
+    }
+    if (cent) {
+      const c0 = cAvg(a - 5, a), c1 = cAvg(b, b + 5);
+      if (c0 === c0 && c1 === c1 && c1 < c0 * 0.8) { spec = c1 < c0 * 0.65 ? 0.8 : 0.5; score += spec; flags.push('cae el brillo armónico'); }
+    }
+    const ok = kind === 'salto' ? (jump >= PASS.jumpSt || (jump >= 1.2 && spec > 0)) : (score >= 1.1);
+    if (!ok) return;
+    if (jump >= 9) { score *= 0.5; flags.push('salto muy grande (¿error de octava?)'); }
+    cands.push({ a, b, kind, jump, score, flags, midi: medAvg(preV), t: frames[a].t });
+  };
+  for (const [i0, i1] of runs) for (let k = i0; k < i1; k++) addCand(k, k + 1, 'salto');
+  for (let i = 0; i < runs.length - 1; i++) { const a = runs[i][1], b = runs[i + 1][0]; if ((b - a) * hop <= PASS.gapMax + hop) addCand(a, b, 'hueco'); }
+
+  if (!cands.length) return { ok: false, reason: 'sin-quiebre', series, flags: [] };
+  cands.sort((p, q) => q.score - p.score || p.a - q.a);
+  const c = cands[0];
+  return { ok: true, midi: c.midi, t: c.t, tAfter: frames[c.b].t, kind: c.kind, jump: c.jump, score: c.score,
+    conf: c.score >= 2 ? 'alta' : c.score >= 1.2 ? 'media' : 'baja', flags: c.flags, series };
+}
+
+/* Resume los 3 intentos: descarta atípicos y toma la mediana. attempts = [{midi}|null, …] */
+function passaggioSummary(attempts) {
+  const v = attempts.map(a => (a && a.ok ? a.midi : null)).filter(m => m != null);
+  if (!v.length) return null;
+  const md = medAvg(v);
+  let keep = v.length >= 3 ? v.filter(m => Math.abs(m - md) <= PASS.outlierSt) : v;
+  if (!keep.length) keep = v;
+  const final = medAvg(keep), spread = Math.max(...keep) - Math.min(...keep), dropped = v.length - keep.length;
+  const conf = keep.length >= 3 && spread <= 1.5 ? 'alta' : keep.length >= 2 && spread <= 2.5 ? 'media' : 'baja';
+  return { midi: Math.round(final), exact: final, used: keep.length, valid: v.length, dropped, spread, conf, all: v };
+}
+
+/* Zona esperada del quiebre pecho→cabeza/falsete en una sirena (aprox., ajustable): [centro, mín, máx] en midi. */
+const PASS_EXPECT = {
+  bajo: [57, 54, 60], baritono: [60, 57, 63], tenor: [64, 61, 67],
+  contralto: [62, 59, 65], mezzo: [64, 61, 67], soprano: [66, 63, 69]
+};
+/* Cruza el quiebre con la tesitura (Pasos 1–3). R = collect(); S = passaggioSummary(). */
+function passaggioCheck(R, sum) {
+  if (!sum) return null;
+  const T = classify(R).best, E = PASS_EXPECT[T.id], d = sum.midi - E[0];
+  const status = sum.midi >= E[1] && sum.midi <= E[2] ? 'coincide' : Math.abs(d) <= 4 ? 'cercano' : 'distinto';
+  let near = null, nd = 1e9;
+  for (const id in PASS_EXPECT) { const dd = Math.abs(sum.midi - PASS_EXPECT[id][0]); if (dd < nd) { nd = dd; near = REF.find(t => t.id === id); } }
+  const cl = R.comf.low, ch = R.comf.high;
+  const inComf = cl != null && ch != null ? sum.midi >= Math.round(cl) - 1 && sum.midi <= Math.round(ch) + 1 : null;
+  return { type: T, expected: E, diff: d, status, nearest: near && near.id !== T.id && status !== 'coincide' ? near : null, inComf };
+}
+/*PASSAGGIO-ENGINE-END*/
+
 const PARAS = [
   'Esta mañana salí temprano a caminar por el parque. El aire estaba fresco, los árboles todavía llevaban gotas de rocío y un grupo de niños jugaba cerca de la fuente. Me detuve un momento a escuchar los pájaros y pensé que ojalá todos los días empezaran con esa calma.',
   'Cuando llegué a la estación, el tren ya había partido. Le pregunté a una señora cuándo salía el siguiente y me respondió con una sonrisa que faltaban veinte minutos. Compré un café, me senté junto a la ventana y aproveché para escribir unas cartas atrasadas.',
@@ -899,13 +1081,13 @@ const ICON = {
 const fmtT = s => Math.floor(s / 60) + ':' + String(Math.floor(s % 60)).padStart(2, '0');
 
 /* ---- 2. Páginas ---- */
-const PARENT = { test: 'home', result: 'test', song: 'home' };
+const PARENT = { test: 'home', passaggio: 'test', song: 'home', get result() { return replay ? 'test' : 'passaggio'; } };
 let view = 'home';
 const REDUCED = matchMedia('(prefers-reduced-motion: reduce)');
-const DEPTH = { home: 0, test: 1, song: 1, result: 2 };
+const DEPTH = { home: 0, test: 1, song: 1, passaggio: 2, result: 3 };
 let goTok = 0, resFresh = false, replay = null;   // replay: {R, prevSex, prevName} mientras se ve el resultado de otra persona
 function go(v) {
-  if (v === 'result' && !todasListas() && !replay) return;   // sin las 5 grabaciones no se pasa al resultado
+  if ((v === 'result' || v === 'passaggio') && !todasListas() && !replay) return;   // sin las 5 grabaciones no se pasa al resultado
   if (replay && v !== 'result') { sex = replay.prevSex; userName = replay.prevName; replay = null; }   // al salir se vuelve a lo propio
   stopAll();
   const prev = view, tok = ++goTok, target = $('#v-' + v);
@@ -918,7 +1100,8 @@ function go(v) {
     if (tok !== goTok) return;
     olds.forEach(e => { e.classList.remove('leaving'); e.hidden = true; });
     if (v === 'home') nameBox(false);
-    if (v !== 'test') releaseMic();
+    if (v !== 'test' && v !== 'passaggio') releaseMic();
+    if (v === 'passaggio') pgEnter();
     target.hidden = false;
     if (v === 'result') { resFresh = true; renderResults(); guardarResultado(); setTimeout(() => { resFresh = false; }, 1500); }
     window.scrollTo(0, 0);
@@ -1286,11 +1469,11 @@ function finishGroup(gid) {
   const next = GROUPS[i + 1]; setOpen(next.id, true);
   setTimeout(() => $('#grp-' + next.id).scrollIntoView({ block: 'start', behavior: REDUCED.matches ? 'auto' : 'smooth' }), REDUCED.matches ? 0 : 460);
 }
-function refreshAll() { SLOTS.forEach(s => renderSlot(s.id)); updateGroups(); if (view === 'result') renderResults(); renderSong(); }
+function refreshAll() { SLOTS.forEach(s => renderSlot(s.id)); updateGroups(); if (view === 'result') renderResults(); renderSong(); pgRefresh(); }
 function clearAll() {
   if (rec) cancelRec(); stopAll();
   SLOTS.forEach(sl => { S[sl.id].takes.forEach(t => URL.revokeObjectURL(t.url)); S[sl.id] = { takes: [], cur: -1, open: false }; renderSlot(sl.id); });
-  GROUPS.forEach(g => setOpen(g.id, g.n === 1)); updateGroups();
+  GROUPS.forEach(g => setOpen(g.id, g.n === 1)); updateGroups(); pgReset();
 }
 
 /* ---- Género ----
@@ -1363,7 +1546,9 @@ $('#btnDemo').hidden = true; $('#btnReplay').hidden = true;
   const now = Date.now(); n = now - t < 1500 ? n + 1 : 1; t = now;
   if (n >= 5) { n = 0; $('#btnDemo').hidden = false; $('#btnReplay').hidden = false; }
 }); })();
-$('#btnCont').addEventListener('click', () => { if (todasListas()) go('result'); });
+$('#btnCont').addEventListener('click', () => { if (todasListas()) go('passaggio'); });
+$('#btnPgCont').addEventListener('click', () => { if (rec) cancelRec(); go('result'); });
+$('#btnPgSkip').addEventListener('click', () => { if (rec) cancelRec(); go('result'); });
 
 /* ---- «Ver resultado de otra persona» (oculto, junto a la voz de ejemplo) ----
    Pide a la hoja la lista de quienes hicieron la prueba (acción «listarRangosVocales» del code.gs) y recrea su resultado con
@@ -1438,7 +1623,8 @@ function wider(R) {   // estimación solo con el rango cómodo (supone un promed
   return Math.max(0.05, Math.min(0.95, normCdf(Math.round(R.comf.high) - Math.round(R.comf.low), 21, 6)));
 }
 let mapAll = false, mapSel = null, mapPrevSel = null, lastR = null, lastT = null;
-function renderResults() {
+function renderResults() { renderResults0(); pgAppendResult(); }
+function renderResults0() {
   const R = collect(), box = $('#res'); if (!R.count) { box.innerHTML = ''; return; }
   const C = classify(R, sexTypes()), T = C.best, P = v => Math.round(v * 100), lc = T.es.toLowerCase();
   lastR = R; lastT = T;
@@ -1935,6 +2121,211 @@ function flash(el, ms) {
 updateGroups(); renderSong();
 enviarPendientes();
 if (new URLSearchParams(location.search).get('v') === 'cancion') go('song');   // enlace «Analizar notas en canción» de Herramientas
+
+
+/*PASSAGGIO-UI-START*/
+/* ====== Paso 4 · Passaggio (interfaz) ======
+   DESCONECTADO: no se llama desde go(), GROUPS ni guardarResultado(). Para probarlo desde la consola:
+     passMount(document.body, collect())     // R = collect() con los Pasos 1–3 ya hechos
+   Reutiliza getMic(), actx, yinLive() (gráfica en vivo), decode(), analyzePitch(), mkPlayer(), peaksOf() y la variable global rec,
+   así que «cerrar», «volver» y cancelRec() también paran estas grabaciones. */
+const PG_TEXT = {
+  'poca-voz': 'Casi no se oyó voz. Acércate al micrófono y haz la sirena con volumen constante.',
+  'sin-recorrido': 'La sirena casi no subió. Desliza la voz de forma continua de la nota grave a la aguda.',
+  'sin-quiebre': 'No se notó un quiebre claro. Puede que lo hayas suavizado, o que fuera muy sutil. Repite sin esconderlo.'
+};
+const PG = { R: null, el: null, takes: [null, null, null], busy: [false, false, false], live: null };
+const pgLo = () => PG.R && PG.R.comf.low != null ? PG.R.comf.low : null;
+const pgHi = () => PG.R && PG.R.comf.high != null ? PG.R.comf.high : null;
+
+const pgLead = () => `Haz una <b>sirena continua</b> desde <b>${nt(pgLo())}</b> hasta <b>${nt(pgHi())}</b>, deslizando la voz sin pausas (glissando), con una vocal cerrada como <b>«U»</b> o <b>«I»</b>. <b>No intentes ocultar ni suavizar el quiebre</b>: queremos oírlo.`;
+function passMount(el, R) {
+  PG.R = R || collect(); PG.el = el; PG.takes = [null, null, null]; PG.busy = [false, false, false];
+  const lo = pgLo(), hi = pgHi(), box = document.createElement('section'); box.className = 'pg'; box.id = 'pg-root';
+  if (lo == null || hi == null || lo >= hi) {
+    box.innerHTML = `<h2>Passaggio</h2><p class="warn">Primero completa «Cómodas» (paso 1): necesito tu nota más grave y más aguda para saber desde dónde hasta dónde deslizar.</p>`;
+    el.appendChild(box); return box;
+  }
+  box.innerHTML = `<h2>Passaggio</h2>
+    <p class="hint pg-lead">${pgLead()}</p>
+    <p class="muted small">Haz 3 intentos. Si uno sale con ruido o te equivocas, repítelo solo.</p>
+    <div class="pg-list">${[0, 1, 2].map(i => `<div class="pg-card" id="pg-c${i}">
+      <div class="pg-h"><h3>Intento ${i + 1}</h3><span class="pg-st muted small"></span></div>
+      <div class="acts"><button class="btn primary rec" type="button" data-pg="rec" data-i="${i}"><span class="dot"></span><span class="lbl">Grabar</span></button>
+      <button class="btn" type="button" data-pg="cancel" data-i="${i}" hidden>Cancelar</button></div>
+      <canvas class="pg-cv" height="150"></canvas>
+      <div class="plh"></div><div class="pg-out" aria-live="polite"></div></div>`).join('')}</div>
+    <div class="pg-res" id="pg-res" hidden></div>`;
+  box.addEventListener('click', e => {
+    const b = e.target.closest('[data-pg]'); if (!b) return;
+    const i = +b.dataset.i;
+    if (b.dataset.pg === 'rec') { if (rec && rec.id === 'pg' + i) rec.mr.stop(); else pgStart(i); }
+    else if (b.dataset.pg === 'cancel') cancelRec();
+  });
+  el.appendChild(box);
+  [0, 1, 2].forEach(i => pgDraw(i));
+  return box;
+}
+
+// Gráfica: curva de tono contra el tiempo, con las líneas de tu rango cómodo y (si ya hay análisis) el quiebre.
+function pgDraw(i, liveSeries, tNow) {
+  const cv = document.querySelector(`#pg-c${i} .pg-cv`); if (!cv) return;
+  const dpr = window.devicePixelRatio || 1, W = cv.clientWidth || 600, H = 150;
+  if (cv.width !== Math.round(W * dpr)) { cv.width = Math.round(W * dpr); cv.height = Math.round(H * dpr); }
+  const g = cv.getContext('2d'); g.setTransform(dpr, 0, 0, dpr, 0, 0); g.clearRect(0, 0, W, H);
+  const cs = getComputedStyle(document.documentElement), C = n => cs.getPropertyValue(n).trim();
+  const tk = PG.takes[i], res = tk && tk.res, ser = liveSeries || (tk && tk.res ? tk.res.series : null) || [];
+  const lo = pgLo(), hi = pgHi();
+  let y0 = lo - 4, y1 = hi + 8; ser.forEach(p => { if (p) { if (p.m < y0) y0 = p.m - 1; if (p.m > y1) y1 = p.m + 1; } });
+  const L = 38, T = 8, B = 18, X1 = W - 8, Y = m => T + (H - T - B) * (1 - (m - y0) / (y1 - y0));
+  const lastT = ser.reduce((a, p) => (p ? p.t : a), 0);
+  const tMax = liveSeries ? Math.max(6, (tNow || 0) + 0.5) : Math.max(3, lastT + 0.3), X = t => L + (X1 - L) * t / tMax;
+  g.font = '11px Inter,system-ui,sans-serif'; g.textBaseline = 'middle';
+  for (let m = Math.ceil(y0); m <= y1; m++) {            // una línea tenue por cada Do (referencia)
+    if (((m % 12) + 12) % 12 === 0) { g.strokeStyle = C('--line'); g.lineWidth = 1; g.beginPath(); g.moveTo(L, Y(m)); g.lineTo(X1, Y(m)); g.stroke(); g.fillStyle = C('--muted'); g.textAlign = 'right'; g.fillText(lb(m), L - 5, Y(m)); }
+  }
+  g.setLineDash([5, 4]); g.strokeStyle = C('--teal'); g.fillStyle = C('--teal');
+  [lo, hi].forEach(m => { g.beginPath(); g.moveTo(L, Y(m)); g.lineTo(X1, Y(m)); g.stroke(); g.textAlign = 'right'; g.fillText(lb(m), L - 5, Y(m)); });
+  g.setLineDash([]);
+  g.strokeStyle = C('--accent'); g.lineWidth = 2.5; g.lineJoin = 'round'; g.beginPath(); let pen = false, lastP = null;
+  ser.forEach(p => {
+    if (!p) { pen = false; return; }
+    const gapBig = lastP && p.t - lastP.t > 0.1; lastP = p;
+    if (!pen || gapBig) { g.moveTo(X(p.t), Y(p.m)); pen = true; } else g.lineTo(X(p.t), Y(p.m));
+  });
+  g.stroke();
+  if (res && res.ok) {                                      // marca del quiebre
+    const x = X(res.t), y = Y(res.midi);
+    g.strokeStyle = C('--warn'); g.lineWidth = 1.5; g.setLineDash([3, 3]); g.beginPath(); g.moveTo(x, T); g.lineTo(x, H - B); g.stroke(); g.setLineDash([]);
+    g.fillStyle = C('--warn'); g.beginPath(); g.arc(x, y, 5, 0, 7); g.fill();
+    g.textAlign = x > W * 0.7 ? 'right' : 'left'; g.fillText('Quiebre ' + lb(res.midi), x + (x > W * 0.7 ? -9 : 9), Math.max(T + 8, y - 12));
+  }
+  if (liveSeries && liveSeries.ev) liveSeries.ev.forEach(p => { g.fillStyle = C('--warn'); g.beginPath(); g.arc(X(p.t), Y(p.m), 4, 0, 7); g.fill(); });
+}
+
+function pgSetUI(i, on) {
+  const c = document.getElementById('pg-c' + i); if (!c) return;
+  const b = c.querySelector('[data-pg="rec"]');
+  b.classList.toggle('on', on); b.querySelector('.lbl').textContent = on ? 'Detener · 0:00' : (PG.takes[i] ? 'Repetir este intento' : 'Grabar');
+  c.querySelector('[data-pg="cancel"]').hidden = !on;
+  document.querySelectorAll('#pg-root [data-pg="rec"]').forEach(x => { if (x !== b) x.disabled = on || micBlocked; });
+}
+
+async function pgStart(i) {
+  if (rec) return;
+  if (!(navigator.mediaDevices && navigator.mediaDevices.getUserMedia && window.MediaRecorder)) { showMicBlocked(); return; }
+  let stream; try { stream = await getMic(); } catch (e) { showMicBlocked(); return; }
+  stream.getAudioTracks().forEach(t => { t.enabled = true; });
+  stopAll();
+  const mime = ['audio/webm;codecs=opus', 'audio/webm', 'audio/mp4', 'audio/ogg'].find(m => MediaRecorder.isTypeSupported(m));
+  const mr = mime ? new MediaRecorder(stream, { mimeType: mime }) : new MediaRecorder(stream);
+  actx = actx || new (window.AudioContext || window.webkitAudioContext)(); if (actx.state === 'suspended') actx.resume();
+  const an = actx.createAnalyser(); an.fftSize = 8192; const src = actx.createMediaStreamSource(stream); src.connect(an);
+  const buf = new Float32Array(an.fftSize), chunks = [], series = [], hist = []; series.ev = [];
+  rec = { id: 'pg' + i, mr, t0: Date.now(), cancel: false, hist: [], ext: null };
+  mr.ondataavailable = e => { if (e.data.size) chunks.push(e.data); };
+  mr.onstop = () => {
+    const r = rec; clearInterval(r.timer); src.disconnect();
+    stream.getAudioTracks().forEach(t => { t.enabled = false; });
+    rec = null; pgSetUI(i, false);
+    if (r.cancel || !chunks.length) { pgDraw(i); return; }
+    pgAnalyze(i, new Blob(chunks, { type: mr.mimeType || 'audio/webm' }));
+  };
+  mr.start(); pgSetUI(i, true);
+  const c = document.getElementById('pg-c' + i), lbl = c.querySelector('[data-pg="rec"] .lbl'), out = c.querySelector('.pg-out');
+  out.innerHTML = ''; c.querySelector('.pg-st').textContent = 'Escuchando…';
+  rec.timer = setInterval(() => {
+    const t = (Date.now() - rec.t0) / 1000; lbl.textContent = `Detener · ${fmtT(t)}`;
+    an.getFloatTimeDomainData(buf);
+    const f = yinLive(buf, actx.sampleRate);
+    if (f) {
+      hist.push(hzToMidi(f)); if (hist.length > 3) hist.shift();
+      if (hist.length >= 3) {
+        const m = median(hist), prev = series.filter(Boolean).slice(-1)[0];
+        if (prev && t - prev.t < 0.2 && m - prev.m >= 2.5) series.ev.push({ t, m });   // salto visible en vivo
+        series.push({ t, m });
+        c.querySelector('.pg-st').innerHTML = `Ahora: <b>${nt(m)}</b>`;
+      }
+    } else series.push(null);
+    pgDraw(i, series, t);
+    if (t >= PASS.maxSec) rec.mr.stop();
+  }, 45);
+}
+
+async function pgAnalyze(i, blob) {
+  const c = document.getElementById('pg-c' + i), out = c.querySelector('.pg-out'), st = c.querySelector('.pg-st');
+  if (PG.takes[i]) URL.revokeObjectURL(PG.takes[i].url);
+  const tk = PG.takes[i] = { blob, url: URL.createObjectURL(blob), res: null };
+  PG.busy[i] = true; out.innerHTML = '<span class="muted">Analizando…</span>'; st.textContent = '';
+  try {
+    const { x, sr } = await decode(blob, PASS.maxSec);
+    tk.x = x; tk.sr = sr; tk.dur = x.length / sr; tk.peaks = peaksOf(x);
+    const fr = await analyzePitch(x, sr, { hop: PASS.hop, fmin: Math.max(30, midiToHz(pgLo() - 7)), fmax: midiToHz(pgHi() + 14),
+      yield: async p => { out.innerHTML = `<span class="muted">Analizando… ${Math.round(p * 100)}%</span>`; await new Promise(r => setTimeout(r, 0)); } });
+    tk.res = detectPassaggio(fr, x, sr);
+  } catch (e) { tk.res = { ok: false, reason: 'error', series: [], flags: [] }; }
+  PG.busy[i] = false;
+  const plh = c.querySelector('.plh'); plh.innerHTML = ''; if (tk.peaks) plh.appendChild(mkPlayer(tk, () => 'rango-vocal_passaggio_intento' + (i + 1)));
+  pgSetUI(i, false); pgDraw(i); pgRenderAttempt(i); pgRenderResult();
+}
+
+function pgRenderAttempt(i) {
+  const c = document.getElementById('pg-c' + i), out = c.querySelector('.pg-out'), st = c.querySelector('.pg-st'), r = PG.takes[i].res;
+  if (!r.ok) { st.textContent = 'Sin quiebre'; out.innerHTML = `<p class="err">${PG_TEXT[r.reason] || 'No se pudo leer este audio. Repite el intento.'}</p>`; return; }
+  st.innerHTML = `Quiebre en <b>${nt(r.midi)}</b>`;
+  const how = r.kind === 'salto' ? `salto de ${r.jump.toFixed(1)} semitonos` : 'pausa breve y reanudación más aguda';
+  out.innerHTML = `<p class="pg-line">Justo antes del quiebre: <b>${ntBig(r.midi)}</b></p><p class="muted small">Detectado por ${how}${r.flags.length ? ' · ' + r.flags.join(' · ') : ''} · confianza ${r.conf}</p>`;
+}
+
+const PG_WHY = 'Tu passaggio es la nota donde la voz cambia de mecanismo (de pecho a cabeza o falsete). Conocerla sirve para: elegir tonalidades de canciones que no te obliguen a forzar el pecho justo antes del quiebre, saber dónde trabajar la transición (ejercicios de sirena, mezcla o «mix»), y calentar con cuidado en esa zona para que el cambio sea más suave.';
+function passaggioResult() {   // objeto plano para guardarlo más adelante (Excel); null si aún no hay datos
+  const sum = passaggioSummary(PG.takes.map(t => t && t.res)); if (!sum) return null;
+  const chk = passaggioCheck(PG.R, sum), n = noteInfo(sum.midi);
+  return { midi: sum.midi, en: n.en, es: n.es, hz: Math.round(n.hz * 10) / 10, confianza: sum.conf, validos: sum.valid, usados: sum.used, dispersion: +sum.spread.toFixed(2),
+    intentos: PG.takes.map(t => (t && t.res && t.res.ok ? +t.res.midi.toFixed(2) : null)), tipo: chk.type.es, esperado: PASS_EXPECT[chk.type.id][0], estado: chk.status, enRangoComodo: chk.inComf };
+}
+function pgResultHtml() {
+  const sum = passaggioSummary(PG.takes.map(t => t && t.res)); if (!sum) return '';
+  const chk = passaggioCheck(PG.R, sum), E = PASS_EXPECT[chk.type.id], done = PG.takes.filter(t => t && t.res).length;
+  const msg = { coincide: `Coincide con lo esperado para tu tipo de voz (${chk.type.es}): suele estar entre ${lb(E[1])} y ${lb(E[2])}.`,
+    cercano: `Está cerca de lo esperado para ${chk.type.es} (${lb(E[1])}–${lb(E[2])}), un poco ${chk.diff > 0 ? 'más arriba' : 'más abajo'}. Es normal: varía con la técnica, el volumen y la vocal.`,
+    distinto: `Queda lejos de lo esperado para ${chk.type.es} (${lb(E[1])}–${lb(E[2])}), ${chk.diff > 0 ? 'más agudo' : 'más grave'}.${chk.nearest ? ` Tu quiebre se parece más al de ${chk.nearest.es}: conviene repetir los intentos y revisar los pasos anteriores.` : ' Conviene repetir los intentos.'}` }[chk.status];
+  let warns = '';
+  if (sum.dropped) warns += `<p class="warn">Descarté ${sum.dropped} intento${sum.dropped > 1 ? 's' : ''} por quedar muy lejos de los demás.</p>`;
+  if (sum.valid < 2) warns += `<p class="warn">Con un solo intento válido el resultado es poco fiable. Graba al menos dos más.</p>`;
+  else if (sum.conf === 'baja') warns += `<p class="warn">Los intentos no coinciden entre sí. Repite el que salió distinto.</p>`;
+  if (chk.inComf === false) warns += `<p class="warn">El quiebre cae fuera de tu rango cómodo (${lb(pgLo())}–${lb(pgHi())}). Revisa si es el quiebre real o un ruido.</p>`;
+  return `<h3>Tu passaggio</h3><div class="note">${ntBig(sum.midi)}</div>
+    <p class="muted small">Mediana de ${sum.used} intento${sum.used > 1 ? 's' : ''} válido${sum.used > 1 ? 's' : ''} (${done} grabado${done > 1 ? 's' : ''}) · confianza ${sum.conf} · ${sum.all.map(v => lb(v)).join(' · ')}</p>
+    <p class="pg-line" style="margin-top:10px">${msg}</p>${warns}<p class="explain">${PG_WHY}</p>`;
+}
+function pgRenderResult() {
+  const box = document.getElementById('pg-res'); if (!box) return;
+  const html = pgResultHtml(); box.hidden = !html; box.innerHTML = html;
+}
+/* ---- Conexión con la app (solo local: no guarda nada en la base de datos) ---- */
+function pgEnter() {   // al entrar al paso: monta, o conserva los intentos si el rango cómodo no cambió
+  const host = document.getElementById('pgHost'), R = collect(), key = R.comf.low + '|' + R.comf.high;
+  if (PG.key === key && host.firstChild) return;
+  pgReset(); host.innerHTML = ''; PG.key = key; passMount(host, R);
+}
+function pgReset() {
+  if (rec && rec.id && rec.id.startsWith('pg')) cancelRec();
+  PG.takes.forEach(t => { if (t && t.url) URL.revokeObjectURL(t.url); });
+  PG.takes = [null, null, null]; PG.key = null; PG.R = null;
+  const host = document.getElementById('pgHost'); if (host) host.innerHTML = '';
+}
+function pgRefresh() {   // cambio de notación C D E ↔ Do Re Mi
+  if (!PG.R || !document.getElementById('pg-root')) return;
+  const lead = document.querySelector('#pg-root .pg-lead'); if (lead && pgLo() != null) lead.innerHTML = pgLead();
+  [0, 1, 2].forEach(i => { pgDraw(i); if (PG.takes[i] && PG.takes[i].res) pgRenderAttempt(i); });
+  pgRenderResult();
+}
+function pgAppendResult() {   // en la pantalla de resultados (no aplica al ver el resultado de otra persona)
+  const box = $('#res'); if (replay || !box || !box.innerHTML || !PG.takes.some(t => t && t.res)) return;
+  const html = pgResultHtml(); if (html) box.insertAdjacentHTML('beforeend', `<div class="pg-res" style="margin-top:22px">${html}</div>`);
+}
+/*PASSAGGIO-UI-END*/
 
 </script>
 </body></html>
