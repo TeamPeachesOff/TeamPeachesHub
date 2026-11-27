@@ -1203,11 +1203,14 @@ function planFirst(pl){
 
 /* ---- control de tiempo: cada espera se puede saltar o cancelar ---- */
 function mkRun(){
-  const r={dead:false,fast:false,gt:null,wk:new Set(),sp:1};
-  r.wait=ms=>new Promise((res,rej)=>{if(r.dead)return rej(DEAD);let t;const w=e=>{clearTimeout(t);r.wk.delete(w);e?rej(e):res()};r.wk.add(w);t=setTimeout(()=>w(0),r.fast?20:ms*r.sp)});
+  const r={dead:false,k:1,raf:0,gt:null,wk:new Set(),pw:new Set(),sp:1};
+  /* r.k = velocidad (1 normal). Al tocar durante una animación NO se salta: sube r.k y todo (esperas, animaciones y transiciones) corre más rápido, sin cortes. */
+  r.wait=ms=>new Promise((res,rej)=>{if(r.dead)return rej(DEAD);const o={};const w=e=>{clearTimeout(o.t);r.wk.delete(w);r.pw.delete(o);e?rej(e):res()};
+    o.w=w;o.end=performance.now()+ms*r.sp/r.k;o.t=setTimeout(()=>w(0),Math.max(0,o.end-performance.now()));r.wk.add(w);r.pw.add(o)});
+  r.rescale=(a,b)=>{const n=performance.now();r.pw.forEach(o=>{clearTimeout(o.t);o.end=n+(o.end-n)*a/b;o.t=setTimeout(()=>o.w(0),Math.max(0,o.end-performance.now()))})};
   r.gate=()=>new Promise((res,rej)=>{if(r.dead)return rej(DEAD);r.gt=e=>{r.gt=null;e?rej(e):res()}});
   r.fire=e=>[...r.wk].forEach(w=>w(e));
-  r.kill=()=>{r.dead=true;r.fire(DEAD);if(r.gt)r.gt(DEAD)};
+  r.kill=()=>{r.dead=true;r.k=1;r.fire(DEAD);if(r.gt)r.gt(DEAD)};
   return r;
 }
 
@@ -1345,8 +1348,20 @@ const rvHint=t=>{const h=$("rvHint");if(!h)return;h.textContent=t||"";h.classLis
 /* Un toque (o Espacio / Enter / →): si hay una pausa, avanza; si hay una animación en curso, la termina al instante. */
 function rvNext(){
   const r=rvRun;if(!r||r.dead||rv.classList.contains("sum"))return;
-  if(r.gt)r.gt(0);else{r.fast=true;r.fire(0)}
+  if(r.gt)r.gt(0);else rvBoost(r);
 }
+/* Acelerar sin saltar: cada toque sube la velocidad (2.5× → 5×) y se aplica a todo lo que se mueve en pantalla. */
+function rvRate(k){
+  document.getAnimations().forEach(a=>{const t=a.effect&&a.effect.target;if(!t||!rv.contains(t))return;
+    let it=1;try{it=a.effect.getComputedTiming().iterations}catch(e){}
+    if(it===Infinity)return;if(a.playbackRate!==k)a.playbackRate=k});
+}
+function rvBoost(r){
+  const o=r.k,n=o<2.5?2.5:Math.min(o*1.4,5);if(n===o)return;
+  r.k=n;r.rescale(o,n);rvRate(n);
+  if(!r.raf){const tick=()=>{if(r.dead||r.k<=1){r.raf=0;return}rvRate(r.k);r.raf=requestAnimationFrame(tick)};r.raf=requestAnimationFrame(tick)}
+}
+function rvCalm(r){if(r.k>1){r.k=1;rvRate(1)}}
 async function rvPlay(){
   if(rvRun)rvRun.kill();
   const run=rvRun=mkRun(),st=$("rvStage"),pr=rvPlan.pairs;
@@ -1355,8 +1370,8 @@ async function rvPlay(){
   document.querySelectorAll("#rvTabs button").forEach(b=>b.classList.toggle("on",+b.dataset.t===rvTheme));
   $("rvRound").textContent="Listo para comenzar";
   run.sp=rvReduced()?.35:1;   // modo manual: cada duelo va a su ritmo normal, tú controlas el paso
-  const step=async f=>{run.fast=false;rvHint("");try{await f()}catch(e){if(e!==NEXT)throw e}};
-  const hold=async t=>{rvHint(t);await run.gate();rvHint("");run.fast=false};
+  const step=async f=>{rvCalm(run);rvHint("");try{await f()}catch(e){if(e!==NEXT)throw e}};
+  const hold=async t=>{rvCalm(run);rvHint(t);await run.gate();rvHint("");rvCalm(run)};
   run.hold=hold;   // las animaciones también pueden pedir un toque en medio del duelo
   try{
     st.innerHTML=`<div class="rv-title sm">${rvMode.n>1?"Ronda "+rvMode.n+"<br>":""}Listo para revelar<br>${pr.length} ${pr.length==1?"duelo":"duelos"}</div>`;
