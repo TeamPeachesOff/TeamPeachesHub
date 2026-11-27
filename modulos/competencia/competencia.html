@@ -56,9 +56,9 @@ main{flex:1;min-height:0;display:flex;flex-direction:column;padding:8px clamp(8p
 #bNext.wait{display:none}
 /* ---- ventana de actividad: baja desde arriba, pegada a los lados y al techo ---- */
 .modal.sheet{align-items:flex-start;padding:0;background:rgba(10,4,14,.62)}
-.modal.sheet .mbox{max-width:none;width:100%;max-height:92dvh;padding:0;overflow:hidden;display:flex;flex-direction:column;border-radius:0 0 var(--r) var(--r);background:#2a1830;box-shadow:0 18px 50px rgba(0,0,0,.65);animation:sheetIn .45s cubic-bezier(.2,.9,.3,1)}
+.modal.sheet .mbox{max-width:580px;width:100%;max-height:92dvh;padding:0;overflow:hidden;display:flex;flex-direction:column;border-radius:0 0 var(--r) var(--r);background:#2a1830;box-shadow:0 18px 50px rgba(0,0,0,.65);animation:sheetIn .45s cubic-bezier(.2,.9,.3,1)}
 @keyframes sheetIn{from{transform:translateY(-100%)}}
-.modal.sheet .mx{z-index:6;top:calc(env(safe-area-inset-top,0px) + 6px);right:max(6px,env(safe-area-inset-right,0px));filter:drop-shadow(0 1px 4px rgba(0,0,0,.95))}
+.modal.sheet .mx{z-index:6;top:calc(env(safe-area-inset-top,0px) + 6px);right:6px;filter:drop-shadow(0 1px 4px rgba(0,0,0,.95))}
 .act{display:flex;flex-direction:column;min-height:0;flex:1}
 .act .cv{position:relative;flex:none;overflow:hidden;background:#120816;display:grid;place-items:center}
 .act .cv::before{content:"";position:absolute;inset:-24px;background:var(--img) center/cover;filter:blur(20px) brightness(.55) saturate(1.2)}
@@ -97,7 +97,7 @@ main{flex:1;min-height:0;display:flex;flex-direction:column;padding:8px clamp(8p
 .m .tag{display:flex;align-items:center;gap:calc(var(--u)*4);font-size:max(8px,calc(var(--u)*10));font-weight:800;letter-spacing:.18em;text-transform:uppercase;color:var(--text-dim);opacity:.8}
 .m .tag svg{width:1.1em;height:1.1em;fill:var(--peach-2);stroke:none}
 .m .duel{position:relative;display:flex;align-items:flex-start;justify-content:center}
-.m .duel::before{content:"";position:absolute;left:calc(var(--u)*50);right:calc(var(--u)*50);top:calc(var(--u)*31);height:max(2px,calc(var(--u)*2));background:linear-gradient(90deg,#ff5fa2,transparent 40%,transparent 60%,#6aa0ff);opacity:.7}
+.m .duel::before{content:"";position:absolute;left:calc(var(--u)*79);right:calc(var(--u)*79);top:calc(var(--u)*31);height:max(2px,calc(var(--u)*2));background:linear-gradient(90deg,#ff5fa2,transparent 40%,transparent 60%,#6aa0ff);opacity:.7}
 .m .vs{width:calc(var(--u)*34);height:calc(var(--u)*62);display:grid;place-items:center;font-style:italic;font-weight:900;font-size:calc(var(--u)*17);color:#fff;text-shadow:0 0 8px var(--peach-2),0 0 16px #6aa0ff;position:relative}
 .s{width:calc(var(--u)*92);background:none;padding:0;display:flex;flex-direction:column;align-items:center;gap:calc(var(--u)*3);--c:#651131;--k:#bfa3b2;position:relative;min-width:0}
 .s.b{--c:#14296b;--k:#a9b8d9}
@@ -440,7 +440,7 @@ body,#rv,#wn{background:var(--felt)}
 @media (max-width:640px){#rv .rv-sumwrap{padding-bottom:calc(env(safe-area-inset-bottom,0px) + 142px)}}
 #rv .rv-pair{position:relative;display:flex;align-items:center;justify-content:center}
 #rv .rv-pair .d{position:relative;display:flex;align-items:flex-start;justify-content:center}
-#rv .rv-pair .d::before{content:"";position:absolute;left:calc(var(--u)*60);right:calc(var(--u)*60);top:calc(var(--u)*33);height:max(2px,calc(var(--u)*3));background:linear-gradient(90deg,#ff6fae,transparent 38%,transparent 62%,#6aa0ff);animation:rvLine .7s ease-out calc(var(--d,0ms) + .1s) backwards}
+#rv .rv-pair .d::before{content:"";position:absolute;left:calc(var(--u)*82);right:calc(var(--u)*82);top:calc(var(--u)*33);height:max(2px,calc(var(--u)*3));background:linear-gradient(90deg,#ff6fae,transparent 38%,transparent 62%,#6aa0ff);animation:rvLine .7s ease-out calc(var(--d,0ms) + .1s) backwards}
 #rv .rv-pair .s{width:calc(var(--u)*94);display:flex;flex-direction:column;align-items:center;gap:calc(var(--u)*5);min-width:0;--c:#ff6fae}
 #rv .rv-pair .s.b{--c:#6aa0ff}
 #rv .rv-pair .s img{width:calc(var(--u)*66);height:calc(var(--u)*66);border-radius:50%;object-fit:cover;border:max(2px,calc(var(--u)*3)) solid var(--c);background:#1a1020;box-shadow:0 0 calc(var(--u)*14) var(--c)}
@@ -485,6 +485,24 @@ body,#rv,#wn{background:var(--felt)}
 @keyframes wnGoIn{from{opacity:0;transform:translateY(30px) scale(.8)}}
 @media (max-width:640px){#wnGo{width:100%}#wn .rv-head{padding:0 34px}}
 @media (prefers-reduced-motion:reduce){#wn *{animation:none!important}}
+/* carta de prueba (ver BJ_ALT) */
+#rv .bj-ph.alt{display:flex;flex-direction:column;background:#1a1020}
+#rv .bj-blur{position:absolute;inset:0;overflow:hidden}
+#rv .bj-blur img{width:100%;height:100%;object-fit:cover;transform:scale(1.3);filter:blur(calc(var(--bjw) * .045)) brightness(.6) saturate(1.2)}
+#rv .bj-top{position:relative;flex:none;height:11.5%;display:flex;align-items:center;justify-content:center}
+#rv .bj-top .rv-rec{margin:0}
+#rv .bj-pic{position:relative;flex:1;min-height:0;margin:0 5%;border-radius:calc(var(--bjw) * .035);overflow:hidden;box-shadow:0 2px 10px rgba(0,0,0,.65)}
+#rv .bj-pic img{width:100%;height:100%;object-fit:cover}
+#rv .bj-nm2{position:relative;flex:none;height:17%;display:flex;align-items:center;justify-content:center;padding:0 6%}
+#rv .bj-nm2 b{display:block;max-width:100%;text-align:center;color:#fff;font-weight:900;font-size:calc(var(--bjw) * .088);line-height:1.1;text-shadow:0 2px 8px rgba(0,0,0,.95);overflow-wrap:anywhere}
+/* campeón dentro de la llave, debajo de la final (no mueve nada) */
+.col .list{position:relative}
+.champ-b{position:absolute;left:0;right:0;top:calc(50% + var(--u) * 47);display:flex;flex-direction:column;align-items:center;gap:calc(var(--u) * 4);pointer-events:none;animation:pop .6s cubic-bezier(.2,1.4,.4,1)}
+.champ-b.nopop{animation:none}
+.champ-b p{margin:0;display:flex;align-items:center;gap:calc(var(--u) * 5);font-size:max(8px,calc(var(--u) * 10));letter-spacing:.2em;text-transform:uppercase;font-weight:900;color:var(--text-dim)}
+.champ-b p svg{width:calc(var(--u) * 14);height:calc(var(--u) * 14);color:var(--gold)}
+.champ-b img{width:max(44px,calc(var(--u) * 46));aspect-ratio:1;border-radius:50%;object-fit:cover;border:max(2px,calc(var(--u) * 2.5)) solid var(--gold);box-shadow:0 0 calc(var(--u) * 22) rgba(255,215,0,.65)}
+.champ-b h2{margin:0;max-width:100%;font-size:max(15px,calc(var(--u) * 17));color:var(--gold);line-height:1.1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;text-shadow:0 1px 8px #000}
 </style>
 </head>
 <body>
@@ -668,6 +686,7 @@ function mergeStates(b,l,r){
       const rr=O.rounds[i];
       if(!rr){if(i===O.rounds.length)O.rounds.push(lr);return}
       const br=B.rounds&&B.rounds[i];
+      if(!!lr.closed!==!!(br&&br.closed))rr.closed=lr.closed;
       lr.matches.forEach((lm,j)=>{
         const rm=rr.matches[j];
         if(!rm||w(rm.a)!==w(lm.a)||w(rm.b)!==w(lm.b))return;
@@ -689,7 +708,7 @@ function mergeStates(b,l,r){
   }catch(e){return null}
 }
 
-let flushT=null,lastChange=Date.now(),lastErr="";
+let champNew=false,flushT=null,lastChange=Date.now(),lastErr="";
 function markDirty(){
   if(realRole()!=="staff")return;
   dirty=true;lastChange=Date.now();setStatus("pending");cacheSave(true);
@@ -836,7 +855,7 @@ function openHelp(){
    <li>Cada duelo da <b class="g">1 victoria</b> a quien gana y <b class="r">1 derrota</b> a quien pierde. Los puntos <b class="g">verdes</b> son victorias y los <b class="r">rojos</b> son derrotas.</li>
    <li><b>3 victorias</b> = clasificas a la llave final. <b>3 derrotas</b> = quedas eliminado.</li>
    <li>Cada ronda se <b class="pk">sortea</b> entre quienes llevan el mismo récord, sin repetir rival.</li>
-   <li>Cuando todos los duelos tienen ganador, el staff pulsa <b class="pk">Cerrar ronda</b>: se felicita a los ganadores y de ahí se pasa a la siguiente.</li>
+   <li>Cuando todos los duelos tienen ganador, el staff pulsa <b class="pk">Cerrar ronda</b>: se felicita a los ganadores y de ahí se pasa a la siguiente. Los resultados se pueden corregir hasta cerrar la ronda, y no se puede avanzar sin cerrarla.</li>
    <li>Abajo siempre están <b>Ver posiciones</b> y, si el staff le puso un tema a la fase, <b>Ver actividad</b>.</li>
    <li>Si hay número impar, alguien <b>descansa</b>: cuenta como victoria (máximo una vez por persona).</li>
   </ul>
@@ -949,6 +968,9 @@ function backToSetup(){if(!isStaff())return;closeModal();creating=true;$("pgrid"
 
 /* ================= Fase suiza ================= */
 const roundDone=r=>r.matches.every(m=>m.w);
+/* Una ronda se puede editar HASTA que el staff pulsa «Cerrar ronda». Las anteriores a la última (y torneos viejos con la llave ya empezada) cuentan como cerradas. */
+const brStarted=()=>!!S.br&&S.br.rounds.reduce((t,x)=>t+x.filter(Boolean).length,0)-S.br.auto>0;
+const isClosed=i=>!!S.rounds[i].closed||i<S.rounds.length-1||brStarted();
 function recs(){
   const R=new Map(S.pl.map(p=>[p,{p,w:0,l:0,opp:[],hadBye:false}]));
   S.rounds.forEach(r=>{
@@ -993,6 +1015,7 @@ function genRound(silent){
 }
 function nextRound(){
   if(!isStaff())return;
+  if(!isClosed(S.rounds.length-1)){toast("Primero cierra la ronda");return}
   if(S.br){S.phase="br";render();return}
   track("comp_siguiente");
   const cur=S.rounds[S.rounds.length-1];
@@ -1004,11 +1027,25 @@ function nextRound(){
   openRevealNext(rd,n);
 }
 function pick(mi,s){
-  if(!isStaff()||S.br)return;
-  const m=S.rounds[S.rounds.length-1].matches[mi],p=s?m.b:m.a;
+  if(!isStaff()||isClosed(S.rounds.length-1))return;
+  const cur=S.rounds[S.rounds.length-1],m=cur.matches[mi],p=s?m.b:m.a;
   m.w=m.w===p?null:p;
-  if(roundDone(S.rounds[S.rounds.length-1])&&activeLeft()==0)mkBracket();
+  S.br=null;                                   // si se corrige un resultado, la llave se vuelve a calcular
+  if(roundDone(cur)&&activeLeft()==0)mkBracket();
   markDirty();render();
+}
+function closeRound(){
+  if(!isStaff()||!S)return;
+  const i=S.rounds.length-1;
+  if(!roundDone(S.rounds[i])||isClosed(i))return;
+  S.rounds[i].closed=true;markDirty();render();openWinners();
+}
+async function admReopen(){
+  const i=S.rounds.length-1;
+  if(!isStaff()||!S||brStarted())return;
+  const ok=await dlg({title:"Reabrir ronda",msg:`Podrás cambiar los resultados de la ronda ${i+1} hasta volver a cerrarla.`,ok:"Sí, reabrir",back:openAdmin});
+  if(!ok||!S)return;
+  track("comp_reabrir");S.rounds[i].closed=false;S.phase="swiss";S.view=i;markDirty();render();toast("Ronda reabierta");
 }
 
 /* ================= Llave ================= */
@@ -1036,7 +1073,7 @@ function undo(){
   if(S.br){S.br=null;S.phase="swiss"}
   else if(S.rounds.length>1)S.rounds.pop();
   else S.rounds[0].matches.forEach(m=>m.w=null);
-  S.view=S.rounds.length-1;markDirty();render();
+  S.rounds[S.rounds.length-1].closed=false;S.view=S.rounds.length-1;markDirty();render();
 }
 function sim(){
   if(!isStaff())return;
@@ -1049,7 +1086,7 @@ function sim(){
   }
   const b=S.br;
   b.rounds.forEach((ms,r)=>ms.forEach((w,i)=>{if(!w){const x=brP(r,i,0),y=brP(r,i,1);ms[i]=Math.random()<.5?x:y}}));
-  S.view=S.rounds.length-1;S.phase="br";markDirty();render();
+  S.rounds.forEach(r=>{r.closed=true});S.view=S.rounds.length-1;S.phase="br";markDirty();render();
 }
 
 /* ================= Administrar torneo (staff) ================= */
@@ -1091,6 +1128,7 @@ function openAdmin(){
   <div class="menu">
    ${it("backToSetup()","plus","Nuevo torneo")}
    ${has?it("openTemas()","mic","Actividades de cada fase"):""}
+   ${has&&isClosed(S.rounds.length-1)&&roundDone(S.rounds[S.rounds.length-1])&&!brStarted()?it("admReopen()","edit","Reabrir ronda (editar resultados)"):""}
    ${has?it("admReset()","redo","Reiniciar resultados (mismas parejas)")+it("admDraw()","vs","Nuevo sorteo (mismos participantes)")+it("admExport()","down","Descargar respaldo"):""}
    ${it("$('admFile').click()","up","Restaurar desde respaldo")}
    ${has&&dev?it("closeModal();sim()","bolt","Pruebas: simular todo")+it("closeModal();undo()","redo","Pruebas: deshacer"):""}
@@ -1108,7 +1146,7 @@ async function admReset(){
   const ok=await dlg({title:"Reiniciar resultados",msg:`Se borran los ganadores de «${esc(S.name)}» y vuelve a la ronda 1 con las mismas parejas. Esto lo verán todos.`,ok:"Sí, reiniciar",danger:true,back:openAdmin});
   if(!ok||!S)return;
   const r=S.rounds[0];
-  r.matches.forEach(m=>{m.w=null});document.querySelectorAll(".fall").forEach(e=>e.remove());
+  r.matches.forEach(m=>{m.w=null});delete r.closed;document.querySelectorAll(".fall").forEach(e=>e.remove());
   S.id=uid();S.rounds=[r];S.view=0;S.phase="swiss";S.br=null;     // id nuevo: el campeón vuelve a celebrarse
   champId=null;pendNext=null;$("matches")._key=null;$("bracket")._br=null;$("champ")._h=null;
   markDirty();refresh();toast("Resultados reiniciados");
@@ -1171,7 +1209,7 @@ function render(){
   const staff=isStaff(),cur=S.rounds.length-1,R=recs(),all=[...R.values()];
   if(S.view>cur||S.view<0)S.view=cur;
   const r=S.rounds[S.view];
-  const editable=S.view===cur&&!S.br&&staff,allDone=roundDone(S.rounds[cur]);
+  const editable=S.view===cur&&staff&&!isClosed(cur),allDone=roundDone(S.rounds[cur]);
   const nq=all.filter(x=>stOf(x)=="q").length,ne=all.filter(x=>stOf(x)=="e").length,na=all.length-nq-ne;
   if(!S.br)S.phase="swiss";
 
@@ -1185,13 +1223,14 @@ function render(){
     return `<button type="button" class="dt ${cls}" ${x?`onclick="goRound(${i})"`:"disabled"} aria-label="Ronda ${i+1}"><i>${done?ico("check"):i+1}</i><span>R${i+1}</span></button>`;
   }).join(""));
   /* Cuando todos los duelos tienen ganador, el staff «cierra la ronda» (se felicita a los ganadores) y desde ahí pasa a la siguiente. */
-  const brStarted=!!S.br&&S.br.rounds.reduce((t,x)=>t+x.filter(Boolean).length,0)-S.br.auto>0;
-  const canClose=staff&&allDone&&S.view===cur&&S.phase==="swiss"&&(S.br?!brStarted:activeLeft()>0);
-  $("bNext").className=canClose?"":"wait";
-  setHTML($("bNext"),`${ico("check")}<span>Cerrar ronda</span>`);
+  const closed=isClosed(cur);
+  const showNext=staff&&allDone&&S.view===cur&&S.phase==="swiss"&&(closed?(!S.br&&activeLeft()>0):(!!S.br||activeLeft()>0));
+  $("bNext").className=showNext?"":"wait";
+  setHTML($("bNext"),closed?`${ico("next")}<span>Siguiente ronda</span>`:`${ico("check")}<span>Cerrar ronda</span>`);
   const bf=$("bFinal");
-  bf.disabled=!S.br;bf.className=S.br?(S.phase==="br"?"on":"ready"):"";
-  setHTML(bf,`${ico(S.br?"cup":"lock")}<span>Llave final</span>`);
+  const brOk=!!S.br&&closed;     // la llave solo se abre cuando la última ronda ya se cerró
+  bf.disabled=!brOk;bf.className=brOk?(S.phase==="br"?"on":"ready"):"";
+  setHTML(bf,`${ico(brOk?"cup":"lock")}<span>Llave final</span>`);
   $("vSwiss").style.display=S.phase=="swiss"?"":"none";
   $("vBr").style.display=S.phase=="br"?"":"none";
 
@@ -1219,23 +1258,23 @@ function render(){
     $("stTxt").textContent=`Ronda ${S.view+1}: ${done} / ${r.matches.length} duelos${staff&&!editable?" · solo lectura":""}`;
   }
 
-  const box=$("champ"),c=S.br&&S.br.rounds[S.br.rounds.length-1][0];
+  const c=S.br&&S.br.rounds[S.br.rounds.length-1][0];
+  champNew=false;
   if(c){
     const ck=S.id+"|"+c.id,seen=celebGet(ck);
-    setHTML(box,`${ico("cup")}${avatar(c)}<div><p>Campeón</p><h2>${esc(c.n)}</h2></div>${ico("cup")}`);
-    box.classList.toggle("nopop",seen);box.classList.add("show");
+    champNew=!seen;
     if(!seen){if(champId!==undefined)confetti(true);celebSet(ck)}
     champId=c.id;
-  }else{box.classList.remove("show");champId=null}
+  }else champId=null;
   renderBr();
   fitAll();
 }
 function goRound(i){S.phase="swiss";S.view=i;render()}
 /* ===== Cerrar ronda: felicita a los ganadores y de ahí se pasa a la siguiente ronda (o a la llave final) ===== */
-function onNext(){openWinners()}
+function onNext(){if(!S)return;if(isClosed(S.rounds.length-1))nextRound();else closeRound()}
 function openWinners(){
   if(!isStaff()||!S)return;
-  const cur=S.rounds.length-1,r=S.rounds[cur];if(!r||!roundDone(r)||S.view!==cur)return;
+  const cur=S.rounds.length-1,r=S.rounds[cur];if(!r||!roundDone(r)||S.view!==cur||!isClosed(cur))return;
   track("comp_cerrar");
   const ws=r.matches.map(m=>m.w).filter(Boolean),n=cur+1;
   $("wnHead").innerHTML=`<h2>${suit(0)}${suit(1)}<span>Ganadores</span>${suit(3)}${suit(2)}</h2><p>Ronda ${n} · ${ws.length} ${ws.length==1?"ganador":"ganadores"} · ¡Felicidades!</p>`;
@@ -1253,7 +1292,7 @@ $("wnGo").onclick=()=>{
   else{SFX.unlock();nextRound()}
 };
 document.addEventListener("keydown",e=>{if(e.key==="Escape"&&$("wn").classList.contains("on")&&!$("rv")?.classList.contains("on"))closeWinners()});
-$("bFinal").onclick=()=>{if(!S||!S.br)return;S.phase="br";$("bracket")._br=null;track("comp_llave");render()};
+$("bFinal").onclick=()=>{if(!S||!S.br||!isClosed(S.rounds.length-1))return;S.phase="br";$("bracket")._br=null;track("comp_llave");render()};
 $("bStand").onclick=openStanding;
 $("bTema").onclick=openActividad;
 setHTML($("bTema"),`${ico("mic")}<span>Ver actividad</span>`);
@@ -1281,7 +1320,8 @@ function renderBr(){
   };
   el.innerHTML=cols.map((col,k)=>{
     const n=b.rounds[col.r].length,last=col.side==="fc",half=last?1:n/2,from=col.side==="R"?half:0;
-    return `<div class="col ${col.side}"><h3 class="${last?"fin":""}">${rname(n)}</h3><div class="list">${Array.from({length:half},(_,j)=>match(col.r,from+j,Math.min(k,cols.length-1-k)*3+j)).join("")}</div></div>`;
+    const ch=b.rounds[R-1][0],champ=last&&ch?`<div class="champ-b${champNew?"":" nopop"}"><p>${ico("cup")}Campeón${ico("cup")}</p>${avatar(ch)}<h2>${esc(ch.n)}</h2></div>`:"";
+    return `<div class="col ${col.side}"><h3 class="${last?"fin":""}">${rname(n)}</h3><div class="list">${Array.from({length:half},(_,j)=>match(col.r,from+j,Math.min(k,cols.length-1-k)*3+j)).join("")}${champ}</div></div>`;
   }).join("");
   el._br=b;el._rows=Math.max(1,b.rounds[0].length/2);
 }
@@ -1432,7 +1472,14 @@ const bjPath=(a,b,c,d,k)=>`M${a+k} ${b}H${c-k}Q${c-k} ${b+k} ${c} ${b+k}V${d-k}Q
 const BJ_OUT="M24 0H376A24 24 0 0 1 400 24V546A24 24 0 0 1 376 570H24A24 24 0 0 1 0 546V24A24 24 0 0 1 24 0Z",BJ_IN=bjPath(26,26,374,544,22),BJ_LN=bjPath(34,34,366,536,16);
 const BJ_GEM=[[13,13],[387,13],[13,557],[387,557]].map(([x,y])=>`<circle cx="${x}" cy="${y}" r="3.6" fill="#fff" fill-opacity=".92"/>`).join("")+[[200,13],[200,557],[13,285],[387,285]].map(([x,y])=>`<path d="M${x} ${y-7}l6 7-6 7-6-7z" fill="#fff" fill-opacity=".92"/>`).join("");
 const bjFrame=k=>`<svg viewBox="0 0 400 570" aria-hidden="true"><path d="${BJ_OUT} ${BJ_IN}" fill="url(#bjg${k})" fill-rule="evenodd"/><rect x="4" y="4" width="392" height="562" rx="21" fill="none" stroke="#fff" stroke-opacity=".55" stroke-width="1.6"/><path d="${BJ_LN}" fill="none" stroke="#fff" stroke-opacity=".85" stroke-width="2.2"/><path d="${BJ_IN}" fill="none" stroke="#000" stroke-opacity=".35" stroke-width="2"/>${BJ_GEM}</svg>`;
-const bjCard=(p,k)=>`<div class="bj-pos bj-${k}"><div class="bj-flt"><div class="bj-slot"><div class="bj-fi"><img class="bj-bk" src="${BJ_IMG[k]}" alt="" draggable="false"><div class="bj-ft"><div class="bj-ph">${avatar(p)}</div><i class="bj-sd"></i>${bjFrame(k)}<div class="bj-nm"><b>${esc(p.n)}</b>${rvRec(p)}</div><i class="bj-sh"></i></div></div></div></div></div>`;
+/* PRUEBA de carta: récord arriba, nombre abajo y la foto en el espacio que sobra; el fondo es la misma foto difuminada.
+   Para volver a la carta anterior (foto a sangre) basta con poner BJ_ALT=false. */
+const BJ_ALT=true;
+const rvRec2=p=>{const x=rvMode&&rvMode.recs&&rvMode.recs.get(p);return `<span class="rv-rec">${rec(x?x.w:0,x?x.l:0)}</span>`};
+const bjFace=(p,k)=>BJ_ALT
+  ?`<div class="bj-ph alt"><div class="bj-blur">${avatar(p)}</div><div class="bj-top">${rvRec2(p)}</div><div class="bj-pic">${avatar(p)}</div><div class="bj-nm2"><b>${esc(p.n)}</b></div></div>${bjFrame(k)}`
+  :`<div class="bj-ph">${avatar(p)}</div><i class="bj-sd"></i>${bjFrame(k)}<div class="bj-nm"><b>${esc(p.n)}</b>${rvRec(p)}</div>`;
+const bjCard=(p,k)=>`<div class="bj-pos bj-${k}"><div class="bj-flt"><div class="bj-slot"><div class="bj-fi"><img class="bj-bk" src="${BJ_IMG[k]}" alt="" draggable="false"><div class="bj-ft">${bjFace(p,k)}<i class="bj-sh"></i></div></div></div></div></div>`;
 
 /* Efecto al voltear: chispas + anillo del color de la carta. */
 function bjBurst(pos){
