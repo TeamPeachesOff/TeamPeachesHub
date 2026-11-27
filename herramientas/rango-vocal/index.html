@@ -673,7 +673,7 @@ function regOf(T, v) {
   return T.regs[i][0];
 }
 
-// Subtipo según el cuadro: en el soprano, la extensión grave marca a la dramática y el agudo a ligera y coloratura;
+// Subtipo según el cuadro: en el soprano, una extensión grave marcada (con agudo moderado) marca a la dramática y el agudo a ligera y coloratura;
 // en el tenor, la nota más aguda decide entre dramático, lírico, ligero y contratenor.
 function pickSub(T, hi, lo) {
   const S = T.subs; if (!S) return null;
@@ -681,7 +681,7 @@ function pickSub(T, hi, lo) {
   if (T.id === 'soprano') {
     if (hi != null && hi >= b[2]) return S[3];
     if (hi != null && hi >= b[1]) return S[2];
-    if (lo != null && lo <= b[0]) return S[0];
+    if (lo != null && lo <= 52 && (hi == null || hi <= 81)) return S[0];   // grave de verdad (Mi3 o menos) y sin agudos amplios
     return hi != null || lo != null ? S[1] : null;
   }
   if (hi == null) return null;
@@ -707,14 +707,25 @@ function speechFit(T, sp) {
 // cuadro (30%) y por último la voz hablada (15%), porque hoy se suele hablar más grave que en el cuadro.
 // Centros: Do4–Do6, La3–La5, Fa3–Fa5, Do3–Do5, La2–La4, Mi2–Mi4.
 const CENTER = { soprano: 72, mezzo: 69, contralto: 65, tenor: 60, baritono: 57, bajo: 52 };
+// En voces femeninas la nota grave cómoda casi no distingue (casi todas bajan a Fa♯3–La3) y arrastraba a las sopranos
+// hacia contralto. Lo que más separa es hasta dónde sube: techo absoluto típico Mi6, Si5 y Sol5.
+const CEIL = { soprano: 88, mezzo: 83, contralto: 79 };
+function ceilFit(id, top) {
+  if ((id === 'soprano' && top >= CEIL.soprano) || (id === 'contralto' && top <= CEIL.contralto)) return 1;
+  return Math.exp(-Math.pow((top - CEIL[id]) / 5, 2));
+}
 function classify(R, ids) {
   const pair = (l, h) => { const x = [l, h].filter(v => v != null); return x.length ? [Math.min(...x), Math.max(...x)] : null; };
   let span = pair(R.comf.low, R.comf.high), basis = 'cómodo';
   if (!span) { span = pair(R.abs.low, R.abs.high); basis = 'absoluto'; }
+  const fem = !!ids && ids.length === 3 && ids.every(id => id in CEIL);
+  const tops = [R.abs.high, R.comf.high].filter(v => v != null), top = fem && tops.length ? Math.max(...tops) : null;
+  const wMid = top != null ? 0.3 : 0.55, wCont = top != null ? 0.15 : 0.3;
   const rows = REF.filter(T => !ids || ids.includes(T.id)).map(T => {
     const f = span ? rangeFit(T, span[0], span[1]) : null, sp = R.speech ? speechFit(T, R.speech) : null;
     let s = 0, w = 0;
-    if (f) { const mid = (span[0] + span[1]) / 2; s += 0.55 * Math.exp(-Math.pow((mid - CENTER[T.id]) / 5, 2)) + 0.3 * f.cont; w += 0.85; }
+    if (f) { const mid = (span[0] + span[1]) / 2; s += wMid * Math.exp(-Math.pow((mid - CENTER[T.id]) / 5, 2)) + wCont * f.cont; w += wMid + wCont; }
+    if (top != null) { s += 0.4 * ceilFit(T.id, top); w += 0.4; }
     if (sp != null) { s += 0.15 * sp; w += 0.15; }
     return { T, cont: f ? f.cont : null, sp, total: w ? s / w : 0 };
   });
