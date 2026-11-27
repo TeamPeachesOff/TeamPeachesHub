@@ -243,7 +243,7 @@ html,body{overflow-x:clip}
 .pg-cv{width:100%;height:150px;display:block;background:transparent;border-bottom:1px solid var(--line)}
 .pg-res{padding:22px 0 0;border-top:1px solid var(--line)}.pg-line{font-size:14px}
 .grp.locked .ghead{cursor:not-allowed;opacity:.45}.grp.locked .ghead:hover .gt,.grp.locked .ghead:hover .car{color:inherit}
-.grp.locked .car{display:none}.grp.locked .hs{display:block}
+.grp.locked .car{display:none}
 .glock{display:inline-flex;margin-left:auto;color:var(--muted)}.glock svg{width:18px;height:18px;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
 .grp:not(.locked) .glock{display:none}
 </style>
@@ -1154,8 +1154,8 @@ const SLOTS = [
   { id: 'speech', kind: 'speech', title: 'Leer en voz alta', max: 60, hint: 'Lee con tu tono natural, como si hablaras con alguien. Con 15 segundos basta.' }
 ];
 const GROUPS = [
-  { id: 'comf', n: 1, title: 'Cómodas', desc: 'Las notas que cantas sin esfuerzo.', ids: ['comfHigh', 'comfLow'], label: 'Cómodo' },
-  { id: 'abs', n: 2, title: 'Absolutas', desc: 'Tus extremos, aunque suenen tensos.', ids: ['absHigh', 'absLow'], label: 'Absoluto' },
+  { id: 'comf', n: 1, title: 'Cómodas', desc: 'Las notas que cantas sin esfuerzo.', ids: ['comfLow', 'comfHigh'], label: 'Cómodo' },
+  { id: 'abs', n: 2, title: 'Absolutas', desc: 'Tus extremos, aunque suenen tensos.', ids: ['absLow', 'absHigh'], label: 'Absoluto' },
   { id: 'speech', n: 3, title: 'Párrafo', desc: 'Lee con tu tono natural.', ids: ['speech'], label: 'Hablado' },
   { id: 'pg', n: 4, title: 'Passaggio', desc: 'Dónde cambia tu voz de pecho a cabeza.', ids: [], special: true }   // se desbloquea al cerrar el 3; sin «Listo»: solo «Continuar»
 ];
@@ -1168,7 +1168,8 @@ let micBlocked = false, rec = null, paraIdx = -1;
 const ALL = new Set();
 const stopAll = () => ALL.forEach(a => a.pause());
 
-const PG = { R: null, el: null, takes: [null, null, null], busy: [false, false, false], key: null, unlocked: false };   // estado del Paso 4 (passaggio)
+const PG = { R: null, el: null, takes: [null, null, null], busy: [false, false, false], key: null };
+const GU = {};   // grupo -> true cuando se pulsó «Listo» en el anterior (el 1 siempre está disponible)   // estado del Paso 4 (passaggio)
 GROUPS.forEach(g => {
   const sec = document.createElement('div');
   sec.className = 'grp'; sec.id = 'grp-' + g.id; if (g.n === 1) { sec.setAttribute('data-open', ''); sec.setAttribute('data-ready', ''); }   // solo «Cómodas» arranca abierta
@@ -1176,7 +1177,7 @@ GROUPS.forEach(g => {
     <div class="gbody"><div class="gin"><p class="hint" style="margin-bottom:16px">${g.desc}</p>${g.special ? '<div id="pgHost"></div>' : '<div class="pair"></div>'}
     <div class="gwarn" role="alert"></div>
     ${g.special ? '' : `<div class="gsum" hidden><div class="gs-t"></div><button class="btn primary" type="button" data-act="done" data-g="${g.id}">Listo</button></div>`}</div></div>`;
-  if (g.special) { sec.classList.add('locked'); sec.querySelector('.ghead').insertAdjacentHTML('beforeend', '<span class="glock" aria-hidden="true"><svg viewBox="0 0 24 24"><rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/></svg></span>'); sec.querySelector('.ghead').setAttribute('aria-disabled', 'true'); }
+  if (g.n > 1) { sec.classList.add('locked'); sec.querySelector('.ghead').insertAdjacentHTML('beforeend', '<span class="glock" aria-hidden="true"><svg viewBox="0 0 24 24"><rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/></svg></span>'); sec.querySelector('.ghead').setAttribute('aria-disabled', 'true'); }
   g.ids.forEach(id => {
     const sl = SLOTS.find(x => x.id === id); S[id] = { takes: [], cur: -1, open: false };
     const el = document.createElement('div');
@@ -1448,7 +1449,8 @@ function collect() {
   return R;
 }
 const todasListas = () => SLOTS.every(sl => resOf(sl.id));   // las 5: cómoda alta/baja, absoluta alta/baja y voz hablada
-const pgUnlocked = () => PG.unlocked && todasListas();   // el 4 se desbloquea al pulsar «Listo» en el 3
+const groupUnlocked = g => g.n === 1 || (!!GU[g.id] && GROUPS.filter(x => x.n < g.n && !x.special).every(x => x.ids.every(id => resOf(id))));   // cada paso se abre al pulsar «Listo» en el anterior
+const pgUnlocked = () => groupUnlocked(GROUPS[3]);
 function updateCont() {   // «Continuar»: aparece cuando el Paso 4 está desbloqueado
   $('#contRow').hidden = !pgUnlocked();
 }
@@ -1481,14 +1483,14 @@ function updateGroups() {
     }
     el.querySelector('.gs-t').innerHTML = html; el.querySelector('.hs').textContent = plain;
   });
-  pgSyncLock();
+  syncLocks();
   updateCont();
 }
 function finishGroup(gid) {
   const i = GROUPS.findIndex(g => g.id === gid);
   setOpen(gid, false);
   const next = GROUPS[i + 1];
-  if (next.special) { PG.unlocked = true; pgSyncLock(); }   // terminar el 3 desbloquea el 4
+  GU[next.id] = true; syncLocks();   // «Listo» desbloquea el siguiente paso
   setOpen(next.id, true);
   setTimeout(() => $('#grp-' + next.id).scrollIntoView({ block: 'start', behavior: REDUCED.matches ? 'auto' : 'smooth' }), REDUCED.matches ? 0 : 460);
 }
@@ -1496,7 +1498,7 @@ function refreshAll() { SLOTS.forEach(s => renderSlot(s.id)); updateGroups(); if
 function clearAll() {
   if (rec) cancelRec(); stopAll();
   SLOTS.forEach(sl => { S[sl.id].takes.forEach(t => URL.revokeObjectURL(t.url)); S[sl.id] = { takes: [], cur: -1, open: false }; renderSlot(sl.id); });
-  pgReset(); PG.unlocked = false; GROUPS.forEach(g => setOpen(g.id, g.n === 1)); updateGroups();
+  pgReset(); Object.keys(GU).forEach(k => delete GU[k]); GROUPS.forEach(g => setOpen(g.id, g.n === 1)); updateGroups();
 }
 
 /* ---- Género ----
@@ -1855,8 +1857,10 @@ function guardarResultado() {
   const R = collect(), n = v => Math.round(v * 100) / 100;
   const sp = R.speech;
   if ([R.comf.low, R.comf.high, R.abs.low, R.abs.high, sp && sp.avg, sp && sp.p10, sp && sp.p90].some(v => v == null || !isFinite(v))) return;
+  const pas = passaggioResult();   // Paso 4: opcional (null si no se hizo o no se detectó); el servidor lo deja en blanco
   const datos = {
     nombre: userName, genero: sex ? sex.label : '', tesitura: classify(R, sexTypes()).best.es,   // el resultado final (Soprano, Tenor…)
+    passaggio: pas ? pas.midi : null,
     bajaComoda: n(R.comf.low), altaComoda: n(R.comf.high), bajaAbsoluta: n(R.abs.low), altaAbsoluta: n(R.abs.high),
     bajoHablado: n(sp.p10), promedioHablado: n(sp.avg), altoHablado: n(sp.p90)
   };   // las notas van como número MIDI (60 = Do4); el servidor las convierte a nombre de nota
@@ -2299,7 +2303,7 @@ function pgRenderAttempt(i) {
 
 function passaggioResult() {   // objeto plano para guardarlo más adelante (Excel); null si aún no hay datos
   const sum = passaggioSummary(PG.takes.map(t => t && t.res)); if (!sum) return null;
-  const chk = passaggioCheck(PG.R, sum), n = noteInfo(sum.midi);
+  const chk = passaggioCheck(collect(), sum), n = noteInfo(sum.midi);
   return { midi: sum.midi, en: n.en, es: n.es, hz: Math.round(n.hz * 10) / 10, confianza: sum.conf, validos: sum.valid, usados: sum.used, dispersion: +sum.spread.toFixed(2),
     intentos: PG.takes.map(t => (t && t.res && t.res.ok ? +t.res.midi.toFixed(2) : null)), tipo: chk.type.es, esperado: PASS_EXPECT[chk.type.id][0], estado: chk.status, enRangoComodo: chk.inComf };
 }
@@ -2332,7 +2336,7 @@ function pgEnter() {   // al abrir el paso: monta, o conserva los intentos si el
   const host = document.getElementById('pgHost'); if (!host || !pgUnlocked()) return;
   const R = collect(), key = R.comf.low + '|' + R.comf.high;
   if (PG.key === key && host.firstChild) return;
-  const keep = PG.unlocked; pgReset(); PG.unlocked = keep; host.innerHTML = ''; PG.key = key; passMount(host, R);
+  pgReset(); host.innerHTML = ''; PG.key = key; passMount(host, R);
 }
 function pgReset() {
   if (rec && rec.id && rec.id.startsWith('pg')) cancelRec();
@@ -2344,13 +2348,16 @@ function pgReset() {
 function pgHeadNote() {   // texto a la derecha del título cuando el 4 está cerrado
   const el = document.getElementById('grp-pg'); if (!el) return;
   const sum = PG.takes.some(t => t && t.res) ? passaggioSummary(PG.takes.map(t => t && t.res)) : null;
-  el.querySelector('.hs').textContent = el.classList.contains('locked') ? 'Se desbloquea al terminar el 3' : (sum ? lb(sum.midi) : '');
+  el.querySelector('.hs').textContent = el.classList.contains('locked') ? '' : (sum ? lb(sum.midi) : '');
 }
-function pgSyncLock() {   // bloquea/desbloquea el 4 según el avance de los pasos 1–3
-  const el = document.getElementById('grp-pg'); if (!el) return;
-  const locked = !pgUnlocked(); el.classList.toggle('locked', locked); el.querySelector('.ghead').setAttribute('aria-disabled', locked);
-  if (locked) { PG.unlocked = false; if (el.hasAttribute('data-open')) setOpen('pg', false); pgReset(); }
-  else if (el.hasAttribute('data-open')) pgEnter();   // si cambió el rango cómodo, se reinician los intentos
+function syncLocks() {   // bloquea/desbloquea los pasos 2, 3 y 4 según el avance
+  GROUPS.forEach(g => {
+    if (g.n === 1) return;
+    const el = document.getElementById('grp-' + g.id); if (!el) return;
+    const locked = !groupUnlocked(g); el.classList.toggle('locked', locked); el.querySelector('.ghead').setAttribute('aria-disabled', locked);
+    if (locked) { if (el.hasAttribute('data-open')) setOpen(g.id, false); if (g.special) pgReset(); }
+    else if (g.special && el.hasAttribute('data-open')) pgEnter();   // si cambió el rango cómodo, se reinician los intentos
+  });
   pgHeadNote();
 }
 function pgRefresh() {   // cambio de notación C D E ↔ Do Re Mi
