@@ -1,0 +1,168 @@
+<!doctype html>
+<html lang="es"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Medidor de nota · Team Peaches Hub 🍑</title>
+<link rel="icon" type="image/png" href="../logos/medidor-nota.png">
+<meta name="theme-color" content="#180E1D">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Space+Grotesk:wght@500;700&display=swap">
+<style>
+/* Misma paleta, tipografía, botones y X que Rango vocal */
+:root{color-scheme:dark;--bg:#180e1d;--ink:#fbeaf2;--muted:#c9a8bb;--line:#3b2646;--line2:#5e3f68;--accent:#ff8fb1;--accent-ink:#2A0E1D;--accent-soft:#33203a;--teal:#c9a3f5;--err:#ff7f93;--ok:#6ee7a8;--key-w:#f1e4ec;--key-b:#140a18;--f-display:"Space Grotesk","Inter",system-ui,sans-serif;--f-body:"Inter",system-ui,-apple-system,"Segoe UI",sans-serif}
+*{box-sizing:border-box}[hidden]{display:none!important}
+body{margin:0;min-height:100dvh;-webkit-user-select:none;user-select:none;background:radial-gradient(1000px 520px at 50% -120px,#3a1836 0%,transparent 70%) var(--bg);background-attachment:fixed;color:var(--ink);font:16px/1.55 var(--f-body);display:grid;place-items:center;padding:calc(env(safe-area-inset-top,0px) + 56px) 18px calc(env(safe-area-inset-bottom,0px) + 28px)}
+main{width:min(440px,100%);display:flex;flex-direction:column;align-items:center;gap:16px;text-align:center}
+.kicker{display:inline-flex;align-items:center;font:600 11px var(--f-body);letter-spacing:.2em;text-transform:uppercase;color:var(--accent)}
+.kicker img{width:22px;height:22px;border-radius:50%;object-fit:cover;margin-right:9px;box-shadow:0 0 0 1.5px rgba(255,143,177,.45)}
+h1{font:700 clamp(32px,9vw,46px)/1 var(--f-display);margin:-6px 0 0;letter-spacing:-.02em}
+.medidor{width:100%}
+.bars{display:flex;align-items:center;justify-content:center;gap:5px;height:44px}
+.bars i{display:block;width:6px;height:100%;border-radius:3px;background:linear-gradient(var(--accent),var(--teal));transform:scaleY(.12);transition:transform .11s linear}
+#nota{display:block;width:100%;border:0;background:none;color:inherit;font:inherit;padding:6px 0 0;cursor:pointer;transition:opacity .3s}
+#nota b{display:block;font:700 clamp(78px,27vw,124px)/1.05 var(--f-display);letter-spacing:-.03em;background:linear-gradient(180deg,#fff,var(--accent));-webkit-background-clip:text;background-clip:text;color:transparent}
+#nota small{display:block;font:500 18px var(--f-display);color:var(--muted);min-height:1.4em}
+.apagada{opacity:.4}
+#nota{transition:opacity .3s,filter .3s}.afinada #nota b{background:linear-gradient(180deg,#fff,var(--ok));-webkit-background-clip:text;background-clip:text}
+.enlace{min-height:44px;margin-top:-8px;padding:6px 12px;border:0;background:none;color:var(--muted);font:500 13px var(--f-body);text-decoration:underline;text-underline-offset:4px;cursor:pointer}.enlace:hover{color:var(--ink)}
+.afin{position:relative;height:30px;margin:14px 8px 0}
+.afin::before{content:"";position:absolute;left:0;right:0;top:12px;height:6px;border-radius:3px;background:linear-gradient(90deg,var(--line2),var(--teal) 38%,var(--ok) 50%,var(--teal) 62%,var(--line2))}
+.afin::after{content:"";position:absolute;left:50%;top:5px;width:2px;height:20px;margin-left:-1px;background:var(--ink);opacity:.5}
+#aguja{position:absolute;z-index:1;top:6px;left:50%;width:18px;height:18px;margin-left:-9px;border-radius:50%;background:var(--accent);border:3px solid #fff;transition:left .12s ease-out}
+.afin-t{display:flex;justify-content:space-between;font-size:11px;color:var(--muted)}
+#estado{min-height:1.5em;margin-top:6px;font-size:13px;color:var(--muted)}
+.teclado{position:relative;display:flex;height:70px;margin-top:12px;gap:2px}
+.teclado .w{flex:1;background:var(--key-w);border-radius:0 0 6px 6px}
+.teclado .k{position:absolute;top:0;width:9%;height:60%;margin-left:-4.5%;background:var(--key-b);border-radius:0 0 4px 4px}
+.teclado .on{background:linear-gradient(var(--accent),#EF0870)}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:10px;min-height:54px;min-width:200px;padding:12px 38px;border-radius:14px;border:1px solid var(--accent);background:var(--accent);color:var(--accent-ink);font:600 17px var(--f-body);cursor:pointer}
+.btn:hover{background:#ffa9c4}.btn.on{background:#ff5c97;border-color:#ff5c97}
+.btn.on::before{content:"";width:9px;height:9px;border-radius:50%;background:currentColor;animation:pulse 1s infinite}@keyframes pulse{50%{opacity:.25}}
+button:focus-visible{outline:3px solid var(--teal);outline-offset:2px}
+.pie{margin:0;font-size:13px;color:var(--muted)}.pie.err{color:var(--err)}
+#cerrar{position:fixed;z-index:30;top:calc(env(safe-area-inset-top,0px) + 8px);right:max(8px,env(safe-area-inset-right,0px));width:44px;height:44px;border:0;background:none;padding:0;display:grid;place-items:center;color:#fff;cursor:pointer;-webkit-tap-highlight-color:transparent}
+#cerrar::before{content:"";display:block;width:26px;height:26px;background:currentColor;-webkit-mask:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M5 5L19 19M19 5L5 19' fill='none' stroke='%23000' stroke-width='3.6' stroke-linecap='round'/%3E%3C/svg%3E") center/contain no-repeat;mask:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M5 5L19 19M19 5L5 19' fill='none' stroke='%23000' stroke-width='3.6' stroke-linecap='round'/%3E%3C/svg%3E") center/contain no-repeat;filter:drop-shadow(0 0 5px rgba(239,8,112,.9)) drop-shadow(0 0 12px rgba(239,8,112,.45));transition:transform .28s cubic-bezier(.3,1.5,.5,1),background-color .2s}
+#cerrar:hover::before,#cerrar:focus-visible::before{transform:rotate(90deg) scale(1.15);background:#ff8fb1}
+#cerrar:active::before{transform:rotate(90deg) scale(.88)}
+#cerrar:focus-visible{outline:none}
+@media (prefers-reduced-motion:no-preference){main>*{animation:rise .7s cubic-bezier(.22,1,.36,1) backwards}main>:nth-child(2){animation-delay:.06s}main>:nth-child(3){animation-delay:.12s}main>:nth-child(4){animation-delay:.18s}main>:nth-child(5){animation-delay:.24s}@keyframes rise{from{opacity:0;transform:translateY(14px)}}}
+</style></head>
+<body>
+<button id="cerrar" type="button" aria-label="Cerrar y volver a Herramientas"></button>
+<main>
+  <div class="kicker"><img src="../../Logos/PeachesLogo.jpeg" alt="" onerror="this.remove()">Team Peaches</div>
+  <h1>Medidor de nota</h1>
+  <div class="medidor" id="medidor">
+    <div class="bars" id="bars" aria-hidden="true"></div>
+    <button id="nota" class="apagada" type="button" title="Toca para cambiar entre C D E y Do Re Mi"><b id="grande">–</b><small id="chica"></small></button>
+    <div class="afin" aria-hidden="true"><i id="aguja"></i></div>
+    <div class="afin-t"><span>♭ baja</span><span>afinada</span><span>alta ♯</span></div>
+    <div id="estado" aria-live="polite">Toca «Iniciar» y canta o toca una nota</div>
+    <div class="teclado" id="teclado" aria-hidden="true"></div>
+  </div>
+  <button class="btn" id="iniciar" type="button">Iniciar</button>
+  <button class="enlace" id="deAudio" type="button">Medir notas de un audio</button>
+  <p class="pie" id="pie">El audio se analiza en tu dispositivo: no se graba ni se envía.</p>
+</main>
+<script>
+const NOTE_ES = ['Do','Do♯','Re','Re♯','Mi','Fa','Fa♯','Sol','Sol♯','La','La♯','Si'];
+const NOTE_EN = ['C','C♯','D','D♯','E','F','F♯','G','G♯','A','A♯','B'];
+const hzToMidi = f => 69 + 12 * Math.log2(f / 440);
+const midiToHz = m => 440 * Math.pow(2, (m - 69) / 12);
+function noteInfo(m) {
+  const r = Math.round(m), cents = Math.round((m - r) * 100), pc = ((r % 12) + 12) % 12, oct = Math.floor(r / 12) - 1;
+  return { midi: r, cents, es: NOTE_ES[pc] + oct, en: NOTE_EN[pc] + oct, hz: midiToHz(m) };
+}
+
+const median = a => { const s = [...a].sort((p, q) => p - q); return s[Math.floor(s.length / 2)]; };
+/* Detector de tono ligero (YIN): el mismo del medidor en vivo de Rango vocal.
+   Cubre de ~27 Hz (La0) a 5000 Hz (pasa de Do8): antes iba de 45 a 2000 Hz, por eso no salían Do1–Fa1
+   y desde Do7 la nota aparecía una octava abajo. Calcula solo hasta encontrar el periodo, así las notas agudas cuestan muy poco. */
+function yinLive(buf, sr) {
+  let e = 0; for (let i = 0; i < buf.length; i++) e += buf[i] * buf[i];
+  if (Math.sqrt(e / buf.length) < 0.008) return null;
+  const W = 4096, tMin = Math.max(2, Math.floor(sr / 5000)), tMax = Math.min(Math.floor(sr / 27), buf.length - W - 2);
+  const cm = new Float32Array(tMax + 2); let run = 0, best = 0, found = 0;
+  for (let t = 1; t <= tMax + 1; t++) {
+    let s = 0; for (let i = 0; i < W; i++) { const x = buf[i] - buf[i + t]; s += x * x; } run += s; cm[t] = s * t / (run || 1);
+    const p = t - 1;   // p ya tiene vecino a ambos lados
+    if (p < tMin) continue;
+    if (found) { if (cm[t] < cm[found]) found = t; else break; }          // baja hasta el fondo del valle
+    else if (cm[p] < 0.15) found = cm[t] < cm[p] ? t : p;
+    if (found && found < t) break;
+    if (cm[p] <= cm[p - 1] && cm[p] <= cm[t] && (!best || cm[p] < cm[best])) best = p;
+  }
+  const k = found || (best && cm[best] < 0.3 ? best : 0);   // respaldo para graves de piano, menos «limpios»
+  if (!k || k > tMax) return null;
+  const a = cm[k - 1], b = cm[k], c = cm[k + 1], den = a - 2 * b + c;
+  return sr / (den > 0 ? k + 0.5 * (a - c) / den : k);
+}
+const $ = s => document.querySelector(s);
+const card = $('#medidor'), boton = $('#iniciar'), estado = $('#estado'), aguja = $('#aguja'), pie = $('#pie');
+const barras = [22,48,80,100,64,90,42,70,30].map(h => { const i = document.createElement('i'); $('#bars').appendChild(i); return { i, h: h / 100 }; });
+// Teclado de una octava: ilumina la nota que suena
+const teclas = [];
+[0,2,4,5,7,9,11].forEach(pc => { const t = document.createElement('i'); t.className = 'w'; $('#teclado').appendChild(t); teclas[pc] = t; });
+[[1,1],[3,2],[6,4],[8,5],[10,6]].forEach(([pc, pos]) => { const t = document.createElement('i'); t.className = 'k'; t.style.left = (pos * 100 / 7) + '%'; $('#teclado').appendChild(t); teclas[pc] = t; });
+
+let notacion = 'en', actual = null, mic = null, ctx = null, an = null, src = null, timer = 0, hist = [], silencio = 0, pidiendo = false;
+function pintarNota() {
+  if (actual == null) { $('#grande').textContent = '–'; $('#chica').textContent = ''; return; }
+  const n = noteInfo(actual);
+  $('#grande').textContent = notacion === 'en' ? n.en : n.es;
+  $('#chica').textContent = notacion === 'en' ? n.es : n.en;
+}
+$('#nota').onclick = () => { notacion = notacion === 'en' ? 'es' : 'en'; pintarNota(); };
+function apagar() { card.classList.remove('suena', 'afinada'); $('#nota').classList.add('apagada'); teclas.forEach(t => t.classList.remove('on')); }
+function medir() {
+  const buf = new Float32Array(an.fftSize); an.getFloatTimeDomainData(buf);
+  let e = 0; for (let i = 0; i < buf.length; i += 4) e += buf[i] * buf[i];
+  const vol = Math.min(1, Math.sqrt(e / (buf.length / 4)) * 6);
+  barras.forEach(b => { b.i.style.transform = `scaleY(${Math.max(.12, vol * b.h * (.75 + Math.random() * .25))})`; });
+  const f = yinLive(buf, ctx.sampleRate);
+  if (!f) {   // se deja la última nota atenuada; tras un silencio se olvida el historial
+    if (++silencio >= 3) { hist = []; apagar(); estado.textContent = actual == null ? 'Escuchando…' : 'Última nota detectada'; }
+    return;
+  }
+  silencio = 0; hist.push(hzToMidi(f)); if (hist.length > 5) hist.shift();
+  if (hist.length < 3) return;
+  const m = median(hist), n = noteInfo(m), bien = Math.abs(n.cents) <= 10;
+  actual = m; pintarNota();
+  $('#nota').classList.remove('apagada'); card.classList.add('suena'); card.classList.toggle('afinada', bien);
+  aguja.style.left = (50 + Math.max(-50, Math.min(50, n.cents))) + '%';
+  estado.textContent = `${bien ? '¡Afinada! ✨' : (n.cents > 0 ? '+' : '') + n.cents + ' cents'} · ${f < 100 ? f.toFixed(1) : Math.round(f)} Hz`;
+  teclas.forEach((t, pc) => t.classList.toggle('on', pc === ((n.midi % 12) + 12) % 12));
+}
+function detener() {
+  clearInterval(timer); timer = 0;
+  if (src) src.disconnect();
+  if (mic) mic.getTracks().forEach(t => t.stop());
+  mic = src = null; hist = []; apagar(); barras.forEach(b => { b.i.style.transform = ''; });
+  boton.textContent = 'Iniciar'; boton.classList.remove('on');
+  estado.textContent = actual == null ? 'Toca «Iniciar» y canta o toca una nota' : 'Última nota detectada';
+}
+async function iniciar() {
+  if (pidiendo) return;
+  pidiendo = true; pie.classList.remove('err');
+  try {
+    ctx = ctx || new (window.AudioContext || window.webkitAudioContext)(); if (ctx.state !== 'running') ctx.resume();
+    mic = await navigator.mediaDevices.getUserMedia({ audio: { echoCancellation: false, noiseSuppression: false, autoGainControl: false } });
+    an = ctx.createAnalyser(); an.fftSize = 8192; src = ctx.createMediaStreamSource(mic); src.connect(an);
+    actual = null; silencio = 0; pintarNota(); estado.textContent = 'Escuchando…';
+    boton.textContent = 'Detener'; boton.classList.add('on');
+    timer = setInterval(medir, 90);
+  } catch (e) {
+    detener(); pie.classList.add('err');
+    pie.textContent = 'No se pudo usar el micrófono. Da permiso al navegador y vuelve a tocar «Iniciar».';
+  }
+  pidiendo = false;
+}
+boton.onclick = () => { if (timer) detener(); else iniciar(); };
+document.addEventListener('visibilitychange', () => { if (document.hidden && timer) detener(); });   // no deja el micrófono abierto
+$('#deAudio').onclick = () => {   // abre «Analizar rango en una canción» de Rango vocal
+  detener();
+  try { if (window.parent !== window && window.parent.trackUI) window.parent.trackUI('herr_analizar_notas'); } catch (e) {}
+  location.href = '../rango-vocal/?v=cancion&from=medidor';
+};
+$('#cerrar').onclick = () => { detener(); location.href = '../'; };
+</script>
+</body></html>

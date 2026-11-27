@@ -924,7 +924,7 @@ $('#cerrar').onclick = () => {   // cierra todo y vuelve al Hub
   try { if (window.parent && window.parent !== window && window.parent.cerrarModulo) { window.parent.cerrarModulo(); return; } } catch (e) {}
   location.href = '../../';
 };
-$('#back').onclick = () => { if (rec) cancelRec(); if (view === 'home') { location.href = '../'; return; } go(PARENT[view] || 'home'); };
+$('#back').onclick = () => { if (rec) cancelRec(); if (view === 'home') { location.href = '../'; return; } if (view === 'song' && new URLSearchParams(location.search).get('from') === 'medidor') { location.href = '../medidor-nota/'; return; } go(PARENT[view] || 'home'); };
 
 /* ---- 3. Datos de las entradas ---- */
 const SLOTS = [
@@ -1275,7 +1275,7 @@ function clearAll() {
    Solo las opciones con «types» cambian el resultado; las demás se comparan contra los 6 tipos. */
 const OTROS_GENEROS = ['No binario', 'Hombre transgénero', 'Mujer transgénero', 'Género fluido', 'Queer', 'Agénero', 'Bigénero', 'Dos espíritus', 'Pangénero',
   'Demigénero', 'Demiboy', 'Demigirl', 'Tercer género', 'Intersexual', 'Prefiero no decirlo', 'Otro', 'Otro, pero prefiero uno diferente del otro anterior',
-  'Ninguno de los anteriores', 'Todos los de arriba', 'Alguno de los anteriores, prefiero decirlo pero no lo haré', 'Prefiero no preferir', 'Es complicado',
+  'Ninguno de los anteriores', 'Todos los de arriba', 'Alguno de los anteriores', 'Prefiero decirlo pero no lo haré', 'Prefiero no preferir', 'Es complicado',
   'En realidad no es tan complicado, solo eres entrometido', 'Pregúntame de nuevo más tarde', 'Pregúntale a mi abogado primero', 'No aplicable',
   'No aplicable, pero de una manera de género', 'Resultados pendientes', 'Indeciso', 'Indeciso inclinado', 'Prefiero no meterme en eso',
   'Depende de quién pregunte', 'Múltiples', 'Sí', 'No', 'Tal vez', 'No te gustaría saber', 'Transformer', 'Helicóptero Apache', 'Gato', 'Tanque termonuclear'];

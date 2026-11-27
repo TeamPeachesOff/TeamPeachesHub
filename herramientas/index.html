@@ -50,6 +50,7 @@ main{max-width:640px;margin:0 auto;padding:6px 16px 70px;}
 .app:focus-visible .ico{outline:3px solid var(--rosa-comp);outline-offset:4px;border-radius:20px;}
 @media (hover:hover){.app:hover .ico{transform:translateY(-4px) scale(1.05);}.app:hover .nm{color:var(--peach-1);}}
 .nm{transition:color .2s ease;}
+@media (max-width:365px){.app{width:96px;}}   /* teléfonos angostos: que sigan cabiendo 3 por línea */
 .pronto{margin-top:38px;text-align:center;font-size:12.5px;color:var(--text-dim);}
 
 @keyframes rise{from{opacity:0;transform:translateY(16px);}}
@@ -83,8 +84,8 @@ main{max-width:640px;margin:0 auto;padding:6px 16px 70px;}
 const SECCIONES = [
   { titulo: '🎤 Análisis de voz', items: [
     { n: 'Rango vocal', k: 'herr_rango_vocal', d: 'Descubre tu tipo de voz', img: 'logos/rango-vocal.png', href: 'rango-vocal/', ring: true },
-    { n: 'Piano vocal', k: 'herr_piano_vocal', d: 'Los rangos de todo el team', img: 'logos/piano-vocal.png', accion: 'piano', ring: true },
-    { n: 'Analizar notas en canción', k: 'herr_analizar_notas', d: 'Sube una canción y mira sus notas', img: 'logos/analizar-notas.png', href: 'rango-vocal/?v=cancion', ring: true }
+    { n: 'Medidor de nota', k: 'herr_medidor_nota', d: 'Mira en vivo la nota que suena', img: 'logos/medidor-nota.png', href: 'medidor-nota/', ring: true },
+    { n: 'Piano vocal', k: 'herr_piano_vocal', d: 'Los rangos de todo el team', img: 'logos/piano-vocal.png', accion: 'piano', ring: true }
   ]},
   { titulo: '⬇️ Descargadores', items: [
     { n: 'Y2mate', k: 'herr_y2mate', d: 'Descarga de YouTube', img: 'logos/y2mate.png', href: 'https://y2mate.gs/es/' },
