@@ -1,0 +1,8 @@
+/* Tamaño base de «La Baraja» (v4.32). Desde la v4.33 esos selectores los usa el Abanico con otras medidas (--fnw y --bjw).
+   Para reactivar la Baraja, ponle estas medidas bajo #rv[data-t="N"]. */
+#rv{--bjw:min(32vw,calc((100vh - 176px)*.7018),440px);--bjh:calc(var(--bjw)/.7018)}
+@supports (height:100dvh){#rv{--bjw:min(32vw,calc((100dvh - 176px)*.7018),440px)}}
+@media (max-width:640px),(max-aspect-ratio:1/1){
+  #rv{--bjw:min(74vw,calc((100vh - 250px)/2*.7018),300px)}
+}
+@supports (height:100dvh){@media (max-width:640px),(max-aspect-ratio:1/1){#rv{--bjw:min(74vw,calc((100dvh - 250px)/2*.7018),300px)}}}

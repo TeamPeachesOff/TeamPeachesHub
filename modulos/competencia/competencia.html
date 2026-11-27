@@ -245,7 +245,7 @@ button:focus-visible,a:focus-visible{outline:2px solid var(--peach-1);outline-of
 .help li{margin-bottom:5px}.help p{margin:0}
 .help b{color:var(--text)}.help b.g{color:var(--rosa-comp)}.help b.r{color:#ff4d6d}.help b.pk{color:var(--peach-1)}
 /* ===================== Revelación de parejas (pantalla completa) =====================
-   Propuestas activas (data-t = 0 · La Baraja, 1 · Abanico, 2 · Lluvia, 3 · Ruleta). Solo se animan transform y opacity (ligero en teléfono). */
+   Propuesta activa: Abanico (las demás están en docs/archivo-animaciones). Solo se animan transform y opacity (ligero en teléfono). */
 #rv{position:fixed;inset:0;z-index:600;display:none;flex-direction:column;overflow:hidden;color:#fff;background:#07030b;-webkit-tap-highlight-color:transparent;user-select:none;-webkit-user-select:none;overscroll-behavior:contain}
 #rv.on{display:flex}
 #rv .rv-bg{position:absolute;inset:0;pointer-events:none}
@@ -312,8 +312,8 @@ button:focus-visible,a:focus-visible{outline:2px solid var(--peach-1);outline-of
 
 /* ===== Cartas · Propuesta 1 «La Baraja» ===== */
 #rv .rv-bg{background:radial-gradient(ellipse 65% 55% at 16% 20%,rgba(255,111,174,.27),rgba(7,3,11,0) 70%),radial-gradient(ellipse 65% 55% at 86% 82%,rgba(86,128,236,.32),rgba(7,3,11,0) 70%),linear-gradient(180deg,#0d0616,#07030b)}
-#rv{--bjw:min(32vw,calc((100vh - 176px)*.7018),440px);--bjh:calc(var(--bjw)/.7018)}
-@supports (height:100dvh){#rv{--bjw:min(32vw,calc((100dvh - 176px)*.7018),440px)}}
+#rv{--fnw:min(27vw,calc((100vh - 176px)*.7018),420px);--bjw:calc(var(--fnw)*.7);--bjh:calc(var(--bjw)/.7018)}
+@supports (height:100dvh){#rv{--fnw:min(27vw,calc((100dvh - 176px)*.7018),420px)}}
 #rv .bj-deck{position:relative;z-index:1;width:var(--bjw);aspect-ratio:400/570;flex:none}
 #rv .rv-duel.bj .bj-deck{position:absolute;left:50%;top:50%;margin:calc(var(--bjh)/-2) 0 0 calc(var(--bjw)/-2)}
 #rv .bj-dc{position:absolute;inset:0;will-change:transform}
@@ -332,9 +332,9 @@ button:focus-visible,a:focus-visible{outline:2px solid var(--peach-1);outline-of
 #rv .rv-duel.idle .bj-b .bj-flt{animation-delay:-1.6s}
 #rv .rv-duel.clash .bj-flt{animation:none}
 #rv .bj-slot{position:absolute;inset:0;perspective:1100px;transition:transform .4s cubic-bezier(.2,.9,.3,1.25),filter .4s}
-#rv .bj-slot.lift{transform:translateY(-3%) scale(1.08)}
+#rv .bj-slot.lift{transform:translateY(-3%) scale(1.04)}
 #rv .bj-slot.dim{filter:brightness(.55) saturate(.8);transform:scale(.95)}
-#rv .bj-slot.up{transform:scale(1.03)}
+#rv .bj-slot.up{transform:none}
 #rv .bj-fi{position:absolute;inset:0;transform-style:preserve-3d;transition:transform .72s cubic-bezier(.3,1.12,.35,1)}
 #rv .bj-fi.flip{transform:rotateY(180deg)}
 #rv .bj-bk,#rv .bj-ft{position:absolute;inset:0;backface-visibility:hidden;-webkit-backface-visibility:hidden;border-radius:6%/4.2%;box-shadow:0 10px 28px rgba(0,0,0,.55)}
@@ -352,7 +352,7 @@ button:focus-visible,a:focus-visible{outline:2px solid var(--peach-1);outline-of
 #rv .rv-duel.clash .bj-a{transform:translate(var(--kx),var(--ky)) rotate(3deg);transition:transform .26s cubic-bezier(.5,0,.9,.4)}
 #rv .rv-duel.clash .bj-b{transform:translate(calc(var(--kx)*-1),calc(var(--ky)*-1)) rotate(-3deg);transition:transform .26s cubic-bezier(.5,0,.9,.4)}
 #rv .bj-vsw{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;z-index:6;pointer-events:none}
-#rv .bj-vsw .rv-vs{color:#fff;font-size:clamp(46px,calc(var(--bjw)*.34),130px);text-shadow:0 0 6px #000,0 0 16px #ff6fae,0 0 38px #6aa0ff}
+#rv .bj-vsw .rv-vs{color:#fff;font-size:clamp(46px,calc(var(--fnw)*.3),130px);text-shadow:0 0 6px #000,0 0 16px #ff6fae,0 0 38px #6aa0ff}
 @keyframes bjFloat{from{transform:translateY(-5px) rotate(-.6deg)}to{transform:translateY(5px) rotate(.6deg)}}
 @keyframes bjGlow{from{opacity:.35}to{opacity:.85}}
 @keyframes bjTrem{0%,100%{transform:translate(0,0)}25%{transform:translate(-1.5px,1px) rotate(-.5deg)}50%{transform:translate(1px,-1px) rotate(.5deg)}75%{transform:translate(-1px,-1.5px)}}
@@ -365,12 +365,18 @@ button:focus-visible,a:focus-visible{outline:2px solid var(--peach-1);outline-of
 #rv .rv-sumwrap h2{margin:0 0 4px;text-align:center;font-size:clamp(22px,5vw,34px);font-weight:900;background:linear-gradient(90deg,#fff,var(--peach-1));-webkit-background-clip:text;background-clip:text;color:transparent}
 #rv .rv-sumwrap>p{margin:0 0 18px;text-align:center;color:var(--text-dim);font-size:13.5px;font-weight:600}
 #rv .rv-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(310px,1fr));gap:10px;max-width:1100px;margin:0 auto}
-#rv .rv-pair{display:flex;align-items:center;gap:8px;padding:10px 12px;border-radius:14px;background:rgba(255,255,255,.07);box-shadow:inset 0 0 0 1px rgba(255,255,255,.1);animation:rvPairIn .45s ease-out backwards;animation-delay:var(--d,0ms)}
+#rv .rv-pair{position:relative;overflow:hidden;display:flex;align-items:center;gap:8px;padding:10px 12px;border-radius:14px;background:rgba(255,255,255,.07);box-shadow:inset 0 0 0 1px rgba(255,255,255,.1);animation:rvDeal .55s cubic-bezier(.2,.9,.3,1.15) backwards;animation-delay:var(--d,0ms)}
 #rv .rv-pair .s{flex:1 1 0;min-width:0;display:flex;align-items:center;gap:8px}
 #rv .rv-pair .s.b{flex-direction:row-reverse;text-align:right}
 #rv .rv-pair .s img{width:40px;height:40px;border-radius:50%;object-fit:cover;flex:none;border:2px solid var(--c)}
 #rv .rv-pair .s.a{--c:#ff6fae}#rv .rv-pair .s.b{--c:#6aa0ff}
 #rv .rv-pair b{font-size:13.5px;line-height:1.15;overflow-wrap:break-word;word-break:normal}
+/* resultados finales: las parejas se reparten como cartas, brillan una vez y llueven cartitas */
+#rv .rv-pair::after{content:"";position:absolute;top:0;bottom:0;left:0;width:36%;background:linear-gradient(100deg,rgba(255,255,255,0),rgba(255,255,255,.2),rgba(255,255,255,0));pointer-events:none;animation:rvPairShine .9s ease-out calc(var(--d,0ms) + .5s) both}
+#rv .rv-pair .s img{animation:rvAvPop .6s cubic-bezier(.2,.9,.3,1.2) calc(var(--d,0ms) + .2s) backwards}
+#rv .rv-sumwrap h2{animation:rvTitleIn .7s cubic-bezier(.2,.9,.3,1) backwards}
+#rv .rv-cf{position:absolute;inset:0;z-index:4;overflow:hidden;pointer-events:none}
+#rv .rv-cf img{position:absolute;top:-16vh;left:var(--x);width:var(--w);height:auto;border-radius:6%/4.2%;box-shadow:0 3px 10px rgba(0,0,0,.5);opacity:0;will-change:transform,opacity;pointer-events:none;-webkit-user-drag:none;animation:rvCf var(--t) cubic-bezier(.3,.1,.5,1) var(--d) forwards}
 #rv .rv-pair em{flex:none;font-weight:900;font-style:italic;font-size:15px;color:var(--peach-1)}
 #rv .rv-bye{max-width:1100px;margin:12px auto 0;text-align:center;color:var(--text-dim);font-size:13.5px;font-weight:600}
 #rv .rv-bye b{color:#fff}
@@ -383,11 +389,14 @@ button:focus-visible,a:focus-visible{outline:2px solid var(--peach-1);outline-of
 @keyframes rvSpark{from{opacity:1;transform:translate(0,0) scale(1.3)}to{opacity:0;transform:translate(var(--x),var(--y)) scale(.2)}}
 @keyframes rvSmoke{from{opacity:.8;transform:scale(.35) translateY(0)}to{opacity:0;transform:scale(2.1) translateY(-8%)}}
 @keyframes rvTitleIn{from{opacity:0;transform:scale(1.7)}to{opacity:1;transform:none}}
-@keyframes rvPairIn{from{opacity:0;transform:translateY(12px)}}
+@keyframes rvDeal{from{opacity:0;transform:translateY(-34px) scale(.9) rotate(var(--rt,-2deg))}}
+@keyframes rvPairShine{from{transform:translateX(-140%) skewX(-18deg)}to{transform:translateX(420%) skewX(-18deg)}}
+@keyframes rvAvPop{from{transform:scale(1.35);box-shadow:0 0 18px var(--c)}}
+@keyframes rvCf{0%{opacity:0;transform:translate3d(0,0,0) rotate(var(--r0))}8%{opacity:.95}85%{opacity:.9}100%{opacity:0;transform:translate3d(var(--dx),122vh,0) rotate(var(--r1))}}
 
 /* teléfono (o pantalla vertical): las dos cartas quedan una sobre otra */
 @media (max-width:640px),(max-aspect-ratio:1/1){
-  #rv{--bjw:min(74vw,calc((100vh - 250px)/2*.7018),300px)}
+  #rv{--fnw:min(62vw,calc((100vh - 250px)/3.7),260px)}
   #rv .rv-duel{flex-direction:column;gap:clamp(6px,1.6vh,16px)}
   #rv .rv-duel.bj{--kx:0px;--ky:calc(var(--bjw)*.09);gap:clamp(8px,1.8vh,18px)}
   #rv .rv-side{flex:0 0 auto;max-width:86vw;gap:8px}
@@ -397,7 +406,7 @@ button:focus-visible,a:focus-visible{outline:2px solid var(--peach-1);outline-of
   #rv .rv-nm{font-size:clamp(17px,3.4vh,34px)}
   #rv .rv-vs{font-size:clamp(40px,10vh,110px)}
 }
-@supports (height:100dvh){@media (max-width:640px),(max-aspect-ratio:1/1){#rv{--bjw:min(74vw,calc((100dvh - 250px)/2*.7018),300px)}}}
+@supports (height:100dvh){@media (max-width:640px),(max-aspect-ratio:1/1){#rv{--fnw:min(62vw,calc((100dvh - 250px)/3.7),260px)}}}
 @media (max-width:640px){
   #rv .rv-hud{flex-direction:column;align-items:stretch;gap:6px}
   #rv .rv-panel{align-self:stretch}
@@ -410,16 +419,14 @@ button:focus-visible,a:focus-visible{outline:2px solid var(--peach-1);outline-of
   #rv .rv-grid{grid-template-columns:1fr}
 }
 @media (prefers-reduced-motion:reduce){
-  #rv .rv-stage.shake,#rv .rv-duel.idle .bj-flt,#rv .rv-duel.idle .bj-pos::before,#rv .bj-pos.trem{animation:none}
+  #rv .rv-stage.shake,#rv .rv-duel.idle .bj-flt,#rv .rv-duel.idle .bj-pos::before,#rv .bj-pos.trem,#rv .rv-pair,#rv .rv-pair::after,#rv .rv-pair .s img,#rv .rv-sumwrap h2{animation:none}
 }
 /* ===== ronda N: etiqueta + récord ===== */
 #rv .rv-rtag{position:absolute;left:0;right:0;top:calc(env(safe-area-inset-top,0px) + 72px);z-index:3;text-align:center;font-weight:900;letter-spacing:.35em;font-size:clamp(13px,2.8vmin,22px);color:#f1c40f;text-shadow:0 2px 10px #000;animation:rvTitleIn .5s backwards}
 #rv .rv-rec{display:block;margin-top:.3em;font-size:.5em;font-weight:800;letter-spacing:.08em;color:#f1c40f;text-shadow:0 1px 6px #000}
 #rv .rv-tabs{flex-wrap:wrap;justify-content:center}
-/* ===== Cartas · Propuesta 2 «Abanico» ===== */
-#rv[data-t="1"]{--bjw:min(27vw,calc((100vh - 176px)*.7018),420px)}
-@supports (height:100dvh){#rv[data-t="1"]{--bjw:min(27vw,calc((100dvh - 176px)*.7018),420px)}}
-#rv .rv-duel.bj.fn{max-width:none;--kx:calc(var(--bjw)*.6);--ky:0px;gap:calc(var(--bjw)*1.25)}
+/* ===== Cartas · Abanico (propuesta activa) ===== */
+#rv .rv-duel.bj.fn{max-width:none;--kx:calc(var(--fnw)*.73);--ky:0px;gap:calc(var(--fnw)*1.5)}
 #rv .fn-fan{position:absolute;left:50%;top:50%;width:0;height:0;z-index:1}
 #rv .fn-c{position:absolute;--hc:255,111,174}
 #rv .fn-c[data-k="b"]{--hc:106,160,255}
@@ -428,32 +435,9 @@ button:focus-visible,a:focus-visible{outline:2px solid var(--peach-1);outline-of
 #rv .fn-c.hl{z-index:5}
 #rv .fn-c.hl .fn-i{transform:translateY(-16%) scale(1.1);box-shadow:0 0 0 2px rgb(var(--hc)),0 0 22px rgb(var(--hc))}
 @media (max-width:640px),(max-aspect-ratio:1/1){
-  #rv[data-t="1"]{--bjw:min(62vw,calc((100vh - 250px)/3.7),260px)}
-  #rv .rv-duel.bj.fn{--kx:0px;--ky:calc(var(--bjw)*.38);gap:calc(var(--bjw)*.8)}
+  #rv .rv-duel.bj.fn{--kx:0px;--ky:calc(var(--fnw)*.34);gap:calc(var(--fnw)*.9)}
+  #rv .bj-vsw .rv-vs{font-size:clamp(40px,calc(var(--fnw)*.24),110px)}
 }
-@supports (height:100dvh){@media (max-width:640px),(max-aspect-ratio:1/1){#rv[data-t="1"]{--bjw:min(62vw,calc((100dvh - 250px)/3.7),260px)}}}
-/* ===== Cartas · Propuesta 3 «Lluvia de cartas» ===== */
-#rv[data-t="2"]{--bjw:min(27vw,calc((100vh - 235px)*.7018),380px)}
-@supports (height:100dvh){#rv[data-t="2"]{--bjw:min(27vw,calc((100dvh - 235px)*.7018),380px)}}
-#rv .ll-rain{position:absolute;inset:0;z-index:2;pointer-events:none}
-#rv .ll-rc{position:absolute;left:0;top:0;display:block;border-radius:6%/4.2%;box-shadow:0 4px 14px rgba(0,0,0,.55);will-change:transform;pointer-events:none;-webkit-user-drag:none}
-#rv .ll-pile{position:absolute;inset:0;z-index:4;pointer-events:none}
-#rv .ll-pc{position:absolute;left:0;top:0;width:100%;height:100%;display:block;border-radius:6%/4.2%;box-shadow:0 2px 8px rgba(0,0,0,.6);will-change:transform,opacity;pointer-events:none;-webkit-user-drag:none}
-#rv .rv-duel.ll .bj-pos.focus .ll-pile{filter:drop-shadow(0 0 14px rgba(var(--gc),.75))}
-@media (max-width:640px),(max-aspect-ratio:1/1){
-  #rv[data-t="2"]{--bjw:min(64vw,calc((100vh - 292px)/2*.7018),260px)}
-}
-@supports (height:100dvh){@media (max-width:640px),(max-aspect-ratio:1/1){#rv[data-t="2"]{--bjw:min(64vw,calc((100dvh - 292px)/2*.7018),260px)}}}
-/* ===== Cartas · Propuesta 4 «Ruleta» ===== */
-#rv[data-t="3"]{--bjw:min(27vw,calc((100vh - 176px)*.7018),420px)}
-@supports (height:100dvh){#rv[data-t="3"]{--bjw:min(27vw,calc((100dvh - 176px)*.7018),420px)}}
-#rv .rl .fn-i{position:relative}
-#rv .rl-sh{position:absolute;inset:0;border-radius:6%/4.2%;background:#07030b;opacity:0;pointer-events:none}
-#rv .rl-ptr{position:absolute;left:-10px;width:0;height:0;z-index:200;border:10px solid transparent;border-top:0;border-bottom:16px solid #f1c40f;transform-origin:50% 0;filter:drop-shadow(0 0 7px rgba(241,196,15,.85))}
-@media (max-width:640px),(max-aspect-ratio:1/1){
-  #rv[data-t="3"]{--bjw:min(62vw,calc((100vh - 250px)/3.7),260px)}
-}
-@supports (height:100dvh){@media (max-width:640px),(max-aspect-ratio:1/1){#rv[data-t="3"]{--bjw:min(62vw,calc((100dvh - 250px)/3.7),260px)}}}
 </style>
 </head>
 <body>
@@ -1150,11 +1134,11 @@ function confetti(){
   b.addEventListener("contextmenu",e=>e.preventDefault());
 })();
 
-/* ================= Revelación de parejas (pantalla completa, 3 propuestas) =================
+/* ================= Revelación de parejas (pantalla completa) =================
    Al pulsar «Comenzar torneo» NO se crea nada todavía: se abre esta pantalla, se revelan las parejas y al final
    se confirma. «Atrás» vuelve a la selección sin tocar el torneo; al volver a comenzar se conservan las parejas
    cuyos dos integrantes siguen elegidos y solo se rearma a quien se quedó sin rival (o a quien se agregó). */
-const RV_NAMES=["La Baraja","Abanico","Lluvia","Ruleta"];   // propuestas de animación disponibles (se irán sumando)
+const RV_NAMES=["Abanico"];   // propuestas de animación activas (las archivadas están en docs/archivo-animaciones)
 let rv=null,rvRun=null,rvPlan=null,rvPl=[],rvName="",pend=null,okReplace=false,rvMode={n:1,recs:null},pendNext=null;
 let rvTheme=RV_NAMES.length-1;   // abre en la propuesta más nueva
 const DEAD={d:1},NEXT={n:1};
@@ -1246,43 +1230,13 @@ const rvQ=(st,s)=>st.querySelector(s);
 const rvCap=(st,txt)=>{const c=rvQ(st,".rv-cap");if(txt)c.textContent=txt;c.classList.add("in")};
 const rvOut=async(st,run)=>{const d=rvQ(st,".rv-duel");if(!d)return;d.classList.add("out");await run.wait(300)};
 
-/* ---- Cartas · Propuesta 1 «La Baraja»: se barajea, se reparte y cada carta se voltea con un toque ---- */
+/* ---- Cartas: piezas compartidas (dorsos, carta con foto y marco, destello al voltear) ---- */
 const BJ_IMG={a:"cartas/dorso-rosa.png?v=1",b:"cartas/dorso-azul.png?v=1"};   // dorsos provisionales (se cambiarán por los definitivos)
 const bjPath=(a,b,c,d,k)=>`M${a+k} ${b}H${c-k}Q${c-k} ${b+k} ${c} ${b+k}V${d-k}Q${c-k} ${d-k} ${c-k} ${d}H${a+k}Q${a+k} ${d-k} ${a} ${d-k}V${b+k}Q${a+k} ${b+k} ${a+k} ${b}Z`;
 const BJ_OUT="M24 0H376A24 24 0 0 1 400 24V546A24 24 0 0 1 376 570H24A24 24 0 0 1 0 546V24A24 24 0 0 1 24 0Z",BJ_IN=bjPath(26,26,374,544,22),BJ_LN=bjPath(34,34,366,536,16);
 const BJ_GEM=[[13,13],[387,13],[13,557],[387,557]].map(([x,y])=>`<circle cx="${x}" cy="${y}" r="3.6" fill="#fff" fill-opacity=".92"/>`).join("")+[[200,13],[200,557],[13,285],[387,285]].map(([x,y])=>`<path d="M${x} ${y-7}l6 7-6 7-6-7z" fill="#fff" fill-opacity=".92"/>`).join("");
 const bjFrame=k=>`<svg viewBox="0 0 400 570" aria-hidden="true"><path d="${BJ_OUT} ${BJ_IN}" fill="url(#bjg${k})" fill-rule="evenodd"/><rect x="4" y="4" width="392" height="562" rx="21" fill="none" stroke="#fff" stroke-opacity=".55" stroke-width="1.6"/><path d="${BJ_LN}" fill="none" stroke="#fff" stroke-opacity=".85" stroke-width="2.2"/><path d="${BJ_IN}" fill="none" stroke="#000" stroke-opacity=".35" stroke-width="2"/>${BJ_GEM}</svg>`;
 const bjCard=(p,k)=>`<div class="bj-pos bj-${k}"><div class="bj-flt"><div class="bj-slot"><div class="bj-fi"><img class="bj-bk" src="${BJ_IMG[k]}" alt="" draggable="false"><div class="bj-ft"><div class="bj-ph">${avatar(p)}</div><i class="bj-sd"></i>${bjFrame(k)}<div class="bj-nm"><b>${esc(p.n)}</b>${rvRec(p)}</div><i class="bj-sh"></i></div></div></div></div></div>`;
-const bjDeckHTML=spec=>spec.map((k,i)=>`<div class="bj-dc" style="transform:translate(0px,${-i*1.2}px);z-index:${i}"><img src="${BJ_IMG[k]}" alt="" draggable="false"></div>`).join("");
-const bjTf=(x,y,r)=>`translate(${x}px,${y}px) rotate(${r}deg)`;
-
-/* Intro: el mazo (mitad azul, mitad rosa) se parte en dos y se intercala dos veces, como una barajada de verdad. */
-async function intro0(st,run){
-  st.innerHTML=`${rvRtag()}<div class="bj-deck" id="bjD">${bjDeckHTML([...Array(8).fill("b"),...Array(8).fill("a")])}</div><div class="rv-cap">Barajando…</div>`;
-  const dk=rvQ(st,"#bjD"),W=dk.offsetWidth,H=dk.offsetHeight;
-  let els=[...dk.children];
-  rvCap(st);
-  dk.animate([{opacity:0,transform:"scale(.8) translateY(30px)"},{opacity:1,transform:"none"}],{duration:300,easing:"cubic-bezier(.2,.9,.3,1.2)"});
-  SFX.flick();await run.wait(380);
-  for(const step of [52,40]){
-    const n=els.length,h=n/2,L=els.slice(0,h),R=els.slice(h);
-    SFX.flick();
-    els.forEach((el,i)=>{const left=i<h,j=left?i:i-h,x=(left?-1:1)*W*.6,r=left?-9:9,to=bjTf(x,-j*1.2,r);
-      el.animate([{transform:el.style.transform},{transform:to}],{duration:300,easing:"cubic-bezier(.3,.8,.3,1)",fill:"forwards"});el._s=to;el._x=x;el._r=r});
-    await run.wait(330);
-    els.forEach(el=>{el.getAnimations().forEach(a=>a.cancel());el.style.transform=el._s});
-    const order=[];for(let j=0;j<h;j++){order.push(L[j]);order.push(R[j])}
-    SFX.riffle((n-1)*step/1000+.28,n);
-    order.forEach((el,o)=>{const fin=bjTf(0,-o*1.2,0);el.style.zIndex=o;
-      el.animate([{transform:el._s},{transform:bjTf(el._x*.4,-H*.32,el._r*.4),offset:.5},{transform:fin}],{duration:280,delay:o*step,easing:"ease-in-out",fill:"both"});el._s=fin});
-    await run.wait((n-1)*step+300);
-    order.forEach(el=>{el.getAnimations().forEach(a=>a.cancel());el.style.transform=el._s});
-    els=order;await run.wait(70);
-  }
-  dk.animate([{transform:"scale(1)"},{transform:"scale(1.06)"},{transform:"scale(1)"}],{duration:260});
-  SFX.thump();rvQ(st,".rv-cap").textContent="¡Las cartas están echadas!";
-  await run.wait(380);
-}
 
 /* Efecto al voltear: chispas + anillo del color de la carta. */
 function bjBurst(pos){
@@ -1294,41 +1248,7 @@ function bjBurst(pos){
   const ring=document.createElement("i");ring.className="bj-ring";
   pos.appendChild(ring);pos.appendChild(w);setTimeout(()=>{w.remove();ring.remove()},1000);
 }
-/* Voltear una carta: sube y tiembla (tensión) → gira → destello. La otra se oscurece mientras tanto. */
-async function bjFlip(st,run,pos){
-  const slot=pos.querySelector(".bj-slot"),fi=pos.querySelector(".bj-fi"),other=[...st.querySelectorAll(".bj-pos")].find(x=>x!==pos),os=other&&other.querySelector(".bj-slot");
-  pos.classList.add("focus","trem");slot.classList.add("lift");
-  const dimmed=os&&!other.querySelector(".bj-fi.flip");if(dimmed)os.classList.add("dim");
-  SFX.riser(.45);await run.wait(460);
-  pos.classList.remove("trem");fi.classList.add("flip");SFX.snap();
-  await run.wait(380);
-  slot.classList.remove("lift");slot.classList.add("up");
-  SFX.chime();bjBurst(pos);if(dimmed)os.classList.remove("dim");
-  await run.wait(420);
-}
-/* Duelo: sale el mazo, se reparten dos cartas boca abajo → toque: se voltea la primera → toque: la segunda → choque + VS. */
-async function duel0(st,run,[a,b],i){
-  st.innerHTML=`<div class="rv-duel bj"><div class="bj-deck">${bjDeckHTML(Array.from({length:16},(_,k)=>k%2?"a":"b"))}</div>${bjCard(a,"a")}${bjCard(b,"b")}<div class="bj-vsw"><div class="rv-vs">VS</div></div></div>`;
-  const duel=rvQ(st,".rv-duel"),dk=rvQ(st,".bj-deck"),pa=rvQ(st,".bj-a"),pb=rvQ(st,".bj-b");
-  const ctr=el=>{const r=el.getBoundingClientRect();return[r.left+r.width/2,r.top+r.height/2]};
-  const [cx,cy]=ctr(dk);
-  const deal=(el,rot)=>{const [x,y]=ctr(el),dx=cx-x,dy=cy-y;
-    el.animate([{transform:`translate(${dx}px,${dy}px) rotate(0deg)`},{transform:`translate(${dx*.4}px,${dy*.4-34}px) rotate(${rot}deg)`,offset:.45},{transform:"translate(0px,0px) rotate(0deg)"}],{duration:580,easing:"cubic-bezier(.22,.8,.3,1)",fill:"backwards"})};
-  if(i)dk.animate([{opacity:0,transform:"scale(.85)"},{opacity:1,transform:"none"}],{duration:200,fill:"backwards"});
-  SFX.flick();await run.wait(i?240:120);
-  SFX.deal();deal(pa,-14);await run.wait(170);
-  SFX.deal();deal(pb,12);await run.wait(580);
-  SFX.thump();dk.animate([{opacity:1},{opacity:0}],{duration:300,fill:"forwards"});
-  duel.classList.add("idle");
-  await run.hold("Toca para voltear la primera carta");
-  await bjFlip(st,run,pa);
-  await run.hold("Toca para voltear la segunda");
-  await bjFlip(st,run,pb);
-  duel.classList.add("clash");await run.wait(260);
-  rvImpact(st,["#ff6fae","#6aa0ff","#fff"]);rvSmoke(st,2);rvQ(st,".rv-vs").classList.add("in");
-  await run.wait(520);
-}
-/* ---- Cartas · Propuesta 2 «Abanico»: un abanico gira como ruleta, se detiene en una carta y esa carta sale y se voltea ---- */
+/* ---- Cartas · «Abanico»: un abanico gira como ruleta, se detiene en una carta y esa carta sale y se voltea ---- */
 function fnBuild(fan,bw){
   const N=13,fw=bw*.36,fh=fw*1.425,R=fh*.95,span=128,pts=[],th=[],cards=[];
   for(let i=0;i<N;i++){const t=-span/2+i*span/(N-1),r=t*Math.PI/180,cx=R*Math.sin(r),cy=-R*Math.cos(r);
@@ -1341,11 +1261,13 @@ function fnBuild(fan,bw){
     fan.appendChild(el);cards.push(el)}
   return{cards,th,fw,fh,R,off,N,bw};
 }
+/* Ancho de referencia del abanico y del espacio entre cartas (la carta con foto es más chica: queda «más atrás»). */
+const fnW=st=>{const d=document.createElement("div");d.style.cssText="position:absolute;visibility:hidden;width:var(--fnw)";st.appendChild(d);const w=d.offsetWidth;d.remove();return w};
 const fnPos=(g,i)=>`translateY(${g.off}px) rotate(${g.th[i]}deg) translateY(${-g.R}px)`;
 
-async function intro1(st,run){
-  st.innerHTML=`${rvRtag()}<div class="rv-duel bj fn"><div class="bj-deck fn-m" style="position:absolute;visibility:hidden"></div><div class="fn-fan"></div></div><div class="rv-cap">Abriendo el abanico…</div>`;
-  const g=fnBuild(rvQ(st,".fn-fan"),rvQ(st,".fn-m").offsetWidth);
+async function introAb(st,run){
+  st.innerHTML=`${rvRtag()}<div class="rv-duel bj fn"><div class="fn-fan"></div></div><div class="rv-cap">Abriendo el abanico…</div>`;
+  const g=fnBuild(rvQ(st,".fn-fan"),fnW(st));
   rvCap(st);
   /* el abanico se abre desde un solo mazo, carta por carta */
   g.cards.forEach((el,i)=>el.animate([{transform:`translateY(${g.off}px) rotate(0deg) translateY(0px)`},{transform:fnPos(g,i)}],{duration:560,delay:i*32,easing:"cubic-bezier(.2,.9,.3,1.15)",fill:"backwards"}));
@@ -1394,11 +1316,11 @@ async function fnPick(st,run,g,pos,kind){
   SFX.whoosh();fnFly(g,t,pos);await run.wait(640);
   SFX.deal();await fnFlip(st,run,pos);
 }
-async function duel1(st,run,[a,b],i){
+async function duelAb(st,run,[a,b],i){
   st.innerHTML=`<div class="rv-duel bj fn"><div class="fn-fan"></div>${bjCard(a,"a")}${bjCard(b,"b")}<div class="bj-vsw"><div class="rv-vs">VS</div></div></div>`;
   const duel=rvQ(st,".rv-duel"),fan=rvQ(st,".fn-fan"),pa=rvQ(st,".bj-a"),pb=rvQ(st,".bj-b");
   pa.style.opacity="0";pb.style.opacity="0";
-  const g=fnBuild(fan,pa.offsetWidth);
+  const g=fnBuild(fan,fnW(st));
   if(i)fan.animate([{opacity:0,transform:"scale(.85)"},{opacity:1,transform:"none"}],{duration:260,fill:"backwards"});
   SFX.flick();await run.wait(i?300:120);
   duel.classList.add("idle");
@@ -1410,180 +1332,7 @@ async function duel1(st,run,[a,b],i){
   rvImpact(st,["#ff6fae","#6aa0ff","#fff"]);rvSmoke(st,2);rvQ(st,".rv-vs").classList.add("in");
   await run.wait(520);
 }
-/* ---- Cartas · Propuesta 3 «Lluvia de cartas»: llueven cartas, se apilan sobre cada rival y la pila se destapa con tensión ---- */
-async function intro2(st,run){
-  st.innerHTML=`${rvRtag()}<div class="bj-deck" style="position:absolute;visibility:hidden"></div><div class="ll-rain"></div><div class="rv-cap">Llueven cartas…</div>`;
-  const W0=rvQ(st,".bj-deck").offsetWidth,rain=rvQ(st,".ll-rain"),sw=st.clientWidth,sh=st.clientHeight,N=rvSmall()?24:34;
-  rvCap(st);SFX.riffle(1.3,N);
-  for(let i=0;i<N;i++){
-    const sc=.3+Math.random()*.34,w=W0*sc,h=w/.7018,k=Math.random()<.5?"a":"b",el=document.createElement("img");
-    el.className="ll-rc";el.src=BJ_IMG[k];el.draggable=false;
-    el.style.cssText=`width:${w}px;height:${h}px;left:${Math.random()*(sw-w)}px;opacity:${(.5+.5*(sc-.3)/.34).toFixed(2)};z-index:${Math.round(sc*10)}`;
-    const r0=(Math.random()-.5)*60,r1=r0+(Math.random()<.5?-1:1)*(120+Math.random()*240),dx=(Math.random()-.5)*w*1.2;
-    el.animate([{transform:`translate(0px,${-h*1.4}px) rotate(${r0}deg)`},{transform:`translate(${dx}px,${sh+h*1.5}px) rotate(${r1}deg)`}],
-      {duration:850+Math.random()*650,delay:i*36+Math.random()*60,easing:"cubic-bezier(.45,0,.9,.6)",fill:"both"});
-    rain.appendChild(el);
-  }
-  await run.wait(N*36+900);
-  rvQ(st,".rv-cap").textContent="Bajo cada pila se esconde un rival…";
-  SFX.thump();await run.wait(420);
-}
-
-/* Una pila de cartas cae sobre la carta de un jugador. La carta real queda oculta debajo. */
-function llPile(pos,n,own){
-  const fl=pos.querySelector(".bj-flt"),pile=document.createElement("div"),W=pos.offsetWidth,H=pos.offsetHeight,out=[];
-  pile.className="ll-pile";fl.appendChild(pile);
-  for(let j=0;j<n;j++){
-    const top=j==n-1,x=(Math.random()-.5)*W*(top?.03:.16),y=(Math.random()-.5)*H*(top?.03:.1),r=(Math.random()-.5)*(top?6:20),
-      el=document.createElement("img");
-    el.className="ll-pc";el.src=BJ_IMG[top?own:(Math.random()<.5?"a":"b")];el.draggable=false;
-    const f=`translate(${x}px,${y}px) rotate(${r}deg)`;el.style.transform=f;el._f={x,y,r};
-    pile.appendChild(el);out.push({el,x,y,r,f});
-  }
-  return{pile,cards:out,W,H};
-}
-/* Cae una carta de la pila: viene de arriba girando, aterriza y rebota un poco. */
-function llDrop(c,pos,W,H){
-  const top=Math.max(pos.getBoundingClientRect().top,0),sg=Math.random()<.5?-1:1,
-    sx=c.x+(Math.random()-.5)*W*1.3,sy=c.y-(top+H*(1.3+Math.random()*.7)),sr=c.r+sg*(110+Math.random()*220),d=520+Math.random()*180;
-  c.el.animate([{transform:`translate(${sx}px,${sy}px) rotate(${sr}deg)`,easing:"cubic-bezier(.5,0,.9,.55)"},
-    {transform:`translate(${c.x}px,${c.y}px) rotate(${c.r}deg)`,offset:.84,easing:"ease-out"},
-    {transform:`translate(${c.x}px,${c.y-H*.028}px) rotate(${c.r}deg)`,offset:.92,easing:"ease-in"},
-    {transform:c.f}],{duration:d,fill:"backwards"});
-  return d;
-}
-/* Sale una carta de la pila: salta hacia un lado y se desvanece. */
-function llPeel(c,W,H,slow){
-  const sg=Math.random()<.5?-1:1,
-    to=`translate(${c.x+sg*W*(slow?.12:.9+Math.random()*.9)}px,${c.y-H*(slow?.75:.15+Math.random()*.6)}px) rotate(${c.r+sg*(slow?16:90+Math.random()*150)}deg)`;
-  const an=c.el.animate([{transform:c.f,opacity:1},{transform:to,opacity:0}],{duration:slow?640:420,easing:"cubic-bezier(.25,.6,.4,1)",fill:"forwards"});
-  an.onfinish=()=>c.el.remove();
-}
-/* Destapar: la pila tiembla (tensión) → salen las cartas una tras otra → pausa → sale la última → la carta sube y se voltea. */
-async function llReveal(st,run,pos,pl){
-  const slot=pos.querySelector(".bj-slot"),fi=pos.querySelector(".bj-fi"),other=[...st.querySelectorAll(".bj-pos")].find(x=>x!==pos),os=other&&other.querySelector(".bj-slot"),
-    cs=pl.cards.slice().reverse(),n=cs.length;
-  pos.classList.add("focus","trem");
-  const dimmed=os&&!other.querySelector(".bj-fi.flip");if(dimmed)os.classList.add("dim");
-  SFX.riser(.5);SFX.roll(.5);await run.wait(520);
-  pos.classList.remove("trem");
-  for(let q=0;q<n-1;q++){llPeel(cs[q],pl.W,pl.H,false);SFX.flick();await run.wait(46)}
-  await run.wait(170);
-  SFX.thump();await run.wait(300);            // la última carta se hace esperar
-  llPeel(cs[n-1],pl.W,pl.H,true);SFX.whoosh();slot.classList.add("lift");
-  await run.wait(250);
-  fi.classList.add("flip");SFX.snap();await run.wait(380);
-  slot.classList.remove("lift");slot.classList.add("up");
-  SFX.chime();bjBurst(pos);if(dimmed)os.classList.remove("dim");
-  await run.wait(380);
-}
-async function duel2(st,run,[a,b],i){
-  st.innerHTML=`<div class="rv-duel bj ll">${bjCard(a,"a")}${bjCard(b,"b")}<div class="bj-vsw"><div class="rv-vs">VS</div></div></div>`;
-  const duel=rvQ(st,".rv-duel"),pa=rvQ(st,".bj-a"),pb=rvQ(st,".bj-b"),n=rvSmall()?5:6;
-  const sa=pa.querySelector(".bj-slot"),sb=pb.querySelector(".bj-slot");sa.style.opacity="0";sb.style.opacity="0";
-  const A=llPile(pa,n,"a"),B=llPile(pb,n,"b");
-  setTimeout(()=>{sa.style.opacity="1";sb.style.opacity="1"},620);      // la carta real aparece cuando ya cayó la primera capa
-  SFX.flick();await run.wait(i?160:60);
-  /* llueve: las dos pilas se llenan al mismo tiempo, carta por carta */
-  let last=0;
-  for(let j=0;j<n;j++){
-    for(const [P,pos] of [[A,pa],[B,pb]]){
-      const d=llDrop(P.cards[j],pos,P.W,P.H);last=d;SFX.flick();
-      if(j%2==0)setTimeout(()=>{if(!run.dead)SFX.land()},d*.86);
-      await run.wait(52);
-    }
-  }
-  await run.wait(last*.9);
-  SFX.thump();duel.classList.add("idle");
-  [A,B].forEach(P=>P.pile.animate([{transform:"scale(1)"},{transform:"scale(1.035)"},{transform:"scale(1)"}],{duration:260}));
-  await run.hold("Toca para destapar la primera carta");
-  await llReveal(st,run,pa,A);
-  await run.hold("Toca para destapar la segunda");
-  await llReveal(st,run,pb,B);
-  duel.classList.add("clash");await run.wait(260);
-  rvImpact(st,["#ff6fae","#6aa0ff","#fff"]);rvSmoke(st,2);rvQ(st,".rv-vs").classList.add("in");
-  await run.wait(520);
-}
-/* ---- Cartas · Propuesta 4 «Ruleta»: un carrusel de cartas gira, frena con «tic», se pasa un poco y vuelve a caer en el elegido ---- */
-const rlEase={out:t=>1-Math.pow(1-t,3.4),io:t=>t<.5?4*t*t*t:1-Math.pow(-2*t+2,3)/2,q:t=>t<.5?2*t*t:1-Math.pow(-2*t+2,2)/2};
-function rlBuild(fan,bw){
-  const N=12,fw=bw*.42,fh=fw*1.425,Rx=bw*.5,Ry=fh*.3,cards=[];
-  for(let i=0;i<N;i++){const k=i%2?"b":"a",el=document.createElement("div");
-    el.className="fn-c";el.dataset.k=k;
-    el.style.cssText=`width:${fw}px;height:${fh}px;left:${-fw/2}px;top:${-fh/2}px`;
-    el.innerHTML=`<div class="fn-i"><img src="${BJ_IMG[k]}" alt="" draggable="false"><i class="rl-sh"></i></div>`;
-    el._sh=el.querySelector(".rl-sh");fan.appendChild(el);cards.push(el)}
-  const ptr=document.createElement("i");ptr.className="rl-ptr";ptr.style.top=(Ry+fh*.5+8)+"px";fan.appendChild(ptr);
-  const g={cards,N,fw,fh,Rx,Ry,bw,step:360/N,ang:0,ptr,th:Array(N).fill(0)};
-  rlPlace(g,0);return g;
-}
-function rlPlace(g,ang){
-  for(let i=0;i<g.N;i++){const f=(ang+i*g.step)*Math.PI/180,z=Math.cos(f),u=(z+1)/2,sc=.6+.4*u,el=g.cards[i];
-    el.style.transform=`translate(${g.Rx*Math.sin(f)}px,${g.Ry*z}px) scale(${sc})`;
-    el.style.zIndex=Math.round(u*100);el._sh.style.opacity=((1-u)*.6).toFixed(2)}
-}
-/* Anima el ángulo del carrusel; suena un «tic» cada vez que una carta pasa por el puntero. */
-const rlAnim=(run,g,a0,a1,dur,ease,tick)=>new Promise(res=>{
-  const t0=performance.now();let last=Math.round(-a0/g.step),lt=0;
-  const f=now=>{
-    if(run.dead)return res();
-    let t=Math.min(1,(now-t0)/dur);if(run.fast)t=1;
-    const a=a0+(a1-a0)*ease(t);g.ang=a;rlPlace(g,a);
-    const q=-a/g.step,k=Math.round(q);
-    if(tick&&k!==last){last=k;if(now-lt>45){lt=now;SFX.tick()}}
-    g.ptr.style.transform=`rotate(${(-26*(1-(((q%1)+1)%1))).toFixed(1)}deg)`;
-    if(t<1)requestAnimationFrame(f);else{g.ptr.style.transform="";res()}
-  };
-  requestAnimationFrame(f);
-});
-async function intro3(st,run){
-  st.innerHTML=`${rvRtag()}<div class="rv-duel bj fn rl"><div class="bj-deck fn-m" style="position:absolute;visibility:hidden"></div><div class="fn-fan"></div></div><div class="rv-cap">La ruleta del destino…</div>`;
-  const fan=rvQ(st,".fn-fan"),g=rlBuild(fan,rvQ(st,".fn-m").offsetWidth);
-  rvCap(st);
-  fan.animate([{opacity:0,transform:"scale(.3)"},{opacity:1,transform:"scale(1.25)"}],{duration:500,easing:"cubic-bezier(.2,.9,.3,1.2)",fill:"forwards"});
-  SFX.whoosh();await run.wait(380);
-  SFX.riser(1.5);
-  await rlAnim(run,g,0,-360*3.3,1700,rlEase.io,true);
-  const a=g.ang;
-  SFX.thump();await rlAnim(run,g,a,a-g.step*.4,160,rlEase.q,false);
-  await rlAnim(run,g,g.ang,Math.round(g.ang/g.step)*g.step,240,rlEase.q,false);
-  await run.wait(200);
-}
-/* Gira y se detiene en la carta elegida: pasa de largo un poco y vuelve (tensión). */
-async function rlSpin(run,g,t,kind){
-  const rgb=kind=="a"?"255,111,174":"106,160,255",fb=-t*g.step,need=g.ang-360*(1.6+Math.random()*.7),final=fb+360*Math.floor((need-fb)/360);
-  SFX.whoosh();
-  await rlAnim(run,g,g.ang,final-g.step*.42,1650,rlEase.out,true);
-  await run.wait(90);
-  await rlAnim(run,g,g.ang,final,340,rlEase.q,true);
-  const c=g.cards[t];c.style.setProperty("--hc",rgb);c.classList.add("hl");SFX.pick(1);
-  await run.wait(300);
-}
-async function rlPick(st,run,g,pos,kind){
-  const par=kind=="a"?0:1,libres=g.cards.map((c,i)=>i).filter(i=>i%2==par&&g.cards[i].style.visibility!="hidden"),
-    t=libres[Math.floor(Math.random()*libres.length)];
-  await rlSpin(run,g,t,kind);
-  g.cards[t].classList.remove("hl");
-  SFX.whoosh();fnFly(g,t,pos);await run.wait(640);
-  SFX.deal();await fnFlip(st,run,pos);
-}
-async function duel3(st,run,[a,b],i){
-  st.innerHTML=`<div class="rv-duel bj fn rl"><div class="fn-fan"></div>${bjCard(a,"a")}${bjCard(b,"b")}<div class="bj-vsw"><div class="rv-vs">VS</div></div></div>`;
-  const duel=rvQ(st,".rv-duel"),fan=rvQ(st,".fn-fan"),pa=rvQ(st,".bj-a"),pb=rvQ(st,".bj-b");
-  pa.style.opacity="0";pb.style.opacity="0";
-  const g=rlBuild(fan,pa.offsetWidth);
-  fan.animate([{opacity:0,transform:"scale(.4)"},{opacity:1,transform:"none"}],{duration:i?320:260,easing:"cubic-bezier(.2,.9,.3,1.2)",fill:"backwards"});
-  SFX.flick();await run.wait(i?340:200);
-  duel.classList.add("idle");
-  await rlPick(st,run,g,pa,"a");
-  await run.hold("Toca para girar por el rival");
-  await rlPick(st,run,g,pb,"b");
-  fan.style.transition="opacity .25s";fan.style.opacity="0";
-  duel.classList.add("clash");await run.wait(260);
-  rvImpact(st,["#ff6fae","#6aa0ff","#fff"]);rvSmoke(st,2);rvQ(st,".rv-vs").classList.add("in");
-  await run.wait(520);
-}
-const INTRO=[intro0,intro1,intro2,intro3],DUEL=[duel0,duel1,duel2,duel3];
+const INTRO=[introAb],DUEL=[duelAb];
 
 async function rvByeStep(st,run,p){
   st.innerHTML=`<div class="rv-duel"><div class="rv-side rv-a in"><div class="rv-title sm">Descansa esta ronda</div><div class="rv-av">${avatar(p)}</div><div class="rv-nm">${esc(p.n)}</div></div></div>`;
@@ -1601,7 +1350,7 @@ function rvNext(){
 async function rvPlay(){
   if(rvRun)rvRun.kill();
   const run=rvRun=mkRun(),st=$("rvStage"),pr=rvPlan.pairs;
-  rv.classList.remove("sum");rv.dataset.t=rvTheme;
+  rvCfClear();rv.classList.remove("sum");rv.dataset.t=rvTheme;
   st.innerHTML="";$("rvSum").innerHTML="";rvBar(0);rvHint("");
   document.querySelectorAll("#rvTabs button").forEach(b=>b.classList.toggle("on",+b.dataset.t===rvTheme));
   $("rvRound").textContent="Listo para comenzar";
@@ -1615,7 +1364,7 @@ async function rvPlay(){
     $("rvRound").textContent=rvMode.n==1?"Primera ronda":"Ronda "+rvMode.n;
     await step(()=>INTRO[rvTheme](st,run));
     for(let i=0;i<pr.length;i++){
-      await hold(rvTheme==0?(i?"Toca para repartir el siguiente duelo":"Toca para repartir"):rvTheme==2?(i?"Toca para que vuelva a llover":"Toca para que llueva"):rvTheme==3?(i?"Toca para girar la ruleta otra vez":"Toca para girar la ruleta"):(i?"Toca para el siguiente duelo":"Toca para el primer duelo"));
+      await hold(i?"Toca para el siguiente duelo":"Toca para el primer duelo");
       await rvOut(st,run);st.innerHTML="";
       $("rvRound").textContent=`Ronda ${rvMode.n} · Duelo ${i+1} de ${pr.length}`;rvBar(i/pr.length);
       await step(()=>DUEL[rvTheme](st,run,pr[i],i));
@@ -1636,11 +1385,32 @@ async function rvPlay(){
 }
 function rvSummary(){
   const pr=rvPlan.pairs,b=rvPlan.bye;
-  rv.classList.add("sum");$("rvStage").innerHTML="";
+  rvHint("");rvCfClear();rv.classList.add("sum");$("rvStage").innerHTML="";
   $("rvRound").textContent="Parejas listas";rvBar(1);
   $("rvSum").scrollTop=0;
-  $("rvSum").innerHTML=`<h2>🏁 Parejas de la ${rvMode.n==1?"primera ronda":"ronda "+rvMode.n}</h2><p>${pr.length} ${pr.length==1?"duelo":"duelos"} · ${pr.length*2+(b?1:0)} participantes</p><div class="rv-grid">${pr.map(([x,y],i)=>`<div class="rv-pair" style="--d:${Math.min(i,14)*45}ms"><div class="s a">${avatar(x)}<b>${esc(x.n)}</b></div><em>VS</em><div class="s b">${avatar(y)}<b>${esc(y.n)}</b></div></div>`).join("")}</div>${b?`<div class="rv-bye">😴 Descansa esta ronda: <b>${esc(b.n)}</b></div>`:""}`;
-  SFX.chord();
+  $("rvSum").innerHTML=`<h2>🏁 Parejas de la ${rvMode.n==1?"primera ronda":"ronda "+rvMode.n}</h2><p>${pr.length} ${pr.length==1?"duelo":"duelos"} · ${pr.length*2+(b?1:0)} participantes</p><div class="rv-grid">${pr.map(([x,y],i)=>`<div class="rv-pair" style="--d:${Math.min(i,14)*70}ms;--rt:${i%2?2:-2}deg"><div class="s a">${avatar(x)}<b>${esc(x.n)}</b></div><em>VS</em><div class="s b">${avatar(y)}<b>${esc(y.n)}</b></div></div>`).join("")}</div>${b?`<div class="rv-bye">😴 Descansa esta ronda: <b>${esc(b.n)}</b></div>`:""}`;
+  rvConfetti();SFX.riffle(Math.min(pr.length,10)*.07+.25,Math.min(pr.length,10)+3);SFX.chime();SFX.chord();
+}
+/* Resultados finales: llueven cartitas rosas y azules sobre el resumen (se omite con «reducir movimiento»). */
+function rvCfClear(){if(rv)rv.querySelectorAll(".rv-cf").forEach(e=>e.remove())}
+function rvConfetti(){
+  if(rvReduced())return;
+  rvCfClear();
+  const w=document.createElement("div");w.className="rv-cf";
+  const N=rvSmall()?14:24,sm=rvSmall();
+  for(let i=0;i<N;i++){
+    const im=document.createElement("img"),s=im.style;
+    im.src=BJ_IMG[i%2?"b":"a"];im.alt="";im.draggable=false;
+    s.setProperty("--x",(2+Math.random()*92)+"%");
+    s.setProperty("--w",(sm?22+Math.random()*10:28+Math.random()*18)+"px");
+    s.setProperty("--t",(2.4+Math.random()*1.6)+"s");
+    s.setProperty("--d",(Math.random()*.9)+"s");
+    s.setProperty("--r0",(Math.random()*120-60)+"deg");
+    s.setProperty("--r1",(Math.random()*720-360)+"deg");
+    s.setProperty("--dx",(Math.random()*160-80)+"px");
+    w.appendChild(im);
+  }
+  rv.appendChild(w);setTimeout(()=>w.remove(),5400);
 }
 
 /* ---- abrir / cerrar ---- */
@@ -1688,7 +1458,7 @@ function openRevealNext(rd,n){
   rvShow();
 }
 function rvClose(){
-  if(rvRun)rvRun.kill();rvRun=null;
+  if(rvRun)rvRun.kill();rvRun=null;rvCfClear();
   if(rv)rv.classList.remove("on");
   document.documentElement.style.overflow="";
 }

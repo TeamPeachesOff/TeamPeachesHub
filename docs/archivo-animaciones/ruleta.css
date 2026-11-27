@@ -1,0 +1,10 @@
+/* ===== Cartas · Propuesta 4 «Ruleta» ===== */
+#rv[data-t="3"]{--bjw:min(27vw,calc((100vh - 176px)*.7018),420px)}
+@supports (height:100dvh){#rv[data-t="3"]{--bjw:min(27vw,calc((100dvh - 176px)*.7018),420px)}}
+#rv .rl .fn-i{position:relative}
+#rv .rl-sh{position:absolute;inset:0;border-radius:6%/4.2%;background:#07030b;opacity:0;pointer-events:none}
+#rv .rl-ptr{position:absolute;left:-10px;width:0;height:0;z-index:200;border:10px solid transparent;border-top:0;border-bottom:16px solid #f1c40f;transform-origin:50% 0;filter:drop-shadow(0 0 7px rgba(241,196,15,.85))}
+@media (max-width:640px),(max-aspect-ratio:1/1){
+  #rv[data-t="3"]{--bjw:min(62vw,calc((100vh - 250px)/3.7),260px)}
+}
+@supports (height:100dvh){@media (max-width:640px),(max-aspect-ratio:1/1){#rv[data-t="3"]{--bjw:min(62vw,calc((100dvh - 250px)/3.7),260px)}}}
