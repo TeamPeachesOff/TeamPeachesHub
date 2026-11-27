@@ -485,16 +485,21 @@ body,#rv,#wn{background:var(--felt)}
 @keyframes wnGoIn{from{opacity:0;transform:translateY(30px) scale(.8)}}
 @media (max-width:640px){#wnGo{width:100%}#wn .rv-head{padding:0 34px}}
 @media (prefers-reduced-motion:reduce){#wn *{animation:none!important}}
-/* carta de prueba (ver BJ_ALT) */
-#rv .bj-ph.alt{display:flex;flex-direction:column;background:#1a1020}
+/* carta de prueba (ver BJ_ALT): todo se coloca en % de la carta, así la foto queda centrada en X e Y
+   (misma franja arriba y abajo: puntos arriba, nombre abajo) */
+#rv .bj-ph.alt{inset:0;border-radius:inherit;background:#1a1020}
 #rv .bj-blur{position:absolute;inset:0;overflow:hidden}
-#rv .bj-blur img{width:100%;height:100%;object-fit:cover;transform:scale(1.3);filter:blur(calc(var(--bjw) * .045)) brightness(.6) saturate(1.2)}
-#rv .bj-top{position:relative;flex:none;height:11.5%;display:flex;align-items:center;justify-content:center}
+#rv .bj-blur img{width:100%;height:100%;object-fit:cover;transform:scale(1.14);filter:blur(calc(var(--bjw) * .012)) brightness(.8) saturate(1.1)}
+#rv .bj-top{position:absolute;left:9%;right:9%;top:6.4%;height:8.6%;display:flex;align-items:center;justify-content:center}
 #rv .bj-top .rv-rec{margin:0}
-#rv .bj-pic{position:relative;flex:1;min-height:0;margin:0 5%;border-radius:calc(var(--bjw) * .035);overflow:hidden;box-shadow:0 2px 10px rgba(0,0,0,.65)}
-#rv .bj-pic img{width:100%;height:100%;object-fit:cover}
-#rv .bj-nm2{position:relative;flex:none;height:17%;display:flex;align-items:center;justify-content:center;padding:0 6%}
-#rv .bj-nm2 b{display:block;max-width:100%;text-align:center;color:#fff;font-weight:900;font-size:calc(var(--bjw) * .088);line-height:1.1;text-shadow:0 2px 8px rgba(0,0,0,.95);overflow-wrap:anywhere}
+#rv .bj-top .rv-rec .rec{padding:0;background:none;border-radius:0;gap:calc(var(--u)*12)}
+#rv .bj-top .rv-rec .rec i{width:calc(var(--u)*9);height:calc(var(--u)*9);background:rgba(0,0,0,.62);box-shadow:none}
+#rv .bj-top .rv-rec .rec .gw i.on{background:var(--rosa-comp);box-shadow:0 0 calc(var(--u)*5) rgba(13,239,138,.75)}
+#rv .bj-top .rv-rec .rec .gl i.on{background:#ff4d6d;box-shadow:0 0 calc(var(--u)*5) rgba(255,77,109,.75)}
+#rv .bj-pic{position:absolute;left:11%;right:11%;top:15%;bottom:15%;border-radius:calc(var(--bjw) * .03);overflow:hidden;box-shadow:0 0 calc(var(--bjw) * .035) rgba(0,0,0,.4)}
+#rv .bj-pic img{display:block;width:100%;height:100%;object-fit:cover;object-position:center}
+#rv .bj-nm2{position:absolute;left:9%;right:9%;top:85%;height:8.6%;display:flex;align-items:center;justify-content:center}
+#rv .bj-nm2 b{display:block;max-width:100%;text-align:center;color:#fff;font-weight:900;font-size:calc(var(--bjw) * var(--nf,.08));line-height:1.1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;text-shadow:0 2px 8px rgba(0,0,0,.95)}
 /* campeón dentro de la llave, debajo de la final (no mueve nada) */
 .col .list{position:relative}
 .champ-b{position:absolute;left:0;right:0;top:calc(50% + var(--u) * 47);display:flex;flex-direction:column;align-items:center;gap:calc(var(--u) * 4);pointer-events:none;animation:pop .6s cubic-bezier(.2,1.4,.4,1)}
@@ -953,6 +958,12 @@ async function startTournament(){
     if(!ok)return;
     okReplace=true;
   }
+  /* Si ya había un sorteo sin confirmar, las parejas NO se pierden solas: el staff decide si las conserva o sortea otra vez */
+  const ids=new Set(pl.map(p=>p.id));
+  if(pend&&pend.pairs.some(([x,y])=>ids.has(x.id)&&ids.has(y.id))){
+    const keep=await dlg({title:"Parejas ya sorteadas",msg:"Hay un sorteo que no se llegó a confirmar. Si lo conservas, las parejas serán las mismas.",ok:"Conservar parejas",no:"Sortear de nuevo"});
+    if(!keep)setPend(null);
+  }
   keepTemas=null;track("comp_nuevo");SFX.unlock();openReveal(pl,name);   // se revela primero; el torneo se crea al confirmar en la pantalla de revelación
 }
 let keepTemas=null;
@@ -960,7 +971,7 @@ function newT(pl,name,plan){
   S={v:1,id:uid(),temas:keepTemas||{},name,pl,rounds:[],view:0,phase:"swiss",rank:new Map(pl.map(p=>[p,Math.random()])),br:null};
   if(plan){S.rounds.push({matches:plan.pairs.map(([a,b])=>({a,b,w:null,ra:{w:0,l:0},rb:{w:0,l:0}})),bye:plan.bye||null});S.view=0}   // primera ronda ya revelada
   else genRound(true);
-  keepTemas=null;creating=false;champId=null;clearDraft();pendNext=null;
+  keepTemas=null;creating=false;champId=null;clearDraft();setPendNext(null);
   $("champ").classList.remove("show");$("champ")._h=null;$("matches")._key=null;
   markDirty();refresh();
 }
@@ -1021,9 +1032,10 @@ function nextRound(){
   const cur=S.rounds[S.rounds.length-1];
   if(!roundDone(cur)||activeLeft()==0)return;
   const n=S.rounds.length+1;
+  if(!pendNext||pendNext.n!==n||pendNext.sid!==S.id){const rs=pendNextRestore(n);if(rs){pendNext=rs;toast("Se conservaron las parejas ya sorteadas",3500)}}
   let rd=pendNext&&pendNext.n===n&&pendNext.sid===S.id?pendNext.rd:null;      // «Atrás» conserva las parejas ya sorteadas
-  if(!rd){const v=S.view;genRound(true);rd=S.rounds.pop();S.view=v;pendNext={n,sid:S.id,rd}}
-  if(!rd.matches.length){S.rounds.push(rd);S.view=S.rounds.length-1;pendNext=null;markDirty();render();return}
+  if(!rd){const v=S.view;genRound(true);rd=S.rounds.pop();S.view=v;setPendNext({n,sid:S.id,rd})}
+  if(!rd.matches.length){S.rounds.push(rd);S.view=S.rounds.length-1;setPendNext(null);markDirty();render();return}
   openRevealNext(rd,n);
 }
 function pick(mi,s){
@@ -1045,7 +1057,7 @@ async function admReopen(){
   if(!isStaff()||!S||brStarted())return;
   const ok=await dlg({title:"Reabrir ronda",msg:`Podrás cambiar los resultados de la ronda ${i+1} hasta volver a cerrarla.`,ok:"Sí, reabrir",back:openAdmin});
   if(!ok||!S)return;
-  track("comp_reabrir");S.rounds[i].closed=false;S.phase="swiss";S.view=i;markDirty();render();toast("Ronda reabierta");
+  track("comp_reabrir");setPendNext(null);S.rounds[i].closed=false;S.phase="swiss";S.view=i;markDirty();render();toast("Ronda reabierta");
 }
 
 /* ================= Llave ================= */
@@ -1148,14 +1160,14 @@ async function admReset(){
   const r=S.rounds[0];
   r.matches.forEach(m=>{m.w=null});delete r.closed;document.querySelectorAll(".fall").forEach(e=>e.remove());
   S.id=uid();S.rounds=[r];S.view=0;S.phase="swiss";S.br=null;     // id nuevo: el campeón vuelve a celebrarse
-  champId=null;pendNext=null;$("matches")._key=null;$("bracket")._br=null;$("champ")._h=null;
+  champId=null;setPendNext(null);$("matches")._key=null;$("bracket")._br=null;$("champ")._h=null;
   markDirty();refresh();toast("Resultados reiniciados");
 }
 /* Nuevo sorteo: parejas nuevas con la animación; el torneo actual no cambia hasta confirmar al final. */
 async function admDraw(){
   const ok=await dlg({title:"Nuevo sorteo",msg:`Se sortean parejas nuevas con los mismos ${S.pl.length} participantes y se borran los resultados de «${esc(S.name)}».`,ok:"Sí, sortear",danger:true,back:openAdmin});
   if(!ok||!S)return;
-  track("comp_sorteo");SFX.unlock();openReveal(S.pl,S.name);keepTemas=S.temas||null;
+  track("comp_sorteo");SFX.unlock();setPend(null);rvDraw=true;openReveal(S.pl,S.name);keepTemas=S.temas||null;
 }
 function admExport(){
   try{
@@ -1191,7 +1203,7 @@ function admImport(inp){
     if(ser(t).length>MAXLEN){toast("Ese respaldo es demasiado grande para guardarse");return}
     const ok=await dlg({title:"Restaurar respaldo",msg:`${S?"Se reemplazará el torneo actual por":"Se cargará"} «${esc(t.name)}» (${t.rounds.length} ronda(s), ${t.pl.length} participantes).`,ok:"Sí, restaurar",danger:true,back:openAdmin});
     if(!ok)return;
-    S=t;S.view=S.rounds.length-1;S.phase="swiss";creating=false;champId=undefined;pendNext=null;pend=null;
+    S=t;S.view=S.rounds.length-1;S.phase="swiss";creating=false;champId=undefined;setPendNext(null);setPend(null);
     $("matches")._key=null;$("bracket")._br=null;
     markDirty();refresh();track("comp_restaurar");toast("Respaldo restaurado");
   };
@@ -1372,7 +1384,32 @@ function confetti(big){
    se confirma. «Atrás» vuelve a la selección sin tocar el torneo; al volver a comenzar se conservan las parejas
    cuyos dos integrantes siguen elegidos y solo se rearma a quien se quedó sin rival (o a quien se agregó). */
 const RV_NAMES=["Abanico"];   // propuestas de animación activas (las archivadas están en docs/archivo-animaciones)
-let rv=null,rvRun=null,rvPlan=null,rvPl=[],rvName="",pend=null,okReplace=false,rvMode={n:1,recs:null},pendNext=null;
+let rv=null,rvRun=null,rvPlan=null,rvPl=[],rvName="",pend=null,okReplace=false,rvMode={n:1,recs:null},pendNext=null,rvDraw=false;
+/* PAREJAS BLINDADAS: las parejas sorteadas (aunque aún no confirmadas) se guardan en este navegador y sobreviven a recargas,
+   a cerrar la pantalla de revelación y a perder señal. Solo se borran al confirmarlas, o cuando el staff pide «Nuevo sorteo» / reabre la ronda. */
+const PENDK="tph_comp_pend_v1";
+let pendNextRaw=null;
+function pendSave(){try{
+  const o={first:pend?{pairs:pend.pairs.map(([a,b])=>[a.id,b.id]),bye:pend.bye?pend.bye.id:null}:null,
+    next:pendNext?{n:pendNext.n,sid:pendNext.sid,pairs:pendNext.rd.matches.map(m=>[m.a.id,m.b.id,m.ra,m.rb]),bye:pendNext.rd.bye?pendNext.rd.bye.id:null}:pendNextRaw};
+  if(!o.first&&!o.next)localStorage.removeItem(PENDK);else localStorage.setItem(PENDK,JSON.stringify(o));
+}catch(e){}}
+function pendLoad(){try{
+  const o=JSON.parse(localStorage.getItem(PENDK)||"null");if(!o)return;
+  if(o.first&&Array.isArray(o.first.pairs))pend={pairs:o.first.pairs.map(([a,b])=>[{id:a},{id:b}]),bye:o.first.bye?{id:o.first.bye}:null};
+  pendNextRaw=o.next||null;
+}catch(e){}}
+const setPend=v=>{pend=v;pendSave()};
+const setPendNext=v=>{pendNext=v;pendNextRaw=null;pendSave()};
+/* Reconstruye las parejas de la siguiente ronda guardadas, si siguen siendo válidas para este torneo. */
+function pendNextRestore(n){
+  const r=pendNextRaw;if(!r||!S||r.sid!==S.id||r.n!==n)return null;
+  const f=id=>S.pl.find(x=>x.id===id);
+  const ms=r.pairs.map(([a,b,ra,rb])=>({a:f(a),b:f(b),w:null,ra,rb}));
+  if(!ms.every(m=>m.a&&m.b))return null;
+  const bye=r.bye?f(r.bye):null;if(r.bye&&!bye)return null;
+  return{n,sid:S.id,rd:{matches:ms,bye}};
+}
 let rvTheme=RV_NAMES.length-1;   // abre en la propuesta más nueva
 const DEAD={d:1},NEXT={n:1};
 const rvSmall=()=>matchMedia("(max-width:640px)").matches;
@@ -1430,7 +1467,7 @@ function planFirst(pl){
   let bye=null;
   if(free.length%2){const pb=pend&&pend.bye,i=pb?free.findIndex(p=>p.id===pb.id):-1;bye=free.splice(i>=0?i:free.length-1,1)[0]}
   const np=[];for(let i=0;i<free.length;i+=2)np.push([free[i],free[i+1]]);
-  pend={pairs:[...kept,...np],bye};
+  setPend({pairs:[...kept,...np],bye});
   return pend;
 }
 
@@ -1477,7 +1514,7 @@ const bjFrame=k=>`<svg viewBox="0 0 400 570" aria-hidden="true"><path d="${BJ_OU
 const BJ_ALT=true;
 const rvRec2=p=>{const x=rvMode&&rvMode.recs&&rvMode.recs.get(p);return `<span class="rv-rec">${rec(x?x.w:0,x?x.l:0)}</span>`};
 const bjFace=(p,k)=>BJ_ALT
-  ?`<div class="bj-ph alt"><div class="bj-blur">${avatar(p)}</div><div class="bj-top">${rvRec2(p)}</div><div class="bj-pic">${avatar(p)}</div><div class="bj-nm2"><b>${esc(p.n)}</b></div></div>${bjFrame(k)}`
+  ?`<div class="bj-ph alt"><div class="bj-blur">${avatar(p)}</div><div class="bj-top">${rvRec2(p)}</div><div class="bj-pic">${avatar(p)}</div><div class="bj-nm2"><b style="--nf:${p.n.length<=10?.08:p.n.length<=14?.068:.056}">${esc(p.n)}</b></div></div>${bjFrame(k)}`
   :`<div class="bj-ph">${avatar(p)}</div><i class="bj-sd"></i>${bjFrame(k)}<div class="bj-nm"><b>${esc(p.n)}</b>${rvRec(p)}</div>`;
 const bjCard=(p,k)=>`<div class="bj-pos bj-${k}"><div class="bj-flt"><div class="bj-slot"><div class="bj-fi"><img class="bj-bk" src="${BJ_IMG[k]}" alt="" draggable="false"><div class="bj-ft">${bjFace(p,k)}<i class="bj-sh"></i></div></div></div></div></div>`;
 
@@ -1716,6 +1753,7 @@ function openRevealNext(rd,n){
   rvShow();
 }
 function rvClose(){
+  okReplace=false;if(rvDraw){rvDraw=false;if(rvMode&&rvMode.n==1)setPend(null)}
   if(rvRun)rvRun.kill();rvRun=null;rvCfClear();
   if(rv)rv.classList.remove("on");
   document.documentElement.style.overflow="";
@@ -1724,7 +1762,7 @@ function rvCommit(){
   const pl=rvPl,name=rvName,plan=rvPlan,m=rvMode;
   rvClose();
   if(m.n>1){commitNext(m);return}
-  pend=null;okReplace=false;
+  setPend(null);okReplace=false;
   newT(pl,name,plan);
 }
 function commitNext(m){
@@ -1733,13 +1771,14 @@ function commitNext(m){
   const ok=rd.matches.every(x=>f(x.a)&&f(x.b))&&(!rd.bye||f(rd.bye));
   if(!ok){toast("Cambió la lista de participantes. Pulsa «Siguiente ronda» otra vez.",5000);return}
   rd.matches.forEach(x=>{x.a=f(x.a);x.b=f(x.b)});if(rd.bye)rd.bye=f(rd.bye);
-  S.rounds.push(rd);S.view=S.rounds.length-1;pendNext=null;
+  S.rounds.push(rd);S.view=S.rounds.length-1;setPendNext(null);
   markDirty();render();
 }
 
 /* ================= Arranque ================= */
 $("bStart").onclick=startTournament;
 async function init(){
+  pendLoad();
   if(ctx().embedded){$("bClose").style.display="";$("bClose").onclick=()=>{try{window.parent.cerrarModulo()}catch(e){}}}
   backend=ctx().standalone?"local":"remote";
   refresh();
