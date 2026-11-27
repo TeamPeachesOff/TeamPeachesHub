@@ -980,7 +980,7 @@ function detectPassaggio(frames, x, sr) {
     let preV = []; for (let k = a; k > a - 6 && k >= 0 && m[k] === m[k]; k--) preV.push(m[k]);
     // salto = nivel después − nivel antes (medianas de 4 cuadros, así el cuadro borroso del cambio no lo achica) − lo que habría subido sin quiebre
     const jump = medAvg(post.slice(0, 4)) - medAvg(preV.slice(0, 4)) - Math.max(0, pre.slope) * (span + 3);
-    if (medAvg(post) < m[a] + 0.5) return;                        // no regresa: se queda arriba
+    if (medAvg(post) < m[a] + (kind === 'salto' ? 0.5 : -0.5)) return;   // el salto no regresa: se queda arriba (la pausa puede reanudar casi al mismo nivel)
     const gapS = (span - 1) * hop, flags = [];
     let score = 0, spec = 0;
     const dip = rmsAvg(a - 4, a) > 0 ? rmsAvg(a + 1, b - 1) / rmsAvg(a - 4, a) : 1;
@@ -988,9 +988,12 @@ function detectPassaggio(frames, x, sr) {
       if (jump < PASS.jumpSt - 0.3 && !cent) return;
       score += Math.min(2, Math.max(0, (jump - 1) / 2));
     } else {                                                     // hueco: micro-caída seguida de reanudación más aguda
-      if (gapS < PASS.gapMin || gapS > PASS.gapMax || jump < 0.7) return;
-      score += 0.6 + Math.min(1.2, jump / 3);
-      if (dip < 0.6) { score += 0.6; flags.push('caída de volumen'); }
+      if (gapS < PASS.gapMin || gapS > PASS.gapMax) return;
+      if (jump >= 0.7) { score += 0.6 + Math.min(1.2, jump / 3); if (dip < 0.6) { score += 0.6; flags.push('caída de volumen'); } }
+      else {   // casi sin salto de tono: solo cuenta si en la pausa el volumen cae claramente (el quiebre se «traga» la voz)
+        if (jump <= -0.8 || dip >= 0.6) return;
+        score += 1.0 + (0.6 - dip); flags.push('caída de volumen');
+      }
     }
     if (cent) {
       const c0 = cAvg(a - 5, a), c1 = cAvg(b, b + 5);
@@ -1641,7 +1644,7 @@ function wider(R) {   // estimación solo con el rango cómodo (supone un promed
   return Math.max(0.05, Math.min(0.95, normCdf(Math.round(R.comf.high) - Math.round(R.comf.low), 21, 6)));
 }
 let mapAll = false, mapSel = null, mapPrevSel = null, lastR = null, lastT = null;
-function renderResults() { renderResults0(); pgAppendResult(); }
+function renderResults() { renderResults0(); }
 function renderResults0() {
   const R = collect(), box = $('#res'); if (!R.count) { box.innerHTML = ''; return; }
   const C = classify(R, sexTypes()), T = C.best, P = v => Math.round(v * 100), lc = T.es.toLowerCase();
@@ -1687,6 +1690,7 @@ function renderResults0() {
       <p class="muted small">«Cómodo» es el porcentaje de tu rango cómodo que queda dentro del rango del tipo;<br>«Hablado», qué tan bien cae tu voz al leer en su registro de pecho.<br>«Total» toma en cuenta sobre todo dónde queda el centro de tu rango cómodo.</p>
       <div class="chart-scroll"><table class="rtab"><thead><tr><th>Tipo</th><th>Cómodo</th><th>Hablado</th><th>Total</th></tr></thead><tbody>${C.rank.map((r, i) => `<tr class="${i === 0 ? 'best' : ''}"><th>${r.T.es}</th><td>${cell(r.cont)}</td><td>${cell(r.sp)}</td><td>${P(r.total)}%</td></tr>`).join('')}</tbody></table></div></div>
     <div class="sec">${subHtml}</div>
+    ${pgFinalHtml()}
     <div class="sec"><h2>Cuadro de referencia</h2>
       <p class="muted small">Recreación de «La voz – Tesitura y registros» (Ester López y Jorge Benayas, Listen, Play, Create). Cada fila es un tipo de voz: arriba sus subtipos y abajo sus registros, sobre el teclado.</p>
       <div class="chart-scroll">${drawRef()}</div>
@@ -2293,27 +2297,31 @@ function pgRenderAttempt(i) {
   out.innerHTML = `<p class="pg-line">Justo antes del quiebre: <b>${ntBig(r.midi)}</b></p><p class="muted small">Detectado por ${how}${r.flags.length ? ' · ' + r.flags.join(' · ') : ''} · confianza ${r.conf}</p>`;
 }
 
-const PG_WHY = 'Tu passaggio es la nota donde la voz cambia de mecanismo (de pecho a cabeza o falsete). Conocerla sirve para: elegir tonalidades de canciones que no te obliguen a forzar el pecho justo antes del quiebre, saber dónde trabajar la transición (ejercicios de sirena, mezcla o «mix»), y calentar con cuidado en esa zona para que el cambio sea más suave.';
 function passaggioResult() {   // objeto plano para guardarlo más adelante (Excel); null si aún no hay datos
   const sum = passaggioSummary(PG.takes.map(t => t && t.res)); if (!sum) return null;
   const chk = passaggioCheck(PG.R, sum), n = noteInfo(sum.midi);
   return { midi: sum.midi, en: n.en, es: n.es, hz: Math.round(n.hz * 10) / 10, confianza: sum.conf, validos: sum.valid, usados: sum.used, dispersion: +sum.spread.toFixed(2),
     intentos: PG.takes.map(t => (t && t.res && t.res.ok ? +t.res.midi.toFixed(2) : null)), tipo: chk.type.es, esperado: PASS_EXPECT[chk.type.id][0], estado: chk.status, enRangoComodo: chk.inComf };
 }
-function pgResultHtml() {
+function pgResultHtml() {   // dentro del Paso 4: tu nota + de qué intentos salió (el detalle de intentos va solo aquí)
   const sum = passaggioSummary(PG.takes.map(t => t && t.res)); if (!sum) return '';
-  const chk = passaggioCheck(PG.R, sum), E = PASS_EXPECT[chk.type.id], done = PG.takes.filter(t => t && t.res).length;
-  const msg = { coincide: `Coincide con lo esperado para tu tipo de voz (${chk.type.es}): suele estar entre ${lb(E[1])} y ${lb(E[2])}.`,
-    cercano: `Está cerca de lo esperado para ${chk.type.es} (${lb(E[1])}–${lb(E[2])}), un poco ${chk.diff > 0 ? 'más arriba' : 'más abajo'}. Es normal: varía con la técnica, el volumen y la vocal.`,
-    distinto: `Queda lejos de lo esperado para ${chk.type.es} (${lb(E[1])}–${lb(E[2])}), ${chk.diff > 0 ? 'más agudo' : 'más grave'}.${chk.nearest ? ` Tu quiebre se parece más al de ${chk.nearest.es}: conviene repetir los intentos y revisar los pasos anteriores.` : ' Conviene repetir los intentos.'}` }[chk.status];
   let warns = '';
   if (sum.dropped) warns += `<p class="warn">Descarté ${sum.dropped} intento${sum.dropped > 1 ? 's' : ''} por quedar muy lejos de los demás.</p>`;
-  if (sum.valid < 2) warns += `<p class="warn">Con un solo intento válido el resultado es poco fiable. Graba al menos dos más.</p>`;
+  if (sum.valid < 2) warns += `<p class="warn">Con un solo intento válido el resultado es poco fiable. Graba al menos uno más.</p>`;
   else if (sum.conf === 'baja') warns += `<p class="warn">Los intentos no coinciden entre sí. Repite el que salió distinto.</p>`;
-  if (chk.inComf === false) warns += `<p class="warn">El quiebre cae fuera de tu rango cómodo (${lb(pgLo())}–${lb(pgHi())}). Revisa si es el quiebre real o un ruido.</p>`;
   return `<h3>Tu passaggio</h3><div class="note">${ntBig(sum.midi)}</div>
-    <p class="muted small">Mediana de ${sum.used} intento${sum.used > 1 ? 's' : ''} válido${sum.used > 1 ? 's' : ''} (${done} grabado${done > 1 ? 's' : ''}) · confianza ${sum.conf} · ${sum.all.map(v => lb(v)).join(' · ')}</p>
-    <p class="pg-line" style="margin-top:10px">${msg}</p>${warns}<p class="explain">${PG_WHY}</p>`;
+    <p class="muted small">Sale de ${sum.used} intento${sum.used > 1 ? 's' : ''}: ${sum.all.map(v => lb(v)).join(' · ')}</p>${warns}`;
+}
+function pgFinalHtml() {   // pantalla de resultados: solo lo importante, sin intentos ni tarjetas
+  if (replay) return '';
+  const sum = passaggioSummary(PG.takes.map(t => t && t.res)); if (!sum) return '';
+  const chk = passaggioCheck(collect(), sum), E = chk.expected, name = chk.type.es, rng = `${lb(E[1])} – ${lb(E[2])}`;
+  const msg = { coincide: `Es lo normal para tu tipo de voz (${name}): suele estar entre ${rng}.`,
+    cercano: `Está un poco más ${chk.diff > 0 ? 'arriba' : 'abajo'} de lo habitual para ${name} (${rng}). Es normal, cambia con la técnica y la vocal.`,
+    distinto: `Está más ${chk.diff > 0 ? 'agudo' : 'grave'} de lo habitual para ${name} (${rng}).` }[chk.status];
+  return `<div class="sec"><h2>Tu passaggio</h2><div class="note">${ntBig(sum.midi)}</div>
+    <p class="lead2">${msg}</p>
+    <p class="muted small" style="margin-top:8px">Es la nota donde tu voz cambia de pecho a cabeza. Evita forzar el volumen justo antes de ella y practica pasarla suave, con sirenas.</p></div>`;
 }
 function pgRenderResult() {
   const box = document.getElementById('pg-res'); if (box) { const html = pgResultHtml(); box.hidden = !html; box.innerHTML = html; }
@@ -2350,10 +2358,6 @@ function pgRefresh() {   // cambio de notación C D E ↔ Do Re Mi
   const lead = document.querySelector('#pg-root .pg-lead'); if (lead && pgLo() != null) lead.innerHTML = pgLead();
   [0, 1, 2].forEach(i => { pgDraw(i); if (PG.takes[i] && PG.takes[i].res) pgRenderAttempt(i); });
   pgRenderResult();
-}
-function pgAppendResult() {   // en la pantalla de resultados (no aplica al ver el resultado de otra persona)
-  const box = $('#res'); if (replay || !box || !box.innerHTML || !PG.takes.some(t => t && t.res)) return;
-  const html = pgResultHtml(); if (html) box.insertAdjacentHTML('beforeend', `<div class="pg-res" style="margin-top:22px">${html}</div>`);
 }
 /*PASSAGGIO-UI-END*/
 
