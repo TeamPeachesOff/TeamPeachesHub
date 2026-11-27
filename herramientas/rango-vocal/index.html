@@ -88,6 +88,8 @@ h2{font:700 22px/1.2 var(--f-display);margin:0 0 6px}h3{font:600 15px/1.3 var(--
 @media(prefers-reduced-motion:reduce){.namef,.namef .btn,.namef.falta{animation:none}}
 .sexsel{display:flex;align-items:center;gap:8px}.sexsel b{color:var(--ink)}
 .tools{display:flex;flex-wrap:wrap;gap:0 14px;margin:8px 0 18px}
+.replay{margin:0 0 18px}.replayrow{display:flex;flex-wrap:wrap;gap:8px;margin-top:6px}
+.replay select{flex:1 1 220px;min-width:0;padding:10px 12px;border-radius:12px;border:1px solid rgba(255,143,177,.35);background:#180e1d;color:inherit;font:inherit}
 .notice{border-left:3px solid var(--accent);background:var(--accent-soft);padding:8px 14px;font-size:14px;margin-bottom:16px}
 .grp{border-top:1px solid var(--line)}.cont{display:flex;justify-content:center;margin-top:28px}
 .ghead{display:flex;align-items:center;gap:14px;padding:18px 0;cursor:pointer;user-select:none}
@@ -266,7 +268,14 @@ html,body{overflow-x:clip}
     <p class="sexsel muted small">Género: <b id="sexName"></b> <button class="btn link" id="btnSex" type="button">Cambiar</button></p>
     <div class="tools">
       <button class="btn link" id="btnDemo" type="button">Probar con voz de ejemplo</button>
+      <button class="btn link" id="btnReplay" type="button" hidden>Ver resultado de otra persona</button>
       <button class="btn link" id="btnClear" type="button">Borrar todo</button>
+    </div>
+    <div id="replayBox" class="replay" hidden>
+      <label class="muted small" for="replaySel">Resultados guardados (en el orden de la hoja)</label>
+      <div class="replayrow"><select id="replaySel" disabled><option>Cargando…</option></select>
+      <button class="btn primary" id="replayGo" type="button" disabled>Ver resultado</button></div>
+      <p class="muted small" id="replayMsg"></p>
     </div>
     <div id="micNotice" class="notice" hidden></div>
     <div id="groups"></div>
@@ -894,9 +903,10 @@ const PARENT = { test: 'home', result: 'test', song: 'home' };
 let view = 'home';
 const REDUCED = matchMedia('(prefers-reduced-motion: reduce)');
 const DEPTH = { home: 0, test: 1, song: 1, result: 2 };
-let goTok = 0, resFresh = false;
+let goTok = 0, resFresh = false, replay = null;   // replay: {R, prevSex, prevName} mientras se ve el resultado de otra persona
 function go(v) {
-  if (v === 'result' && !todasListas()) return;   // sin las 5 grabaciones no se pasa al resultado
+  if (v === 'result' && !todasListas() && !replay) return;   // sin las 5 grabaciones no se pasa al resultado
+  if (replay && v !== 'result') { sex = replay.prevSex; userName = replay.prevName; replay = null; }   // al salir se vuelve a lo propio
   stopAll();
   const prev = view, tok = ++goTok, target = $('#v-' + v);
   view = v;
@@ -1230,6 +1240,7 @@ function renderSlot(id) {
 
 /* ---- 8. Grupos plegables: al completar uno aparece «Listo», se cierra y baja al siguiente ---- */
 function collect() {
+  if (replay) return replay.R;   // «Ver resultado de otra persona»: usa los datos de la hoja, no las grabaciones
   const g = id => (resOf(id) ? resOf(id).midi : null);
   const R = { abs: { low: g('absLow'), high: g('absHigh') }, comf: { low: g('comfLow'), high: g('comfHigh') }, speech: resOf('speech') };
   R.count = [R.abs.low, R.abs.high, R.comf.low, R.comf.high, R.speech].filter(v => v != null).length;
@@ -1347,12 +1358,77 @@ $('#btnDemo').addEventListener('click', async () => {
 });
 $('#btnClear').addEventListener('click', clearAll);
 /* «Probar con voz de ejemplo» está oculto: aparece al tocar 5 veces seguidas el título «Prueba de voz». */
-$('#btnDemo').hidden = true;
+$('#btnDemo').hidden = true; $('#btnReplay').hidden = true;
 (() => { let n = 0, t = 0; $('#v-test h1').addEventListener('click', () => {
   const now = Date.now(); n = now - t < 1500 ? n + 1 : 1; t = now;
-  if (n >= 5) { n = 0; $('#btnDemo').hidden = false; }
+  if (n >= 5) { n = 0; $('#btnDemo').hidden = false; $('#btnReplay').hidden = false; }
 }); })();
 $('#btnCont').addEventListener('click', () => { if (todasListas()) go('result'); });
+
+/* ---- «Ver resultado de otra persona» (oculto, junto a la voz de ejemplo) ----
+   Pide a la hoja la lista de quienes hicieron la prueba (acción «listarRangosVocales» del code.gs) y recrea su resultado con
+   sus 7 notas. Las columnas se buscan por el texto del encabezado, así no importa su orden en la hoja. No se registra ni se cuenta. */
+const NOTA_IDX = { do: 0, re: 2, mi: 4, fa: 5, sol: 7, la: 9, si: 11 };
+function notaAMidi(v) {
+  if (v == null || v === '') return null;
+  if (typeof v === 'number') return isFinite(v) ? v : null;
+  const m = String(v).trim().toLowerCase().match(/^(do|re|mi|fa|sol|la|si)\s*([#♯b♭]?)\s*(-?\d+)$/);
+  if (!m) { const x = parseFloat(v); return isFinite(x) ? x : null; }
+  return 12 * (parseInt(m[3], 10) + 1) + NOTA_IDX[m[1]] + (/[#♯]/.test(m[2]) ? 1 : /[b♭]/.test(m[2]) ? -1 : 0);
+}
+const normK = k => String(k).normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().replace(/[^a-z0-9]/g, '');
+function campo(row, tests) {   // primer encabezado que cumple todas las pruebas (regex)
+  for (const k of Object.keys(row)) { const n = normK(k); if (tests.every(t => t.test(n))) return row[k]; }
+  return null;
+}
+const LOW = /baj|grave/, HIGH = /alt|agud/;
+function filaAResultado(row) {
+  const nm = campo(row, [/nombre/]), gen = campo(row, [/genero|sexo/]), tes = campo(row, [/tesitura|resultado|tipo/]);
+  const midi = (a, b) => notaAMidi(campo(row, [a, b]));
+  const R = {
+    comf: { low: midi(LOW, /comod/), high: midi(HIGH, /comod/) },
+    abs: { low: midi(LOW, /absol/), high: midi(HIGH, /absol/) },
+    speech: { avg: midi(/prom|medi/, /habl/), p10: midi(LOW, /habl/), p90: midi(HIGH, /habl/), n: 100, seconds: 15 }
+  };
+  const need = [R.comf.low, R.comf.high, R.abs.low, R.abs.high, R.speech.avg];
+  if (need.some(v => v == null || !isFinite(v))) return null;
+  if (R.speech.p10 == null) R.speech.p10 = R.speech.avg - 2;
+  if (R.speech.p90 == null) R.speech.p90 = R.speech.avg + 2;
+  R.count = 5;
+  return { R, nombre: nm ? String(nm) : '', genero: gen ? String(gen) : '', tesitura: tes ? String(tes) : '' };
+}
+let replayFilas = null;
+async function cargarReplay() {
+  const sel = $('#replaySel'), go1 = $('#replayGo'), msg = $('#replayMsg');
+  sel.disabled = go1.disabled = true; sel.innerHTML = '<option>Cargando…</option>'; msg.textContent = '';
+  try {
+    const r = await fetch(APPS_SCRIPT_URL, { method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' }, body: JSON.stringify({ action: 'listarRangosVocales' }) });
+    const j = await r.json();
+    if (!j || !j.ok || !Array.isArray(j.filas)) throw new Error((j && j.error) || 'sin lista');
+    replayFilas = j.filas.map(filaAResultado);
+    const opts = replayFilas.map((f, i) => f ? `<option value="${i}">${esc(f.nombre || 'Sin nombre')} — ${esc(f.tesitura || '?')}</option>` : '').join('');
+    if (!opts) throw new Error('La hoja no tiene filas con las 7 notas');
+    sel.innerHTML = opts; sel.disabled = go1.disabled = false;
+  } catch (e) {
+    sel.innerHTML = '<option>No disponible</option>';
+    msg.textContent = 'No se pudo cargar la lista (' + (e.message || e) + '). Falta agregar la acción «listarRangosVocales» al code.gs.';
+  }
+}
+const esc = t => String(t).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+$('#btnReplay').addEventListener('click', () => {
+  const box = $('#replayBox'); box.hidden = !box.hidden;
+  if (!box.hidden && !replayFilas) cargarReplay();
+});
+$('#replayGo').addEventListener('click', () => {
+  const f = replayFilas && replayFilas[+$('#replaySel').value]; if (!f) return;
+  if (rec) cancelRec();
+  const prevSex = replay ? replay.prevSex : sex, prevName = replay ? replay.prevName : userName;
+  replay = { R: f.R, prevSex, prevName };
+  sex = SEXES.find(x => x.label === f.genero) || { id: 'replay', label: f.genero };   // sin tipos propios = los 6 tipos, como en la prueba
+  userName = f.nombre;
+  go('result');
+});
+
 
 /* ---- 10. Resultado ---- */
 const erf = x => { const t = 1 / (1 + 0.3275911 * Math.abs(x)), y = 1 - (((((1.061405429 * t - 1.453152027) * t) + 1.421413741) * t - 0.284496736) * t + 0.254829592) * t * Math.exp(-x * x); return x >= 0 ? y : -y; };
@@ -1566,15 +1642,15 @@ async function enviarResultado(registro) {
   catch (e) { pendGuardar(pendLeer().concat([registro])); }
 }
 function guardarResultado() {
-  if (!todasListas()) return;
+  if (replay || !todasListas()) return;   // ver el resultado de otra persona nunca se registra
   if (SLOTS.some(sl => (curT(sl.id) || {}).demo)) return;   // la voz de ejemplo no se registra
   const R = collect(), n = v => Math.round(v * 100) / 100;
   const sp = R.speech;
   if ([R.comf.low, R.comf.high, R.abs.low, R.abs.high, sp && sp.avg, sp && sp.p10, sp && sp.p90].some(v => v == null || !isFinite(v))) return;
   const datos = {
     nombre: userName, genero: sex ? sex.label : '', tesitura: classify(R, sexTypes()).best.es,   // el resultado final (Soprano, Tenor…)
-    altaComoda: n(R.comf.high), bajaComoda: n(R.comf.low), altaAbsoluta: n(R.abs.high), bajaAbsoluta: n(R.abs.low),
-    altoHablado: n(sp.p90), bajoHablado: n(sp.p10), promedioHablado: n(sp.avg)
+    bajaComoda: n(R.comf.low), altaComoda: n(R.comf.high), bajaAbsoluta: n(R.abs.low), altaAbsoluta: n(R.abs.high),
+    bajoHablado: n(sp.p10), promedioHablado: n(sp.avg), altoHablado: n(sp.p90)
   };   // las notas van como número MIDI (60 = Do4); el servidor las convierte a nombre de nota
   const firma = JSON.stringify(datos);
   if (RESULTADOS.some(r => r.firma === firma)) return;   // volver a ver el mismo resultado no lo duplica
