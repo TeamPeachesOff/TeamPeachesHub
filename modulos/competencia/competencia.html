@@ -75,8 +75,8 @@ main{flex:1;min-height:0;display:flex;flex-direction:column;padding:8px clamp(8p
 .m .vs{width:calc(var(--u)*34);height:calc(var(--u)*62);display:grid;place-items:center;font-style:italic;font-weight:900;font-size:calc(var(--u)*17);color:#fff;text-shadow:0 0 8px var(--peach-2),0 0 16px #6aa0ff;position:relative}
 .s{width:calc(var(--u)*92);background:none;padding:0;display:flex;flex-direction:column;align-items:center;gap:calc(var(--u)*3);--c:#ff5fa2;position:relative;min-width:0}
 .s.b{--c:#6aa0ff}
-.chip{width:calc(var(--u)*62);aspect-ratio:1;border-radius:50%;position:relative;flex:none;display:block;padding:calc(var(--u)*5);background:repeating-conic-gradient(var(--c) 0 22deg,#fff 22deg 36deg,var(--c) 36deg 45deg);box-shadow:0 calc(var(--u)*4) 0 rgba(0,0,0,.45),0 0 calc(var(--u)*12) rgba(0,0,0,.4);transition:transform .22s cubic-bezier(.3,1.6,.5,1),filter .22s,box-shadow .22s}
-.chip img{width:100%;height:100%;border-radius:50%;object-fit:cover;background:#1a1020;border:max(1px,calc(var(--u)*1.5)) solid #180E1D}
+.chip{width:calc(var(--u)*62);aspect-ratio:1;border-radius:50%;position:relative;flex:none;display:block;padding:calc(var(--u)*2.5);background:repeating-conic-gradient(var(--c) 0 22deg,#fff 22deg 36deg,var(--c) 36deg 45deg);box-shadow:0 calc(var(--u)*2) 0 rgba(0,0,0,.4);transition:transform .22s cubic-bezier(.3,1.6,.5,1),filter .22s,box-shadow .22s}
+.chip img{width:100%;height:100%;border-radius:50%;object-fit:cover;background:#1a1020;border:max(1px,calc(var(--u)*1)) solid #180E1D}
 .s b{max-width:100%;font-size:max(9px,calc(var(--u)*13));line-height:1.2;font-weight:800;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .s.can:hover .chip{transform:translateY(calc(var(--u)*-4)) scale(1.07);box-shadow:0 calc(var(--u)*8) 0 rgba(0,0,0,.35),0 0 calc(var(--u)*18) var(--c)}
 .s.can:active .chip{transform:scale(.94)}
@@ -109,7 +109,7 @@ main{flex:1;min-height:0;display:flex;flex-direction:column;padding:8px clamp(8p
 .lgd{display:flex;gap:14px;flex-wrap:wrap;flex:none;font-size:11.5px;color:var(--text-dim);font-weight:800}
 .lgd i{display:inline-block;width:9px;height:9px;border-radius:50%;margin-right:5px}
 .pr{display:flex;align-items:center;gap:calc(var(--u)*8);padding:0 calc(var(--u)*8);font-weight:800;font-size:max(9px,calc(var(--u)*14));--c:#ff5fa2}
-.pr .chip{width:calc(var(--u)*34);padding:calc(var(--u)*3);box-shadow:none}
+.pr .chip{width:calc(var(--u)*34);padding:calc(var(--u)*1.5);box-shadow:none}
 .pr span.n{flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .pr.q{--c:#0DEF8A}.pr.q span.n{color:var(--rosa-comp)}
 .pr.e{--c:#7a6a76;opacity:.45}.pr.e span.n{text-decoration:line-through}
@@ -124,7 +124,7 @@ main{flex:1;min-height:0;display:flex;flex-direction:column;padding:8px clamp(8p
 .bm{display:flex;flex-direction:column;gap:2px;border-block:0}
 .bm .s{width:100%;flex-direction:row;gap:calc(var(--u)*6);justify-content:flex-start;height:calc(var(--u)*30);padding:0 calc(var(--u)*3);border-radius:var(--r)}
 .bm .s+.s{box-shadow:0 -1px 0 rgba(239,8,112,.35);border-radius:0}
-.bm .chip{width:calc(var(--u)*26);padding:calc(var(--u)*2.5);box-shadow:none}
+.bm .chip{width:calc(var(--u)*26);padding:calc(var(--u)*1.5);box-shadow:none}
 .bm .s b{font-size:max(8px,calc(var(--u)*12));flex:1;text-align:left}
 .bm .s em{font-style:normal;font-size:max(7px,calc(var(--u)*9));color:var(--text-dim)}
 .bm .s.can:hover{background:rgba(239,8,112,.2)}
@@ -380,11 +380,10 @@ main{flex:1;min-height:0;display:flex;flex-direction:column;padding:8px clamp(8p
 :root{--felt:url("data:image/svg+xml,%3Csvg%20xmlns%3D%27http%3A//www.w3.org/2000/svg%27%20width%3D%27120%27%20height%3D%27120%27%20viewBox%3D%270%200%20120%20120%27%20fill%3D%27%23ff8fb1%27%20fill-opacity%3D%27.07%27%3E%3Cpath%20transform%3D%27translate%2818%2018%29%27%20d%3D%27M12%203C9%207%204%209.5%204%2013.5a4%204%200%200%200%207%202.6L9.5%2021h5L13%2016.1a4%204%200%200%200%207-2.6C20%209.5%2015%207%2012%203z%27/%3E%3Cpath%20transform%3D%27translate%2878%2018%29%27%20d%3D%27M12%2021C6%2016%203%2012.5%203%208.8A4.6%204.6%200%200%201%2012%207a4.6%204.6%200%200%201%209%201.8c0%203.7-3%207.2-9%2012.2z%27/%3E%3Cpath%20transform%3D%27translate%2818%2078%29%27%20d%3D%27M12%202l7%2010-7%2010-7-10z%27/%3E%3Cpath%20transform%3D%27translate%2878%2078%29%27%20d%3D%27M12%203a4%204%200%200%200-3%206.6A4%204%200%201%200%2011%2016l-1.5%205h5L13%2016a4%204%200%201%200%202-6.4A4%204%200%200%200%2012%203z%27/%3E%3C/svg%3E") center/120px,radial-gradient(ellipse 55% 60% at 8% 12%,rgba(239,8,112,.30),transparent 70%),radial-gradient(ellipse 55% 60% at 94% 92%,rgba(80,110,255,.26),transparent 70%),radial-gradient(ellipse 80% 75% at 50% 50%,#4a1544 0%,#2a0d30 50%,#12061a 100%)}
 body,#rv{background:var(--felt)}
 #rv .rv-bg{position:absolute;inset:0;pointer-events:none;overflow:hidden}
-body::before,#rv .rv-bg::before{content:"";position:fixed;left:50%;top:50%;width:170vmax;height:170vmax;margin:-85vmax 0 0 -85vmax;border-radius:50%;pointer-events:none;z-index:-1;background:repeating-conic-gradient(rgba(255,170,205,.045) 0 7deg,transparent 7deg 18deg);-webkit-mask:radial-gradient(closest-side,#000 15%,transparent 72%);mask:radial-gradient(closest-side,#000 15%,transparent 72%);animation:rays 90s linear infinite}
+#rv .rv-bg::before{content:"";position:fixed;left:50%;top:50%;width:170vmax;height:170vmax;margin:-85vmax 0 0 -85vmax;border-radius:50%;pointer-events:none;z-index:-1;background:repeating-conic-gradient(rgba(255,170,205,.045) 0 7deg,transparent 7deg 18deg);-webkit-mask:radial-gradient(closest-side,#000 15%,transparent 72%);mask:radial-gradient(closest-side,#000 15%,transparent 72%);animation:rays 90s linear infinite}
 #rv .rv-bg::before{position:absolute;z-index:0}
-body::after,#rv .rv-bg::after{content:"";position:fixed;inset:3.5vmin;border-radius:50%/42%;border:2px solid rgba(255,215,0,.16);box-shadow:0 0 0 8px rgba(255,215,0,.035),inset 0 0 60px rgba(0,0,0,.35);pointer-events:none;z-index:-1}
+#rv .rv-bg::after{content:"";position:fixed;inset:3.5vmin;border-radius:50%/42%;border:2px solid rgba(255,215,0,.16);box-shadow:0 0 0 8px rgba(255,215,0,.035),inset 0 0 60px rgba(0,0,0,.35);pointer-events:none;z-index:-1}
 #rv .rv-bg::after{position:absolute;z-index:0}
-body{isolation:isolate}
 @keyframes rays{to{transform:rotate(360deg)}}
 
 /* ===== resumen de parejas: todo cabe, sin scroll ===== */
@@ -427,7 +426,7 @@ body{isolation:isolate}
 @keyframes rvAvInB{from{opacity:0;transform:translateX(46px) scale(.6)}}
 @keyframes rvNameIn{from{opacity:0;transform:translateY(8px)}}
 @keyframes rvVsPop{0%{opacity:0;transform:scale(2.6) rotate(-8deg)}60%{opacity:1;transform:scale(.9)}100%{opacity:1;transform:none}}
-@media (prefers-reduced-motion:reduce){body::before,#rv .rv-bg::before,#rv .rv-head,#rv .rv-head *,#rv .rv-head p::before,#rv .rv-head p::after,#rv .rv-pair *,#rv .rv-pair .d::before{animation:none!important}}
+@media (prefers-reduced-motion:reduce){#rv .rv-bg::before,#rv .rv-head,#rv .rv-head *,#rv .rv-head p::before,#rv .rv-head p::after,#rv .rv-pair *,#rv .rv-pair .d::before{animation:none!important}}
 </style>
 </head>
 <body>
@@ -1001,7 +1000,7 @@ function openAdmin(){
   <div style="display:flex;gap:8px"><input class="inp" id="admName" maxlength="48" value="${esc(S.name)}" autocomplete="off"><button class="btn btn-primary" onclick="admRename()">Guardar</button></div>`:""}
   <div class="menu">
    ${it("backToSetup()","plus","Nuevo torneo")}
-   ${has?it("admReset()","redo","Reiniciar resultados (nuevo sorteo)")+it("admExport()","down","Descargar respaldo"):""}
+   ${has?it("admReset()","redo","Reiniciar resultados (mismas parejas)")+it("admDraw()","vs","Nuevo sorteo (mismos participantes)")+it("admExport()","down","Descargar respaldo"):""}
    ${it("$('admFile').click()","up","Restaurar desde respaldo")}
    ${has&&dev?it("closeModal();sim()","bolt","Pruebas: simular todo")+it("closeModal();undo()","redo","Pruebas: deshacer"):""}
    ${dev||PRUEBA_ROLES?it("setView(role()==='staff'?'miembro':'staff')","moon","Pruebas: ver como "+(role()==="staff"?"miembro":"staff")):""}
@@ -1013,9 +1012,21 @@ function admRename(){
   const v=$("admName").value.trim();if(!v){toast("Escribe un nombre");return}
   S.name=v;markDirty();closeModal();render();toast("Nombre actualizado");
 }
+/* Reiniciar: borra ganadores y rondas siguientes, pero conserva las parejas de la ronda 1. No sortea ni anima. */
 async function admReset(){
-  const ok=await dlg({title:"Reiniciar resultados",msg:`Se borran todos los resultados de «${esc(S.name)}» y se hace un sorteo nuevo con los mismos ${S.pl.length} participantes. Esto lo verán todos.`,ok:"Sí, reiniciar",danger:true,back:openAdmin});
-  if(ok){newT(S.pl,S.name);toast("Torneo reiniciado")}
+  const ok=await dlg({title:"Reiniciar resultados",msg:`Se borran los ganadores de «${esc(S.name)}» y vuelve a la ronda 1 con las mismas parejas. Esto lo verán todos.`,ok:"Sí, reiniciar",danger:true,back:openAdmin});
+  if(!ok||!S)return;
+  const r=S.rounds[0];
+  r.matches.forEach(m=>{m.w=null});document.querySelectorAll(".fall").forEach(e=>e.remove());
+  S.id=uid();S.rounds=[r];S.view=0;S.phase="swiss";S.br=null;     // id nuevo: el campeón vuelve a celebrarse
+  champId=null;pendNext=null;$("matches")._key=null;$("bracket")._br=null;$("champ")._h=null;
+  markDirty();refresh();toast("Resultados reiniciados");
+}
+/* Nuevo sorteo: parejas nuevas con la animación; el torneo actual no cambia hasta confirmar al final. */
+async function admDraw(){
+  const ok=await dlg({title:"Nuevo sorteo",msg:`Se sortean parejas nuevas con los mismos ${S.pl.length} participantes y se borran los resultados de «${esc(S.name)}».`,ok:"Sí, sortear",danger:true,back:openAdmin});
+  if(!ok||!S)return;
+  track("comp_sorteo");SFX.unlock();openReveal(S.pl,S.name);
 }
 function admExport(){
   try{
