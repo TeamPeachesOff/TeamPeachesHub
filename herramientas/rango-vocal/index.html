@@ -235,12 +235,17 @@ html,body{overflow-x:clip}
 }
 </style>
 <style id="pg-css">
-/* ===== Paso 4 · Passaggio (desconectado) ===== */
-.pg{display:flex;flex-direction:column;gap:14px;margin-top:8px}.pg-lead{max-width:62ch;color:var(--ink)}
-.pg-list{display:grid;gap:14px}.pg-card{display:flex;flex-direction:column;gap:10px;padding:16px;border:1px solid var(--line);border-radius:14px;background:var(--accent-soft)}
+/* ===== Paso 4 · Passaggio (sin tarjetas: mismo estilo que los pasos 1–3) ===== */
+.pg{display:flex;flex-direction:column;gap:6px}.pg-lead{max-width:62ch;color:var(--ink)}
+.pg-list{display:flex;flex-direction:column}
+.pg-att{display:flex;flex-direction:column;gap:12px;padding:22px 0;border-top:1px solid var(--line)}.pg-att:first-child{border-top:0;padding-top:12px}
 .pg-h{display:flex;justify-content:space-between;align-items:baseline;gap:10px}
-.pg-cv{width:100%;height:150px;display:block;border-radius:10px;background:var(--bg)}
-.pg-res{padding:18px;border:1px solid var(--line2);border-radius:14px;background:var(--accent-soft)}.pg-line{font-size:14px}
+.pg-cv{width:100%;height:150px;display:block;background:transparent;border-bottom:1px solid var(--line)}
+.pg-res{padding:22px 0 0;border-top:1px solid var(--line)}.pg-line{font-size:14px}
+.grp.locked .ghead{cursor:not-allowed;opacity:.45}.grp.locked .ghead:hover .gt,.grp.locked .ghead:hover .car{color:inherit}
+.grp.locked .car{display:none}.grp.locked .hs{display:block}
+.glock{display:inline-flex;margin-left:auto;color:var(--muted)}.glock svg{width:18px;height:18px;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+.grp:not(.locked) .glock{display:none}
 </style>
 </head>
 <body>
@@ -293,13 +298,6 @@ html,body{overflow-x:clip}
   </section>
 
   <!-- Página 3: Resultado -->
-  <!-- Paso 4: Passaggio (funciona en local; aún no se guarda en la base de datos) -->
-  <section id="v-passaggio" class="view" hidden>
-    <h1>Passaggio</h1>
-    <div id="pgHost"></div>
-    <div class="cont" style="gap:10px;flex-wrap:wrap"><button class="btn primary big" id="btnPgCont" type="button">Ver resultado</button><button class="btn quiet" id="btnPgSkip" type="button">Omitir este paso</button></div>
-  </section>
-
   <section id="v-result" class="view" hidden><div id="res"></div></section>
 
   <!-- Canción (se abre desde la portada) -->
@@ -939,12 +937,27 @@ function detectPassaggio(frames, x, sr) {
       if (Math.abs(m[k] - md) > 1.5 && Math.abs(m[k - 1] - m[k + 1]) < 1) m[k] = md;
     }
   }
+  // 1b) «hoyo» pegado a la curva: cae ≥5 st de golpe y en ≤0.35 s vuelve a subir a un nivel igual o mayor (error de octava en el quiebre)
+  for (let k = 1, maxL = Math.round(0.35 / hop); k < n; k++) {
+    if (m[k] !== m[k] || m[k - 1] !== m[k - 1] || m[k - 1] - m[k] < 5) continue;
+    for (let e = k + 1; e <= Math.min(n - 1, k + maxL) && m[e] === m[e]; e++) {
+      if (m[e] - m[e - 1] >= 5) { if (m[e] >= m[k - 1] - 1) for (let j = k; j < e; j++) m[j] = NaN; k = e; break; }
+    }
+  }
   // 2) tramos con voz: descarta los muy cortos
   const runs = []; let s0 = -1;
   for (let k = 0; k <= n; k++) {
     const v = k < n && m[k] === m[k];
     if (v && s0 < 0) s0 = k;
     if (!v && s0 >= 0) { if (k - s0 >= PASS.minRun) runs.push([s0, k - 1]); else for (let j = s0; j < k; j++) m[j] = NaN; s0 = -1; }
+  }
+  // 2b) «hoyo»: justo en el quiebre el detector a veces cae una octava (se ve como un pico hacia abajo). Un tramo corto muy por debajo
+  //     de lo que viene antes y después no es voz real: se borra, así el quiebre queda como una pausa breve con reanudación más aguda.
+  for (let i = runs.length - 2; i >= 1; i--) {
+    const [d0, d1] = runs[i], p = runs[i - 1], q = runs[i + 1];
+    if ((d1 - d0 + 1) * hop > 0.35 || (frames[q[0]].t - frames[p[1]].t) > 0.7) continue;
+    const lvl = medAvg(Array.from(m.subarray(d0, d1 + 1))), before = m[p[1]], after = medAvg(Array.from(m.subarray(q[0], Math.min(q[1], q[0] + 3) + 1)));
+    if (before - lvl >= 5 && after - lvl >= 5 && after >= before - 1) { for (let j = d0; j <= d1; j++) m[j] = NaN; runs.splice(i, 1); }
   }
   const series = Array.from(m, (v, k) => (v === v ? { t: frames[k].t, m: v } : null));
   const voiced = runs.reduce((s, r) => s + r[1] - r[0] + 1, 0);
@@ -1081,13 +1094,13 @@ const ICON = {
 const fmtT = s => Math.floor(s / 60) + ':' + String(Math.floor(s % 60)).padStart(2, '0');
 
 /* ---- 2. Páginas ---- */
-const PARENT = { test: 'home', passaggio: 'test', song: 'home', get result() { return replay ? 'test' : 'passaggio'; } };
+const PARENT = { test: 'home', song: 'home', result: 'test' };
 let view = 'home';
 const REDUCED = matchMedia('(prefers-reduced-motion: reduce)');
-const DEPTH = { home: 0, test: 1, song: 1, passaggio: 2, result: 3 };
+const DEPTH = { home: 0, test: 1, song: 1, result: 2 };
 let goTok = 0, resFresh = false, replay = null;   // replay: {R, prevSex, prevName} mientras se ve el resultado de otra persona
 function go(v) {
-  if ((v === 'result' || v === 'passaggio') && !todasListas() && !replay) return;   // sin las 5 grabaciones no se pasa al resultado
+  if (v === 'result' && !todasListas() && !replay) return;   // sin las 5 grabaciones no se pasa al resultado
   if (replay && v !== 'result') { sex = replay.prevSex; userName = replay.prevName; replay = null; }   // al salir se vuelve a lo propio
   stopAll();
   const prev = view, tok = ++goTok, target = $('#v-' + v);
@@ -1100,8 +1113,7 @@ function go(v) {
     if (tok !== goTok) return;
     olds.forEach(e => { e.classList.remove('leaving'); e.hidden = true; });
     if (v === 'home') nameBox(false);
-    if (v !== 'test' && v !== 'passaggio') releaseMic();
-    if (v === 'passaggio') pgEnter();
+    if (v !== 'test') releaseMic();
     target.hidden = false;
     if (v === 'result') { resFresh = true; renderResults(); guardarResultado(); setTimeout(() => { resFresh = false; }, 1500); }
     window.scrollTo(0, 0);
@@ -1141,7 +1153,8 @@ const SLOTS = [
 const GROUPS = [
   { id: 'comf', n: 1, title: 'Cómodas', desc: 'Las notas que cantas sin esfuerzo.', ids: ['comfHigh', 'comfLow'], label: 'Cómodo' },
   { id: 'abs', n: 2, title: 'Absolutas', desc: 'Tus extremos, aunque suenen tensos.', ids: ['absHigh', 'absLow'], label: 'Absoluto' },
-  { id: 'speech', n: 3, title: 'Párrafo', desc: 'Lee con tu tono natural.', ids: ['speech'], label: 'Hablado' }
+  { id: 'speech', n: 3, title: 'Párrafo', desc: 'Lee con tu tono natural.', ids: ['speech'], label: 'Hablado' },
+  { id: 'pg', n: 4, title: 'Passaggio', desc: 'Dónde cambia tu voz de pecho a cabeza.', ids: [], special: true }   // se desbloquea al cerrar el 3; sin «Listo»: solo «Continuar»
 ];
 const FN = { comfHigh: 'nota-comoda-alta', comfLow: 'nota-comoda-baja', absHigh: 'nota-absoluta-alta', absLow: 'nota-absoluta-baja', speech: 'voz-hablada' };
 const S = {};   // id -> { takes: [], cur, open }
@@ -1152,13 +1165,15 @@ let micBlocked = false, rec = null, paraIdx = -1;
 const ALL = new Set();
 const stopAll = () => ALL.forEach(a => a.pause());
 
+const PG = { R: null, el: null, takes: [null, null, null], busy: [false, false, false], key: null, unlocked: false };   // estado del Paso 4 (passaggio)
 GROUPS.forEach(g => {
   const sec = document.createElement('div');
   sec.className = 'grp'; sec.id = 'grp-' + g.id; if (g.n === 1) { sec.setAttribute('data-open', ''); sec.setAttribute('data-ready', ''); }   // solo «Cómodas» arranca abierta
   sec.innerHTML = `<div class="ghead" role="button" tabindex="0" aria-expanded="${g.n === 1}" data-act="gtoggle" data-g="${g.id}"><span class="gno">${g.n}</span><span class="gt">${g.title}</span><span class="hs"></span><span class="car">${ICON.chev}</span></div>
-    <div class="gbody"><div class="gin"><p class="hint" style="margin-bottom:16px">${g.desc}</p><div class="pair"></div>
+    <div class="gbody"><div class="gin"><p class="hint" style="margin-bottom:16px">${g.desc}</p>${g.special ? '<div id="pgHost"></div>' : '<div class="pair"></div>'}
     <div class="gwarn" role="alert"></div>
-    <div class="gsum" hidden><div class="gs-t"></div><button class="btn primary" type="button" data-act="done" data-g="${g.id}">Listo</button></div></div></div>`;
+    ${g.special ? '' : `<div class="gsum" hidden><div class="gs-t"></div><button class="btn primary" type="button" data-act="done" data-g="${g.id}">Listo</button></div>`}</div></div>`;
+  if (g.special) { sec.classList.add('locked'); sec.querySelector('.ghead').insertAdjacentHTML('beforeend', '<span class="glock" aria-hidden="true"><svg viewBox="0 0 24 24"><rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/></svg></span>'); sec.querySelector('.ghead').setAttribute('aria-disabled', 'true'); }
   g.ids.forEach(id => {
     const sl = SLOTS.find(x => x.id === id); S[id] = { takes: [], cur: -1, open: false };
     const el = document.createElement('div');
@@ -1430,14 +1445,16 @@ function collect() {
   return R;
 }
 const todasListas = () => SLOTS.every(sl => resOf(sl.id));   // las 5: cómoda alta/baja, absoluta alta/baja y voz hablada
-function updateCont() {   // «Continuar»: las tres pruebas listas y la tercera ya cerrada
-  $('#contRow').hidden = !(GROUPS.every(g => g.ids.every(id => resOf(id))) && !$('#grp-speech').hasAttribute('data-open'));
+const pgUnlocked = () => PG.unlocked && todasListas();   // el 4 se desbloquea al pulsar «Listo» en el 3
+function updateCont() {   // «Continuar»: aparece cuando el Paso 4 está desbloqueado
+  $('#contRow').hidden = !pgUnlocked();
 }
 function setOpen(gid, open) {
   const el = $('#grp-' + gid); if (open) el.setAttribute('data-open', ''); else el.removeAttribute('data-open');
   clearTimeout(el.__rt);   // el recorte solo se necesita mientras se anima; después los menús pueden salirse
   if (open) el.__rt = setTimeout(() => el.setAttribute('data-ready', ''), REDUCED.matches ? 0 : 600); else el.removeAttribute('data-ready');
   el.querySelector('.ghead').setAttribute('aria-expanded', open);
+  if (open && gid === 'pg') pgEnter();
   updateCont();
 }
 function rangeWarns(R) {
@@ -1452,6 +1469,7 @@ function updateGroups() {
   const R = collect(), W = rangeWarns(R);
   GROUPS.forEach(g => { $('#grp-' + g.id + ' .gwarn').innerHTML = (W[g.id] || []).map(t => `<p class="warn">${t}</p>`).join(''); });
   GROUPS.forEach(g => {
+    if (g.special) return;
     const el = $('#grp-' + g.id), done = g.ids.every(id => resOf(id)), row = el.querySelector('.gsum');
     row.hidden = !done; let html = '', plain = '';
     if (done) {
@@ -1460,20 +1478,22 @@ function updateGroups() {
     }
     el.querySelector('.gs-t').innerHTML = html; el.querySelector('.hs').textContent = plain;
   });
+  pgSyncLock();
   updateCont();
 }
 function finishGroup(gid) {
   const i = GROUPS.findIndex(g => g.id === gid);
   setOpen(gid, false);
-  if (i === GROUPS.length - 1) { go('result'); return; }
-  const next = GROUPS[i + 1]; setOpen(next.id, true);
+  const next = GROUPS[i + 1];
+  if (next.special) { PG.unlocked = true; pgSyncLock(); }   // terminar el 3 desbloquea el 4
+  setOpen(next.id, true);
   setTimeout(() => $('#grp-' + next.id).scrollIntoView({ block: 'start', behavior: REDUCED.matches ? 'auto' : 'smooth' }), REDUCED.matches ? 0 : 460);
 }
 function refreshAll() { SLOTS.forEach(s => renderSlot(s.id)); updateGroups(); if (view === 'result') renderResults(); renderSong(); pgRefresh(); }
 function clearAll() {
   if (rec) cancelRec(); stopAll();
   SLOTS.forEach(sl => { S[sl.id].takes.forEach(t => URL.revokeObjectURL(t.url)); S[sl.id] = { takes: [], cur: -1, open: false }; renderSlot(sl.id); });
-  GROUPS.forEach(g => setOpen(g.id, g.n === 1)); updateGroups(); pgReset();
+  pgReset(); PG.unlocked = false; GROUPS.forEach(g => setOpen(g.id, g.n === 1)); updateGroups();
 }
 
 /* ---- Género ----
@@ -1522,7 +1542,7 @@ document.addEventListener('click', e => {
   else if (act === 'newpara') newPara();
   else if (act === 'hist') { S[id].open = !S[id].open; renderHist(id); }
   else if (act === 'take') { S[id].cur = +b.dataset.i; renderSlot(id); updateGroups(); }
-  else if (act === 'gtoggle') { const g = $('#grp-' + b.dataset.g); setOpen(b.dataset.g, !g.hasAttribute('data-open')); }
+  else if (act === 'gtoggle') { const g = $('#grp-' + b.dataset.g); if (g.classList.contains('locked')) return; setOpen(b.dataset.g, !g.hasAttribute('data-open')); }
   else if (act === 'done') finishGroup(b.dataset.g);
   else if (act === 'mapsel') { mapSel = mapSel === b.dataset.k ? null : b.dataset.k; renderMap(); }
   else if (act === 'share') shareImages();
@@ -1546,9 +1566,7 @@ $('#btnDemo').hidden = true; $('#btnReplay').hidden = true;
   const now = Date.now(); n = now - t < 1500 ? n + 1 : 1; t = now;
   if (n >= 5) { n = 0; $('#btnDemo').hidden = false; $('#btnReplay').hidden = false; }
 }); })();
-$('#btnCont').addEventListener('click', () => { if (todasListas()) go('passaggio'); });
-$('#btnPgCont').addEventListener('click', () => { if (rec) cancelRec(); go('result'); });
-$('#btnPgSkip').addEventListener('click', () => { if (rec) cancelRec(); go('result'); });
+$('#btnCont').addEventListener('click', () => { if (rec) cancelRec(); if (pgUnlocked()) go('result'); });
 
 /* ---- «Ver resultado de otra persona» (oculto, junto a la voz de ejemplo) ----
    Pide a la hoja la lista de quienes hicieron la prueba (acción «listarRangosVocales» del code.gs) y recrea su resultado con
@@ -2125,8 +2143,8 @@ if (new URLSearchParams(location.search).get('v') === 'cancion') go('song');   /
 
 /*PASSAGGIO-UI-START*/
 /* ====== Paso 4 · Passaggio (interfaz) ======
-   DESCONECTADO: no se llama desde go(), GROUPS ni guardarResultado(). Para probarlo desde la consola:
-     passMount(document.body, collect())     // R = collect() con los Pasos 1–3 ya hechos
+   Vive dentro de la lista 1-2-3 como grupo «pg» (GROUPS). Se desbloquea al pulsar «Listo» en el 3.
+   SOLO LOCAL: guardarResultado() NO envía nada del passaggio. Para la base de datos, usar passaggioResult() (objeto plano).
    Reutiliza getMic(), actx, yinLive() (gráfica en vivo), decode(), analyzePitch(), mkPlayer(), peaksOf() y la variable global rec,
    así que «cerrar», «volver» y cancelRec() también paran estas grabaciones. */
 const PG_TEXT = {
@@ -2134,7 +2152,6 @@ const PG_TEXT = {
   'sin-recorrido': 'La sirena casi no subió. Desliza la voz de forma continua de la nota grave a la aguda.',
   'sin-quiebre': 'No se notó un quiebre claro. Puede que lo hayas suavizado, o que fuera muy sutil. Repite sin esconderlo.'
 };
-const PG = { R: null, el: null, takes: [null, null, null], busy: [false, false, false], live: null };
 const pgLo = () => PG.R && PG.R.comf.low != null ? PG.R.comf.low : null;
 const pgHi = () => PG.R && PG.R.comf.high != null ? PG.R.comf.high : null;
 
@@ -2143,13 +2160,12 @@ function passMount(el, R) {
   PG.R = R || collect(); PG.el = el; PG.takes = [null, null, null]; PG.busy = [false, false, false];
   const lo = pgLo(), hi = pgHi(), box = document.createElement('section'); box.className = 'pg'; box.id = 'pg-root';
   if (lo == null || hi == null || lo >= hi) {
-    box.innerHTML = `<h2>Passaggio</h2><p class="warn">Primero completa «Cómodas» (paso 1): necesito tu nota más grave y más aguda para saber desde dónde hasta dónde deslizar.</p>`;
+    box.innerHTML = `<p class="warn">Primero completa «Cómodas» (paso 1): necesito tu nota más grave y más aguda para saber desde dónde hasta dónde deslizar.</p>`;
     el.appendChild(box); return box;
   }
-  box.innerHTML = `<h2>Passaggio</h2>
-    <p class="hint pg-lead">${pgLead()}</p>
+  box.innerHTML = `<p class="hint pg-lead">${pgLead()}</p>
     <p class="muted small">Haz 3 intentos. Si uno sale con ruido o te equivocas, repítelo solo.</p>
-    <div class="pg-list">${[0, 1, 2].map(i => `<div class="pg-card" id="pg-c${i}">
+    <div class="pg-list">${[0, 1, 2].map(i => `<div class="pg-att" id="pg-c${i}">
       <div class="pg-h"><h3>Intento ${i + 1}</h3><span class="pg-st muted small"></span></div>
       <div class="acts"><button class="btn primary rec" type="button" data-pg="rec" data-i="${i}"><span class="dot"></span><span class="lbl">Grabar</span></button>
       <button class="btn" type="button" data-pg="cancel" data-i="${i}" hidden>Cancelar</button></div>
@@ -2300,20 +2316,34 @@ function pgResultHtml() {
     <p class="pg-line" style="margin-top:10px">${msg}</p>${warns}<p class="explain">${PG_WHY}</p>`;
 }
 function pgRenderResult() {
-  const box = document.getElementById('pg-res'); if (!box) return;
-  const html = pgResultHtml(); box.hidden = !html; box.innerHTML = html;
+  const box = document.getElementById('pg-res'); if (box) { const html = pgResultHtml(); box.hidden = !html; box.innerHTML = html; }
+  pgHeadNote();
 }
 /* ---- Conexión con la app (solo local: no guarda nada en la base de datos) ---- */
-function pgEnter() {   // al entrar al paso: monta, o conserva los intentos si el rango cómodo no cambió
-  const host = document.getElementById('pgHost'), R = collect(), key = R.comf.low + '|' + R.comf.high;
+function pgEnter() {   // al abrir el paso: monta, o conserva los intentos si el rango cómodo no cambió
+  const host = document.getElementById('pgHost'); if (!host || !pgUnlocked()) return;
+  const R = collect(), key = R.comf.low + '|' + R.comf.high;
   if (PG.key === key && host.firstChild) return;
-  pgReset(); host.innerHTML = ''; PG.key = key; passMount(host, R);
+  const keep = PG.unlocked; pgReset(); PG.unlocked = keep; host.innerHTML = ''; PG.key = key; passMount(host, R);
 }
 function pgReset() {
   if (rec && rec.id && rec.id.startsWith('pg')) cancelRec();
   PG.takes.forEach(t => { if (t && t.url) URL.revokeObjectURL(t.url); });
   PG.takes = [null, null, null]; PG.key = null; PG.R = null;
   const host = document.getElementById('pgHost'); if (host) host.innerHTML = '';
+  pgHeadNote();
+}
+function pgHeadNote() {   // texto a la derecha del título cuando el 4 está cerrado
+  const el = document.getElementById('grp-pg'); if (!el) return;
+  const sum = PG.takes.some(t => t && t.res) ? passaggioSummary(PG.takes.map(t => t && t.res)) : null;
+  el.querySelector('.hs').textContent = el.classList.contains('locked') ? 'Se desbloquea al terminar el 3' : (sum ? lb(sum.midi) : '');
+}
+function pgSyncLock() {   // bloquea/desbloquea el 4 según el avance de los pasos 1–3
+  const el = document.getElementById('grp-pg'); if (!el) return;
+  const locked = !pgUnlocked(); el.classList.toggle('locked', locked); el.querySelector('.ghead').setAttribute('aria-disabled', locked);
+  if (locked) { PG.unlocked = false; if (el.hasAttribute('data-open')) setOpen('pg', false); pgReset(); }
+  else if (el.hasAttribute('data-open')) pgEnter();   // si cambió el rango cómodo, se reinician los intentos
+  pgHeadNote();
 }
 function pgRefresh() {   // cambio de notación C D E ↔ Do Re Mi
   if (!PG.R || !document.getElementById('pg-root')) return;
