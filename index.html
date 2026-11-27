@@ -4421,6 +4421,8 @@ function rangosConocidos_(){
   DB.miembros.forEach(m=>rangosDe_(m).forEach(r=>_rangosCache_.add(normalizar(r))));
   return _rangosCache_;
 }
+// Apodos del miembro (columna «apodos» de la base de datos), para los buscadores de miembros.
+function apodosDe_(m){ return String(m.apodos||m.Apodos||m.apodo||""); }
 function renderMiembros(filtro=""){
   const textoFiltro = filtro.trim();
   const matchStrikes = textoFiltro.match(/^(\d+)\s*strikes?$/i);
@@ -4429,7 +4431,7 @@ function renderMiembros(filtro=""){
   const filtrar = matchStrikes
     ? (m=>conNombre(m) && (Number(m.strikes)||0)===Number(matchStrikes[1]))
     : (m=>conNombre(m) && (!f || (()=>{ const x=filtroExactoMiembro_(m,f); return x!==null ? x : normalizar([
-        m.nombre, m.rangoVocal,
+        m.nombre, apodosDe_(m), m.rangoVocal,
         m.usuarioDiscord, m.usuarioBandlab, limpiarUsuarioBandlab(m.usuarioBandlab), limpiarUsuarioInstagram(m.usuarioInstagram), m.usuarioSmule,   // cualquiera de sus usuarios
         esTrue(m.staff)?"staff":"", esTrue(m.canto)?"canto":"", esTrue(m.doblaje)?"doblaje":"", esTrue(m.inactivo)?"inactivo":"",
         m.generacionNum||"", palabraGeneracion(m.generacionNum),
@@ -5344,7 +5346,7 @@ function renderChipGrid_(filtro){
   const f = normalizarTexto_(filtro||"");
   const grid=document.getElementById("asignarChipGrid");
   const lista = (DB.miembros||[]).filter(m=>m.nombre)
-    .filter(m=> !f || normalizarTexto_(m.nombre).includes(f) || normalizarTexto_(m.usuarioSmule).includes(f))
+    .filter(m=> !f || normalizarTexto_(m.nombre).includes(f) || normalizarTexto_(m.usuarioSmule).includes(f) || normalizarTexto_(apodosDe_(m)).includes(f))
     .slice().sort((a,b)=>(a.nombre||"").localeCompare(b.nombre||""));
   grid.innerHTML = lista.length ? lista.map(m=>`<button type="button" class="member-chip ${asignarSeleccionados_.has(String(m.id))?"sel":""}" data-chip="${escAttr(m.id)}">
     <img src="${escAttr(m.avatarUrl||LOGO_DEFAULT)}" onerror="this.onerror=null;this.src='${LOGO_DEFAULT}';">${escHtml(m.nombre||"")}
@@ -5439,7 +5441,7 @@ function renderEditChipGrid_(filtro){
   const f = normalizarTexto_(filtro||"");
   const grid = document.getElementById("ee_chipGrid");
   const lista = (DB.miembros||[]).filter(m=>m.nombre)
-    .filter(m=>!f || normalizarTexto_(m.nombre).includes(f) || normalizarTexto_(m.usuarioSmule).includes(f))
+    .filter(m=>!f || normalizarTexto_(m.nombre).includes(f) || normalizarTexto_(m.usuarioSmule).includes(f) || normalizarTexto_(apodosDe_(m)).includes(f))
     .slice().sort((a,b)=>(a.nombre||"").localeCompare(b.nombre||""));
   grid.innerHTML = lista.length ? lista.map(m=>`<button type="button" class="member-chip ${editEntregaSel_.has(String(m.id))?"sel":""}" data-ee-chip="${escAttr(m.id)}">
     <img src="${escAttr(m.avatarUrl||LOGO_DEFAULT)}" onerror="this.onerror=null;this.src='${LOGO_DEFAULT}';">${escHtml(m.nombre||"")}
@@ -6454,7 +6456,7 @@ document.getElementById("searchMundo").addEventListener("input", debounce(e=>{
   const f=normalizar(e.target.value.trim());
   const cont=document.getElementById("mundoResultados");
   if(!f){ cont.classList.add("hidden"); cont.innerHTML=""; return; }
-  const resultados=miembrosConUbicacion().filter(m=>normalizar((m.nombre||"")+" "+(m.ciudadResuelta||"")).includes(f)).slice(0,8);
+  const resultados=miembrosConUbicacion().filter(m=>normalizar((m.nombre||"")+" "+apodosDe_(m)+" "+(m.ciudadResuelta||"")).includes(f)).slice(0,8);
   cont.classList.remove("hidden");
   cont.innerHTML=resultados.length?resultados.map(m=>`<div class="mundo-resultado-item" data-id="${escAttr(m.id)}">${avatarImgTag(m)}<div><div class="mr-name">${escHtml(m.nombre||"")}</div><div class="mr-city">${escHtml(m.ciudadResuelta||"")}</div></div></div>`).join(""):`<div class="mundo-resultado-item"><div class="mr-name">Sin resultados</div></div>`;
   bindAvatarFallbacks();
@@ -7994,7 +7996,7 @@ function renderEntregaFormChips_(filtro){
   const f = normalizarTexto_(filtro||"");
   const grid = document.getElementById("en_chipGrid");
   const lista = (DB.miembros||[]).filter(m=>m.nombre)
-    .filter(m=>!f || normalizarTexto_(m.nombre).includes(f) || normalizarTexto_(m.usuarioSmule).includes(f))
+    .filter(m=>!f || normalizarTexto_(m.nombre).includes(f) || normalizarTexto_(m.usuarioSmule).includes(f) || normalizarTexto_(apodosDe_(m)).includes(f))
     .slice().sort((a,b)=>(a.nombre||"").localeCompare(b.nombre||""));
   grid.innerHTML = lista.length ? lista.map(m=>`<button type="button" class="member-chip ${entregaFormSel_.has(String(m.id))?"sel":""}" data-en-chip="${escAttr(m.id)}">
     <img src="${escAttr(m.avatarUrl||LOGO_DEFAULT)}" onerror="this.onerror=null;this.src='${LOGO_DEFAULT}';">${escHtml(m.nombre||"")}

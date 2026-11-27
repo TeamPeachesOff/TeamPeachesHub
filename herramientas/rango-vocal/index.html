@@ -1561,7 +1561,7 @@ function guardarResultado() {
   const sp = R.speech;
   if ([R.comf.low, R.comf.high, R.abs.low, R.abs.high, sp && sp.avg, sp && sp.p10, sp && sp.p90].some(v => v == null || !isFinite(v))) return;
   const datos = {
-    nombre: userName, genero: sex ? sex.label : '',
+    nombre: userName, genero: sex ? sex.label : '', tesitura: classify(R, sexTypes()).best.es,   // el resultado final (Soprano, Tenor…)
     altaComoda: n(R.comf.high), bajaComoda: n(R.comf.low), altaAbsoluta: n(R.abs.high), bajaAbsoluta: n(R.abs.low),
     altoHablado: n(sp.p90), bajoHablado: n(sp.p10), promedioHablado: n(sp.avg)
   };   // las notas van como número MIDI (60 = Do4); el servidor las convierte a nombre de nota
