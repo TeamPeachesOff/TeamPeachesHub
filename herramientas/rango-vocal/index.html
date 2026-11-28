@@ -298,6 +298,7 @@ html,body{overflow-x:clip}
       <p class="muted small" id="replayMsg"></p>
     </div>
     <div id="micNotice" class="notice" hidden></div>
+    <p class="fine" id="recTip">Para grabar mejor: ambiente silencioso, micrófono cerca y auriculares si hay tonos guía. Los micrófonos de celular atenúan los graves extremos.</p>
     <div id="groups"></div>
     <div class="cont" id="contRow" hidden><button class="btn primary big" id="btnCont" type="button">Continuar</button></div>
     </div>
@@ -1269,7 +1270,7 @@ async function startRec(id) {
     stream.getAudioTracks().forEach(t => { t.enabled = false; });
     rec = null; setRecUI(id, false);
     let pcmData = null; try { pcmData = pcm ? pcm.stop() : null; } catch (e) { }
-    if (!r.cancel && chunks.length) setBlob(id, new Blob(chunks, { type: mr.mimeType || 'audio/webm' }), pcmData);
+    if (!r.cancel && chunks.length) setBlob(id, new Blob(chunks, { type: mr.mimeType || 'audio/webm' }), pcmData, true);
   };
   mr.start(); setRecUI(id, true);
   const live = $('#slot-' + id + ' .live'), btn = $('#slot-' + id + ' [data-act="rec"] .lbl');
@@ -1409,9 +1410,9 @@ document.addEventListener('click', e => { $$('.pp-menu').forEach(m => { if (!m.p
 
 /* ---- 7. Entradas: lectura, historial y resultado de cada nota ---- */
 async function decodeOnly(blob, maxSec) { return decode(blob, maxSec); }
-async function setBlob(id, blob, pcm) {
+async function setBlob(id, blob, pcm, fromMic) {
   const st = S[id], sl = SLOTS.find(s => s.id === id);
-  const take = { blob, url: URL.createObjectURL(blob), busy: true, pct: 0, res: null, err: null, n: (st.last = (st.last || 0) + 1) };
+  const take = { blob, url: URL.createObjectURL(blob), busy: true, pct: 0, res: null, err: null, fromMic: !!fromMic, n: (st.last = (st.last || 0) + 1) };
   st.takes.push(take); st.cur = st.takes.length - 1;
   if (st.takes.length > 8) { const old = st.takes.shift(); URL.revokeObjectURL(old.url); st.cur--; }
   renderSlot(id);
@@ -1947,7 +1948,15 @@ function timbreCampos(T) {   // columnas de timbre: vacías si no se midió o no
   const r1 = v => v == null || !isFinite(v) ? null : Math.round(v * 10) / 10;
   if (!T) return { timbreValido: '' };
   return { timbreValido: T.valido ? 'sí' : 'no', timbreF1: T.fiab.formantes > 0 ? Math.round(T.f1) : null, timbreF2: T.fiab.formantes > 0 ? Math.round(T.f2) : null, timbreF3: T.fiab.formantes > 0 && T.f3 != null ? Math.round(T.f3) : null,
-    sfcf: T.fiab.sfcf > 0 ? Math.round(T.sfcf) : null, alphaRatio: r1(T.fiab.alpha > 0 ? T.alpha : null) };
+    sfcf: T.fiab.sfcf > 0 ? Math.round(T.sfcf) : null, alphaRatio: r1(T.fiab.alpha > 0 ? T.alpha : null),
+    timbreNota: Math.round((69 + 12 * Math.log2(T.f0 / 440)) * 100) / 100, sfcfProm: T.fiab.sfcf > 0 ? r1(T.sfcfProm) : null };
+}
+function calidadCampos() {   // datos para filtrar y calibrar sin guardar audio: calidad media de las 4 notas, tomas y origen del audio
+  const ts = ['comfLow', 'comfHigh', 'absLow', 'absHigh'].map(id => curT(id)).filter(t => t && t.res);
+  const avg = k => ts.length ? Math.round(100 * ts.reduce((a, t) => a + (t.res[k] || 0), 0) / ts.length) : null;
+  const all = SLOTS.map(sl => curT(sl.id)).filter(Boolean), mic = all.filter(t => t.fromMic).length;
+  return { claridadMedia: avg('conf'), estabilidadMedia: avg('stability'), tomas: SLOTS.reduce((a, sl) => a + S[sl.id].takes.length, 0),
+    origenAudio: !all.length ? '' : mic === all.length ? 'micrófono' : mic ? 'mixto' : 'archivo' };
 }
 function guardarResultado() {
   if (replay || !todasListas()) return;   // ver el resultado de otra persona nunca se registra
@@ -1962,7 +1971,8 @@ function guardarResultado() {
     bajaComoda: n(R.comf.low), altaComoda: n(R.comf.high), bajaAbsoluta: n(R.abs.low), altaAbsoluta: n(R.abs.high),
     bajoHablado: n(sp.p10), promedioHablado: n(sp.avg), altoHablado: n(sp.p90),
     versionMotor: VOZ_DATOS.VERSION_MOTOR, afinidad: Math.round(C0.afinidad * 100), secundaria: C0.secundaria ? C0.secundaria.T.es : '',
-    frontera: C0.frontera ? C0.frontera.etiqueta : '', extM2: C0.extM2 != null ? n(C0.extM2) : null, zonaM0: R.abs.m0 ? n(R.abs.m0.midi) : null, medianaHablada: n(sp.med != null ? sp.med : sp.avg), ...timbreCampos(R.timbre)
+    frontera: C0.frontera ? C0.frontera.etiqueta : '', extM2: C0.extM2 != null ? n(C0.extM2) : null, zonaM0: R.abs.m0 ? n(R.abs.m0.midi) : null, medianaHablada: n(sp.med != null ? sp.med : sp.avg), ...timbreCampos(R.timbre), ...calidadCampos(),
+    pasSirena1: pas && pas.intentos ? pas.intentos[0] : null, pasSirena2: pas && pas.intentos ? pas.intentos[1] : null, pasSirena3: pas && pas.intentos ? pas.intentos[2] : null
   };   // las notas van como número MIDI (60 = Do4); el servidor las convierte a nombre de nota
   const firma = JSON.stringify(datos);
   if (RESULTADOS.some(r => r.firma === firma)) return;   // volver a ver el mismo resultado no lo duplica
