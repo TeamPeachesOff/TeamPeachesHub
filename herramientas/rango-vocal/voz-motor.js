@@ -3,7 +3,7 @@
  *   { abs:{low,high}, comf:{low,high}, speech:{avg, med?, p10?, p90?}, passaggio?:{midi, conf?} }
  * Reemplaza el promedio simple (grave+agudo)/2 por verosimilitud gaussiana por categoría + reglas fisiológicas.
  * Pesos por defecto: tesitura 50 % · voz hablada 10 % · passaggio 30 % × confianza (0 si no hay) · extensión aguda femenina 15 %.
- * El timbre (LPC, formante del cantante) entra en una entrega posterior; hasta entonces su peso es 0 y se reparte solo. */
+ * El timbre (voz-timbre.js) se mide y se guarda, pero su peso es 0 hasta calibrarlo con datos propios. */
 (function (root, factory) {
   if (typeof module === 'object' && module.exports) module.exports = factory(require('./voz-datos.js'));
   else root.VozMotor = factory(root.VOZ_DATOS);

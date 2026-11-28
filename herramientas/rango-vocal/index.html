@@ -384,9 +384,10 @@ html,body{overflow-x:clip}
   });
 })();
 </script>
-<script src="voz-datos.js?v=4"></script>
-<script src="voz-motor.js?v=3"></script>
+<script src="voz-datos.js?v=5"></script>
+<script src="voz-motor.js?v=4"></script>
 <script src="voz-sirena.js?v=1"></script>
+<script src="voz-timbre.js?v=1"></script>
 <script>
 /*CORE-START*/
 const NOTE_ES = ['Do','Do♯','Re','Re♯','Mi','Fa','Fa♯','Sol','Sol♯','La','La♯','Si'];
@@ -1087,7 +1088,7 @@ const S = {};   // id -> { takes: [], cur, open }
 const curT = id => S[id].takes[S[id].cur] || null;
 const resOf = id => { const t = curT(id); return t && t.res ? t.res : null; };
 const fileBase = (id, t) => 'rango-vocal_' + FN[id] + (t.res && id !== 'speech' ? '_' + noteInfo(t.res.midi).en.replace('♯', 's') : '') + (S[id].takes.length > 1 ? '_toma' + t.n : '');
-let micBlocked = false, rec = null, paraIdx = -1;
+let micBlocked = false, rec = null, recStarting = false, paraIdx = -1;
 const ALL = new Set();
 const stopAll = () => ALL.forEach(a => a.pause());
 
@@ -1250,7 +1251,7 @@ function setRecUI(id, on) {
   $$('[data-act="rec"]').forEach(x => { if (x !== b) x.disabled = on || micBlocked; });
 }
 async function startRec(id) {
-  if (rec) return;
+  if (rec || recStarting) return;
   if (!(navigator.mediaDevices && navigator.mediaDevices.getUserMedia && window.MediaRecorder)) { showMicBlocked(); return; }
   let stream; try { stream = await getMic(); } catch (e) { showMicBlocked(); return; }
   stream.getAudioTracks().forEach(t => { t.enabled = true; });
@@ -1259,13 +1260,16 @@ async function startRec(id) {
   actx = actx || new (window.AudioContext || window.webkitAudioContext)(); if (actx.state === 'suspended') actx.resume();
   const an = actx.createAnalyser(); an.fftSize = 8192; const src = actx.createMediaStreamSource(stream); src.connect(an);
   const buf = new Float32Array(an.fftSize), chunks = [], sl = SLOTS.find(s => s.id === id);
+  let pcm = null;
+  if (sl.kind === 'comf') { recStarting = true; try { pcm = await pcmStart(src); } catch (e) { pcm = null; } recStarting = false; }
   rec = { id, mr, t0: Date.now(), cancel: false, hist: [], ext: null };
   mr.ondataavailable = e => { if (e.data.size) chunks.push(e.data); };
   mr.onstop = () => {
     const r = rec; clearInterval(r.timer); src.disconnect();
     stream.getAudioTracks().forEach(t => { t.enabled = false; });
     rec = null; setRecUI(id, false);
-    if (!r.cancel && chunks.length) setBlob(id, new Blob(chunks, { type: mr.mimeType || 'audio/webm' }));
+    let pcmData = null; try { pcmData = pcm ? pcm.stop() : null; } catch (e) { }
+    if (!r.cancel && chunks.length) setBlob(id, new Blob(chunks, { type: mr.mimeType || 'audio/webm' }), pcmData);
   };
   mr.start(); setRecUI(id, true);
   const live = $('#slot-' + id + ' .live'), btn = $('#slot-' + id + ' [data-act="rec"] .lbl');
@@ -1283,6 +1287,35 @@ async function startRec(id) {
     } else if (!rec.hist.length) live.innerHTML = '<span class="muted">Escuchando…</span>';
     if (s >= sl.max) rec.mr.stop();
   }, 110);
+}
+/* Captura de audio SIN comprimir (PCM) para medir el timbre: MediaRecorder usa Opus y altera el espectro.
+   AudioWorklet cargado desde un Blob; si el navegador no lo tiene, ScriptProcessor. Solo se usa en las notas cómodas. */
+let pcmWorkletOk = false;
+async function pcmStart(src) {
+  const chunks = []; let node, closed = false;
+  try {
+    if (!(actx.audioWorklet && window.AudioWorkletNode)) throw new Error('sin worklet');
+    if (!pcmWorkletOk) {
+      const url = URL.createObjectURL(new Blob(["class P extends AudioWorkletProcessor{process(i){const c=i[0]&&i[0][0];if(c)this.port.postMessage(c.slice(0));return true}}registerProcessor('tph-pcm',P)"], { type: 'text/javascript' }));
+      try { await actx.audioWorklet.addModule(url); pcmWorkletOk = true; } finally { URL.revokeObjectURL(url); }
+    }
+    node = new AudioWorkletNode(actx, 'tph-pcm', { numberOfInputs: 1, numberOfOutputs: 1, channelCount: 1 });
+    node.port.onmessage = e => { if (!closed) chunks.push(e.data); };
+  } catch (e) {
+    if (!actx.createScriptProcessor) return null;
+    node = actx.createScriptProcessor(4096, 1, 1);
+    node.onaudioprocess = ev => { if (!closed) chunks.push(ev.inputBuffer.getChannelData(0).slice(0)); };
+  }
+  const sink = actx.createGain(); sink.gain.value = 0;   // sin salida audible: solo mantiene el nodo activo
+  src.connect(node); node.connect(sink); sink.connect(actx.destination);
+  return {
+    stop() {
+      closed = true;
+      try { src.disconnect(node); } catch (e) { } try { node.disconnect(); } catch (e) { } try { sink.disconnect(); } catch (e) { }
+      let n = 0; chunks.forEach(c => { n += c.length; }); const x = new Float32Array(n); let o = 0; chunks.forEach(c => { x.set(c, o); o += c.length; });
+      return n ? { x, sr: actx.sampleRate } : null;
+    }
+  };
 }
 function cancelRec() { if (rec) { rec.cancel = true; rec.mr.stop(); } }
 
@@ -1376,7 +1409,7 @@ document.addEventListener('click', e => { $$('.pp-menu').forEach(m => { if (!m.p
 
 /* ---- 7. Entradas: lectura, historial y resultado de cada nota ---- */
 async function decodeOnly(blob, maxSec) { return decode(blob, maxSec); }
-async function setBlob(id, blob) {
+async function setBlob(id, blob, pcm) {
   const st = S[id], sl = SLOTS.find(s => s.id === id);
   const take = { blob, url: URL.createObjectURL(blob), busy: true, pct: 0, res: null, err: null, n: (st.last = (st.last || 0) + 1) };
   st.takes.push(take); st.cur = st.takes.length - 1;
@@ -1394,6 +1427,7 @@ async function setBlob(id, blob) {
       take.res = await measureNote(x, sr, sl.kind, { yield: yieldFn });
       if (take.res && take.res.m0only) { take.err = 'Solo se detectó vocal fry (M0, por debajo de Do2 ≈ 65 Hz). Eso se anota aparte y no cuenta como nota grave: sube un poco y sostén una nota con sonido claro por al menos 1 segundo.'; take.res = null; }
       else if (!take.res) take.err = 'No se detectó una nota clara. Sostén una vocal («a») con volumen constante, sin ruido de fondo.';
+      else if (pcm && sl.kind === 'comf') { try { take.timbre = VozTimbre.analizar(pcm.x, pcm.sr, take.res.midi, { genero: 'M' }); } catch (e) { take.timbre = null; } }   // el género se aplica al leerlo (timbreOf)
     }
   } catch (e) { take.err = 'No se pudo leer este archivo. Prueba con otro audio o video (m4a, mp3, wav, webm, mp4 u ogg).'; }
   take.busy = false; renderSlot(id); updateGroups();
@@ -1433,11 +1467,21 @@ function renderSlot(id) {
 }
 
 /* ---- 8. Grupos plegables: al completar uno aparece «Listo», se cierra y baja al siguiente ---- */
+function timbreOf() {   // mejor medición de timbre entre las dos notas cómodas (prefiere la grave); el SFcf solo cuenta en voces masculinas
+  const c = ['comfLow', 'comfHigh'].map(id => curT(id)).filter(t => t && t.timbre).map(t => t.timbre);
+  if (!c.length) return null;
+  const pick = c.find(t => t.fiab.formantes > 0) || c.find(t => t.valido) || c[0], m = sex && sex.id === 'masculino';
+  const r = Object.assign({}, pick, { fiab: Object.assign({}, pick.fiab) });
+  if (!m) { r.sfcf = null; r.fiab.sfcf = 0; }
+  r.valido = r.fiab.formantes > 0 || r.fiab.sfcf > 0 || r.fiab.alpha > 0;
+  return r;
+}
 function collect() {
   if (replay) return replay.R;   // «Ver resultado de otra persona»: usa los datos de la hoja, no las grabaciones
   const g = id => (resOf(id) ? resOf(id).midi : null);
   const R = { abs: { low: g('absLow'), high: g('absHigh'), m0: (resOf('absLow') || {}).m0 || null }, comf: { low: g('comfLow'), high: g('comfHigh') }, speech: resOf('speech') };
   R.count = [R.abs.low, R.abs.high, R.comf.low, R.comf.high, R.speech].filter(v => v != null).length;
+  R.timbre = timbreOf();   // informativo: el clasificador no lo usa todavía (w_timbre = 0)
   const ps = PG.takes.some(t => t && t.res) ? passaggioSummary(PG.takes.map(t => t && t.res)) : null;   // sirenas del Paso 4: entran al clasificador con su peso
   if (ps) R.passaggio = { midi: ps.exact, conf: ps.peso };
   return R;
@@ -1647,6 +1691,20 @@ function wider(R) {   // estimación solo con el rango cómodo (supone un promed
   return Math.max(0.05, Math.min(0.95, normCdf(Math.round(R.comf.high) - Math.round(R.comf.low), 21, 6)));
 }
 let mapAll = false, mapSel = null, mapPrevSel = null, lastR = null, lastT = null;
+const TIMBRE_MOTIVO = { 'sin-audio-sin-comprimir': 'no hubo audio sin comprimir', saturado: 'la grabación saturó (muy fuerte)', 'sin-tramo-estable': 'no hubo un tramo estable', 'tramo-corto': 'el tramo estable fue muy corto', 'muy-bajo': 'el volumen fue muy bajo', 'f0-alta-para-lpc': 'la nota es muy aguda para medir formantes', 'pocos-tramos-lpc': 'los formantes no fueron claros', 'formantes-incoherentes': 'los formantes no fueron coherentes' };
+function timbreHtml(R) {   // solo si grabaste con el micrófono de la página; es informativo
+  const T = R.timbre; if (!T || replay) return '';
+  const hzr = v => Math.round(v / 10) * 10 + ' Hz', m = sex && sex.id === 'masculino';
+  if (!T.valido) {
+    const why = T.motivos.map(k => TIMBRE_MOTIVO[k]).filter(Boolean)[0];
+    return `<div class="sec"><h2>Timbre</h2><p class="muted small">No se pudo medir el timbre${why ? ': ' + why : ''}. No afecta tu resultado.</p></div>`;
+  }
+  const L = [];
+  if (T.fiab.formantes > 0) L.push(`<p class="lead2">Formantes de tu «a»: <b>F1 ${hzr(T.f1)}</b> · <b>F2 ${hzr(T.f2)}</b>${T.f3 != null ? ` · <b>F3 ${hzr(T.f3)}</b>` : ''}</p>`);
+  if (m) L.push(T.fiab.sfcf > 0 ? `<p class="lead2">Formante del cantante: <b>cerca de ${hzr(T.sfcf)}</b></p>` : `<p class="muted small">No se distinguió un formante del cantante claro en tu grabación.</p>`);
+  if (T.fiab.alpha > 0) L.push(`<p class="lead2">Brillo (pendiente espectral): <b>${T.alpha.toFixed(1)} dB</b></p><p class="fine">Más alto = voz más brillante; más bajo = más oscura.</p>`);
+  return `<div class="sec"><h2>Timbre</h2>${L.join('')}<p class="muted small">Medido con tu micrófono sobre la nota cómoda. Es informativo: todavía no cambia tu tipo de voz porque aún no hay valores de referencia calibrados.</p></div>`;
+}
 function renderResults() { renderResults0(); }
 function renderResults0() {
   const R = collect(), box = $('#res'); if (!R.count) { box.innerHTML = ''; return; }
@@ -1695,6 +1753,7 @@ function renderResults0() {
       <p class="muted small">«Cómodo» es el porcentaje de tu rango cómodo que queda dentro del rango estándar del tipo;<br>«Hablado», qué tan cerca cae tu voz al leer de lo típico del tipo.<br>«Afinidad» combina dónde queda tu tesitura cómoda (sin dejar que el falsete la arrastre), tu voz hablada y, si la hay, tu passaggio.</p>
       <div class="chart-scroll"><table class="rtab"><thead><tr><th>Tipo</th><th>Cómodo</th><th>Hablado</th><th>Afinidad</th></tr></thead><tbody>${C.rank.map((r, i) => `<tr class="${i === 0 ? 'best' : ''}"><th>${r.T.es}</th><td>${cell(r.cont)}</td><td>${cell(r.sp)}</td><td>${P(r.total)}%</td></tr>`).join('')}</tbody></table></div></div>
     <div class="sec">${subHtml}</div>
+    ${timbreHtml(R)}
     ${pgFinalHtml()}
     <div class="sec"><h2>Cuadro de referencia</h2>
       <p class="muted small">Taxonomía Fach con los registros por mecanismo laríngeo (M0–M3). Cada fila es un tipo de voz: arriba las zonas de sus passaggi (1.º y 2.º) y abajo sus registros, sobre el teclado.</p>
@@ -1884,6 +1943,12 @@ async function enviarResultado(registro) {
   try { await postRegistro(registro); enviarPendientes(); }
   catch (e) { pendGuardar(pendLeer().concat([registro])); }
 }
+function timbreCampos(T) {   // columnas de timbre: vacías si no se midió o no es fiable
+  const r1 = v => v == null || !isFinite(v) ? null : Math.round(v * 10) / 10;
+  if (!T) return { timbreValido: '' };
+  return { timbreValido: T.valido ? 'sí' : 'no', timbreF1: T.fiab.formantes > 0 ? Math.round(T.f1) : null, timbreF2: T.fiab.formantes > 0 ? Math.round(T.f2) : null, timbreF3: T.fiab.formantes > 0 && T.f3 != null ? Math.round(T.f3) : null,
+    sfcf: T.fiab.sfcf > 0 ? Math.round(T.sfcf) : null, alphaRatio: r1(T.fiab.alpha > 0 ? T.alpha : null) };
+}
 function guardarResultado() {
   if (replay || !todasListas()) return;   // ver el resultado de otra persona nunca se registra
   if (SLOTS.some(sl => (curT(sl.id) || {}).demo)) return;   // la voz de ejemplo no se registra
@@ -1897,7 +1962,7 @@ function guardarResultado() {
     bajaComoda: n(R.comf.low), altaComoda: n(R.comf.high), bajaAbsoluta: n(R.abs.low), altaAbsoluta: n(R.abs.high),
     bajoHablado: n(sp.p10), promedioHablado: n(sp.avg), altoHablado: n(sp.p90),
     versionMotor: VOZ_DATOS.VERSION_MOTOR, afinidad: Math.round(C0.afinidad * 100), secundaria: C0.secundaria ? C0.secundaria.T.es : '',
-    frontera: C0.frontera ? C0.frontera.etiqueta : '', extM2: C0.extM2 != null ? n(C0.extM2) : null, zonaM0: R.abs.m0 ? n(R.abs.m0.midi) : null, medianaHablada: n(sp.med != null ? sp.med : sp.avg)
+    frontera: C0.frontera ? C0.frontera.etiqueta : '', extM2: C0.extM2 != null ? n(C0.extM2) : null, zonaM0: R.abs.m0 ? n(R.abs.m0.midi) : null, medianaHablada: n(sp.med != null ? sp.med : sp.avg), ...timbreCampos(R.timbre)
   };   // las notas van como número MIDI (60 = Do4); el servidor las convierte a nombre de nota
   const firma = JSON.stringify(datos);
   if (RESULTADOS.some(r => r.firma === firma)) return;   // volver a ver el mismo resultado no lo duplica
@@ -2363,6 +2428,7 @@ async function pgExportDebug() {   // JSON de depuración: curvas, marcadores y 
     notas: { comoda: R.comf, absoluta: { low: R.abs.low, high: R.abs.high, m0: R.abs.m0 }, hablada: R.speech ? { avg: r2(R.speech.avg), med: R.speech.med != null ? r2(R.speech.med) : null, p10: r2(R.speech.p10), p90: r2(R.speech.p90) } : null },
     clasificacion: { tipo: C.best.es, afinidad: r2(C.afinidad), secundaria: C.secundaria ? { tipo: C.secundaria.T.es, afinidad: r2(C.secundaria.afinidad) } : null, frontera: C.frontera ? C.frontera.etiqueta : null, rama: C.rama,
       partes: C.rank.slice(0, 3).map(x => ({ tipo: x.id, afinidad: r2(x.total), ll: r2(x.ll), partes: Object.fromEntries(Object.entries(x.parts).map(([k, v]) => [k, { peso: r2(v.w), z: r2(v.z) }])) })) },
+    timbre: R.timbre ? { valido: R.timbre.valido, motivos: R.timbre.motivos, f0: r2(R.timbre.f0), f1: R.timbre.f1, f2: R.timbre.f2, f3: R.timbre.f3, sfcf: R.timbre.sfcf, sfcfProm: R.timbre.sfcfProm != null ? r2(R.timbre.sfcfProm) : null, alpha: R.timbre.alpha != null ? r2(R.timbre.alpha) : null, segundos: R.timbre.segundos, tramos: R.timbre.tramos, fiab: R.timbre.fiab, parametros: VozTimbre.PARAMS } : null,
     resumenPassaggio: passaggioSummary(PG.takes.map(t => t && t.res)),
     sirenas: PG.takes.map((t, i) => {
       if (!t || !t.res) return null; const r = t.res, d = r.debug;

@@ -91,5 +91,5 @@
     'Los rangos por tipo, los passaggi y los parámetros del clasificador son orientativos. ' +
     'Este resultado es una sugerencia, no un diagnóstico; para una clasificación definitiva consulta a un profesor de canto.';
 
-  return { TIPOS, REF: TIPOS, REG_ES, SPEECH_REF, HABLA, REFERENCIAS, AVISO_METODOLOGICO, VERSION_MOTOR: 'm1.2-v4.50' };
+  return { TIPOS, REF: TIPOS, REG_ES, SPEECH_REF, HABLA, REFERENCIAS, AVISO_METODOLOGICO, VERSION_MOTOR: 'm1.3-v4.54' };
 });
