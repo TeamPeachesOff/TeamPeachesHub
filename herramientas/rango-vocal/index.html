@@ -378,8 +378,8 @@ html,body{overflow-x:clip}
   });
 })();
 </script>
-<script src="voz-datos.js?v=1"></script>
-<script src="voz-motor.js?v=1"></script>
+<script src="voz-datos.js?v=2"></script>
+<script src="voz-motor.js?v=2"></script>
 <script>
 /*CORE-START*/
 const NOTE_ES = ['Do','Do♯','Re','Re♯','Mi','Fa','Fa♯','Sol','Sol♯','La','La♯','Si'];
@@ -400,7 +400,8 @@ const pct = (a, p) => {
 // de su tono más grave (regla de Praat). En cada cuadro se recogen candidatos YIN de todas las bandas y un
 // Viterbi (como Praat y pYIN) elige el camino más coherente entre cuadros. Después se afina el periodo con
 // interpolación fraccional y, en notas sostenidas, se verifica la octava con el espectro.
-const FMIN_ABS = 16, FMAX_ABS = 9000;          // Do0 ≈ 16.35 Hz hasta ~Do9
+const FMIN_ABS = 30, FMAX_ABS = 4500;          // Do1 (32.7 Hz) hasta Do8 (4186 Hz), con margen; antes bajaba a Do0 y daba subarmónicos de 24–37 Hz
+const M0_HZ = 65.4, M0_MIDI = 36 - 0.1, STAB_SEC = 0.8;   // bajo Do2 (~65 Hz) = zona M0 (fry), solo informativa · estabilidad mínima de una nota extrema/cómoda
 const BANDS = [
   { id: 'low',  lo: 16,   hi: 110,  sr: 2900 },
   { id: 'mid',  lo: 70,   hi: 700,  sr: 11000 },
@@ -584,21 +585,28 @@ function estimateNote(frames) {
   }
   const grp = core.slice(bi, bi + best), mid = grp[Math.floor(grp.length / 2)];
   const sel = F.filter((f, i) => Math.abs(v[i] - mid) <= 0.7);
+  if (!sel.length || !runOk(sel, frames, STAB_SEC)) return null;   // sin ≥ 0.8 s seguidos (±50 cents) no se acepta
   return { midi: mid, frames: v.length, stability: best / core.length, conf: sel.reduce((a, f) => a + f.conf, 0) / sel.length,
     tS: Math.min(...sel.map(f => f.t)), tE: Math.max(...sel.map(f => f.t)) };
 }
+// ¿Hay un tramo continuo de al menos `sec` segundos? (tolera un cuadro perdido entre dos buenos)
+function runOk(sel, frames, sec) {
+  const hop = frames.length > 1 ? frames[1].t - frames[0].t : 0.02; let s0 = sel[0].t, prev = sel[0].t;
+  for (const f of sel) { if (f.t - prev > 2.01 * hop) s0 = f.t; prev = f.t; if (prev - s0 + hop >= sec) return true; }
+  return false;
+}
 
-// Nota extrema (absoluta): la más aguda (dir>0) o más grave (dir<0) que se sostiene al menos 0.2 s.
+// Nota extrema (absoluta): la más aguda (dir>0) o más grave (dir<0) que se sostiene al menos 0.8 s (±50 cents) con buena claridad.
 // Ignora picos sueltos y errores de un solo cuadro, y no promedia con el resto de la grabación.
-function estimateExtreme(frames, dir) {
+function estimateExtreme(frames, dir, opt = {}) {
   if (frames.length < 6) return null;
-  const hop = frames[1].t - frames[0].t, K = Math.max(5, Math.round(0.2 / hop));
-  const m = frames.map(f => (f.f0 > 0 && f.conf >= 0.5 ? hzToMidi(f.f0) : NaN));
+  const hop = frames[1].t - frames[0].t, K = Math.max(5, Math.round((opt.sec || STAB_SEC) / hop));
+  const m = frames.map(f => (f.f0 > 0 && f.conf >= (opt.conf != null ? opt.conf : 0.6) ? hzToMidi(f.f0) : NaN));
   const wins = [];
   for (let i = 0; i + K <= m.length; i++) {
     let mn = 1e9, mx = -1e9, ok = true;
     for (let j = i; j < i + K; j++) { const v = m[j]; if (v !== v) { ok = false; break; } if (v < mn) mn = v; if (v > mx) mx = v; }
-    if (ok && mx - mn <= 1.0) wins.push({ i, med: median(m.slice(i, i + K)) });
+    if (ok && mx - mn <= 1.0) { const med = median(m.slice(i, i + K)); if ((opt.minMidi == null || med >= opt.minMidi) && (opt.maxMidi == null || med < opt.maxMidi)) wins.push({ i, med }); }
   }
   if (!wins.length) return null;
   const ext = dir > 0 ? Math.max(...wins.map(w => w.med)) : Math.min(...wins.map(w => w.med));
@@ -637,17 +645,22 @@ function octaveCheck(x, sr, r) {
 // Medición de una nota de los audios 1 a 4. kind: 'comf' | 'high' | 'low'.
 async function measureNote(x, sr, kind, opts = {}) {
   const frames = await analyzePitch(x, sr, opts);
-  let r = kind === 'high' ? estimateExtreme(frames, 1) : kind === 'low' ? estimateExtreme(frames, -1) : null;
-  if (!r) r = estimateNote(frames);
-  if (!r) return null;
+  // Zona M0 / vocal fry (< ~65 Hz): se anota como dato informativo, nunca como nota grave modal.
+  let m0 = null;
+  if (kind !== 'high') { const z = estimateExtreme(frames.map(f => (f.f0 > 0 && f.f0 < M0_HZ ? f : { ...f, f0: 0 })), -1, { sec: 0.2, conf: 0 }); if (z) m0 = { midi: z.midi, seconds: z.tE - z.tS }; }
+  const modal = frames.map(f => (f.f0 > 0 && f.f0 < M0_HZ ? { ...f, f0: 0, conf: 0 } : f));
+  let r = kind === 'high' ? estimateExtreme(modal, 1) : kind === 'low' ? estimateExtreme(modal, -1, { minMidi: M0_MIDI }) : null;
+  if (!r) r = estimateNote(modal);
+  if (!r) return m0 ? { m0only: true, m0 } : null;
   const fix = octaveCheck(highpass(x, sr, 9), sr, r);
-  if (fix) { r.midi += fix; r.octaveFixed = fix; }
+  if (fix && r.midi + fix >= M0_MIDI) { r.midi += fix; r.octaveFixed = fix; }
+  if (m0) r.m0 = m0;
   return r;
 }
 
 // Voz hablada: promedio y percentiles 10–90 = tesitura habitual.
 function speechStats(frames) {
-  let v = frames.filter(f => f.f0 >= 50 && f.f0 <= 700 && f.conf >= 0.5).map(f => hzToMidi(f.f0));
+  let v = frames.filter(f => f.f0 >= M0_HZ && f.f0 <= 700 && f.conf >= 0.5).map(f => hzToMidi(f.f0));
   if (v.length < 25) return null;
   const m0 = pct(v, 0.5);
   v = v.filter(x => Math.abs(x - m0) <= 10);
@@ -1301,7 +1314,8 @@ async function setBlob(id, blob) {
       if (!take.res) take.err = 'No se detectó voz suficiente. Habla más cerca del micrófono y evita el ruido de fondo.';
     } else {
       take.res = await measureNote(x, sr, sl.kind, { yield: yieldFn });
-      if (!take.res) take.err = 'No se detectó una nota clara. Sostén una vocal («a») con volumen constante, sin ruido de fondo.';
+      if (take.res && take.res.m0only) { take.err = 'Solo se detectó vocal fry (M0, por debajo de Do2 ≈ 65 Hz). Eso se anota aparte y no cuenta como nota grave: sube un poco y sostén una nota con sonido claro por al menos 1 segundo.'; take.res = null; }
+      else if (!take.res) take.err = 'No se detectó una nota clara. Sostén una vocal («a») con volumen constante, sin ruido de fondo.';
     }
   } catch (e) { take.err = 'No se pudo leer este archivo. Prueba con otro audio o video (m4a, mp3, wav, webm, mp4 u ogg).'; }
   take.busy = false; renderSlot(id); updateGroups();
@@ -1333,6 +1347,7 @@ function renderSlot(id) {
   const n = noteInfo(r.midi), c = n.cents;
   let extra = '';
   if (r.octaveFixed) extra += `<p class="warn">Corregí una octava: el espectro mostraba que el tono real es más ${r.octaveFixed > 0 ? 'agudo' : 'grave'} que el detectado al principio. Si no coincide con lo que cantaste, repite el audio.</p>`;
+  if (r.m0) extra += `<p class="muted small">Zona M0 / vocal fry detectada hasta ${nt(r.m0.midi)} (${hzS(r.m0.midi)}): es informativa y no cuenta como tu nota grave.</p>`;
   if (r.conf < 0.6) extra += `<p class="warn">Señal poco clara. Acércate al micrófono, evita el ruido de fondo y sostén una vocal estable.</p>`;
   out.innerHTML = `<div class="note">${ntBig(r.midi)}</div>
     <div class="q1">${qual('claridad', r.conf)} <i>·</i> ${qual('estabilidad', r.stability)} <i>·</i> <span class="q2"><button type="button" class="tip" data-tip="hz">${hzS(r.midi)}</button> <i>·</i> <button type="button" class="tip" data-tip="cents">${c > 0 ? '+' : c < 0 ? '−' : ''}${Math.abs(c)} cents</button></span></div>
@@ -1343,7 +1358,7 @@ function renderSlot(id) {
 function collect() {
   if (replay) return replay.R;   // «Ver resultado de otra persona»: usa los datos de la hoja, no las grabaciones
   const g = id => (resOf(id) ? resOf(id).midi : null);
-  const R = { abs: { low: g('absLow'), high: g('absHigh') }, comf: { low: g('comfLow'), high: g('comfHigh') }, speech: resOf('speech') };
+  const R = { abs: { low: g('absLow'), high: g('absHigh'), m0: (resOf('absLow') || {}).m0 || null }, comf: { low: g('comfLow'), high: g('comfHigh') }, speech: resOf('speech') };
   R.count = [R.abs.low, R.abs.high, R.comf.low, R.comf.high, R.speech].filter(v => v != null).length;
   return R;
 }
@@ -1578,7 +1593,7 @@ function renderResults0() {
     <div class="vname">${C.frontera ? C.frontera.etiqueta : T.es}</div>
     ${C.sub ? `<div class="vsub">${C.sub[0]} <span class="muted small">(tendencia)</span></div>` : ''}
     <p class="lead2">${C.frontera ? 'Zona fronteriza: ' : 'Afinidad con '}<b>${T.es} ${P(C.afinidad)}%</b>${C.secundaria ? ` · Tendencia secundaria: ${C.secundaria.T.es} ${P(C.secundaria.afinidad)}%` : ''}</p>
-    ${(C.notas || []).map(n => `<p class="lead2" style="margin-top:10px">${n.texto.replace('hasta ' + n.midi, 'hasta ' + nt(n.midi))}</p>`).join('')}
+    ${(C.notas || []).map(n => `<p class="lead2" style="margin-top:10px">${n.texto.replace('{n}', nt(n.midi))}</p>`).join('')}
     ${(C.sugerencias || []).map(t => `<p class="warn">${t}</p>`).join('')}
     ${wd != null ? `<p class="lead2">Tu rango cómodo es más amplio que el de aprox. <b>${Math.round(wd * 100)}%</b> de la gente.</p><p class="fine">Es una estimación orientativa (promedio supuesto: 1.75 octavas), no un estudio.</p>` : ''}
     ${REG_ES[spReg] ? `<p class="lead2" style="margin-top:10px">Tu voz hablada cae en <b>${REG_ES[spReg]}</b>.</p>` : ''}
@@ -1783,15 +1798,17 @@ async function enviarResultado(registro) {
 function guardarResultado() {
   if (replay || !todasListas()) return;   // ver el resultado de otra persona nunca se registra
   if (SLOTS.some(sl => (curT(sl.id) || {}).demo)) return;   // la voz de ejemplo no se registra
-  const R = collect(), n = v => Math.round(v * 100) / 100;
+  const R = collect(), n = v => Math.round(v * 100) / 100, C0 = classify(R, sexTypes());
   const sp = R.speech;
   if ([R.comf.low, R.comf.high, R.abs.low, R.abs.high, sp && sp.avg, sp && sp.p10, sp && sp.p90].some(v => v == null || !isFinite(v))) return;
   const pas = passaggioResult();   // Paso 4: opcional (null si no se hizo o no se detectó); el servidor lo deja en blanco
   const datos = {
-    nombre: userName, genero: sex ? sex.label : '', tesitura: classify(R, sexTypes()).best.es,   // el resultado final (Soprano, Tenor…)
+    nombre: userName, genero: sex ? sex.label : '', tesitura: C0.best.es,   // el resultado final (Soprano, Tenor…)
     passaggio: pas ? pas.midi : null,
     bajaComoda: n(R.comf.low), altaComoda: n(R.comf.high), bajaAbsoluta: n(R.abs.low), altaAbsoluta: n(R.abs.high),
-    bajoHablado: n(sp.p10), promedioHablado: n(sp.avg), altoHablado: n(sp.p90)
+    bajoHablado: n(sp.p10), promedioHablado: n(sp.avg), altoHablado: n(sp.p90),
+    versionMotor: VOZ_DATOS.VERSION_MOTOR, afinidad: Math.round(C0.afinidad * 100), secundaria: C0.secundaria ? C0.secundaria.T.es : '',
+    frontera: C0.frontera ? C0.frontera.etiqueta : '', extM2: C0.extM2 != null ? n(C0.extM2) : null, zonaM0: R.abs.m0 ? n(R.abs.m0.midi) : null, medianaHablada: n(sp.med != null ? sp.med : sp.avg)
   };   // las notas van como número MIDI (60 = Do4); el servidor las convierte a nombre de nota
   const firma = JSON.stringify(datos);
   if (RESULTADOS.some(r => r.firma === firma)) return;   // volver a ver el mismo resultado no lo duplica

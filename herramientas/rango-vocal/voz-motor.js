@@ -66,7 +66,8 @@
       else effHigh = high > 72 ? 72 + 0.25 * (high - 72) : high;
     }
     const m2Ext = masc && comfHigh != null && comfHigh > 74 ? comfHigh : null;   // pasado D5: se informa, no clasifica
-    if (m2Ext != null) notas.push({ k: 'm2', texto: `Extensión M2 / Falsete cómoda hasta ${m2Ext}: se reporta aparte y no cuenta como tesitura de pecho.`, midi: m2Ext });
+    if (m2Ext != null) notas.push({ k: 'm2', texto: 'Extensión M2 / Falsete cómoda hasta {n}: se reporta aparte y no cuenta como tesitura de pecho.', midi: m2Ext });
+    if (R.abs && R.abs.m0 && nn(R.abs.m0.midi)) notas.push({ k: 'm0', texto: 'Zona M0 / vocal fry: llegaste hasta {n}. Es informativa; no cuenta como tu nota grave ni cambia tu tipo de voz.', midi: R.abs.m0.midi });
     const capContratenor = masc && comfHigh != null && comfHigh >= 77;
     if (capContratenor) notas.push({ k: 'contratenor', texto: 'Capacidad de Contratenor (M2): tu voz cómoda llega a la zona de soprano en falsete. No cambia tu tipo de voz de pecho.' });
     const delta = low != null && spMed != null ? spMed - low : null;
