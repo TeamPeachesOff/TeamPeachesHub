@@ -292,7 +292,7 @@ html,body{overflow-x:clip}
       <button class="btn link" id="btnClear" type="button">Borrar todo</button>
     </div>
     <div id="replayBox" class="replay" hidden>
-      <label class="muted small" for="replaySel">Resultados guardados (en el orden de la hoja)</label>
+      <label class="muted small" for="replaySel">Resultados guardados (los más recientes primero)</label>
       <div class="replayrow"><select id="replaySel" disabled><option>Cargando…</option></select>
       <button class="btn primary" id="replayGo" type="button" disabled>Ver resultado</button></div>
       <p class="muted small" id="replayMsg"></p>
@@ -1585,17 +1585,23 @@ function campo(row, tests) {   // primer encabezado que cumple todas las pruebas
 }
 const LOW = /baj|grave/, HIGH = /alt|agud/;
 function filaAResultado(row) {
-  const nm = campo(row, [/nombre/]), gen = campo(row, [/genero|sexo/]), tes = campo(row, [/tesitura|resultado|tipo/]);
-  const midi = (a, b) => notaAMidi(campo(row, [a, b]));
+  // Cada dato se busca por su encabezado (sin importar orden, mayúsculas ni tildes); sirve para filas viejas y nuevas de la hoja.
+  const pick = (...tests) => { for (const t of tests) { const v = campo(row, t); if (v !== null && v !== '') return v; } return null; };
+  const nota = (...tests) => notaAMidi(pick(...tests));
+  const nm = pick([/^nombre/]), gen = pick([/^(genero|sexo)/]), tes = pick([/^tesitura/], [/resultado/]);
+  const prom = nota([/^promedio/], [/prom/, /habl/]), mdn = nota([/^mediana/, /habl/]);   // «Promedio» (filas viejas) o «Mediana hablada» (filas nuevas)
   const R = {
-    comf: { low: midi(LOW, /comod/), high: midi(HIGH, /comod/) },
-    abs: { low: midi(LOW, /absol/), high: midi(HIGH, /absol/) },
-    speech: { avg: midi(/prom|medi/, /habl/), p10: midi(LOW, /habl/), p90: midi(HIGH, /habl/), n: 100, seconds: 15 }
+    comf: { low: nota([LOW, /comod/]), high: nota([HIGH, /comod/]) },
+    abs: { low: nota([LOW, /absol/]), high: nota([HIGH, /absol/]) },
+    speech: { avg: prom != null ? prom : mdn, med: mdn != null ? mdn : prom, p10: nota([LOW, /habl/]), p90: nota([HIGH, /habl/]), n: 100, seconds: 15 }
   };
   const need = [R.comf.low, R.comf.high, R.abs.low, R.abs.high, R.speech.avg];
   if (need.some(v => v == null || !isFinite(v))) return null;
   if (R.speech.p10 == null) R.speech.p10 = R.speech.avg - 2;
   if (R.speech.p90 == null) R.speech.p90 = R.speech.avg + 2;
+  const m0 = nota([/zonam0/]); if (m0 != null) R.abs.m0 = { midi: m0 };                 // vocal fry anotado (informativo)
+  const pas = nota([/^passaggio/]), pc = String(pick([/confianza/, /passaggio/]) || '').toLowerCase();
+  if (pas != null) R.passaggio = { midi: pas, conf: { alta: 1, media: 0.7, baja: 0.35 }[pc] || 0.6 };   // mismo peso que tuvo en la prueba
   R.count = 5;
   return { R, nombre: nm ? String(nm) : '', genero: gen ? String(gen) : '', tesitura: tes ? String(tes) : '' };
 }
@@ -1604,7 +1610,8 @@ async function cargarReplay() {
   const sel = $('#replaySel'), go1 = $('#replayGo'), msg = $('#replayMsg');
   sel.disabled = go1.disabled = true; sel.innerHTML = '<option>Cargando…</option>'; msg.textContent = '';
   try {
-    const r = await fetch(APPS_SCRIPT_URL, { method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' }, body: JSON.stringify({ action: 'listarRangosVocales' }) });
+    let token = ''; try { token = localStorage.getItem('tph_session_token') || ''; } catch (e) { }   // la lista es SOLO para staff: hace falta la sesión del Hub
+    const r = await fetch(APPS_SCRIPT_URL, { method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' }, body: JSON.stringify({ action: 'listarRangosVocales', token }) });
     const j = await r.json();
     if (!j || !j.ok || !Array.isArray(j.filas)) throw new Error((j && j.error) || 'sin lista');
     replayFilas = j.filas.map(filaAResultado);
@@ -1613,7 +1620,7 @@ async function cargarReplay() {
     sel.innerHTML = opts; sel.disabled = go1.disabled = false;
   } catch (e) {
     sel.innerHTML = '<option>No disponible</option>';
-    msg.textContent = 'No se pudo cargar la lista (' + (e.message || e) + '). Falta agregar la acción «listarRangosVocales» al code.gs.';
+    msg.textContent = 'No se pudo cargar la lista (' + (e.message || e) + '). Esta lista es solo para staff: inicia sesión en el Hub y abre la herramienta desde ahí. Si ya lo hiciste, revisa que el code.gs tenga la acción «listarRangosVocales».';
   }
 }
 const esc = t => String(t).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
