@@ -157,6 +157,12 @@ h2{font:700 22px/1.2 var(--f-display);margin:0 0 6px}h3{font:600 15px/1.3 var(--
 .rtab{border-collapse:collapse;width:100%;margin-top:12px;font-size:14px;font-variant-numeric:tabular-nums}.rtab th,.rtab td{padding:8px 10px 8px 0;border-bottom:1px solid var(--line);text-align:left;white-space:nowrap}
 .rtab thead th{font:600 11px var(--f-body);letter-spacing:.1em;text-transform:uppercase;color:var(--muted)}.rtab tr.best td,.rtab tr.best th{font-weight:700;color:var(--accent)}
 .bar{display:inline-block;width:70px;height:4px;background:var(--line);vertical-align:middle;margin-right:8px}.bar i{display:block;height:100%;background:currentColor}
+.wm-top{display:flex;align-items:baseline;gap:12px}.wm-time{font:700 40px/1 var(--f-display);color:var(--accent)}
+.wm-bar{display:flex;gap:6px;margin:12px 0 16px}.wm-bar b{flex:1;height:6px;border-radius:3px;background:var(--line);overflow:hidden;display:block}.wm-bar b i{display:block;height:100%;width:0;background:var(--accent)}
+.wm-stage{display:flex;gap:18px;align-items:stretch}.wm-track{position:relative;width:16px;min-height:132px;border-radius:8px;background:var(--accent-soft);border:1px solid var(--line);flex:none}
+.wm-dot{position:absolute;left:50%;width:22px;height:22px;margin:-11px 0 0 -11px;border-radius:50%;background:var(--accent);box-shadow:0 0 14px rgba(255,143,177,.55);transition:top .4s ease}
+.wm-txt h3{margin:0 0 6px}.wm-txt .hint{margin:0 0 8px}
+@media (prefers-reduced-motion:reduce){.wm-track{display:none}}
 .refs{margin:10px 0 0;padding-left:20px}.refs li{margin:0 0 6px}.subs{list-style:none;margin:12px 0 0;padding:0}.subs li{padding:10px 0 10px 14px;border-bottom:1px solid var(--line);border-left:3px solid transparent}.subs li.pick{border-left-color:var(--accent)}.subs strong{font:600 17px var(--f-display)}
 .pill{font:600 11px var(--f-body);color:var(--accent);margin-left:10px;letter-spacing:.1em;text-transform:uppercase}
 .legend button{position:relative;border:0;border-radius:6px;background:none;color:inherit;font:inherit;padding:6px 8px;cursor:pointer}.legend button:hover{color:var(--ink)}.legend button[aria-pressed=true]{color:var(--ink);font-weight:600}.legend button::after{content:"";position:absolute;left:8px;right:8px;bottom:1px;height:2px;border-radius:2px;background:var(--accent);transform:scaleX(0);transform-origin:left}.legend button[aria-pressed=true]::after{transform:scaleX(1)}.legend{align-items:center}
@@ -1117,6 +1123,73 @@ GROUPS.forEach(g => {
   });
   $('#groups').appendChild(sec);
 });
+/* ---- Paso 0 · Calentamiento guiado (60 s, opcional). No graba nada: solo guía con tiempo, texto y un punto que sube y baja.
+   0:00–0:20 labios o «m» suave · 0:20–0:40 dos sirenas suaves en «u» · 0:40–1:00 escala corta descendente en «a». ---- */
+const WARM_PH = [
+  { title: 'Labios o «m»', text: 'Haz vibrar los labios como un motorcito (o canta una «m» con la boca cerrada) y deja que la voz suba y baje suave por tu zona cómoda.' },
+  { title: 'Dos sirenas en «u»', text: 'Desliza la voz de grave a agudo y de vuelta, en «u», con poquito volumen y sin empujar. Son 2 sirenas.' },
+  { title: 'Escala corta en «a»', text: 'Baja 5 notas, una por una, relajado y suave, empezando en un agudo cómodo.' }
+];
+const WARM = { state: 'idle', result: '', el: 0, last: 0, raf: 0, shown: {} };
+{
+  const sec = document.createElement('div'); sec.className = 'grp'; sec.id = 'grp-warm'; sec.setAttribute('data-open', ''); sec.setAttribute('data-ready', '');
+  sec.innerHTML = `<div class="ghead" role="button" tabindex="0" aria-expanded="true" data-act="gtoggle" data-g="warm"><span class="gno">0</span><span class="gt">Calentamiento</span><span class="hs">Opcional · 1 min</span><span class="car">${ICON.chev}</span></div>
+    <div class="gbody"><div class="gin"><div id="warmBox"></div></div></div>`;
+  $('#groups').prepend(sec);
+  const g1 = $('#grp-comf'); g1.removeAttribute('data-open'); g1.removeAttribute('data-ready'); g1.querySelector('.ghead').setAttribute('aria-expanded', 'false');   // «Cómodas» se abre al terminar o saltar el calentamiento
+}
+function warmHead() { const t = { completo: 'Completo', parcial: 'Parcial', saltado: 'Saltado' }[WARM.result]; $('#grp-warm .hs').textContent = t || 'Opcional · 1 min'; }
+function warmRender() {
+  const box = $('#warmBox');
+  if (WARM.state === 'run' || WARM.state === 'pause') {
+    box.innerHTML = `<div class="wm-top"><span class="wm-time" id="wmTime">1:00</span><span class="muted small" id="wmPh"></span></div>
+      <div class="wm-bar" aria-hidden="true"><b><i></i></b><b><i></i></b><b><i></i></b></div>
+      <div class="wm-stage"><div class="wm-track" aria-hidden="true"><i class="wm-dot" id="wmDot"></i></div>
+        <div class="wm-txt" aria-live="polite"><h3 id="wmTitle"></h3><p class="hint" id="wmText"></p><p class="muted small" id="wmSub"></p></div></div>
+      <div class="acts" style="margin-top:14px"><button class="btn" type="button" data-warm="pause">${WARM.state === 'pause' ? 'Seguir' : 'Pausar'}</button><button class="btn link" type="button" data-warm="stop">Saltar el resto</button></div>`;
+    WARM.shown = {}; warmUpdate(); return;
+  }
+  if (WARM.state === 'done' && WARM.result === 'completo') {
+    box.innerHTML = `<div class="note">¡Listo!</div><p class="hint" style="margin:8px 0 14px">Tu voz ya está despierta. Empieza la prueba con calma y sin empujar.</p>
+      <div class="acts"><button class="btn primary" type="button" data-warm="go">Empezar la prueba</button><button class="btn link" type="button" data-warm="start">Repetir calentamiento</button></div>`;
+    return;
+  }
+  box.innerHTML = `<p class="hint" style="margin-bottom:14px">Un minuto de calentamiento suave ayuda a que tus notas salgan más reales, sobre todo las agudas. Es opcional y no se graba nada.</p>
+    <div class="acts"><button class="btn primary" type="button" data-warm="start">Empezar calentamiento · 1 min</button></div>
+    <p style="margin-top:10px"><button class="btn link" type="button" data-warm="skip">Ya vengo vocalizado · Saltar</button></p>`;
+}
+function warmUpdate() {
+  const s = Math.min(60, WARM.el), p = Math.min(2, Math.floor(s / 20)), set = (id, v) => { const e = document.getElementById(id); if (e && WARM.shown[id] !== v) { WARM.shown[id] = v; e.textContent = v; } };
+  set('wmTime', fmtT(Math.max(0, Math.ceil(60 - s)))); set('wmPh', `Tramo ${p + 1} de 3`); set('wmTitle', WARM_PH[p].title); set('wmText', WARM_PH[p].text);
+  const l = s - p * 20, half = (l % 10) < 5;
+  set('wmSub', p === 0 ? (half ? 'Sube suave…' : 'Baja suave…') : p === 1 ? `Sirena ${l < 10 ? 1 : 2} de 2 · ${half ? 'sube' : 'baja'}` : `Nota ${Math.min(5, Math.floor(l / 4) + 1)} de 5`);
+  document.querySelectorAll('#warmBox .wm-bar b i').forEach((e, i) => { e.style.width = Math.max(0, Math.min(1, (s - i * 20) / 20)) * 100 + '%'; });
+  const dot = document.getElementById('wmDot');
+  if (dot) { const u = p === 2 ? 0.95 - Math.min(4, Math.floor(l / 4)) * 0.19 : 0.5 - 0.5 * Math.cos(2 * Math.PI * l / 10); dot.style.top = ((1 - u) * 88 + 6) + '%'; }
+}
+function warmTick(now) {
+  if (WARM.state !== 'run') return;
+  WARM.el += Math.min(0.25, (now - WARM.last) / 1000); WARM.last = now;   // si la pestaña se oculta, el reloj no corre de golpe
+  if (WARM.el >= 60) { contar('rv_calentamiento_completo'); warmFinish('completo'); return; }
+  warmUpdate(); WARM.raf = requestAnimationFrame(warmTick);
+}
+function warmAdvance() {
+  setOpen('warm', false); setOpen('comf', true);
+  setTimeout(() => $('#grp-comf').scrollIntoView({ block: 'start', behavior: REDUCED.matches ? 'auto' : 'smooth' }), REDUCED.matches ? 0 : 460);
+}
+function warmFinish(res) {
+  cancelAnimationFrame(WARM.raf); WARM.state = 'done'; WARM.result = res; warmHead(); warmRender();
+  if (res !== 'completo') warmAdvance();   // saltar (o saltar el resto) abre «Cómodas» directo
+}
+$('#warmBox').addEventListener('click', e => {
+  const b = e.target.closest('[data-warm]'); if (!b) return; const a = b.dataset.warm;
+  if (a === 'start') { cancelAnimationFrame(WARM.raf); WARM.state = 'run'; WARM.el = 0; WARM.last = performance.now(); WARM.result = ''; warmHead(); warmRender(); WARM.raf = requestAnimationFrame(warmTick); }
+  else if (a === 'pause') { if (WARM.state === 'run') { WARM.state = 'pause'; cancelAnimationFrame(WARM.raf); } else { WARM.state = 'run'; WARM.last = performance.now(); WARM.raf = requestAnimationFrame(warmTick); } warmRender(); }
+  else if (a === 'stop') warmFinish('parcial');
+  else if (a === 'skip') warmFinish('saltado');
+  else if (a === 'go') warmAdvance();
+});
+warmRender();
 function newPara() {
   let i; do { i = Math.floor(Math.random() * PARAS.length); } while (i === paraIdx && PARAS.length > 1);
   paraIdx = i; $('#para').textContent = PARAS[i];
@@ -1602,6 +1675,7 @@ function renderResults0() {
     <p class="lead2">${C.frontera ? 'Zona fronteriza: ' : 'Afinidad con '}<b>${T.es} ${P(C.afinidad)}%</b>${C.secundaria ? ` · Tendencia secundaria: ${C.secundaria.T.es} ${P(C.secundaria.afinidad)}%` : ''}</p>
     ${(C.notas || []).map(n => `<p class="lead2" style="margin-top:10px">${n.texto.replace('{n}', nt(n.midi))}</p>`).join('')}
     ${(C.sugerencias || []).map(t => `<p class="warn">${t}</p>`).join('')}
+    ${(C.frontera || C.incongruente) && WARM.result !== 'completo' && !replay ? '<p class="warn">Hiciste la prueba sin el calentamiento completo: es la causa más probable de un resultado dudoso. Haz el calentamiento de 1 minuto (Paso 0) y repite.</p>' : ''}
     ${wd != null ? `<p class="lead2">Tu rango cómodo es más amplio que el de aprox. <b>${Math.round(wd * 100)}%</b> de la gente.</p><p class="fine">Es una estimación orientativa (promedio supuesto: 1.75 octavas), no un estudio.</p>` : ''}
     ${REG_ES[spReg] ? `<p class="lead2" style="margin-top:10px">Tu voz hablada cae en <b>${REG_ES[spReg]}</b>.</p>` : ''}
     ${warns.map(w => `<p class="warn">${w}</p>`).join('')}
@@ -1770,6 +1844,7 @@ function contar(clave) {
 const CLAVES_RV = [   // [selector, clave]: gana el primero que coincide
   ['#nameForm button[type=submit]', 'rv_empezar_prueba'], ['#goSong', 'rv_analizar_cancion'], ['#btnSongDemo', 'rv_cancion_ejemplo'], ['#songHit', 'rv_cancion_posicion'],
   ['#sexBox button', 'rv_genero'], ['#btnSex', 'rv_cambiar_genero'], ['[data-act="rec"]', 'rv_grabar'], ['[data-pg="rec"]', 'rv_sirena_grabar'], ['[data-pg="debug"]', 'rv_exportar_depuracion'],
+  ['[data-warm="start"]', 'rv_calentamiento_empezar'], ['[data-warm="skip"]', 'rv_calentamiento_saltar'], ['[data-warm="stop"]', 'rv_calentamiento_saltar_resto'], ['[data-warm="pause"]', 'rv_calentamiento_pausar'], ['[data-warm="go"]', 'rv_calentamiento_continuar'],
   ['[data-act="cancel"],[data-pg="cancel"]', 'rv_cancelar_grabacion'], ['[data-act="take"]', 'rv_elegir_toma'], ['[data-act="hist"]', 'rv_historial'],
   ['[data-act="newpara"]', 'rv_otro_parrafo'], ['[data-act="done"]', 'rv_listo_paso'], ['[data-act="gtoggle"]', 'rv_abrir_paso'], ['#btnCont', 'rv_continuar'],
   ['#btnClear', 'rv_borrar'], ['#btnDemo', 'rv_voz_ejemplo'], ['#btnReplay', 'rv_ver_resultado_ajeno'], ['#replayGo', 'rv_ver_resultado_ajeno'],
@@ -1811,7 +1886,7 @@ function guardarResultado() {
   const pas = passaggioResult();   // Paso 4: opcional (null si no se hizo o no se detectó); el servidor lo deja en blanco
   const datos = {
     nombre: userName, genero: sex ? sex.label : '', tesitura: C0.best.es,   // el resultado final (Soprano, Tenor…)
-    passaggio: pas ? pas.midi : null, confPassaggio: pas ? pas.confianza : '',
+    passaggio: pas ? pas.midi : null, confPassaggio: pas ? pas.confianza : '', calentamiento: WARM.result || '',
     bajaComoda: n(R.comf.low), altaComoda: n(R.comf.high), bajaAbsoluta: n(R.abs.low), altaAbsoluta: n(R.abs.high),
     bajoHablado: n(sp.p10), promedioHablado: n(sp.avg), altoHablado: n(sp.p90),
     versionMotor: VOZ_DATOS.VERSION_MOTOR, afinidad: Math.round(C0.afinidad * 100), secundaria: C0.secundaria ? C0.secundaria.T.es : '',
