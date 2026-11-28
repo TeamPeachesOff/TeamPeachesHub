@@ -378,8 +378,9 @@ html,body{overflow-x:clip}
   });
 })();
 </script>
-<script src="voz-datos.js?v=2"></script>
-<script src="voz-motor.js?v=2"></script>
+<script src="voz-datos.js?v=3"></script>
+<script src="voz-motor.js?v=3"></script>
+<script src="voz-sirena.js?v=1"></script>
 <script>
 /*CORE-START*/
 const NOTE_ES = ['Do','Do♯','Re','Re♯','Mi','Fa','Fa♯','Sol','Sol♯','La','La♯','Si'];
@@ -537,6 +538,17 @@ async function analyzePitch(x0, sr, opts = {}) {
     if (opts.yield && k % 40 === 39) await opts.yield(0.9 * k / nF);
   }
 
+  // Sin Viterbi (opts.raw): cada cuadro elige su mejor candidato. Lo usa el detector de quiebres de las sirenas, que necesita ver los saltos reales.
+  if (opts.raw) {
+    for (let k = 0; k < nF; k++) {
+      const C = cand[k]; if (!C || !C.length) continue;
+      let b = 0; for (let i = 1; i < C.length; i++) if (C[i].cost < C[b].cost) b = i;
+      if (C[b].cost >= 0.3) continue;
+      const c = C[b], B = bands[c.bi], tau = doRefine ? refineTau(B.xs, c.s, B.W, c.tau) : c.tau;
+      frames[k].f0 = B.srd / tau; frames[k].conf = 1 - c.cm;
+    }
+    return frames;
+  }
   // Viterbi: costo de observación (claridad + preferencia por la octava alta) + costo de salto entre cuadros.
   const J = 0.35 * 0.01 / hop, VUV = 0.14 * 0.01 / hop, UV = 0.3;
   let prev = null, prevC = null;
@@ -781,7 +793,7 @@ function synthMelody(notes, sr) {
    (YIN multibanda + Viterbi) y los cuadros {t, rms, f0, conf} se revisan buscando el quiebre de la sirena.
    Nada de esto se ejecuta solo: lo llama passMount() cuando se conecte el paso. */
 const PASS = {
-  hop: 0.015,        // 15 ms por cuadro
+  hop: 0.01,         // 10 ms por cuadro (detector multi-señal de voz-sirena.js)
   minConf: 0.45,     // claridad mínima para fiarse del f0 de un cuadro
   minRun: 4,         // un tramo con voz necesita ≥ 4 cuadros (60 ms) para contar
   jumpSt: 2.0,       // salto discontinuo mínimo (semitonos) entre cuadros consecutivos
@@ -839,7 +851,8 @@ function slopeBefore(m, a, n) {
   return { slope: sxx ? sxy / sxx : 0, n: xs.length, rise: ys[0] - ys[ys.length - 1] };
 }
 
-/* Analiza un intento. frames = salida de analyzePitch; x/sr (opcionales) activan el criterio espectral.
+/* (Motor anterior de un solo criterio: ya no se usa; el Paso 4 llama a VozSirena.detectar.)
+   Analiza un intento. frames = salida de analyzePitch; x/sr (opcionales) activan el criterio espectral.
    Devuelve { ok, reason?, midi?, t?, kind?, jump?, score?, conf?, flags[], series[], ev } */
 function detectPassaggio(frames, x, sr) {
   const hop = frames.length > 1 ? frames[1].t - frames[0].t : PASS.hop, n = frames.length;
@@ -929,17 +942,9 @@ function detectPassaggio(frames, x, sr) {
     conf: c.score >= 2 ? 'alta' : c.score >= 1.2 ? 'media' : 'baja', flags: c.flags, series };
 }
 
-/* Resume los 3 intentos: descarta atípicos y toma la mediana. attempts = [{midi}|null, …] */
-function passaggioSummary(attempts) {
-  const v = attempts.map(a => (a && a.ok ? a.midi : null)).filter(m => m != null);
-  if (!v.length) return null;
-  const md = medAvg(v);
-  let keep = v.length >= 3 ? v.filter(m => Math.abs(m - md) <= PASS.outlierSt) : v;
-  if (!keep.length) keep = v;
-  const final = medAvg(keep), spread = Math.max(...keep) - Math.min(...keep), dropped = v.length - keep.length;
-  const conf = keep.length >= 3 && spread <= 1.5 ? 'alta' : keep.length >= 2 && spread <= 2.5 ? 'media' : 'baja';
-  return { midi: Math.round(final), exact: final, used: keep.length, valid: v.length, dropped, spread, conf, all: v };
-}
+/* Resume las 3 sirenas (/a/, /a/, /u/): ver VozSirena.resumir. Peso completo si ≥ 2 coinciden (±2.5 st); 0.35 si solo una; null si ninguna. */
+const PG_VOWELS = ['a', 'a', 'u'];
+function passaggioSummary(attempts) { return VozSirena.resumir(attempts, PG_VOWELS); }
 
 /* Zona esperada del quiebre pecho→cabeza/falsete en una sirena (aprox., ajustable): [centro, mín, máx] en midi. */
 const PASS_EXPECT = VozMotor.PASS_EXPECT;   // se arma con los passaggi de voz-datos.js
@@ -1360,6 +1365,8 @@ function collect() {
   const g = id => (resOf(id) ? resOf(id).midi : null);
   const R = { abs: { low: g('absLow'), high: g('absHigh'), m0: (resOf('absLow') || {}).m0 || null }, comf: { low: g('comfLow'), high: g('comfHigh') }, speech: resOf('speech') };
   R.count = [R.abs.low, R.abs.high, R.comf.low, R.comf.high, R.speech].filter(v => v != null).length;
+  const ps = PG.takes.some(t => t && t.res) ? passaggioSummary(PG.takes.map(t => t && t.res)) : null;   // sirenas del Paso 4: entran al clasificador con su peso
+  if (ps) R.passaggio = { midi: ps.exact, conf: ps.peso };
   return R;
 }
 const todasListas = () => SLOTS.every(sl => resOf(sl.id));   // las 5: cómoda alta/baja, absoluta alta/baja y voz hablada
@@ -1762,7 +1769,7 @@ function contar(clave) {
 }
 const CLAVES_RV = [   // [selector, clave]: gana el primero que coincide
   ['#nameForm button[type=submit]', 'rv_empezar_prueba'], ['#goSong', 'rv_analizar_cancion'], ['#btnSongDemo', 'rv_cancion_ejemplo'], ['#songHit', 'rv_cancion_posicion'],
-  ['#sexBox button', 'rv_genero'], ['#btnSex', 'rv_cambiar_genero'], ['[data-act="rec"]', 'rv_grabar'], ['[data-pg="rec"]', 'rv_sirena_grabar'],
+  ['#sexBox button', 'rv_genero'], ['#btnSex', 'rv_cambiar_genero'], ['[data-act="rec"]', 'rv_grabar'], ['[data-pg="rec"]', 'rv_sirena_grabar'], ['[data-pg="debug"]', 'rv_exportar_depuracion'],
   ['[data-act="cancel"],[data-pg="cancel"]', 'rv_cancelar_grabacion'], ['[data-act="take"]', 'rv_elegir_toma'], ['[data-act="hist"]', 'rv_historial'],
   ['[data-act="newpara"]', 'rv_otro_parrafo'], ['[data-act="done"]', 'rv_listo_paso'], ['[data-act="gtoggle"]', 'rv_abrir_paso'], ['#btnCont', 'rv_continuar'],
   ['#btnClear', 'rv_borrar'], ['#btnDemo', 'rv_voz_ejemplo'], ['#btnReplay', 'rv_ver_resultado_ajeno'], ['#replayGo', 'rv_ver_resultado_ajeno'],
@@ -1804,7 +1811,7 @@ function guardarResultado() {
   const pas = passaggioResult();   // Paso 4: opcional (null si no se hizo o no se detectó); el servidor lo deja en blanco
   const datos = {
     nombre: userName, genero: sex ? sex.label : '', tesitura: C0.best.es,   // el resultado final (Soprano, Tenor…)
-    passaggio: pas ? pas.midi : null,
+    passaggio: pas ? pas.midi : null, confPassaggio: pas ? pas.confianza : '',
     bajaComoda: n(R.comf.low), altaComoda: n(R.comf.high), bajaAbsoluta: n(R.abs.low), altaAbsoluta: n(R.abs.high),
     bajoHablado: n(sp.p10), promedioHablado: n(sp.avg), altoHablado: n(sp.p90),
     versionMotor: VOZ_DATOS.VERSION_MOTOR, afinidad: Math.round(C0.afinidad * 100), secundaria: C0.secundaria ? C0.secundaria.T.es : '',
@@ -2109,7 +2116,7 @@ const PG_TEXT = {
 const pgLo = () => PG.R && PG.R.comf.low != null ? PG.R.comf.low : null;
 const pgHi = () => PG.R && PG.R.comf.high != null ? PG.R.comf.high : null;
 
-const pgLead = () => `Haz una <b>sirena continua</b> desde <b>${nt(pgLo())}</b> hasta <b>${nt(pgHi())}</b>, deslizando la voz sin pausas (glissando), con una vocal cerrada como <b>«U»</b> o <b>«I»</b>. <b>No intentes ocultar ni suavizar el quiebre</b>: queremos oírlo.`;
+const pgLead = () => `Haz una <b>sirena continua</b> desde <b>${nt(pgLo())}</b> hasta <b>${nt(pgHi())}</b>, deslizando la voz sin pausas (glissando). Las dos primeras con la vocal <b>«A»</b> y la tercera con <b>«U»</b>. <b>No intentes ocultar ni suavizar el quiebre</b>: queremos oírlo.`;
 function passMount(el, R) {
   PG.R = R || collect(); PG.el = el; PG.takes = [null, null, null]; PG.busy = [false, false, false];
   const lo = pgLo(), hi = pgHi(), box = document.createElement('section'); box.className = 'pg'; box.id = 'pg-root';
@@ -2118,9 +2125,9 @@ function passMount(el, R) {
     el.appendChild(box); return box;
   }
   box.innerHTML = `<p class="hint pg-lead">${pgLead()}</p>
-    <p class="muted small">Haz 3 intentos. Si uno sale con ruido o te equivocas, repítelo solo.</p>
+    <p class="muted small">Haz las 3 sirenas (/a/, /a/ y /u/). Comparar las vocales ayuda a distinguir un quiebre real de un cruce entre armónicos y resonancias. Si una sale con ruido o te equivocas, repítela sola.</p>
     <div class="pg-list">${[0, 1, 2].map(i => `<div class="pg-att" id="pg-c${i}">
-      <div class="pg-h"><h3>Intento ${i + 1}</h3><span class="pg-st muted small"></span></div>
+      <div class="pg-h"><h3>Sirena ${i + 1} · /${PG_VOWELS[i]}/</h3><span class="pg-st muted small"></span></div>
       <div class="acts"><button class="btn primary rec" type="button" data-pg="rec" data-i="${i}"><span class="dot"></span><span class="lbl">Grabar</span></button>
       <button class="btn" type="button" data-pg="cancel" data-i="${i}" hidden>Cancelar</button></div>
       <canvas class="pg-cv" height="150"></canvas>
@@ -2131,6 +2138,7 @@ function passMount(el, R) {
     const i = +b.dataset.i;
     if (b.dataset.pg === 'rec') { if (rec && rec.id === 'pg' + i) rec.mr.stop(); else pgStart(i); }
     else if (b.dataset.pg === 'cancel') cancelRec();
+    else if (b.dataset.pg === 'debug') pgExportDebug();
   });
   el.appendChild(box);
   [0, 1, 2].forEach(i => pgDraw(i));
@@ -2176,7 +2184,7 @@ function pgDraw(i, liveSeries, tNow) {
 function pgSetUI(i, on) {
   const c = document.getElementById('pg-c' + i); if (!c) return;
   const b = c.querySelector('[data-pg="rec"]');
-  b.classList.toggle('on', on); b.querySelector('.lbl').textContent = on ? 'Detener · 0:00' : (PG.takes[i] ? 'Repetir este intento' : 'Grabar');
+  b.classList.toggle('on', on); b.querySelector('.lbl').textContent = on ? 'Detener · 0:00' : (PG.takes[i] ? 'Repetir esta sirena' : 'Grabar');
   c.querySelector('[data-pg="cancel"]').hidden = !on;
   document.querySelectorAll('#pg-root [data-pg="rec"]').forEach(x => { if (x !== b) x.disabled = on || micBlocked; });
 }
@@ -2230,9 +2238,9 @@ async function pgAnalyze(i, blob) {
   try {
     const { x, sr } = await decode(blob, PASS.maxSec);
     tk.x = x; tk.sr = sr; tk.dur = x.length / sr; tk.peaks = peaksOf(x);
-    const fr = await analyzePitch(x, sr, { hop: PASS.hop, fmin: Math.max(30, midiToHz(pgLo() - 7)), fmax: midiToHz(pgHi() + 14),
+    const fr = await analyzePitch(x, sr, { hop: PASS.hop, raw: true, fmin: Math.max(30, midiToHz(pgLo() - 7)), fmax: midiToHz(pgHi() + 14),
       yield: async p => { out.innerHTML = `<span class="muted">Analizando… ${Math.round(p * 100)}%</span>`; await new Promise(r => setTimeout(r, 0)); } });
-    tk.res = detectPassaggio(fr, x, sr);
+    tk.res = VozSirena.detectar(x, sr, fr);
   } catch (e) { tk.res = { ok: false, reason: 'error', series: [], flags: [] }; }
   PG.busy[i] = false;
   const plh = c.querySelector('.plh'); plh.innerHTML = ''; if (tk.peaks) plh.appendChild(mkPlayer(tk, () => 'rango-vocal_passaggio_intento' + (i + 1)));
@@ -2243,24 +2251,46 @@ function pgRenderAttempt(i) {
   const c = document.getElementById('pg-c' + i), out = c.querySelector('.pg-out'), st = c.querySelector('.pg-st'), r = PG.takes[i].res;
   if (!r.ok) { st.textContent = 'Sin quiebre'; out.innerHTML = `<p class="err">${PG_TEXT[r.reason] || 'No se pudo leer este audio. Repite el intento.'}</p>`; return; }
   st.innerHTML = `Quiebre en <b>${nt(r.midi)}</b>`;
-  const how = r.kind === 'salto' ? `salto de ${r.jump.toFixed(1)} semitonos` : 'pausa breve y reanudación más aguda';
-  out.innerHTML = `<p class="pg-line">Justo antes del quiebre: <b>${ntBig(r.midi)}</b></p><p class="muted small">Detectado por ${how}${r.flags.length ? ' · ' + r.flags.join(' · ') : ''} · confianza ${r.conf}</p>`;
+  out.innerHTML = `<p class="pg-line">Justo antes del quiebre: <b>${ntBig(r.midi)}</b></p><p class="muted small">Coinciden ${r.hits} señales: ${r.flags.join(' · ')} · confianza ${r.conf}</p>`;
 }
 
 function passaggioResult() {   // objeto plano para guardarlo más adelante (Excel); null si aún no hay datos
   const sum = passaggioSummary(PG.takes.map(t => t && t.res)); if (!sum) return null;
   const chk = passaggioCheck(collect(), sum), n = noteInfo(sum.midi);
-  return { midi: sum.midi, en: n.en, es: n.es, hz: Math.round(n.hz * 10) / 10, confianza: sum.conf, validos: sum.valid, usados: sum.used, dispersion: +sum.spread.toFixed(2),
+  return { midi: sum.midi, peso: sum.peso, confirmaU: sum.confirmaU, posibleCruce: sum.posibleCruce, en: n.en, es: n.es, hz: Math.round(n.hz * 10) / 10, confianza: sum.conf, validos: sum.valid, usados: sum.used, dispersion: +sum.spread.toFixed(2),
     intentos: PG.takes.map(t => (t && t.res && t.res.ok ? +t.res.midi.toFixed(2) : null)), tipo: chk.type.es, esperado: PASS_EXPECT[chk.type.id][0], estado: chk.status, enRangoComodo: chk.inComf };
 }
-function pgResultHtml() {   // dentro del Paso 4: tu nota + de qué intentos salió (el detalle de intentos va solo aquí)
-  const sum = passaggioSummary(PG.takes.map(t => t && t.res)); if (!sum) return '';
+function pgResultHtml() {   // dentro del Paso 4: tu nota + de qué sirenas salió (el detalle va solo aquí)
+  const hay = PG.takes.some(t => t && t.res), sum = hay ? passaggioSummary(PG.takes.map(t => t && t.res)) : null;
+  if (!hay) return '';
+  const dbg = `<p><button class="btn link" type="button" data-pg="debug">Descargar datos de depuración (.json)</button></p><p class="fine">Incluye curvas y marcadores, no tu audio.</p>`;
+  if (!sum) return `<h3>Tu passaggio</h3><p class="warn">No se detectó un quiebre fiable en ninguna sirena. Puede que tengas una mezcla muy suave: en ese caso el passaggio no se usa para clasificar y no pasa nada. Si quieres, repite sin esconder el cambio.</p>${dbg}`;
   let warns = '';
-  if (sum.dropped) warns += `<p class="warn">Descarté ${sum.dropped} intento${sum.dropped > 1 ? 's' : ''} por quedar muy lejos de los demás.</p>`;
-  if (sum.valid < 2) warns += `<p class="warn">Con un solo intento válido el resultado es poco fiable. Graba al menos uno más.</p>`;
-  else if (sum.conf === 'baja') warns += `<p class="warn">Los intentos no coinciden entre sí. Repite el que salió distinto.</p>`;
+  if (sum.dropped) warns += `<p class="warn">Descarté ${sum.dropped} sirena${sum.dropped > 1 ? 's' : ''} por quedar muy lejos de las demás.</p>`;
+  if (sum.posibleCruce) warns += `<p class="warn">El quiebre se vio en /a/ pero no en la misma zona con /u/: podría ser un cruce entre armónicos y resonancias, no un passaggio real. Lo usé con menos peso.</p>`;
+  else if (sum.valid < 2) warns += `<p class="warn">Con una sola sirena válida el resultado es poco fiable y cuenta con poco peso. Graba otra.</p>`;
+  else if (sum.conf === 'baja') warns += `<p class="warn">Las sirenas no coinciden entre sí. Repite la que salió distinta.</p>`;
+  const ok = sum.confirmaU ? '<p class="muted small">Confirmado también con /u/.</p>' : '';
   return `<h3>Tu passaggio</h3><div class="note">${ntBig(sum.midi)}</div>
-    <p class="muted small">Sale de ${sum.used} intento${sum.used > 1 ? 's' : ''}: ${sum.all.map(v => lb(v)).join(' · ')}</p>${warns}`;
+    <p class="muted small">Sale de ${sum.used} sirena${sum.used > 1 ? 's' : ''}: ${sum.all.map(v => lb(v)).join(' · ')} · peso en la clasificación: ${sum.peso >= 1 ? 'completo' : sum.peso >= 0.7 ? 'reducido' : 'bajo'}</p>${ok}${warns}${dbg}`;
+}
+async function pgExportDebug() {   // JSON de depuración: curvas, marcadores y eventos de cada sirena (sin audio ni nombre)
+  const R = collect(), C = classify(R, sexTypes()), r2 = v => Math.round(v * 100) / 100;
+  const out = {
+    app: 'rango-vocal', versionMotor: VOZ_DATOS.VERSION_MOTOR, fecha: new Date().toISOString(), parametrosSirena: VozSirena.PARAMS,
+    notas: { comoda: R.comf, absoluta: { low: R.abs.low, high: R.abs.high, m0: R.abs.m0 }, hablada: R.speech ? { avg: r2(R.speech.avg), med: R.speech.med != null ? r2(R.speech.med) : null, p10: r2(R.speech.p10), p90: r2(R.speech.p90) } : null },
+    clasificacion: { tipo: C.best.es, afinidad: r2(C.afinidad), secundaria: C.secundaria ? { tipo: C.secundaria.T.es, afinidad: r2(C.secundaria.afinidad) } : null, frontera: C.frontera ? C.frontera.etiqueta : null, rama: C.rama,
+      partes: C.rank.slice(0, 3).map(x => ({ tipo: x.id, afinidad: r2(x.total), ll: r2(x.ll), partes: Object.fromEntries(Object.entries(x.parts).map(([k, v]) => [k, { peso: r2(v.w), z: r2(v.z) }])) })) },
+    resumenPassaggio: passaggioSummary(PG.takes.map(t => t && t.res)),
+    sirenas: PG.takes.map((t, i) => {
+      if (!t || !t.res) return null; const r = t.res, d = r.debug;
+      return { vocal: PG_VOWELS[i], duracion: t.dur ? r2(t.dur) : null, ok: r.ok, motivo: r.reason || null, midi: r.ok ? r2(r.midi) : null, t: r.ok ? r2(r.t) : null, marcadores: r.markers || null, confianza: r.conf || null,
+        serie: (r.series || []).filter(Boolean).map(p => [r2(p.t), r2(p.m)]),
+        eventos: d ? d.events.map(e => ({ t: r2(e.t), midi: r2(e.midi), marcadores: e.hits, salto: r2(e.jump), caidaDb: r2(e.dropDb), detalle: e.markers })) : [],
+        fuerza: d ? { salto: d.s1.map(r2), caidaRms: d.s2.map(r2), inversion: d.s3.map(r2) } : null };
+    })
+  };
+  await saveFile(new Blob([JSON.stringify(out)], { type: 'application/json' }), 'rango-vocal_depuracion.json');
 }
 function pgFinalHtml() {   // pantalla de resultados: solo lo importante, sin intentos ni tarjetas
   if (replay) return '';
@@ -2271,6 +2301,7 @@ function pgFinalHtml() {   // pantalla de resultados: solo lo importante, sin in
     distinto: `Está más ${chk.diff > 0 ? 'agudo' : 'grave'} de lo habitual para ${name} (${rng}).` }[chk.status];
   return `<div class="sec"><h2>Tu passaggio</h2><div class="note">${ntBig(sum.midi)}</div>
     <p class="lead2">${msg}</p>
+    ${sum.posibleCruce ? '<p class="warn">Con /u/ no apareció en la misma zona: podría ser un cruce entre armónicos y resonancias. Tómalo con cautela.</p>' : sum.confirmaU ? '<p class="muted small">Confirmado también con /u/.</p>' : ''}
     <p class="muted small" style="margin-top:8px">Es la nota donde tu voz cambia de pecho a cabeza. Evita forzar el volumen justo antes de ella y practica pasarla suave, con sirenas.</p></div>`;
 }
 function pgRenderResult() {
