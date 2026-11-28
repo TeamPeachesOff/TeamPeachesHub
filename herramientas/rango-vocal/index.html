@@ -157,7 +157,7 @@ h2{font:700 22px/1.2 var(--f-display);margin:0 0 6px}h3{font:600 15px/1.3 var(--
 .rtab{border-collapse:collapse;width:100%;margin-top:12px;font-size:14px;font-variant-numeric:tabular-nums}.rtab th,.rtab td{padding:8px 10px 8px 0;border-bottom:1px solid var(--line);text-align:left;white-space:nowrap}
 .rtab thead th{font:600 11px var(--f-body);letter-spacing:.1em;text-transform:uppercase;color:var(--muted)}.rtab tr.best td,.rtab tr.best th{font-weight:700;color:var(--accent)}
 .bar{display:inline-block;width:70px;height:4px;background:var(--line);vertical-align:middle;margin-right:8px}.bar i{display:block;height:100%;background:currentColor}
-.subs{list-style:none;margin:12px 0 0;padding:0}.subs li{padding:10px 0 10px 14px;border-bottom:1px solid var(--line);border-left:3px solid transparent}.subs li.pick{border-left-color:var(--accent)}.subs strong{font:600 17px var(--f-display)}
+.refs{margin:10px 0 0;padding-left:20px}.refs li{margin:0 0 6px}.subs{list-style:none;margin:12px 0 0;padding:0}.subs li{padding:10px 0 10px 14px;border-bottom:1px solid var(--line);border-left:3px solid transparent}.subs li.pick{border-left-color:var(--accent)}.subs strong{font:600 17px var(--f-display)}
 .pill{font:600 11px var(--f-body);color:var(--accent);margin-left:10px;letter-spacing:.1em;text-transform:uppercase}
 .legend button{position:relative;border:0;border-radius:6px;background:none;color:inherit;font:inherit;padding:6px 8px;cursor:pointer}.legend button:hover{color:var(--ink)}.legend button[aria-pressed=true]{color:var(--ink);font-weight:600}.legend button::after{content:"";position:absolute;left:8px;right:8px;bottom:1px;height:2px;border-radius:2px;background:var(--accent);transform:scaleX(0);transform-origin:left}.legend button[aria-pressed=true]::after{transform:scaleX(1)}.legend{align-items:center}
 .sel .rb,.sel .b-comf,.sel .b-abs,.sel .b-speech{opacity:.18}.sel .comfband{opacity:.03}
@@ -378,6 +378,8 @@ html,body{overflow-x:clip}
   });
 })();
 </script>
+<script src="voz-datos.js?v=1"></script>
+<script src="voz-motor.js?v=1"></script>
 <script>
 /*CORE-START*/
 const NOTE_ES = ['Do','Do♯','Re','Re♯','Mi','Fa','Fa♯','Sol','Sol♯','La','La♯','Si'];
@@ -651,113 +653,13 @@ function speechStats(frames) {
   v = v.filter(x => Math.abs(x - m0) <= 10);
   if (v.length < 25) return null;
   const dt = frames.length > 1 ? frames[1].t - frames[0].t : 0.023;
-  return { avg: v.reduce((a, b) => a + b, 0) / v.length, p10: pct(v, 0.1), p90: pct(v, 0.9), n: v.length, seconds: v.length * dt };
+  return { avg: v.reduce((a, b) => a + b, 0) / v.length, med: pct(v, 0.5), p10: pct(v, 0.1), p90: pct(v, 0.9), n: v.length, seconds: v.length * dt };
 }
 
-// ---- Cuadro de referencia «La voz – Tesitura y registros» (Ester López y Jorge Benayas, Listen, Play, Create) ----
-// Leído nota por nota sobre el teclado del cuadro (número midi: Do4 = 60).
-// regs: [registro, nota más grave, nota más aguda]. subs: [subtipo, nota más grave, nota más aguda, descripción].
-const REF = [
-  { id: 'soprano', es: 'Soprano',
-    regs: [['pecho', 57, 65], ['medio', 67, 77], ['cabeza', 79, 84], ['silbido', 86, 91]],
-    subs: [['Dramática', 57, 59, 'Voz amplia y potente, con extensión hacia el grave.'],
-           ['Lírica', 60, 84, 'El núcleo del repertorio, hasta Do6, de timbre cálido y fluido.'],
-           ['Ligera', 86, 88, 'Agudos fáciles y ágiles que entran en el registro de silbido.'],
-           ['Coloratura', 89, 91, 'Los agudos más extremos del cuadro, con gran agilidad.']] },
-  { id: 'mezzo', es: 'Mezzosoprano',
-    regs: [['pecho', 55, 64], ['medio', 65, 76], ['cabeza', 77, 81], ['silbido', 83, 84]], subs: null },
-  { id: 'contralto', es: 'Contralto',
-    regs: [['pecho', 52, 62], ['medio', 64, 74], ['cabeza', 76, 79], ['silbido', 81, 83]], subs: null },
-  { id: 'tenor', es: 'Tenor',
-    regs: [['pecho', 47, 55], ['medio', 57, 65], ['cabeza', 67, 72], ['silbido', 74, 79]],
-    subs: [['Dramático', 47, 69, 'Voz robusta y oscura, con cima habitual hasta La4.'],
-           ['Lírico', 71, 72, 'Alcanza Si4 y Do5 con timbre dulce y flexible.'],
-           ['Ligero', 74, 74, 'Agudos fáciles y brillantes, hasta Re5.'],
-           ['Contratenor', 76, 79, 'Zona muy aguda, en el registro de silbido o falsete.']] },
-  { id: 'baritono', es: 'Barítono',
-    regs: [['pecho', 43, 52], ['medio', 53, 62], ['cabeza', 64, 67], ['silbido', 69, 71]], subs: null },
-  { id: 'bajo', es: 'Bajo',
-    regs: [['strohbass', 36, 40], ['pecho', 41, 48], ['medio', 50, 60], ['cabeza', 62, 67]], subs: null }
-];
-const REG_ES = { strohbass: 'Strohbass', pecho: 'Pecho', medio: 'Medio', cabeza: 'Cabeza', silbido: 'Silbido' };
-// Voz hablada de referencia en el cuadro (llaves sobre el pentagrama).
-const SPEECH_REF = { hombres: [45, 52], mujeres: [57, 65] };
-REF.forEach(T => {
-  T.lo = T.regs[0][1]; T.hi = T.regs[T.regs.length - 1][2];
-  T.bnd = T.regs.slice(1).map((r, i) => (T.regs[i][2] + r[1]) / 2);          // frontera entre registros contiguos
-  const pe = T.regs.find(r => r[0] === 'pecho'); T.speechLo = pe[1]; T.speechHi = pe[2];   // la voz hablada vive en el registro de pecho
-});
-
-// Registro de una nota para un tipo de voz.
-function regOf(T, v) {
-  if (v < T.lo - 0.75) return 'bajo-cuadro';
-  if (v > T.hi + 0.75) return 'sobre-cuadro';
-  let i = 0; while (i < T.bnd.length && v >= T.bnd[i]) i++;
-  return T.regs[i][0];
-}
-
-// Subtipo según el cuadro: en el soprano, una extensión grave marcada (con agudo moderado) marca a la dramática y el agudo a ligera y coloratura;
-// en el tenor, la nota más aguda decide entre dramático, lírico, ligero y contratenor.
-function pickSub(T, hi, lo) {
-  const S = T.subs; if (!S) return null;
-  const b = S.slice(1).map((s, i) => (S[i][2] + s[1]) / 2);
-  if (T.id === 'soprano') {
-    if (hi != null && hi >= b[2]) return S[3];
-    if (hi != null && hi >= b[1]) return S[2];
-    if (lo != null && lo <= 52 && (hi == null || hi <= 81)) return S[0];   // grave de verdad (Mi3 o menos) y sin agudos amplios
-    return hi != null || lo != null ? S[1] : null;
-  }
-  if (hi == null) return null;
-  let i = 0; while (i < b.length && hi >= b[i]) i++;
-  return S[i];
-}
-
-// Qué parte de un rango [a,b] (notas enteras) cae dentro del rango completo del tipo (cuadro) y cuánto del tipo cubre.
-function rangeFit(T, a, b) {
-  a = Math.round(a); b = Math.round(b); if (a > b) [a, b] = [b, a];
-  let inside = 0; for (let m = a; m <= b; m++) if (m >= T.lo && m <= T.hi) inside++;
-  return { cont: inside / (b - a + 1), cover: inside / (T.hi - T.lo + 1) };
-}
-// Qué tan bien cae la voz hablada en el registro de pecho del tipo (promedio + percentiles 10 a 90).
-function speechDist(T, m) { return m < T.speechLo ? T.speechLo - m : m > T.speechHi ? m - T.speechHi : 0; }
-function speechFit(T, sp) {
-  const near = Math.exp(-Math.pow(speechDist(T, sp.avg) / 3, 2));
-  const a = Math.round(sp.p10), b = Math.round(sp.p90); let inside = 0;
-  for (let k = a; k <= b; k++) if (k >= T.speechLo - 1 && k <= T.speechHi + 1) inside++;
-  return 0.6 * near + 0.4 * inside / (b - a + 1);
-}
-// Manda DÓNDE queda el centro del rango cómodo (55%) frente al centro típico de cada tipo; luego cuánto cabe en el
-// cuadro (30%) y por último la voz hablada (15%), porque hoy se suele hablar más grave que en el cuadro.
-// Centros: Do4–Do6, La3–La5, Fa3–Fa5, Do3–Do5, La2–La4, Mi2–Mi4.
-const CENTER = { soprano: 72, mezzo: 69, contralto: 65, tenor: 60, baritono: 57, bajo: 52 };
-// En voces femeninas la nota grave cómoda casi no distingue (casi todas bajan a Fa♯3–La3) y arrastraba a las sopranos
-// hacia contralto. Lo que más separa es hasta dónde sube: techo absoluto típico Mi6, Si5 y Sol5.
-const CEIL = { soprano: 88, mezzo: 83, contralto: 79 };
-function ceilFit(id, top) {
-  if ((id === 'soprano' && top >= CEIL.soprano) || (id === 'contralto' && top <= CEIL.contralto)) return 1;
-  return Math.exp(-Math.pow((top - CEIL[id]) / 5, 2));
-}
-function classify(R, ids) {
-  const pair = (l, h) => { const x = [l, h].filter(v => v != null); return x.length ? [Math.min(...x), Math.max(...x)] : null; };
-  let span = pair(R.comf.low, R.comf.high), basis = 'cómodo';
-  if (!span) { span = pair(R.abs.low, R.abs.high); basis = 'absoluto'; }
-  const fem = !!ids && ids.length === 3 && ids.every(id => id in CEIL);
-  const tops = [R.abs.high, R.comf.high].filter(v => v != null), top = fem && tops.length ? Math.max(...tops) : null;
-  const wMid = top != null ? 0.3 : 0.55, wCont = top != null ? 0.15 : 0.3;
-  const rows = REF.filter(T => !ids || ids.includes(T.id)).map(T => {
-    const f = span ? rangeFit(T, span[0], span[1]) : null, sp = R.speech ? speechFit(T, R.speech) : null;
-    let s = 0, w = 0;
-    if (f) { const mid = (span[0] + span[1]) / 2; s += wMid * Math.exp(-Math.pow((mid - CENTER[T.id]) / 5, 2)) + wCont * f.cont; w += wMid + wCont; }
-    if (top != null) { s += 0.4 * ceilFit(T.id, top); w += 0.4; }
-    if (sp != null) { s += 0.15 * sp; w += 0.15; }
-    return { T, cont: f ? f.cont : null, sp, total: w ? s / w : 0 };
-  });
-  rows.sort((a, b) => b.total - a.total || (b.cont || 0) - (a.cont || 0));
-  const best = rows[0].T;
-  const loSub = R.comf.low != null ? R.comf.low : R.abs.low;
-  const subComf = pickSub(best, R.comf.high, loSub), subAbs = pickSub(best, R.abs.high, R.abs.low);
-  return { rank: rows, best, span, basis, sub: subComf || subAbs, subBasis: subComf ? 'cómoda' : 'absoluta', subOther: subComf && subAbs && subComf !== subAbs ? subAbs : null };
-}
+// ---- Datos y motor de clasificación: ver voz-datos.js y voz-motor.js (el cuadro escolar López–Benayas ya no decide nada) ----
+const REF = VOZ_DATOS.REF, REG_ES = VOZ_DATOS.REG_ES, SPEECH_REF = VOZ_DATOS.SPEECH_REF;
+const regOf = VozMotor.regOf;
+function classify(R, ids) { return VozMotor.classify(R, ids); }
 
 // ---- Voz sintética (solo para el ejemplo y las pruebas) ----
 function rng(seed) {
@@ -1027,10 +929,7 @@ function passaggioSummary(attempts) {
 }
 
 /* Zona esperada del quiebre pecho→cabeza/falsete en una sirena (aprox., ajustable): [centro, mín, máx] en midi. */
-const PASS_EXPECT = {
-  bajo: [57, 54, 60], baritono: [60, 57, 63], tenor: [64, 61, 67],
-  contralto: [62, 59, 65], mezzo: [64, 61, 67], soprano: [66, 63, 69]
-};
+const PASS_EXPECT = VozMotor.PASS_EXPECT;   // se arma con los passaggi de voz-datos.js
 /* Cruza el quiebre con la tesitura (Pasos 1–3). R = collect(); S = passaggioSummary(). */
 function passaggioCheck(R, sum) {
   if (!sum) return null;
@@ -1510,7 +1409,7 @@ const OTROS_GENEROS = ['No binario', 'Hombre transgénero', 'Mujer transgénero'
   'No aplicable, pero de una manera de género', 'Resultados pendientes', 'Indeciso', 'Indeciso inclinado', 'Prefiero no meterme en eso',
   'Depende de quién pregunte', 'Múltiples', 'Sí', 'No', 'Tal vez', 'No te gustaría saber', 'Transformer', 'Helicóptero Apache', 'Gato', 'Tanque termonuclear'];
 const SEXES = [
-  { id: 'masculino', label: 'Masculino', types: ['tenor', 'baritono', 'bajo'] },
+  { id: 'masculino', label: 'Masculino', types: ['tenor', 'baritono', 'bajobar', 'bajo'] },
   { id: 'femenino', label: 'Femenino', types: ['soprano', 'mezzo', 'contralto'] },
   ...OTROS_GENEROS.map((label, i) => ({ id: 'otro' + i, label }))
 ];
@@ -1656,7 +1555,7 @@ function renderResults0() {
   const rg = (lo, hi) => lo != null && hi != null ? [`${nt(lo)} – ${nt(hi)}`, octs(lo, hi)] : ['—', 'Falta grabar'];
   const [cb, cs] = rg(R.comf.low, R.comf.high), [ab, as] = rg(R.abs.low, R.abs.high);
   const items = [['Cómoda grave', R.comf.low], ['Cómoda aguda', R.comf.high], ['Absoluta grave', R.abs.low], ['Absoluta aguda', R.abs.high], ['Voz hablada', R.speech ? R.speech.avg : null]].filter(i => i[1] != null);
-  const DESC = { strohbass: 'Lo más grave: sonido ronco, como crujido', pecho: 'Grave y con cuerpo: con la que sueles hablar', medio: 'Zona de en medio: mezcla de pecho y cabeza', cabeza: 'Agudo y ligero: resuena arriba', silbido: 'Lo más agudo: casi como un silbato' };
+  const DESC = { strohbass: 'Lo más grave: sonido ronco, como crujido', pecho: 'Grave y con cuerpo: con la que sueles hablar', medio: 'Zona de en medio: mezcla de pecho y cabeza', cabeza: 'Agudo y ligero: cabeza en mujeres, falsete en hombres', silbido: 'Solo en agudos extremos (sobre Do6–Re6): casi como un silbato' };
   const MINE = [['Tu cómoda más baja', R.comf.low], ['Tu cómoda más alta', R.comf.high], ['Tu límite grave', R.abs.low], ['Tu límite agudo', R.abs.high], ['Al hablar', R.speech ? R.speech.avg : null]].filter(i => i[1] != null);
   const rows = [['sobre-cuadro', 'Más arriba', 'Más agudo que lo típico de tu tipo'], ...T.regs.slice().reverse().map(r => [r[0], REG_ES[r[0]], DESC[r[0]], r]), ['bajo-cuadro', 'Más abajo', 'Más grave que lo típico de tu tipo']];
   const regHtml = rows.map(([key, name, desc, r]) => {
@@ -1669,19 +1568,20 @@ function renderResults0() {
   const warns = Object.values(rangeWarns(R)).flat();
   const cell = v => v == null ? '<span class="muted">—</span>' : `<span class="bar"><i style="width:${P(v)}%"></i></span>${P(v)}%`;
   let subHtml;
-  if (T.subs) {
-    const zone = x => x[1] === x[2] ? nt(x[1]) : `${nt(x[1])} – ${nt(x[2])}`;
-    subHtml = `<h2>Subtipos de ${lc}</h2><p class="muted small">El subtipo sale de tu nota más aguda cómoda${T.id === 'soprano' ? ' y tu nota cómoda más grave' : ''}.</p>
-      <ul class="subs">${T.subs.map(x => `<li class="${C.sub === x ? 'pick' : ''}"><strong>${x[0]}</strong> <span class="muted small">${zone(x)}</span>${C.sub === x ? '<span class="pill">Sugerido</span>' : ''}<div class="muted small">${x[3]}</div></li>`).join('')}</ul>`;
-  } else subHtml = `<h2>Subtipos</h2><p class="muted small">El cuadro de referencia no subdivide la voz de ${lc}.</p>`;
+  subHtml = `<h2>Subtipos de ${lc} (Fach)</h2><p class="muted small">En el sistema Fach las variantes comparten casi todo el rango central: se distinguen por tesitura cómoda, peso, timbre y passaggi. Con solo notas no se puede afirmar un subtipo, así que aquí van como referencia${C.sub ? ' y la tendencia que marcan tus notas' : ''}.</p>
+    <ul class="subs">${T.fach.map(x => `<li class="${C.sub && C.sub[0] === x[0] ? 'pick' : ''}"><strong>${x[0]}</strong>${C.sub && C.sub[0] === x[0] ? '<span class="pill">Tendencia</span>' : ''}<div class="muted small">${x[1]}</div></li>`).join('')}</ul>
+    <p class="muted small">Passaggi típicos de ${lc}: primo ${nt(T.p1[0])}${T.p1[1] !== T.p1[0] ? ' – ' + nt(T.p1[1]) : ''}, secondo ${nt(T.p2[0])}${T.p2[1] !== T.p2[0] ? ' – ' + nt(T.p2[1]) : ''}. ${T.verificado ? '' : '<span class="fine">(Rangos por verificar.)</span>'}</p>`;
   box.innerHTML = `
     <div class="rtop"><div class="kicker">Tu tipo de voz</div>
       <button class="btn" type="button" data-act="share" id="btnShare" aria-label="Compartir: descargar 2 imágenes"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 15V4m0 0L8 8m4-4 4 4M5 12v6a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-6"/></svg><span>Compartir</span></button></div>
     <p class="muted small" id="shareMsg" role="status" style="text-align:right"></p>
-    <div class="vname">${T.es}</div>
-    ${C.sub ? `<div class="vsub">${C.sub[0]}</div>` : ''}
+    <div class="vname">${C.frontera ? C.frontera.etiqueta : T.es}</div>
+    ${C.sub ? `<div class="vsub">${C.sub[0]} <span class="muted small">(tendencia)</span></div>` : ''}
+    <p class="lead2">${C.frontera ? 'Zona fronteriza: ' : 'Afinidad con '}<b>${T.es} ${P(C.afinidad)}%</b>${C.secundaria ? ` · Tendencia secundaria: ${C.secundaria.T.es} ${P(C.secundaria.afinidad)}%` : ''}</p>
+    ${(C.notas || []).map(n => `<p class="lead2" style="margin-top:10px">${n.texto.replace('hasta ' + n.midi, 'hasta ' + nt(n.midi))}</p>`).join('')}
+    ${(C.sugerencias || []).map(t => `<p class="warn">${t}</p>`).join('')}
     ${wd != null ? `<p class="lead2">Tu rango cómodo es más amplio que el de aprox. <b>${Math.round(wd * 100)}%</b> de la gente.</p><p class="fine">Es una estimación orientativa (promedio supuesto: 1.75 octavas), no un estudio.</p>` : ''}
-    ${REG_ES[spReg] ? `<p class="lead2" style="margin-top:10px">Tu voz hablada cae dentro del registro de <b>${REG_ES[spReg].toLowerCase()}</b>.</p>` : ''}
+    ${REG_ES[spReg] ? `<p class="lead2" style="margin-top:10px">Tu voz hablada cae en <b>${REG_ES[spReg]}</b>.</p>` : ''}
     ${warns.map(w => `<p class="warn">${w}</p>`).join('')}
     <div class="sumt">
       ${sumCol('Rango cómodo', cb, cs)}${sumCol('Rango absoluto', ab, as)}${sumCol('Voz hablada', R.speech ? nt(R.speech.avg) : '—', R.speech ? 'En promedio' : 'Falta grabar')}
@@ -1689,14 +1589,15 @@ function renderResults0() {
     <div class="sec"><h2>Registros de tu voz</h2><p class="muted small">Un registro es una forma distinta de sonar. Arriba van los agudos y abajo los graves; a la derecha, dónde cayó cada nota tuya.</p><div class="stair">${regHtml}</div></div>
     <div class="sec"><div class="maphead"><h2>Tu mapa vocal</h2><button class="btn link" type="button" data-act="maptog" id="mapTog"></button></div><div id="mapBox"></div></div>
     <div class="sec"><h2>Comparación con los ${C.rank.length} tipos</h2>
-      <p class="muted small">«Cómodo» es el porcentaje de tu rango cómodo que queda dentro del rango del tipo;<br>«Hablado», qué tan bien cae tu voz al leer en su registro de pecho.<br>«Total» toma en cuenta sobre todo dónde queda el centro de tu rango cómodo.</p>
-      <div class="chart-scroll"><table class="rtab"><thead><tr><th>Tipo</th><th>Cómodo</th><th>Hablado</th><th>Total</th></tr></thead><tbody>${C.rank.map((r, i) => `<tr class="${i === 0 ? 'best' : ''}"><th>${r.T.es}</th><td>${cell(r.cont)}</td><td>${cell(r.sp)}</td><td>${P(r.total)}%</td></tr>`).join('')}</tbody></table></div></div>
+      <p class="muted small">«Cómodo» es el porcentaje de tu rango cómodo que queda dentro del rango estándar del tipo;<br>«Hablado», qué tan cerca cae tu voz al leer de lo típico del tipo.<br>«Afinidad» combina dónde queda tu tesitura cómoda (sin dejar que el falsete la arrastre), tu voz hablada y, si la hay, tu passaggio.</p>
+      <div class="chart-scroll"><table class="rtab"><thead><tr><th>Tipo</th><th>Cómodo</th><th>Hablado</th><th>Afinidad</th></tr></thead><tbody>${C.rank.map((r, i) => `<tr class="${i === 0 ? 'best' : ''}"><th>${r.T.es}</th><td>${cell(r.cont)}</td><td>${cell(r.sp)}</td><td>${P(r.total)}%</td></tr>`).join('')}</tbody></table></div></div>
     <div class="sec">${subHtml}</div>
     ${pgFinalHtml()}
     <div class="sec"><h2>Cuadro de referencia</h2>
-      <p class="muted small">Recreación de «La voz – Tesitura y registros» (Ester López y Jorge Benayas, Listen, Play, Create). Cada fila es un tipo de voz: arriba sus subtipos y abajo sus registros, sobre el teclado.</p>
+      <p class="muted small">Taxonomía Fach con los registros por mecanismo laríngeo (M0–M3). Cada fila es un tipo de voz: arriba las zonas de sus passaggi (1.º y 2.º) y abajo sus registros, sobre el teclado.</p>
       <div class="chart-scroll">${drawRef()}</div>
       <details class="ex"><summary>Ver tabla con las notas exactas</summary><div class="chart-scroll"><table class="reft">${refTableHtml()}</table></div></details></div>
+    <div class="sec"><h2>Referencias</h2><p class="muted small">${VOZ_DATOS.AVISO_METODOLOGICO}</p><ol class="refs muted small">${VOZ_DATOS.REFERENCIAS.map(r => `<li>${r[0]} <i>${r[1]}</i> ${r[2]}</li>`).join('')}</ol><p class="fine">Motor ${VOZ_DATOS.VERSION_MOTOR}</p></div>
     <div class="foot-logo"><img src="../../Logos/PeachesLogo.jpeg" alt="" onerror="this.remove()">Team Peaches</div>`;
   renderMap();
 }
@@ -1831,6 +1732,34 @@ function drawMap(R, T, all) {
    «registrarRangoVocal»). Solo se envía si están las 5 grabaciones y ninguna es la voz de ejemplo. Si no hay internet, queda
    en el teléfono y se reintenta la próxima vez que se abra esta página o se vea un resultado. */
 const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbwcnPM10DeRLE6ReNX_AqeViRfKkHjpflT-QCw05oW_L8n5ohrDhfR_iPuzTqYNrG8H4A/exec';   // el mismo de index.html
+
+/* ---- Analíticas de uso (acción pública «trackUI»; claves rv_* en CLAVES_INTERACCION_UI del code.gs) ----
+   Dentro del Hub usa su trackUI; solo, respeta el modo fantasma 👻 (tph_notrack). Nunca debe romper el clic que la dispara. */
+function contar(clave) {
+  try { if (window.parent !== window && window.parent.trackUI) { window.parent.trackUI(clave); return; } } catch (err) {}
+  try {
+    let v = null, token = '';
+    try { v = localStorage.getItem('tph_notrack'); if (localStorage.getItem('tph_session_rol') === 'staff') token = localStorage.getItem('tph_session_token') || ''; } catch (err) {}
+    if (v === null) v = (document.cookie.match(/(?:^|; )tph_notrack=([^;]*)/) || [])[1];
+    if (v === '1') return;
+    fetch(APPS_SCRIPT_URL, { method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' }, body: JSON.stringify({ action: 'trackUI', clave, token }), keepalive: true }).catch(() => {});
+  } catch (err) {}
+}
+const CLAVES_RV = [   // [selector, clave]: gana el primero que coincide
+  ['#nameForm button[type=submit]', 'rv_empezar_prueba'], ['#goSong', 'rv_analizar_cancion'], ['#btnSongDemo', 'rv_cancion_ejemplo'], ['#songHit', 'rv_cancion_posicion'],
+  ['#sexBox button', 'rv_genero'], ['#btnSex', 'rv_cambiar_genero'], ['[data-act="rec"]', 'rv_grabar'], ['[data-pg="rec"]', 'rv_sirena_grabar'],
+  ['[data-act="cancel"],[data-pg="cancel"]', 'rv_cancelar_grabacion'], ['[data-act="take"]', 'rv_elegir_toma'], ['[data-act="hist"]', 'rv_historial'],
+  ['[data-act="newpara"]', 'rv_otro_parrafo'], ['[data-act="done"]', 'rv_listo_paso'], ['[data-act="gtoggle"]', 'rv_abrir_paso'], ['#btnCont', 'rv_continuar'],
+  ['#btnClear', 'rv_borrar'], ['#btnDemo', 'rv_voz_ejemplo'], ['#btnReplay', 'rv_ver_resultado_ajeno'], ['#replayGo', 'rv_ver_resultado_ajeno'],
+  ['[data-nt]', 'rv_notacion'], ['.tip', 'rv_ayuda'], ['[data-act="mapsel"],#mapBox [data-sel]', 'rv_mapa_registro'], ['[data-act="maptog"]', 'rv_mapa_todas'],
+  ['[data-act="share"]', 'rv_compartir'], ['details.ex summary', 'rv_ver_tabla_ref'], ['.pl .pp', 'rv_reproducir'], ['.pl .wf', 'rv_buscar_audio'], ['.pl .vb', 'rv_volumen'],
+  ['.pl .dl', 'rv_descargar_mp3'], ['.pl .spd button', 'rv_velocidad'], ['.pl .mb', 'rv_menu_audio'], ['#back', 'rv_volver'], ['#cerrar', 'rv_cerrar']
+];
+document.addEventListener('click', e => { if (!e.target.closest) return; for (const [sel, k] of CLAVES_RV) if (e.target.closest(sel)) { contar(k); break; } }, true);
+document.addEventListener('change', e => {
+  const i = e.target; if (!i || !i.files || !i.files[0]) return;
+  if (i.dataset && i.dataset.act === 'file') contar('rv_subir_audio'); else if (i.id === 'songFile') contar('rv_cancion_importar');
+}, true);
 const PEND_KEY = 'rv_pendientes';
 const RESULTADOS = [];
 const pendLeer = () => { try { return JSON.parse(localStorage.getItem(PEND_KEY) || '[]'); } catch (e) { return []; } };
@@ -1963,17 +1892,17 @@ async function shareImages() {
 /* ---- 11. Cuadro de referencia recreado: filas por tipo, subtipos arriba, registros abajo y teclado con frecuencias ---- */
 function drawRef() {
   const lo = 36, hi = 92, n = hi - lo + 1, W = 1040, L = 118, P = (W - L - 12) / n, X = m => L + (m - lo) * P;
-  let y = 6, body = ''; const lay = REF.map(t => { const h = t.subs ? 56 : 34, o = { t, y, h }; y += h + 8; return o; });
+  let y = 6, body = ''; const lay = REF.map(t => { const h = 56, o = { t, y, h }; y += h + 8; return o; });
   const key = y + 4; let bands = '';
   for (let m = lo; m < hi; m += 12) bands += `<rect class="cband" x="${X(m)}" y="0" width="${P}" height="${key}"/>`;
   lay.forEach(({ t, y: y0 }) => {
-    body += `<text class="rname" x="${L - 10}" y="${y0 + (t.subs ? 44 : 22)}">${t.es}</text>`;
-    if (t.subs) t.subs.forEach(sb => {
+    body += `<text class="rname" x="${L - 10}" y="${y0 + 44}">${t.es}</text>`;
+    t.pasos.forEach(sb => {
       const a = sb[1], b = sb[2] + 1, w = (b - a) * P;
-      body += `<rect class="sbar" x="${X(a)}" y="${y0}" width="${w}" height="17" rx="3"><title>${sb[0]}</title></rect>`;
+      body += `<rect class="sbar" x="${X(a)}" y="${y0}" width="${w}" height="17" rx="3"><title>${sb[3]}</title></rect>`;
       if (w >= sb[0].length * 5.2 + 6) body += `<text class="stxt" x="${X(a) + w / 2}" y="${y0 + 12}">${sb[0]}</text>`;
     });
-    const ry = y0 + (t.subs ? 22 : 2);
+    const ry = y0 + 22;
     t.regs.forEach((r, k) => {
       const a = k === 0 ? r[1] : t.bnd[k - 1] + 0.5, b = k === t.regs.length - 1 ? r[2] + 1 : t.bnd[k] + 0.5, w = (b - a) * P;
       body += `<rect class="rb rb-${r[0]} on" x="${X(a)}" y="${ry}" width="${w}" height="28" rx="3"><title>${REG_ES[r[0]]}</title></rect>`;
@@ -1991,12 +1920,12 @@ function drawRef() {
   return `<svg viewBox="0 0 ${W} ${key + 82}" role="img" aria-label="Cuadro de referencia de tesituras y registros por tipo de voz">${bands}${body}${keys}${lbl}</svg>`;
 }
 function refTableHtml() {
-  const nn = v => lb(v), hz = v => Math.round(midiToHz(v)), order = ['strohbass', 'pecho', 'medio', 'cabeza', 'silbido'];
-  let h = `<thead><tr><th>Voz</th>${order.map(k => `<th>${REG_ES[k]}</th>`).join('')}<th>Subtipos</th></tr></thead><tbody>`;
+  const nn = v => lb(v), hz = v => Math.round(midiToHz(v)), order = ['pecho', 'medio', 'cabeza', 'silbido'];
+  let h = `<thead><tr><th>Voz</th>${order.map(k => `<th>${REG_ES[k]}</th>`).join('')}<th>Passaggi</th><th>Subtipos (Fach)</th></tr></thead><tbody>`;
   REF.forEach(T => {
     h += `<tr><th>${T.es}</th>`;
     order.forEach(k => { const r = T.regs.find(x => x[0] === k); h += r ? `<td class="rg-${k}">${nn(r[1])} – ${nn(r[2])}<br><span class="muted small">${hz(r[1])}–${hz(r[2])} Hz</span></td>` : '<td></td>'; });
-    h += `<td>${T.subs ? T.subs.map(s => `${s[0]} ${s[1] === s[2] ? nn(s[1]) : nn(s[1]) + '–' + nn(s[2])}`).join('<br>') : '<span class="muted">Sin subdivisión</span>'}</td></tr>`;
+    h += `<td>1.º ${nn(T.p1[0])}${T.p1[1] !== T.p1[0] ? '–' + nn(T.p1[1]) : ''}<br>2.º ${nn(T.p2[0])}${T.p2[1] !== T.p2[0] ? '–' + nn(T.p2[1]) : ''}${T.verificado ? '' : '<br><span class="muted small">por verificar</span>'}</td><td>${T.fach.map(s => s[0]).join('<br>')}</td></tr>`;
   });
   return h + '</tbody>';
 }
