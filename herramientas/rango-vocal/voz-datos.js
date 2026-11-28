@@ -88,7 +88,7 @@
   ];
 
   const AVISO_METODOLOGICO = 'Aviso metodológico: el sistema Fach describe el canto lírico sin amplificación; el canto contemporáneo es más flexible y una misma persona puede cantar en varias categorías. ' +
-    'Los rangos por tipo, los passaggi y los parámetros del clasificador son orientativos (algunos marcados «por verificar») y se irán calibrando con casos confirmados. ' +
+    'Los rangos por tipo, los passaggi y los parámetros del clasificador son orientativos. ' +
     'Este resultado es una sugerencia, no un diagnóstico; para una clasificación definitiva consulta a un profesor de canto.';
 
   return { TIPOS, REF: TIPOS, REG_ES, SPEECH_REF, HABLA, REFERENCIAS, AVISO_METODOLOGICO, VERSION_MOTOR: 'm1.2-v4.50' };
