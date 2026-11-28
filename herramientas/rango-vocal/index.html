@@ -2009,8 +2009,10 @@ function pill(g, x, y, w, h, r, color) {
 const rangeTxt = (a, b) => a != null && b != null ? `${lb(a)} – ${lb(b)}` : '—';
 function infoImage(R, C) {
   const [c, g] = mkCanvas(1080, 1350), m = 540;
-  txt(g, 'TU TIPO DE VOZ', m, 190, 32, '#ff8fb1', { body: 1, w: 600 });
+  const pc = v => Math.round(v * 100);   // mismo texto que la pantalla de resultados: afinidad, tendencia secundaria y zona fronteriza
+  txt(g, C.frontera ? 'ZONA FRONTERIZA' : 'AFINIDAD CON', m, 190, 32, '#ff8fb1', { body: 1, w: 600 });
   txt(g, C.best.es, m, 340, 150, '#fbeaf2', { max: 960 });
+  txt(g, `${pc(C.afinidad)}%` + (C.secundaria ? ` · Tendencia secundaria: ${C.secundaria.T.es} ${pc(C.secundaria.afinidad)}%` : ''), m, 410, 32, '#c9a8bb', { body: 1, w: 500, max: 960 });
   const block = (label, big, small, y, color) => {
     txt(g, label, m, y, 30, color, { body: 1, w: 600 });
     txt(g, big, m, y + 100, 92, '#fbeaf2', { max: 960 });
@@ -2031,7 +2033,7 @@ function mapImage(R, C) {
   const lo = Math.max(0, Math.floor((Math.min(...vals) - 3) / 12) * 12), hi = Math.min(132, Math.ceil((Math.max(...vals) + 4) / 12) * 12);
   const L = 100, P = (1920 - 2 * L) / (hi - lo), X = m => L + (m - lo) * P, KY = 760;
   txt(g, 'Mi rango vocal', L, 150, 76, '#fbeaf2', { align: 'left' });
-  txt(g, T.es, 1920 - L, 150, 60, '#ff8fb1', { align: 'right' });
+  txt(g, `${T.es} · ${Math.round(C.afinidad * 100)}%`, 1920 - L, 150, 60, '#ff8fb1', { align: 'right' });
   rows.forEach(([name, a, b, color], i) => {
     const y = 290 + i * 150, x = X(a), w = (b - a + 1) * P;
     pill(g, x, y, w, 56, 18, color);
